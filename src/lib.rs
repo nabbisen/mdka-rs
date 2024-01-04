@@ -2,7 +2,7 @@
 
 use std::cell::RefCell;
 
-use html5ever::{parse_document, Attribute, QualName};
+use html5ever::{parse_document, ns, namespace_url, Attribute};
 use html5ever::driver::ParseOpts;
 use html5ever::tendril::TendrilSink;
 use markup5ever_rcdom::{RcDom, NodeData, Handle};
@@ -13,6 +13,9 @@ const INDENT_SIZE: usize = 4;
 /// entry (todo)
 pub fn from_html(html: &str) -> String {
     let dom = parse_document(RcDom::default(), ParseOpts::default()).from_utf8().read_from(&mut html.as_bytes()).unwrap();
+    // let mut result = StructuredPrinter::default();
+    // walk(&dom.document, &mut result, custom);
+    // println!("{:?}", &dom.document);
     manipulate_node(&dom.document, None)
 }
 
@@ -23,11 +26,11 @@ fn manipulate_node(node: &Handle, indent: Option<usize>) -> String {
             escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_string()
         },
         NodeData::Element {
-            ref name,
             attrs: ref node_attrs,
             ..
         } => {
-            manipulate_element(node, name, node_attrs, indent)
+            let attrs = attrs(node_attrs);
+            manipulate_element(node, attrs, indent)
         },
         NodeData::Document | NodeData::Doctype { .. } => manipulate_children(node, None), // todo
         NodeData::Comment { .. } => "".to_string(),
@@ -36,7 +39,23 @@ fn manipulate_node(node: &Handle, indent: Option<usize>) -> String {
     ret
 }
 
-fn get_attrs(node_attrs: &RefCell<Vec<Attribute>>) -> String {
+fn element_name_attrs(node: &Handle) -> (String, String) {
+    match node.data {
+        NodeData::Element {
+            ref name,
+            attrs: ref node_attrs,
+            ..
+        } => {
+            (name.local.to_string(), attrs(node_attrs))
+        },
+        _ => { ("".to_string(), "".to_string()) }
+    }
+}
+fn element_name(node: &Handle) -> String {
+    let (ret, _) = element_name_attrs(node);
+    ret
+}
+fn attrs(node_attrs: &RefCell<Vec<Attribute>>) -> String {
     let style = node_attrs
         .borrow()
         .iter()
@@ -47,7 +66,7 @@ fn get_attrs(node_attrs: &RefCell<Vec<Attribute>>) -> String {
         .iter()
         .find(|attr| attr.name.local.to_string().as_str() == "id")
         .and_then(|attr| Some(attr.value.escape_default().to_string()));
-    format!("{}{}{}{}",
+    format!("{}{}{}{}", 
         if style.is_some() || id.is_some() { " " } else { "" },
         if id.is_some() { format!("id=\"{}\"", id.clone().unwrap()) } else { "".to_string() },
         if style.is_some() && id.is_some() { " " } else { "" },
@@ -55,13 +74,10 @@ fn get_attrs(node_attrs: &RefCell<Vec<Attribute>>) -> String {
     )
 }
 
-fn manipulate_element(node: &Handle, name: &QualName, node_attrs: &RefCell<Vec<Attribute>>, indent: Option<usize>) -> String {
-    let attrs = get_attrs(node_attrs);
-
-    // todo: local name
-    let node_name = name.local.to_string();
-    let ret = match node_name.as_str() {
-        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => manipulate_heading(node, indent, attrs, node_name),
+fn manipulate_element(node: &Handle, attrs: String, indent: Option<usize>) -> String {
+    let element_name = element_name(node);
+    let ret = match element_name.as_str() {
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => manipulate_heading(node, indent, attrs, element_name),
         "span" => manipulate_block(node, indent, attrs, 0),
         "div" => manipulate_block(node, indent, attrs, 1),
         "p" => manipulate_block(node, indent, attrs, 2),
@@ -82,7 +98,6 @@ fn manipulate_element(node: &Handle, name: &QualName, node_attrs: &RefCell<Vec<A
         "html" | "head" | "body" => manipulate_children(node, None),
         _ => "".to_string()
     };
-
     ret
 }
 fn manipulate_children(node: &Handle, indent: Option<usize>) -> String {
@@ -102,8 +117,9 @@ fn manipulate_attrs(s: String, attrs: String, indent: Option<usize>, new_line: b
     }
 }
 
-fn manipulate_heading(node: &Handle, indent: Option<usize>, attrs: String, node_name: String) -> String {
-    let prefix = "#".repeat(node_name.chars().last().unwrap().to_digit(10).unwrap().try_into().unwrap());
+fn manipulate_heading(node: &Handle, indent: Option<usize>, attrs: String, element_name: String) -> String {
+    let level = element_name.chars().last().unwrap().to_digit(10).unwrap().try_into().unwrap();
+    let prefix = "#".repeat(level);
     let ret = format!("{} {}", prefix, manipulate_children(node, indent));
     manipulate_attrs(ret, attrs, indent, true)
 }
@@ -120,23 +136,12 @@ fn manipulate_list(node: &Handle, indent: Option<usize>, is_ordered: bool) -> St
     let is_nested = INDENT_INIT_VALUE < current_indent;
     let mut ret = (if is_nested { "\n" } else { "" }).to_string();
     for (i, child) in node.children.borrow().iter().enumerate() {
-        let child_ret = match child.data {
-            NodeData::Element {
-                ref name,
-                attrs: ref node_attrs,
-                ..
-            } => {
-                // todo: local name
-                let node_name = name.local.to_string();
-                match node_name.as_str() {
-                    "li" => {
-                        let attrs = get_attrs(node_attrs);
-                        let child_children_ret = manipulate_children(child, next_indent);
-                        let is_last = i == node.children.borrow().len() - 1;
-                        manipulate_attrs(format!("{} {}", prefix, child_children_ret), attrs, indent, !is_last)
-                    },
-                    _ => "".to_string()
-                }
+        let (element_name, attrs) = element_name_attrs(child);
+        let child_ret = match element_name.as_str() {
+            "li" => {
+                let child_children_ret = manipulate_children(child, next_indent);
+                let is_last = i == node.children.borrow().len() - 1;
+                manipulate_attrs(format!("{} {}", prefix, child_children_ret), attrs, indent, !is_last)
             },
             _ => "".to_string()
         };
@@ -148,19 +153,11 @@ fn find_trs(node: &Handle) -> Vec<Handle> {
     let mut trs = Vec::<Handle>::new();
     for child in node.children.borrow().iter() {
         // todo: local name
-        let node_name = match child.data {
-            NodeData::Element {
-                ref name,
-                ..
-            } => {
-                name.local.to_string()
-            },
-            _ => { "".to_string() }};
-        if node_name.as_str() == "tr" {
-            trs.push(child.clone());
-        } else {
-            trs.append(&mut find_trs(&child));
-        }
+        let element_name = element_name(child);
+        let _ = match element_name.as_str() {
+            "tr" => trs.push(child.clone()),
+            _ => trs.append(&mut find_trs(&child))
+        };
     }
     trs
 }
@@ -172,42 +169,26 @@ fn manipulate_table(node: &Handle, _indent: Option<usize>, _attrs: String) -> St
 
         let mut row = "|".to_string();
         for td in tr.children.borrow().iter() {
-            // todo: local name
-            let node_name = match td.data {
-                NodeData::Element {
-                    ref name,
-                    ..
-                } => {
-                    name.local.to_string()
-                },
-                _ => { "".to_string() }};
-            match node_name.as_str() {
+            let element_name = element_name(td);
+            let _ = match element_name.as_str() {
                 "th" | "td" => {
                     row = format!("{} {} |", row, manipulate_node(td, Some(INDENT_INIT_VALUE)));
-                }
+                },
                 _ => {}
-            }
+            };
         }
         row = format!("{}\n", row);
         // todo: text-align
         if i == 0 {
             row = format!("{}|", row);
             for td in tr.children.borrow().iter() {
-                // todo: local name
-                let node_name = match td.data {
-                    NodeData::Element {
-                        ref name,
-                        ..
-                    } => {
-                        name.local.to_string()
-                    },
-                    _ => { "".to_string() }};
-                match node_name.as_str() {
+                let element_name = element_name(td);
+                let _ = match element_name.as_str() {
                     "th" | "td" => {
                         row = format!("{} --- |", row);
-                    }
+                    },
                     _ => {}
-                }
+                };
             }
             row = format!("{}\n", row);
         }
@@ -223,18 +204,11 @@ fn manipulate_preformatted(node: &Handle, indent: Option<usize>, attrs: String, 
         let code_node = node_children
             .iter()
             .find(|child| {
-                match child.data {
-                    NodeData::Element {
-                        ref name,
-                        ..
-                    } => {
-                        name.local.to_string().as_str() == "code"
-                    },
-                    _ => false
-                }
+                let element_name = element_name(child);
+                element_name == "code"
             });
         let prefix = if code_node.is_some() {
-            let code_lang =
+            let code_lang = 
                 match code_node.unwrap().data {
                     NodeData::Element {
                         ref attrs,
