@@ -41,6 +41,7 @@ fn list() {
     assert(cases);
 }
 
+// more test: variety
 #[test]
 fn table() {
     let cases = vec![
@@ -77,10 +78,12 @@ fn preformatted() {
         ("<pre><code lang=\"rust\">1</code></pre>", "\n```rust\n1\n```\n\n"),
         ("<pre><div>1</div></pre>", "\n```\n<div>1</div>\n```\n\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
+        ("<ul><li>a<ol><li><pre><div>1</div>2\n</pre></ol><li>b</ul>", "- a\n    1. \n        ```\n        <div>1</div>2        \n        ```\n        \n        \n- b\n"),
     ];
     assert(cases);
 }
 
+// more test: nested elements
 #[test]
 fn blockquote() {
     let cases = vec![

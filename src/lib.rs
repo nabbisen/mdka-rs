@@ -220,8 +220,7 @@ fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &Hash
     }
     format!("\n{}\n{}", ret, indent_str)
 }
-// todo: indent
-fn inner_html(node: &Handle) -> String {
+fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
     let h: SerializableHandle = (*node).clone().into();
     let opts = SerializeOpts {
         scripting_enabled: false,
@@ -230,7 +229,17 @@ fn inner_html(node: &Handle) -> String {
     };
     let mut buf = Vec::new();
     serialize(&mut buf, &h, opts).unwrap();
-    String::from_utf8(buf).unwrap()
+    let serialized = String::from_utf8(buf).unwrap();
+    if INDENT_DEFAULT_SIZE < indent_size.unwrap_or(INDENT_DEFAULT_SIZE) {
+        let indent_str = indent(indent_size);
+        serialized.split("\n").into_iter().fold(String::new(), |mut acc, x| {
+            let s = format!("{}{}", indent_str, &x);
+            acc.push_str(s.as_str());
+            acc
+        })
+    } else {
+        serialized
+    }
 }
 fn inner_text_scan(node: &Handle, s: String) -> String {
     match node.data {
@@ -264,7 +273,7 @@ fn inner_text(node: &Handle) -> String {
 }
 fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_inline: bool) -> String {
     if is_inline {
-        let ret = format!("`{}`", inner_html(node));
+        let ret = format!("`{}`", inner_html(node, indent_size));
         return enclose(ret, indent_size, attrs_map, false);
     }
     
@@ -297,7 +306,7 @@ fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_map:
     };
     let next_node = if code_node.is_some() { code_node.unwrap() } else { node };
     let indent_str = indent(indent_size);
-    let ret = format!("\n{}\n{}\n```\n{}\n", prefix, inner_html(next_node), indent_str);
+    let ret = format!("\n{}{}\n{}\n{}```\n{}\n{}", indent_str, prefix, inner_html(next_node, indent_size), indent_str, indent_str, indent_str);
     enclose(ret, indent_size, attrs_map, true)
 }
 fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
