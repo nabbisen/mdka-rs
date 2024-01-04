@@ -5,7 +5,8 @@ use std::cell::RefCell;
 use html5ever::{parse_document, ns, namespace_url, Attribute};
 use html5ever::driver::ParseOpts;
 use html5ever::tendril::TendrilSink;
-use markup5ever_rcdom::{RcDom, NodeData, Handle};
+use html5ever::serialize::{serialize, SerializeOpts, TraversalScope};
+use markup5ever_rcdom::{RcDom, NodeData, Handle, SerializableHandle};
 
 const INDENT_INIT_VALUE: usize = 0;
 const INDENT_SIZE: usize = 4;
@@ -196,9 +197,21 @@ fn manipulate_table(node: &Handle, _indent: Option<usize>, _attrs: String) -> St
     }
     ret
 }
+// todo: indent
+fn inner_html(node: &Handle) -> String {
+    let h: SerializableHandle = (*node).clone().into();
+    let opts = SerializeOpts {
+        scripting_enabled: false,
+        traversal_scope: TraversalScope::ChildrenOnly(None),
+        create_missing_parent: false,
+    };
+    let mut buf = Vec::new();
+    serialize(&mut buf, &h, opts).unwrap();
+    String::from_utf8(buf).unwrap()
+}
 fn manipulate_preformatted(node: &Handle, indent: Option<usize>, attrs: String, is_inline: bool) -> String {
     let ret = if is_inline {
-        format!("`{}`", manipulate_children(node, indent))
+        format!("`{}`", inner_html(node))
     } else {
         let node_children = &node.children.borrow();
         let code_node = node_children
@@ -227,7 +240,8 @@ fn manipulate_preformatted(node: &Handle, indent: Option<usize>, attrs: String, 
         } else {
             "```".to_string()
         };
-        format!("{}\n{}\n```\n", prefix, manipulate_children(if code_node.is_some() { code_node.unwrap() } else { node }, indent))
+        let next_node = if code_node.is_some() { code_node.unwrap() } else { node };
+        format!("{}\n{}\n```\n", prefix, inner_html(next_node))
     };
     manipulate_attrs(ret, attrs, indent, false)
 }

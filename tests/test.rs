@@ -86,6 +86,8 @@ fn preformatted() {
         ("<code>1</code>", "`1`"),
         ("<pre><code>1</code></pre>", "```\n1\n```\n"),
         ("<pre><code lang=\"rust\">1</code></pre>", "```rust\n1\n```\n"),
+        ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n"),
+        ("<code><div>1</div></code>", "`<div>1</div>`"),
     ];
     for (input, expect) in cases {
         let output = from_html(input);
