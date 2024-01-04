@@ -11,10 +11,7 @@ fn heading() {
         ("<h6>6</h6>", "###### 6\n"),
         ("<h1>1</h1>\n<h2>2</h2>\n<h3>3</h3>", "# 1\n## 2\n### 3\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -24,10 +21,7 @@ fn block() {
         ("<div>1</div><div>2</div>", "1\n2\n"),
         ("<p>1</p><p>2</p>", "1\n\n2\n\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -43,10 +37,7 @@ fn list() {
         ("<ul><li>1<ol><li>1-1<li>1-2</ol><li>2</ul>", "- 1\n    1. 1-1\n    1. 1-2\n- 2\n"),
         ("<ol><li>1<ul><li>1-1<li>1-2</ul><li>2</ol>", "1. 1\n    - 1-1\n    - 1-2\n1. 2\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -73,10 +64,7 @@ fn table() {
 </table>
 "#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -89,10 +77,7 @@ fn preformatted() {
         ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 // todo
@@ -102,10 +87,7 @@ fn preformatted() {
 //         ("<b>1</b>", " **1** "),
 //         ("<strong>2</strong>", " **2** "),
 //     ];
-//     for (input, expect) in cases {
-//         let output = from_html(input);
-//         assert_eq!(output, expect);
-//     }
+//     assert(cases);
 // }
 
 // #[test]
@@ -114,10 +96,7 @@ fn preformatted() {
 //         ("<b>1</b>", " **1** "),
 //         ("<strong>2</strong>", " **2** "),
 //     ];
-//     for (input, expect) in cases {
-//         let output = from_html(input);
-//         assert_eq!(output, expect);
-//     }
+//     assert(cases);
 // }
 
 // #[test]
@@ -126,10 +105,7 @@ fn preformatted() {
 //         ("<b>1</b>", " **1** "),
 //         ("<strong>2</strong>", " **2** "),
 //     ];
-//     for (input, expect) in cases {
-//         let output = from_html(input);
-//         assert_eq!(output, expect);
-//     }
+//     assert(cases);
 // }
 
 #[test]
@@ -138,10 +114,7 @@ fn bold() {
         ("<b>1</b>", " **1** "),
         ("<strong>2</strong>", " **2** "),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -150,10 +123,7 @@ fn italic() {
         ("<i>1</i>", " *1* "),
         ("<em>2</em>", " *2* "),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -163,10 +133,7 @@ fn new_line() {
         ("1<br><br>2", "1    \n    \n2"),
         ("1\n2", "1\n2"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -175,10 +142,7 @@ fn devider() {
         ("<hr>", "\n---\n"),
         ("1<hr>2", "1\n---\n2"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -187,10 +151,7 @@ fn attrs() {
         ("<h1 style=\"color: orange;\">1</h1>", "<span style=\"color: orange;\">\n# 1\n</span>\n"),
         ("<h1 id=\"myid\" style=\"color: orange;\">1</h1>", "<span id=\"myid\" style=\"color: orange;\">\n# 1\n</span>\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -199,10 +160,7 @@ fn style() {
         ("<style>* { color: orange; }></style>", ""),
         ("<h1>1</h1><style>* { color: orange; }></style><h2>2</h2>", "# 1\n## 2\n"),
     ];
-    for (input, expect) in cases {
-        let output = from_html(input);
-        assert_eq!(output, expect);
-    }
+    assert(cases);
 }
 
 #[test]
@@ -214,6 +172,18 @@ fn unsupported() {
         ("<span><!-- 1 -->2</span>", "2"),
         ("<span class=\"b\">1</span>", "1"),
     ];
+    assert(cases);
+}
+
+#[test]
+fn readme_usage() {
+    let cases = vec![
+        ("<h1>heading 1</h1>\n<p>Hello, world.</p>", "# heading 1\nHello, world.\n\n"),
+    ];
+    assert(cases);
+}
+
+fn assert(cases: Vec<(&str, &str)>) {
     for (input, expect) in cases {
         let output = from_html(input);
         assert_eq!(output, expect);
