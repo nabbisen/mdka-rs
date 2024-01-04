@@ -1,9 +1,17 @@
-# mdka-rs
-HTML to Markdown converter - Lightweight library written in Rust
+# mdka
+HTML to Markdown converter - Lightweight library written in Rust.
 
 "ka" means "化" aka conversion.
 
 ## Usage
+`Cargo.toml`
+
+```toml
+[dependencies]
+mdka = "*" # or specific version
+```
+
+`awesome.rs`
 
 ```rust
 use mdka::from_html
@@ -13,6 +21,10 @@ fn awesome_fn() {
     let ret = from_html(input);
     println!("{}", ret);
     // # heading 1
+    // 
+    // 
     // Hello, world.
+    // 
+    // 
 }
 ```
