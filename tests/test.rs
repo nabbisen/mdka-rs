@@ -81,15 +81,14 @@ fn preformatted() {
     assert(cases);
 }
 
-// todo
-// #[test]
-// fn blockquote() {
-//     let cases = vec![
-//         ("<b>1</b>", " **1** "),
-//         ("<strong>2</strong>", " **2** "),
-//     ];
-//     assert(cases);
-// }
+#[test]
+fn blockquote() {
+    let cases = vec![
+        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def"),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> "),
+    ];
+    assert(cases);
+}
 
 #[test]
 fn link() {

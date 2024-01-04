@@ -299,9 +299,15 @@ fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_map:
     let ret = format!("\n{}\n{}\n```\n{}\n", prefix, inner_html(next_node), indent_str);
     enclose(ret, indent_size, attrs_map, true)
 }
-// todo
-fn manipulate_blockquote(_node: &Handle, _indent_size: Option<usize>, _attrs_map: &HashMap<String, String>) -> String {
-    "".to_string()
+fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
+    let md_str = manipulate_children(node, indent_size);
+    let indent_str = indent(indent_size);
+    let lines = md_str
+        .split('\n')
+        .map(|line| format!("{}> {}", indent_str, line.to_string()))
+        .collect::<Vec<String>>();
+    let ret = lines.join("\n");
+    enclose(ret, indent_size, attrs_map, true)
 }
 fn manipulate_link(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let href = attrs_map.get("href");
