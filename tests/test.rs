@@ -169,8 +169,7 @@ fn attrs() {
 #[test]
 fn unsupported() {
     let cases = vec![
-        // todo
-        // ("<head>1</head>", ""),
+        ("<!doctype html><html lang=\"en\"><head>1</head></html>", "1"), // treated as inline
         ("<script>1</script>", ""),
         ("<script lang=\"ts\">console.log('wow')</script>", ""),
         ("<style>* { color: orange; }></style>", ""),

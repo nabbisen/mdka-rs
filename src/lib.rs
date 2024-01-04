@@ -44,6 +44,7 @@ fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
             manipulate_element(node, indent_size, &attrs_map)
         },
         NodeData::Document | NodeData::Doctype { .. } => manipulate_children(node, None),
+        // skip: comments
         NodeData::Comment { .. } => "".to_string(),
         NodeData::ProcessingInstruction { .. } => unreachable!(),
     };
@@ -95,7 +96,7 @@ fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: &Has
         "br" => "    \n".to_string(),
         "hr" => "\n---\n".to_string(),
         "html" | "body" => manipulate_children(node, None),
-        // head, script, style, comments
+        // skip: script, style
         _ => "".to_string()
     };
     ret
