@@ -65,6 +65,21 @@ fn table() {
     </tbody>
 </table>
 "#, "\n| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
+// todo: fix attrs_map
+//         (r#"
+// <table><thead><tr>
+//     <th style=\"text-align: left ;\">h1</th>
+//     <th style=\"text-align:center;\">h2</th>
+//     <th style=\"text-align :right;\">h3</th>
+// </thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
+//         "\n| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n"),
+//         (r#"
+// <table><thead><tr>
+//     <th class=\"text-left;\">h1</th>
+//     <th class=\"text-center text-italic\">h2</th>
+//     <th class=\"text-bold text-right text-center\">h3</th>
+// </thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
+//         "\n| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n")
     ];
     assert(cases);
 }

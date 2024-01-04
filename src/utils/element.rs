@@ -22,6 +22,7 @@ pub fn element_name(node: &Handle) -> String {
     ret
 }
 
+// todo: fix key-value pairs
 pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String> {
     let mut map = HashMap::new();
     for attr in node_attrs.borrow().iter() {
@@ -40,6 +41,31 @@ pub fn find_trs(node: &Handle) -> Vec<Handle> {
         };
     }
     trs
+}
+
+pub fn style_text_align(style: &String) -> Option<&str> {
+    if let Some(start) = style.find("text-align") {
+        for pos in (start + "text-align".len())..style.len() {
+            if style.as_bytes()[pos] == b':' {      
+                if let Some(end) = style[pos..].find(';') {
+                    return Some((style[(pos + 1)..(pos + end)]).trim()); 
+                } 
+            } 
+        }
+    }
+    None
+}
+
+pub fn class_text_align(class: &String) -> Option<&str> {
+    for s in class.split(' ') {
+        match s {
+            "text-left" => return Some("left"),
+            "text-center" => return Some("center"),
+            "text-right" => return Some("right"),
+            _ => {}
+        }
+    }
+    None
 }
 
 pub fn indent(indent_size: Option<usize>) -> String {

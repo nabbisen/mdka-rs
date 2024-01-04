@@ -66,14 +66,28 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &
             };
         }
         row = format!("{}\n", row);
-        // todo: text-align
         if i == 0 {
             row = format!("{}{}|", row, indent_str);
             for td in tr.children.borrow().iter() {
-                let name = element_name(td);
+                let (name, attrs_map) = element_name_attrs_map(td);
                 let _ = match name.as_str() {
                     "th" | "td" => {
-                        row = format!("{} --- |", row);
+                        let style = match attrs_map.get("style") {
+                            Some(style) => style_text_align(style),
+                            _ => {
+                                match attrs_map.get("class") {
+                                    Some(class) => class_text_align(class),
+                                    _ => None,
+                                }
+                            }
+                        };
+                        let devider = match style {
+                            Some("left") => ":--- ",
+                            Some("center") => " --- ",
+                            Some("right") => " ---:",
+                            _ => " --- "
+                        };
+                        row = format!("{}{}|", row, devider);
                     },
                     _ => {}
                 };
