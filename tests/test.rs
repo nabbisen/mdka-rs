@@ -41,6 +41,7 @@ fn list() {
     assert(cases);
 }
 
+// more test: variety
 #[test]
 fn table() {
     let cases = vec![
@@ -77,19 +78,20 @@ fn preformatted() {
         ("<pre><code lang=\"rust\">1</code></pre>", "\n```rust\n1\n```\n\n"),
         ("<pre><div>1</div></pre>", "\n```\n<div>1</div>\n```\n\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
+        ("<ul><li>a<ol><li><pre><div>1</div>2\n</pre></ol><li>b</ul>", "- a\n    1. \n        ```\n        <div>1</div>2        \n        ```\n        \n        \n- b\n"),
     ];
     assert(cases);
 }
 
-// todo
-// #[test]
-// fn blockquote() {
-//     let cases = vec![
-//         ("<b>1</b>", " **1** "),
-//         ("<strong>2</strong>", " **2** "),
-//     ];
-//     assert(cases);
-// }
+// more test: nested elements
+#[test]
+fn blockquote() {
+    let cases = vec![
+        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def"),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> "),
+    ];
+    assert(cases);
+}
 
 #[test]
 fn link() {
@@ -170,8 +172,7 @@ fn attrs() {
 #[test]
 fn unsupported() {
     let cases = vec![
-        // todo
-        // ("<head>1</head>", ""),
+        ("<!doctype html><html lang=\"en\"><head>1</head></html>", "1"), // treated as inline
         ("<script>1</script>", ""),
         ("<script lang=\"ts\">console.log('wow')</script>", ""),
         ("<style>* { color: orange; }></style>", ""),
