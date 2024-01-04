@@ -2,7 +2,7 @@
 
 use std::cell::RefCell;
 
-use html5ever::{parse_document, ns, namespace_url, Attribute};
+use html5ever::{parse_document, Attribute};
 use html5ever::driver::ParseOpts;
 use html5ever::tendril::TendrilSink;
 use html5ever::serialize::{serialize, SerializeOpts, TraversalScope};
