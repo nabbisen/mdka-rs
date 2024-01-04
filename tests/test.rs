@@ -3,13 +3,14 @@ use mdka::from_html;
 #[test]
 fn heading() {
     let cases = vec![
-        ("<h1>1</h1>", "# 1\n"),
-        ("<h2>2</h2>", "## 2\n"),
-        ("<h3>3</h3>", "### 3\n"),
-        ("<h4>4</h4>", "#### 4\n"),
-        ("<h5>5</h5>", "##### 5\n"),
-        ("<h6>6</h6>", "###### 6\n"),
-        ("<h1>1</h1>\n<h2>2</h2>\n<h3>3</h3>", "# 1\n## 2\n### 3\n"),
+        ("<h1>1</h1>", "# 1\n\n"),
+        ("<h2>2</h2>", "## 2\n\n"),
+        ("<h3>3</h3>", "### 3\n\n"),
+        ("<h4>4</h4>", "#### 4\n\n"),
+        ("<h5>5</h5>", "##### 5\n\n"),
+        ("<h6>6</h6>", "###### 6\n\n"),
+        ("<h1>1</h1>\n<h2>2</h2>\n<h3>3</h3>", "# 1\n\n## 2\n\n### 3\n\n"),
+        ("<h1>1</h1>\n\n\n<h2>2</h2>\n\n\n<h3>3</h3>", "# 1\n\n## 2\n\n### 3\n\n"),
     ];
     assert(cases);
 }
@@ -19,7 +20,7 @@ fn block() {
     let cases = vec![
         ("<span>1</span><span>2</span>", "12"),
         ("<div>1</div><div>2</div>", "1\n2\n"),
-        ("<p>1</p><p>2</p>", "1\n\n2\n\n"),
+        ("<p>1</p><p>2</p>", "\n1\n\n\n2\n\n"),
     ];
     assert(cases);
 }
@@ -62,7 +63,7 @@ fn table() {
         </tr>
     </tbody>
 </table>
-"#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n"),
+"#, "\n| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
     ];
     assert(cases);
 }
@@ -70,11 +71,11 @@ fn table() {
 #[test]
 fn preformatted() {
     let cases = vec![
-        ("<pre>1</pre>", "```\n1\n```\n"),
+        ("<pre>1</pre>", "\n```\n1\n```\n\n"),
         ("<code>1</code>", "`1`"),
-        ("<pre><code>1</code></pre>", "```\n1\n```\n"),
-        ("<pre><code lang=\"rust\">1</code></pre>", "```rust\n1\n```\n"),
-        ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n"),
+        ("<pre><code>1</code></pre>", "\n```\n1\n```\n\n"),
+        ("<pre><code lang=\"rust\">1</code></pre>", "\n```rust\n1\n```\n\n"),
+        ("<pre><div>1</div></pre>", "\n```\n<div>1</div>\n```\n\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
     ];
     assert(cases);
@@ -90,23 +91,26 @@ fn preformatted() {
 //     assert(cases);
 // }
 
-// #[test]
-// fn link() {
-//     let cases = vec![
-//         ("<b>1</b>", " **1** "),
-//         ("<strong>2</strong>", " **2** "),
-//     ];
-//     assert(cases);
-// }
+#[test]
+fn link() {
+    let cases = vec![
+        ("<a href=\"https://some-fqdn/some-dir/some-point\">Click me</a>", "[Click me](https://some-fqdn/some-dir/some-point)"),
+        ("<a>no link</a>", "[no link]()"),
+    ];
+    assert(cases);
+}
 
-// #[test]
-// fn media() {
-//     let cases = vec![
-//         ("<b>1</b>", " **1** "),
-//         ("<strong>2</strong>", " **2** "),
-//     ];
-//     assert(cases);
-// }
+#[test]
+fn media() {
+    let cases = vec![
+        ("<img src=\"/some-dir/some-file.ext\">", "\n![](/some-dir/some-file.ext)\n"),
+        ("<img alt=\"awesome image\">", "\n![awesome image]()\n"),
+        ("<img src=\"/some-dir/some-file.ext\" alt=\"awesome image\">", "\n![awesome image](/some-dir/some-file.ext)\n"),
+        ("<img alt=\"awesome image\" src=\"/some-dir/some-file.ext\">", "\n![awesome image](/some-dir/some-file.ext)\n"),
+        ("<video src=\"/some-dir/some-file.ext2\" alt=\"awesome video\">", "\n![awesome video](/some-dir/some-file.ext2)\n"),
+    ];
+    assert(cases);
+}
 
 #[test]
 fn bold() {
@@ -146,19 +150,19 @@ fn devider() {
 }
 
 #[test]
-fn attrs() {
+fn text() {
     let cases = vec![
-        ("<h1 style=\"color: orange;\">1</h1>", "<span style=\"color: orange;\">\n# 1\n</span>\n"),
-        ("<h1 id=\"myid\" style=\"color: orange;\">1</h1>", "<span id=\"myid\" style=\"color: orange;\">\n# 1\n</span>\n"),
+        ("<html>1</html>", "1"),
+        ("<body>1</body>", "1"),
     ];
     assert(cases);
 }
 
 #[test]
-fn style() {
+fn attrs() {
     let cases = vec![
-        ("<style>* { color: orange; }></style>", ""),
-        ("<h1>1</h1><style>* { color: orange; }></style><h2>2</h2>", "# 1\n## 2\n"),
+        ("<h1 style=\"color: orange;\">1</h1>", "\n<span style=\"color: orange;\">\n# 1\n\n</span>\n"),
+        ("<h1 id=\"myid\" style=\"color: orange;\">1</h1>", "\n<span id=\"myid\" style=\"color: orange;\">\n# 1\n\n</span>\n"),
     ];
     assert(cases);
 }
@@ -166,9 +170,12 @@ fn style() {
 #[test]
 fn unsupported() {
     let cases = vec![
-        ("<html>1</html>", "1"),
-        ("<head>1</head>", "1"),
-        ("<body>1</body>", "1"),
+        // todo
+        // ("<head>1</head>", ""),
+        ("<script>1</script>", ""),
+        ("<script lang=\"ts\">console.log('wow')</script>", ""),
+        ("<style>* { color: orange; }></style>", ""),
+        ("<h1>1</h1><style>* { color: orange; }></style><h2>2</h2>", "# 1\n\n## 2\n\n"),
         ("<span><!-- 1 -->2</span>", "2"),
         ("<span class=\"b\">1</span>", "1"),
     ];
@@ -178,7 +185,7 @@ fn unsupported() {
 #[test]
 fn readme_usage() {
     let cases = vec![
-        ("<h1>heading 1</h1>\n<p>Hello, world.</p>", "# heading 1\nHello, world.\n\n"),
+        ("<h1>heading 1</h1>\n<p>Hello, world.</p>", "# heading 1\n\n\nHello, world.\n\n"),
     ];
     assert(cases);
 }
