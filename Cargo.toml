@@ -1,5 +1,5 @@
 [package]
-name = "mdka-rs"
+name = "mdka"
 version = "0.0.1"
 edition = "2021"
 authors = ["nabbisen <nabbisen@scqr.net>"]
