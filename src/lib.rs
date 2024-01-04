@@ -11,7 +11,16 @@ use markup5ever_rcdom::{RcDom, NodeData, Handle, SerializableHandle};
 const INDENT_INIT_VALUE: usize = 0;
 const INDENT_SIZE: usize = 4;
 
-/// entry (todo)
+/// Convert HTML to Markdown
+///
+/// ```
+/// use mdka::from_html;
+/// 
+/// let input = "<h1>heading 1</h1>\n<p>Hello, world.</p>";
+/// let expect = "# heading 1\nHello, world.\n\n";
+/// let ret = from_html(input);
+/// assert_eq!(ret, expect);
+/// ```
 pub fn from_html(html: &str) -> String {
     let dom = parse_document(RcDom::default(), ParseOpts::default()).from_utf8().read_from(&mut html.as_bytes()).unwrap();
     // let mut result = StructuredPrinter::default();
