@@ -11,7 +11,7 @@ pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
             let escaped = contents.borrow().escape_default().to_string();
-            escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_string()
+            escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_owned()
         },
         NodeData::Element {
             attrs: ref node_attrs,
@@ -22,14 +22,14 @@ pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
         },
         NodeData::Document | NodeData::Doctype { .. } => manipulate_children(node, None),
         // skip: comments
-        NodeData::Comment { .. } => "".to_string(),
+        NodeData::Comment { .. } => String::new(),
         NodeData::ProcessingInstruction { .. } => unreachable!(),
     };
     ret
 }
 
 pub fn manipulate_children(node: &Handle, indent_size: Option<usize>) -> String {
-    let mut ret = "".to_string();
+    let mut ret = String::new();
     let next_indent_size = if indent_size.is_some() { indent_size.unwrap() } else { INDENT_DEFAULT_SIZE };
     for child in node.children.borrow().iter() {
         ret = format!("{}{}", ret, manipulate_node(child, Some(next_indent_size)));
@@ -41,9 +41,11 @@ pub fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: 
     let name = element_name(node);
     let ret = match name.as_str() {
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => manipulate_heading(node, indent_size, attrs_map, name),
-        "span" => manipulate_block(node, indent_size, attrs_map, 0),
-        "div" => manipulate_block(node, indent_size, attrs_map, 1),
-        "p" => manipulate_block(node, indent_size, attrs_map, 2),
+        "div" => manipulate_block(node, indent_size, attrs_map, false),
+        "p" => manipulate_block(node, indent_size, attrs_map, true),
+        "span" => manipulate_inline(node, indent_size, attrs_map, InlineStyle::Regular),
+        "b" | "strong" => manipulate_inline(node, indent_size, attrs_map, InlineStyle::Bold),
+        "i" | "em" => manipulate_inline(node, indent_size, attrs_map, InlineStyle::Italic),
         "ul" => manipulate_list(node, indent_size, false),
         "ol" => manipulate_list(node, indent_size, true),
         "table" => manipulate_table(node, indent_size, attrs_map),
@@ -51,15 +53,13 @@ pub fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: 
         "pre" => manipulate_preformatted(node, indent_size, attrs_map, false),
         "code" => manipulate_preformatted(node, indent_size, attrs_map, true),
         "blockquote" => manipulate_blockquote(node, indent_size, attrs_map),
-        "b" | "strong" => manipulate_bold(node, indent_size, attrs_map),
-        "i" | "em" => manipulate_italic(node, indent_size, attrs_map),
         "a" => manipulate_link(node, indent_size, attrs_map),
         "img" | "video" => manipulate_media(node, indent_size, attrs_map),
-        "br" => "    \n".to_string(),
-        "hr" => "\n---\n".to_string(),
+        "br" => "    \n".to_owned(),
+        "hr" => "\n---\n".to_owned(),
         "html" | "body" => manipulate_children(node, None),
         // skip: script, style
-        _ => "".to_string()
+        _ => String::new()
     };
     ret
 }
