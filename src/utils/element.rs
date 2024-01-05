@@ -28,7 +28,7 @@ pub fn element_name(node: &Handle) -> String {
 pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String> {
     let mut map = HashMap::new();
     for attr in node_attrs.borrow().iter() {
-        println!("{:?}", attr);
+        // println!("{:?}", attr);
         map.insert(attr.name.local.to_string(), attr.value.escape_default().to_string());
     }
     map
