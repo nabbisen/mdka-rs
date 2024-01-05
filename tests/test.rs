@@ -20,7 +20,7 @@ fn block() {
     let cases = vec![
         ("<span>1</span><span>2</span>", "12"),
         ("<div>1</div><div>2</div>", "1\n2\n"),
-        ("<p>1</p><p>2</p>", "\n1\n\n\n2\n\n"),
+        ("<p>1</p><p>2</p>", "1\n\n2\n\n"),
     ];
     assert(cases);
 }
@@ -64,7 +64,7 @@ fn table() {
         </tr>
     </tbody>
 </table>
-"#, "\n| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
+"#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
 // todo: fix attrs_map
 //         (r#"
 // <table><thead><tr>
@@ -87,11 +87,11 @@ fn table() {
 #[test]
 fn preformatted() {
     let cases = vec![
-        ("<pre>1</pre>", "\n```\n1\n```\n\n"),
+        ("<pre>1</pre>", "```\n1\n```\n\n"),
         ("<code>1</code>", "`1`"),
-        ("<pre><code>1</code></pre>", "\n```\n1\n```\n\n"),
-        ("<pre><code lang=\"rust\">1</code></pre>", "\n```rust\n1\n```\n\n"),
-        ("<pre><div>1</div></pre>", "\n```\n<div>1</div>\n```\n\n"),
+        ("<pre><code>1</code></pre>", "```\n1\n```\n\n"),
+        ("<pre><code lang=\"rust\">1</code></pre>", "```rust\n1\n```\n\n"),
+        ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
         ("<ul><li>a<ol><li><pre><div>1</div>2\n</pre></ol><li>b</ul>", "- a\n    1. \n        ```\n        <div>1</div>2        \n        ```\n        \n        \n- b\n"),
     ];
@@ -120,11 +120,11 @@ fn link() {
 #[test]
 fn media() {
     let cases = vec![
-        ("<img src=\"/some-dir/some-file.ext\">", "\n![](/some-dir/some-file.ext)\n"),
-        ("<img alt=\"awesome image\">", "\n![awesome image]()\n"),
-        ("<img src=\"/some-dir/some-file.ext\" alt=\"awesome image\">", "\n![awesome image](/some-dir/some-file.ext)\n"),
-        ("<img alt=\"awesome image\" src=\"/some-dir/some-file.ext\">", "\n![awesome image](/some-dir/some-file.ext)\n"),
-        ("<video src=\"/some-dir/some-file.ext2\" alt=\"awesome video\">", "\n![awesome video](/some-dir/some-file.ext2)\n"),
+        ("<img src=\"/some-dir/some-file.ext\">", "![](/some-dir/some-file.ext)\n"),
+        ("<img alt=\"awesome image\">", "![awesome image]()\n"),
+        ("<img src=\"/some-dir/some-file.ext\" alt=\"awesome image\">", "![awesome image](/some-dir/some-file.ext)\n"),
+        ("<img alt=\"awesome image\" src=\"/some-dir/some-file.ext\">", "![awesome image](/some-dir/some-file.ext)\n"),
+        ("<video src=\"/some-dir/some-file.ext2\" alt=\"awesome video\">", "![awesome video](/some-dir/some-file.ext2)\n"),
     ];
     assert(cases);
 }
@@ -201,7 +201,7 @@ fn unsupported() {
 #[test]
 fn readme_usage() {
     let cases = vec![
-        ("<h1>heading 1</h1>\n<p>Hello, world.</p>", "# heading 1\n\n\nHello, world.\n\n"),
+        ("<h1>heading 1</h1>\n<p>Hello, world.</p>", "# heading 1\n\nHello, world.\n\n"),
     ];
     assert(cases);
 }

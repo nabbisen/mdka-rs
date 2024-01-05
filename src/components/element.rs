@@ -12,15 +12,38 @@ use crate::INDENT_UNIT_SIZE;
 pub fn manipulate_heading(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, name: String) -> String {
     let level = name.chars().last().unwrap().to_digit(10).unwrap().try_into().unwrap();
     let prefix = "#".repeat(level);
-    let ret = format!("{} {}\n\n", prefix, manipulate_children(node, indent_size));
+    let trailing = block_trailing_new_line(indent_size);
+    let ret = format!("{} {}{}{}", prefix, manipulate_children(node, indent_size), trailing, trailing);
     enclose(ret, indent_size, attrs_map, true)
 }
 
-pub fn manipulate_block(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, new_lines_size: usize) -> String{
-    let start = "\n".repeat(if 1 < new_lines_size { new_lines_size - 1 } else { 0 });
-    let end = "\n".repeat(new_lines_size);
-    let ret = format!("{}{}{}", start, manipulate_children(node, indent_size), end);
+pub enum InlineStyle {
+    Regular,
+    Bold,
+    Italic,
+}
+pub fn manipulate_inline(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, inline_style: InlineStyle) -> String{
+    let mut ret = manipulate_children(node, indent_size);
+    match inline_style {
+        InlineStyle::Bold => ret = bold(ret.as_str()),
+        InlineStyle::Italic => ret = italic(ret.as_str()),
+        _ => {}
+    }
     enclose(ret, indent_size, attrs_map, false)
+}
+fn bold(s: &str) -> String {
+    format!(" **{}** ", s)
+}
+fn italic(s: &str) -> String {
+    format!(" *{}* ", s)
+}
+
+pub fn manipulate_block(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_paragraph: bool) -> String{
+    let indent_str = indent(indent_size);
+    let new_line = if is_paragraph { format!("{}{}", "\n", indent_str) } else { String::new() };
+    let trailing = block_trailing_new_line(indent_size);
+    let ret = format!("{}{}{}", manipulate_children(node, indent_size), new_line, trailing);
+    enclose(ret, indent_size, attrs_map, true)
 }
 
 pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, is_ordered: bool) -> String {
@@ -41,16 +64,20 @@ pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, is_ordered: bo
                 let s = format!("{}{} {}{}", indent_str, prefix, child_children_ret, new_line);
                 enclose(s, indent_size, &attrs_map, false)
             },
-            _ => "".to_string()
+            _ => String::new()
         };
         ret = format!("{}{}", ret, child_ret);
     }
-    format!("{}{}", ret, if is_nested { "" } else { "\n" })
+
+    let (_, attrs_map) = element_name_attrs_map(node);
+    let trailing = if is_nested { String::new() } else { block_trailing_new_line(indent_size) };
+    let ret = format!("{}{}", ret, trailing);
+    enclose(ret, indent_size, &attrs_map, true)
 }
 
 pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &HashMap<String, String>) -> String {
     let trs = find_trs(node);
-    let mut ret = "".to_string();
+    let mut ret = String::new();
     let indent_str = indent(indent_size);
     for (i, tr) in trs.iter().enumerate() {
         if tr.children.borrow().len() == 0 { break }
@@ -96,7 +123,11 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &
         }
         ret = format!("{}{}", ret, row);
     }
-    format!("\n{}\n{}", ret, indent_str)
+
+    let (_, attrs_map) = element_name_attrs_map(node);
+    let trailing = block_trailing_new_line(indent_size);
+    let ret = format!("{}{}", ret, trailing);
+    enclose(ret, indent_size, &attrs_map, true)
 }
 
 pub fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_inline: bool) -> String {
@@ -123,18 +154,21 @@ pub fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_
                         .borrow()
                         .iter()
                         .find(|attr| attr.name.local.to_string().as_str() == "lang")
-                        .map(|attr| attr.value.to_string()).unwrap_or("".to_string())
+                        .map(|attr| attr.value.to_string()).unwrap_or(String::new())
                 },
-                _ => "".to_string()
+                _ => String::new()
             }
         ;
         format!("```{}", code_lang)
     } else {
-        "```".to_string()
+        "```".to_owned()
     };
-    let next_node = if code_node.is_some() { code_node.unwrap() } else { node };
+    let is_nested = INDENT_DEFAULT_SIZE < indent_size.unwrap();
+    let leading = if is_nested { block_trailing_new_line(indent_size) } else { String::new() };
+    let trailing = block_trailing_new_line(indent_size);
     let indent_str = indent(indent_size);
-    let ret = format!("\n{}{}\n{}\n{}```\n{}\n{}", indent_str, prefix, inner_html(next_node, indent_size), indent_str, indent_str, indent_str);
+    let next_node = if code_node.is_some() { code_node.unwrap() } else { node };
+    let ret = format!("{}{}\n{}\n{}```\n{}{}", leading, prefix, inner_html(next_node, indent_size), indent_str, indent_str, trailing);
     enclose(ret, indent_size, attrs_map, true)
 }
 
@@ -145,7 +179,8 @@ pub fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_ma
         .split('\n')
         .map(|line| format!("{}> {}", indent_str, line.to_string()))
         .collect::<Vec<String>>();
-    let ret = lines.join("\n");
+    let trailing = block_trailing_new_line(indent_size);
+    let ret = lines.join(&trailing);
     enclose(ret, indent_size, attrs_map, true)
 }
 
@@ -158,17 +193,7 @@ pub fn manipulate_link(node: &Handle, indent_size: Option<usize>, attrs_map: &Ha
 pub fn manipulate_media(_node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let src = attrs_map.get("src");
     let alt = attrs_map.get("alt");
-    let indent_str = indent(indent_size);
-    let ret = format!("\n{}![{}]({})\n", indent_str, alt.unwrap_or(&String::new()), src.unwrap_or(&String::new()));
+    let trailing = block_trailing_new_line(indent_size);
+    let ret = format!("![{}]({}){}", alt.unwrap_or(&String::new()), src.unwrap_or(&String::new()), trailing);
     enclose(ret, indent_size, attrs_map, true)
-}
-
-pub fn manipulate_bold(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
-    let ret = format!(" **{}** ", manipulate_children(node, indent_size));
-    enclose(ret, indent_size, attrs_map, false)
-}
-
-pub fn manipulate_italic(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
-    let ret = format!(" *{}* ", manipulate_children(node, indent_size));
-    enclose(ret, indent_size, attrs_map, false)
 }

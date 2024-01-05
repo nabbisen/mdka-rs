@@ -33,7 +33,7 @@ pub fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
 }
 
 pub fn inner_text(node: &Handle) -> String {
-    let mut ret = "".to_string();
+    let mut ret = String::new();
     for child in node.children.borrow().iter() {
         ret = inner_text_scan(child, ret);
     }
@@ -44,7 +44,7 @@ fn inner_text_scan(node: &Handle, s: String) -> String {
     match node.data {
         NodeData::Text { ref contents } => {
             let escaped = contents.borrow().escape_default().to_string();
-            let replaced = escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_string();
+            let replaced = escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_owned();
             if s.len() == 0 {
                 replaced
             } else {
@@ -60,6 +60,6 @@ fn inner_text_scan(node: &Handle, s: String) -> String {
             }
             ret
         },
-        _ => { "".to_string() }
+        _ => { String::new() }
     }
 }
