@@ -119,14 +119,14 @@ pub fn is_emtpy_element(content: &String, attrs_map: &HashMap<String, String>) -
 }
 
 /// generate span enclosure to apply block style 
-pub fn enclose(s: String, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, requires_new_line: bool) -> String {
+pub fn enclose(s: &String, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, requires_new_line: bool) -> String {
     if requires_enclosure(attrs_map) {
         let new_line = if requires_new_line { "\n".to_owned() } else { String::new() };
         let indent_str = indent(indent_size);
         let enclosure_attrs = enclosure_attrs(attrs_map);
         format!("{}{}<span{}>{}{}</span>{}", new_line, indent_str, enclosure_attrs, new_line, s, new_line)
     } else {
-        s
+        s.to_string()
     }
 }
 
