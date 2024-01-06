@@ -26,6 +26,24 @@ fn block() {
 }
 
 #[test]
+fn bold() {
+    let cases = vec![
+        ("<b>1</b>", " **1** "),
+        ("<strong>2</strong>", " **2** "),
+    ];
+    assert(cases);
+}
+
+#[test]
+fn italic() {
+    let cases = vec![
+        ("<i>1</i>", " *1* "),
+        ("<em>2</em>", " *2* "),
+    ];
+    assert(cases);
+}
+
+#[test]
 fn list() {
     let cases = vec![
         ("<ul><li>1<li>2</ul>", "- 1\n- 2\n"),
@@ -65,21 +83,20 @@ fn table() {
     </tbody>
 </table>
 "#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
-// todo: fix attrs_map
-//         (r#"
-// <table><thead><tr>
-//     <th style=\"text-align: left ;\">h1</th>
-//     <th style=\"text-align:center;\">h2</th>
-//     <th style=\"text-align :right;\">h3</th>
-// </thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
-//         "\n| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n"),
-//         (r#"
-// <table><thead><tr>
-//     <th class=\"text-left;\">h1</th>
-//     <th class=\"text-center text-italic\">h2</th>
-//     <th class=\"text-bold text-right text-center\">h3</th>
-// </thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
-//         "\n| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n")
+        (r#"
+<table><thead><tr>
+    <th style=\"text-align: left ;\">h1</th>
+    <th style=\"text-align:center;\">h2</th>
+    <th style=\"text-align :right;\">h3</th>
+</thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
+        "| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n"),
+        (r#"
+<table><thead><tr>
+    <th class=\"text-left\">h1</th>
+    <th class=\"text-center text-italic\">h2</th>
+    <th class=\"text-bold text-right text-center\">h3</th>
+</thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
+        "| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n")
     ];
     assert(cases);
 }
@@ -103,7 +120,7 @@ fn preformatted() {
 fn blockquote() {
     let cases = vec![
         ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def"),
-        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> "),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> \n> def\n> ---\n> "),
     ];
     assert(cases);
 }
@@ -125,24 +142,6 @@ fn media() {
         ("<img src=\"/some-dir/some-file.ext\" alt=\"awesome image\">", "![awesome image](/some-dir/some-file.ext)\n"),
         ("<img alt=\"awesome image\" src=\"/some-dir/some-file.ext\">", "![awesome image](/some-dir/some-file.ext)\n"),
         ("<video src=\"/some-dir/some-file.ext2\" alt=\"awesome video\">", "![awesome video](/some-dir/some-file.ext2)\n"),
-    ];
-    assert(cases);
-}
-
-#[test]
-fn bold() {
-    let cases = vec![
-        ("<b>1</b>", " **1** "),
-        ("<strong>2</strong>", " **2** "),
-    ];
-    assert(cases);
-}
-
-#[test]
-fn italic() {
-    let cases = vec![
-        ("<i>1</i>", " *1* "),
-        ("<em>2</em>", " *2* "),
     ];
     assert(cases);
 }

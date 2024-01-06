@@ -44,8 +44,8 @@ fn inner_text_scan(node: &Handle, s: String) -> String {
     match node.data {
         NodeData::Text { ref contents } => {
             let escaped = contents.borrow().escape_default().to_string();
-            let replaced = escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_owned();
-            if s.len() == 0 {
+            let replaced = escaped.replace("\\n", "\n").replace("\\r", "\r").trim_end().to_owned();
+            if s.is_empty() {
                 replaced
             } else {
                 format!("{} {}", s, replaced)

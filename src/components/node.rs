@@ -11,7 +11,7 @@ pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
             let escaped = contents.borrow().escape_default().to_string();
-            escaped.replace("\\n", "\n").replace("\\r", "\r").trim().to_owned()
+            escaped.replace("\\n", "\n").replace("\\r", "\r").trim_end().to_owned()
         },
         NodeData::Element {
             attrs: ref node_attrs,
