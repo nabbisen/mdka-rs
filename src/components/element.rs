@@ -238,8 +238,9 @@ pub fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_ma
         .split('\n')
         .map(|line| format!("{}> {}", indent_str, line.to_string()))
         .collect::<Vec<String>>();
+    let rejoined = lines.join("\n");
     let trailing = block_trailing_new_line(indent_size);
-    let content = lines.join(&trailing);
+    let content = format!("{}{}", rejoined, trailing);
     enclose(&content, indent_size, attrs_map, true)
 }
 

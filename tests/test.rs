@@ -119,8 +119,8 @@ fn preformatted() {
 #[test]
 fn blockquote() {
     let cases = vec![
-        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def"),
-        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> \n> def\n> ---\n> "),
+        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def\n"),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> \n> def\n> ---\n> \n"),
     ];
     assert(cases);
 }
@@ -218,8 +218,10 @@ fn empty_element() {
         ("<p></p>", ""),
         ("<span></span>", ""),
         ("<b></b>", ""),
+        ("<strong></strong>", ""),
         ("<i></i>", ""),
         ("<i class=\"some-icon\"></i>", ""),
+        ("<em></em>", ""),
         ("<ul></ul>", ""),
         ("<ol></ol>", ""),
         ("<ul><li></ul>", "- \n"),
@@ -291,6 +293,87 @@ fn empty_enclosed() {
         ("<a id=\"myid\"></a>", "<span id=\"myid\"></span>"),
         ("<img id=\"myid\"></img>", "<span id=\"myid\"></span>"),
         ("<video id=\"myid\"></video>", "<span id=\"myid\"></span>"),
+    ];
+    assert(cases);
+}
+
+#[test]
+fn contenteditable_element() {
+    let cases = vec![
+        ("<h1 contenteditable=\"true\">lorem</h1>", "# lorem\n\n"),
+        ("<h2 contenteditable=\"true\">lorem</h2>", "## lorem\n\n"),
+        ("<h3 contenteditable=\"true\">lorem</h3>", "### lorem\n\n"),
+        ("<h4 contenteditable=\"true\">lorem</h4>", "#### lorem\n\n"),
+        ("<h5 contenteditable=\"true\">lorem</h5>", "##### lorem\n\n"),
+        ("<h6 contenteditable=\"true\">lorem</h6>", "###### lorem\n\n"),
+        ("<div contenteditable=\"true\">lorem</div>", "lorem\n"),
+        ("<p contenteditable=\"true\">lorem</p>", "lorem\n\n"),
+        ("<span contenteditable=\"true\">lorem</span>", "lorem"),
+        ("<b contenteditable=\"true\">lorem</b>", " **lorem** "),
+        ("<strong contenteditable=\"true\">lorem</strong>", " **lorem** "),
+        ("<i contenteditable=\"true\">lorem</i>", " *lorem* "),
+        ("<em contenteditable=\"true\">lorem</i>", " *lorem* "),
+        ("<ul><li contenteditable=\"true\">lorem</li></ul>", "- lorem\n"),
+        // todo
+//         (r#"
+// <ul>
+//     <li contenteditable=\"true\">lorem</li>
+//     <li contenteditable=\"true\"><ul>
+//         <li contenteditable=\"true\">ipsum</li>
+//     </ul>
+//     <li contenteditable=\"true\">dolor</li>
+// </ul>
+//         "#, "- lorem\n    - ipsum\n- dolor"),
+        ("<ol><li contenteditable=\"true\">lorem</li></ol>", "1. lorem\n"),
+        // todo
+//         (r#"
+// <ol>
+//     <li contenteditable=\"true\">lorem</li>
+//     <li contenteditable=\"true\"><ol>
+//         <li contenteditable=\"true\">ipsum</li>
+//     </ol>
+//     <li contenteditable=\"true\">dolor</li>
+// </ol>
+//         "#, "1. lorem\n    1. ipsum\n1. dolor"),
+        (r#"
+<table>
+    <thead>
+        <tr>
+            <th contenteditable=\"true\">h1</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td contenteditable=\"true\">d1</td>
+        </tr>
+    </tbody>
+</table>
+        "#, "| h1 |\n| --- |\n| d1 |\n\n"),
+        (r#"
+<table contenteditable=\"true\">
+    <thead contenteditable=\"true\">
+        <tr contenteditable=\"true\">
+            <th contenteditable=\"true\">h1</th>
+            <th contenteditable=\"true\">h2</th>
+        </tr>
+    </thead>
+    <tbody contenteditable=\"true\">
+        <tr contenteditable=\"true\">
+            <td contenteditable=\"true\">d1</td>
+            <td contenteditable=\"true\">d2</td>
+        </tr>
+        <tr contenteditable=\"true\">
+            <td contenteditable=\"true\">d3</td>
+            <td contenteditable=\"true\">d4</td>
+        </tr>
+    </tbody>
+</table>
+        "#, "| h1 | h2 |\n| --- | --- |\n| d1 | d2 |\n| d3 | d4 |\n\n"),
+        ("<code contenteditable=\"true\">lorem</code>", "`lorem`"),
+        ("<pre contenteditable=\"true\">lorem</pre>", "```\nlorem\n```\n\n"),
+        ("<pre contenteditable=\"true\"><code lang=\"rust\">println!(\"lorem\");</code></pre>", "```rust\nprintln!(\"lorem\");\n```\n\n"),
+        ("<blockquote contenteditable=\"true\">lorem</blockquote>", "> lorem\n"),
+        ("<a href=\"href_str\" contenteditable=\"true\">caption</a>", "[caption](href_str)"),
     ];
     assert(cases);
 }
