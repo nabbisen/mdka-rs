@@ -184,6 +184,69 @@ fn attrs() {
 }
 
 #[test]
+fn empty() {
+    let cases = vec![
+        ("<h1></h1>", ""),
+        ("<h2></h2>", ""),
+        ("<h3></h3>", ""),
+        ("<h4></h4>", ""),
+        ("<h5></h5>", ""),
+        ("<h6></h6>", ""),
+        ("<div></div>", ""),
+        ("<p></p>", ""),
+        ("<span></span>", ""),
+        ("<b></b>", ""),
+        ("<i></i>", ""),
+        ("<i class=\"some-icon\"></i>", ""),
+        ("<ul></ul>", ""),
+        ("<ol></ol>", ""),
+        ("<ul><li></ul>", "- \n"),
+        ("<table></table>", ""),
+        ("<table><tbody><tr><td></td></tr></tbody></table>", "|  |\n| --- |\n\n"),
+        ("<table><thead><tr><th></th></tr></thead><tbody><tr><td></td></tr></tbody></table>", "|  |\n| --- |\n|  |\n\n"),
+        ("<code></code>", ""),
+        ("<pre></pre>", ""),
+        ("<pre><code></code></pre>", ""),
+        ("<blockquote></blockquote>", ""),
+        ("<a></a>", ""),
+        ("<a href></a>", ""),
+        ("<a href=\"\"></a>", ""),
+        ("<a href=\"href_str\"></a>", "[](href_str)"),
+        ("<a>caption</a>", "[caption]()"),
+        ("<img></img>", ""),
+        ("<img src></img>", ""),
+        ("<img src=\"\"></img>", ""),
+        ("<img alt></img>", ""),
+        ("<img alt=\"\"></img>", ""),
+        ("<img src=\"src_str\">", "![](src_str)\n"),
+        ("<img id=\"myid\"></img>", "<span id=\"myid\"></span>"),
+        ("<video></video>", ""),
+        ("<video src=\"src_str\">", "![](src_str)\n"),
+        ("<video alt=\"alt_str\">", "![alt_str]()\n"),
+    ];
+    assert(cases);
+}
+
+#[test]
+fn empty_enclosed() {
+    let cases = vec![
+        ("<h1 id=\"myid\"></h1>", "<span id=\"myid\"></span>"),
+        ("<h1 style=\"color: pink;\"></h1>", "<span style=\"color: pink;\"></span>"),
+        ("<div id=\"myid\"></div>", "<span id=\"myid\"></span>"),
+        ("<span id=\"myid\"></span>", "<span id=\"myid\"></span>"),
+        ("<ul id=\"myid\"></ul>", "<span id=\"myid\"></span>"),
+        ("<table id=\"myid\"></table>", "<span id=\"myid\"></span>"),
+        ("<code id=\"myid\"></code>", "<span id=\"myid\"></span>"),
+        ("<pre id=\"myid\"></pre>", "<span id=\"myid\"></span>"),
+        ("<blockquote id=\"myid\"></blockquote>", "<span id=\"myid\"></span>"),
+        ("<a id=\"myid\"></a>", "<span id=\"myid\"></span>"),
+        ("<img id=\"myid\"></img>", "<span id=\"myid\"></span>"),
+        ("<video id=\"myid\"></video>", "<span id=\"myid\"></span>"),
+    ];
+    assert(cases);
+}
+
+#[test]
 fn unsupported() {
     let cases = vec![
         ("<!doctype html><html lang=\"en\"><head>1</head></html>", "1"), // treated as inline

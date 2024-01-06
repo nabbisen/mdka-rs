@@ -113,6 +113,11 @@ pub fn block_trailing_new_line(indent_size: Option<usize>) -> String {
     }
 }
 
+/// check if empty content
+pub fn is_emtpy_element(content: &String, attrs_map: &HashMap<String, String>) -> bool {
+    content.is_empty() && !requires_enclosure(attrs_map)
+}
+
 /// generate span enclosure to apply block style 
 pub fn enclose(s: String, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, requires_new_line: bool) -> String {
     if requires_enclosure(attrs_map) {
