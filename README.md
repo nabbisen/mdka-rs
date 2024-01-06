@@ -1,7 +1,7 @@
 # mdka
 **HTML to Markdown** converter - Lightweight library written in Rust.
 
-"ka" means "化" aka conversion.
+"ka" means "化 (か)" aka conversion.
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=latest)](https://crates.io/crates/mdka)
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka/latest)
