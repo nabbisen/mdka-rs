@@ -6,10 +6,12 @@ use markup5ever_rcdom::{RcDom, NodeData, Handle, SerializableHandle};
 use crate::INDENT_DEFAULT_SIZE;
 use crate::utils::element::*;
 
+/// parse html str
 pub fn parse_html(html: &str) -> RcDom {
     parse_document(RcDom::default(), ParseOpts::default()).from_utf8().read_from(&mut html.as_bytes()).unwrap()
 }
 
+/// generate inner_html from serialized node
 pub fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
     let h: SerializableHandle = (*node).clone().into();
     let opts = SerializeOpts {
@@ -32,6 +34,7 @@ pub fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
     }
 }
 
+/// generate inner text from node data
 pub fn inner_text(node: &Handle) -> String {
     let mut ret = String::new();
     for child in node.children.borrow().iter() {
@@ -40,6 +43,7 @@ pub fn inner_text(node: &Handle) -> String {
     ret
 }
 
+/// scan inner nodes recursively to generate inner text
 fn inner_text_scan(node: &Handle, s: String) -> String {
     match node.data {
         NodeData::Text { ref contents } => {

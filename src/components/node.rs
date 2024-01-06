@@ -7,6 +7,7 @@ use crate::utils::element::*;
 
 use crate::INDENT_DEFAULT_SIZE;
 
+/// main process on node
 pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
@@ -28,6 +29,7 @@ pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     ret
 }
 
+/// process on children of node
 pub fn manipulate_children(node: &Handle, indent_size: Option<usize>) -> String {
     let mut ret = String::new();
     let next_indent_size = if indent_size.is_some() { indent_size.unwrap() } else { INDENT_DEFAULT_SIZE };
@@ -37,6 +39,7 @@ pub fn manipulate_children(node: &Handle, indent_size: Option<usize>) -> String 
     ret
 }
 
+/// process by element type
 pub fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let name = element_name(node);
     let ret = match name.as_str() {

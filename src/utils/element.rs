@@ -6,6 +6,7 @@ use markup5ever_rcdom::{NodeData, Handle};
 
 use crate::INDENT_DEFAULT_SIZE;
 
+/// get name and attrs of element from node data
 pub fn element_name_attrs_map(node: &Handle) -> (String, HashMap<String, String>) {
     match node.data {
         NodeData::Element {
@@ -19,11 +20,13 @@ pub fn element_name_attrs_map(node: &Handle) -> (String, HashMap<String, String>
     }
 }
 
+/// get name of element from node data
 pub fn element_name(node: &Handle) -> String {
     let (ret, _) = element_name_attrs_map(node);
     ret
 }
 
+/// get attrs of element from node data as key-value map
 pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String> {
     let mut map = HashMap::new();
     let mut attr_key = String::new();
@@ -55,6 +58,7 @@ pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String
     map
 }
 
+/// get tr vec in table
 pub fn find_trs(node: &Handle) -> Vec<Handle> {
     let mut trs = Vec::<Handle>::new();
     for child in node.children.borrow().iter() {
@@ -67,6 +71,7 @@ pub fn find_trs(node: &Handle) -> Vec<Handle> {
     trs
 }
 
+/// parse style str to find align attr
 pub fn style_text_align(style: &String) -> Option<&str> {
     if let Some(start) = style.find("text-align") {
         for pos in (start + "text-align".len())..style.len() {
@@ -80,6 +85,7 @@ pub fn style_text_align(style: &String) -> Option<&str> {
     None
 }
 
+/// parse class str to find align attr
 pub fn class_text_align(class: &String) -> Option<&str> {
     for s in class.split(' ') {
         match s.replace("\\\"", "").replace(";", "").as_str() {
@@ -92,10 +98,12 @@ pub fn class_text_align(class: &String) -> Option<&str> {
     None
 }
 
+/// generate indent str from size
 pub fn indent(indent_size: Option<usize>) -> String {
     " ".repeat(indent_size.unwrap())
 }
 
+/// generate trailing new line with or without indent
 pub fn block_trailing_new_line(indent_size: Option<usize>) -> String {
     let indent = indent_size.unwrap(); 
     if indent == INDENT_DEFAULT_SIZE {
@@ -105,6 +113,7 @@ pub fn block_trailing_new_line(indent_size: Option<usize>) -> String {
     }
 }
 
+/// generate span enclosure to apply block style 
 pub fn enclose(s: String, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, requires_new_line: bool) -> String {
     if requires_enclosure(attrs_map) {
         let new_line = if requires_new_line { "\n".to_owned() } else { String::new() };
@@ -116,10 +125,12 @@ pub fn enclose(s: String, indent_size: Option<usize>, attrs_map: &HashMap<String
     }
 }
 
+/// check if enclosure is necessary
 fn requires_enclosure(attrs_map: &HashMap<String, String>) -> bool {
     attrs_map.contains_key("id") || attrs_map.contains_key("style")
 }
 
+/// generate attrs of enclosure
 fn enclosure_attrs(attrs_map: &HashMap<String, String>) -> String {
     let style = attrs_map.get("style");
     let id = attrs_map.get("id");
