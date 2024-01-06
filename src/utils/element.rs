@@ -24,12 +24,33 @@ pub fn element_name(node: &Handle) -> String {
     ret
 }
 
-// todo: fix key-value pairs
 pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String> {
     let mut map = HashMap::new();
+    let mut attr_key = String::new();
+    let mut attr_value = String::new();
     for attr in node_attrs.borrow().iter() {
-        // println!("{:?}", attr);
-        map.insert(attr.name.local.to_string(), attr.value.escape_default().to_string());
+        let k = attr.name.local.to_string();
+        let v = attr.value.to_string();
+
+        let is_quote_inside = !attr_key.is_empty();
+        if is_quote_inside {
+            attr_value = format!("{} {}{}", attr_value, k, v);
+            if k.trim_end().ends_with("\\\"") {
+                map.insert(attr_key, attr_value);
+
+                attr_key = String::new();
+                attr_value = String::new();
+            };
+            continue
+        };
+        let is_quote_start = v.trim_start().starts_with("\\\"") && !v.trim_end().ends_with("\\\"");
+        if is_quote_start {
+            attr_key = k;
+            attr_value = v;
+            continue
+        };
+
+        map.insert(k, v);
     }
     map
 }
@@ -61,7 +82,7 @@ pub fn style_text_align(style: &String) -> Option<&str> {
 
 pub fn class_text_align(class: &String) -> Option<&str> {
     for s in class.split(' ') {
-        match s {
+        match s.replace("\\\"", "").replace(";", "").as_str() {
             "text-left" => return Some("left"),
             "text-center" => return Some("center"),
             "text-right" => return Some("right"),

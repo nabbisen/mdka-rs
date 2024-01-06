@@ -99,7 +99,7 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &
                 let (name, attrs_map) = element_name_attrs_map(td);
                 let _ = match name.as_str() {
                     "th" | "td" => {
-                        let style = match attrs_map.get("style") {
+                        let align = match attrs_map.get("style") {
                             Some(style) => style_text_align(style),
                             _ => {
                                 match attrs_map.get("class") {
@@ -108,7 +108,7 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, _attrs_map: &
                                 }
                             }
                         };
-                        let devider = match style {
+                        let devider = match align {
                             Some("left") => ":--- ",
                             Some("center") => " --- ",
                             Some("right") => " ---:",
