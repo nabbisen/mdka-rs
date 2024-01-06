@@ -102,7 +102,7 @@ pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, attrs_map: &Ha
 
     let (_, attrs_map) = element_name_attrs_map(node);
     let trailing = if is_nested { String::new() } else { block_trailing_new_line(indent_size) };
-    let enclosed = format!("{}{}", content, trailing);
+    let enclosed = format!("{}{}{}", content, trailing, trailing);
     enclose(&enclosed, indent_size, &attrs_map, true)
 }
 
@@ -239,8 +239,13 @@ pub fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_ma
         .map(|line| format!("{}> {}", indent_str, line.to_string()))
         .collect::<Vec<String>>();
     let rejoined = lines.join("\n");
-    let trailing = block_trailing_new_line(indent_size);
-    let content = format!("{}{}", rejoined, trailing);
+
+    let is_nested = INDENT_DEFAULT_SIZE < indent_size.unwrap();
+    let content = if is_nested { rejoined } else {
+        let trailing = block_trailing_new_line(indent_size);
+        format!("{}{}{}", rejoined, trailing, trailing)
+    };
+    
     enclose(&content, indent_size, attrs_map, true)
 }
 
