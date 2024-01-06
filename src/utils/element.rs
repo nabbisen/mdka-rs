@@ -130,9 +130,14 @@ pub fn enclose(s: String, indent_size: Option<usize>, attrs_map: &HashMap<String
     }
 }
 
+const ENCLOSURE_ATTRS: [&str; 2] = ["id", "style"];
+
 /// check if enclosure is necessary
 fn requires_enclosure(attrs_map: &HashMap<String, String>) -> bool {
-    attrs_map.contains_key("id") || attrs_map.contains_key("style")
+    ENCLOSURE_ATTRS.iter().any(|attr_key| {
+        let k = attr_key.to_string();
+        attrs_map.contains_key(k.as_str())
+    })
 }
 
 /// generate attrs of enclosure
