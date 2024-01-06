@@ -60,8 +60,12 @@ pub fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: 
         "img" | "video" => manipulate_media(node, indent_size, attrs_map),
         "br" => "    \n".to_owned(),
         "hr" => "\n---\n".to_owned(),
-        "html" | "body" => manipulate_children(node, None),
-        // skip: script, style
+        "html" | "body" |
+            "main" | "header" | "footer" | "nav" |
+            "section" | "article" | "aside" |
+            "time" | "address" | "figure" | "figcaption" =>
+            manipulate_children(node, None),
+        // skip: script, style, svg
         _ => String::new()
     };
     ret

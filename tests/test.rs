@@ -166,10 +166,32 @@ fn devider() {
 }
 
 #[test]
-fn text() {
+fn document() {
     let cases = vec![
-        ("<html>1</html>", "1"),
-        ("<body>1</body>", "1"),
+        ("<html>lorem</html>", "lorem"),
+        ("<body>lorem</body>", "lorem"),
+    ];
+    assert(cases);
+}
+
+#[test]
+fn semantic() {
+    let cases = vec![
+        ("<main>lorem</main>", "lorem"),
+        ("<main><div>lorem</div></main>", "lorem\n"),
+        ("<header>lorem</header>", "lorem"),
+        ("<footer>lorem</footer>", "lorem"),
+        ("<nav>lorem</nav>", "lorem"),
+        ("<nav><a href=\"href_str\">caption</a></nav>", "[caption](href_str)"),
+        ("<section>lorem</section>", "lorem"),
+        ("<section><p>lorem</p></section>", "lorem\n\n"),
+        ("<article>lorem</article>", "lorem"),
+        ("<aside>lorem</aside>", "lorem"),
+        ("<time>lorem</time>", "lorem"),
+        ("<address>lorem</address>", "lorem"),
+        ("<figure><img src=\"src_str\"></figure>", "![](src_str)\n"),
+        ("<figcaption>lorem</figcaption>", "lorem"),
+        ("<figure><img src=\"src_str\"><figcaption>lorem</figcaption></figure>", "![](src_str)\nlorem"),
     ];
     assert(cases);
 }
@@ -184,7 +206,7 @@ fn attrs() {
 }
 
 #[test]
-fn empty() {
+fn empty_element() {
     let cases = vec![
         ("<h1></h1>", ""),
         ("<h2></h2>", ""),
@@ -228,6 +250,33 @@ fn empty() {
 }
 
 #[test]
+fn empty_document() {
+    let cases = vec![
+        ("<html></html>", ""),
+        ("<body></body>", ""),
+    ];
+    assert(cases);
+}
+
+#[test]
+fn empty_semantic() {
+    let cases = vec![
+        ("<main></main>", ""),
+        ("<header></header>", ""),
+        ("<footer></footer>", ""),
+        ("<nav></nav>", ""),
+        ("<section></section>", ""),
+        ("<article></article>", ""),
+        ("<aside></aside>", ""),
+        ("<time></time>", ""),
+        ("<address></address>", ""),
+        ("<figure></figure>", ""),
+        ("<figcaption></figcaption>", ""),
+    ];
+    assert(cases);
+}
+
+#[test]
 fn empty_enclosed() {
     let cases = vec![
         ("<h1 id=\"myid\"></h1>", "<span id=\"myid\"></span>"),
@@ -256,6 +305,16 @@ fn unsupported() {
         ("<h1>1</h1><style>* { color: orange; }></style><h2>2</h2>", "# 1\n\n## 2\n\n"),
         ("<span><!-- 1 -->2</span>", "2"),
         ("<span class=\"b\">1</span>", "1"),
+        (r#"
+<svg width="100" height="100">
+  <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+</svg>
+        "#, ""),
+        ("<customtag></customtag>", ""),
+        ("<div customattr=\"some\">lorem</div>", "lorem\n"),
+        ("<div data-id=\"some\">lorem</div>", "lorem\n"),
+        ("<CustomComponent id=\"myid\" style=\"mystyle\" />", ""),
+        ("<CustomComponent :id=\"myid\" :style=\"mystyle\" />", ""),
     ];
     assert(cases);
 }
@@ -268,6 +327,7 @@ fn readme_usage() {
     assert(cases);
 }
 
+/// general purpose assertion
 fn assert(cases: Vec<(&str, &str)>) {
     for (input, expect) in cases {
         let output = from_html(input);
