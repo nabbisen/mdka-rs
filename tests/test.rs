@@ -110,7 +110,19 @@ fn preformatted() {
         ("<pre><code lang=\"rust\">1</code></pre>", "```rust\n1\n```\n\n"),
         ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n\n"),
         ("<code><div>1</div></code>", "`<div>1</div>`"),
-        ("<ul><li>a<ol><li><pre><div>1</div>2\n</pre></ol><li>b</ul>", "- a\n    1. \n        ```\n        <div>1</div>2        \n        ```\n        \n        \n- b\n"),
+        (r#"
+<ul>
+    <li>a
+        <ol>
+            <li>
+                <pre>
+                <div>1</div>2
+
+                </pre>
+        </ol>
+    <li>b
+</ul>
+        "#, "- a\n    1. \n        ```\n        <div>1</div>2\n        ```\n        \n        \n- b\n"),
     ];
     assert(cases);
 }
@@ -120,7 +132,8 @@ fn preformatted() {
 fn blockquote() {
     let cases = vec![
         ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def\n"),
-        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> \n> def\n> ---\n> \n"),
+        ("<blockquote>a<br>bc<br>def</blockquote>", "> a    \n> bc    \n> def\n"),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> \n"),
     ];
     assert(cases);
 }
@@ -314,27 +327,53 @@ fn contenteditable_element() {
         ("<i contenteditable=\"true\">lorem</i>", " *lorem* "),
         ("<em contenteditable=\"true\">lorem</i>", " *lorem* "),
         ("<ul><li contenteditable=\"true\">lorem</li></ul>", "- lorem\n"),
-        // todo
-//         (r#"
-// <ul>
-//     <li contenteditable=\"true\">lorem</li>
-//     <li contenteditable=\"true\"><ul>
-//         <li contenteditable=\"true\">ipsum</li>
-//     </ul>
-//     <li contenteditable=\"true\">dolor</li>
-// </ul>
-//         "#, "- lorem\n    - ipsum\n- dolor"),
+        (r#"
+<ul>
+    <li contenteditable=\"true\">lorem</li>
+    <li contenteditable=\"true\"><ul>
+        <li contenteditable=\"true\">ipsum</li>
+    </ul>
+    <li contenteditable=\"true\">dolor</li>
+</ul>
+        "#, "- lorem\n- \n    - ipsum\n- dolor\n"),
         ("<ol><li contenteditable=\"true\">lorem</li></ol>", "1. lorem\n"),
-        // todo
-//         (r#"
-// <ol>
-//     <li contenteditable=\"true\">lorem</li>
-//     <li contenteditable=\"true\"><ol>
-//         <li contenteditable=\"true\">ipsum</li>
-//     </ol>
-//     <li contenteditable=\"true\">dolor</li>
-// </ol>
-//         "#, "1. lorem\n    1. ipsum\n1. dolor"),
+        (r#"
+<ol>
+    <li contenteditable=\"true\">lorem</li>
+    <li contenteditable=\"true\"><ol>
+        <li contenteditable=\"true\">ipsum</li>
+    </ol>
+    <li contenteditable=\"true\">dolor</li>
+</ol>
+        "#, "1. lorem\n1. \n    1. ipsum\n1. dolor\n"),
+        (r#"
+<ol>
+    <li contenteditable=\"true\">lorem-1</li>
+    <li contenteditable=\"true\">lorem-2<ul>
+        <li contenteditable=\"true\">ipsum-1</li>
+        <li contenteditable=\"true\">ipsum-2</li>
+        <li contenteditable=\"true\">ipsum-3<ol>
+            <li contenteditable=\"true\">dolor-1</li>
+            <li contenteditable=\"true\">dolor-2</li>
+            <li contenteditable=\"true\">dolor-3</li>
+        </li></ol>
+        <li contenteditable=\"true\">ipsum-4</li>
+    </ul>
+    <li contenteditable=\"true\">lorem-3</li>
+    <li contenteditable=\"true\">lorem-4</li>
+</ol>
+        "#, r#"1. lorem-1
+1. lorem-2
+    - ipsum-1
+    - ipsum-2
+    - ipsum-3
+        1. dolor-1
+        1. dolor-2
+        1. dolor-3
+    - ipsum-4
+1. lorem-3
+1. lorem-4
+"#),
         (r#"
 <table>
     <thead>
