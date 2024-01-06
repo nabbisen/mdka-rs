@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "0.5.1"
+version = "1.0.0"
 edition = "2021"
 authors = ["nabbisen <nabbisen@scqr.net>"]
 license = "Apache-2.0"
