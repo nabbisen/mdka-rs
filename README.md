@@ -13,7 +13,7 @@
 
 ```toml
 [dependencies]
-mdka = "*" # or specific version
+mdka = "^1.0.0"
 ```
 
 `awesome.rs`
