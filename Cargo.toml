@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["nabbisen <nabbisen@scqr.net>"]
 license = "Apache-2.0"
@@ -18,3 +18,7 @@ path = "src/lib.rs"
 [dependencies]
 html5ever = "^0.26.0"
 markup5ever_rcdom = "^0.2.0"
+
+[[example]]
+name = "trial"
+path = "examples/trial.rs"
