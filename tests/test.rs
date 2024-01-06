@@ -46,15 +46,15 @@ fn italic() {
 #[test]
 fn list() {
     let cases = vec![
-        ("<ul><li>1<li>2</ul>", "- 1\n- 2\n"),
-        ("<ul><li>1</li><li>2</li></ul>", "- 1\n- 2\n"),
-        ("<ol><li>1<li>2</ol>", "1. 1\n1. 2\n"),
-        ("<ol><li>1</li><li>2</li></ol>", "1. 1\n1. 2\n"),
-        ("<ul><li>1<ul><li>1-1<li>1-2</ul><li>2</ul>", "- 1\n    - 1-1\n    - 1-2\n- 2\n"),
-        ("<ul><li>1<ul><li>1-1<ul><li>1-1-1<li>1-1-2</ul><li>1-2</ul><li>2</ul>", "- 1\n    - 1-1\n        - 1-1-1\n        - 1-1-2\n    - 1-2\n- 2\n"),
-        ("<ul><li><ul><li><ul><li>1-1-1<li>1-1-2</ul><li>1-2</ul><li>2</ul>", "- \n    - \n        - 1-1-1\n        - 1-1-2\n    - 1-2\n- 2\n"),
-        ("<ul><li>1<ol><li>1-1<li>1-2</ol><li>2</ul>", "- 1\n    1. 1-1\n    1. 1-2\n- 2\n"),
-        ("<ol><li>1<ul><li>1-1<li>1-2</ul><li>2</ol>", "1. 1\n    - 1-1\n    - 1-2\n1. 2\n"),
+        ("<ul><li>1<li>2</ul>", "- 1\n- 2\n\n"),
+        ("<ul><li>1</li><li>2</li></ul>", "- 1\n- 2\n\n"),
+        ("<ol><li>1<li>2</ol>", "1. 1\n1. 2\n\n"),
+        ("<ol><li>1</li><li>2</li></ol>", "1. 1\n1. 2\n\n"),
+        ("<ul><li>1<ul><li>1-1<li>1-2</ul><li>2</ul>", "- 1\n    - 1-1\n    - 1-2\n- 2\n\n"),
+        ("<ul><li>1<ul><li>1-1<ul><li>1-1-1<li>1-1-2</ul><li>1-2</ul><li>2</ul>", "- 1\n    - 1-1\n        - 1-1-1\n        - 1-1-2\n    - 1-2\n- 2\n\n"),
+        ("<ul><li><ul><li><ul><li>1-1-1<li>1-1-2</ul><li>1-2</ul><li>2</ul>", "- \n    - \n        - 1-1-1\n        - 1-1-2\n    - 1-2\n- 2\n\n"),
+        ("<ul><li>1<ol><li>1-1<li>1-2</ol><li>2</ul>", "- 1\n    1. 1-1\n    1. 1-2\n- 2\n\n"),
+        ("<ol><li>1<ul><li>1-1<li>1-2</ul><li>2</ol>", "1. 1\n    - 1-1\n    - 1-2\n1. 2\n\n"),
     ];
     assert(cases);
 }
@@ -122,7 +122,7 @@ fn preformatted() {
         </ol>
     <li>b
 </ul>
-        "#, "- a\n    1. \n        ```\n        <div>1</div>2\n        ```\n        \n        \n- b\n"),
+        "#, "- a\n    1. \n        ```\n        <div>1</div>2\n        ```\n        \n        \n- b\n\n"),
     ];
     assert(cases);
 }
@@ -131,9 +131,17 @@ fn preformatted() {
 #[test]
 fn blockquote() {
     let cases = vec![
-        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def\n"),
-        ("<blockquote>a<br>bc<br>def</blockquote>", "> a    \n> bc    \n> def\n"),
-        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> \n"),
+        ("<blockquote>a\nbc\ndef</blockquote>", "> a\n> bc\n> def\n\n"),
+        ("<blockquote>a<br>bc<br>def</blockquote>", "> a    \n> bc    \n> def\n\n"),
+        ("<blockquote>a\nbc<br>\ndef<hr></blockquote>", "> a\n> bc    \n> def\n> ---\n> \n\n"),
+        (r#"
+<ul>
+    <li>due to it:<br>
+        <blockquote>lorem</blockquote>
+    </li>
+    <li>ipsum</li>
+</ul>
+"#, "- due to it:    \n    > lorem\n- ipsum\n\n"),
     ];
     assert(cases);
 }
@@ -237,7 +245,7 @@ fn empty_element() {
         ("<em></em>", ""),
         ("<ul></ul>", ""),
         ("<ol></ol>", ""),
-        ("<ul><li></ul>", "- \n"),
+        ("<ul><li></ul>", "- \n\n"),
         ("<table></table>", ""),
         ("<table><tbody><tr><td></td></tr></tbody></table>", "|  |\n| --- |\n\n"),
         ("<table><thead><tr><th></th></tr></thead><tbody><tr><td></td></tr></tbody></table>", "|  |\n| --- |\n|  |\n\n"),
@@ -326,7 +334,7 @@ fn contenteditable_element() {
         ("<strong contenteditable=\"true\">lorem</strong>", " **lorem** "),
         ("<i contenteditable=\"true\">lorem</i>", " *lorem* "),
         ("<em contenteditable=\"true\">lorem</i>", " *lorem* "),
-        ("<ul><li contenteditable=\"true\">lorem</li></ul>", "- lorem\n"),
+        ("<ul><li contenteditable=\"true\">lorem</li></ul>", "- lorem\n\n"),
         (r#"
 <ul>
     <li contenteditable=\"true\">lorem</li>
@@ -335,8 +343,8 @@ fn contenteditable_element() {
     </ul>
     <li contenteditable=\"true\">dolor</li>
 </ul>
-        "#, "- lorem\n- \n    - ipsum\n- dolor\n"),
-        ("<ol><li contenteditable=\"true\">lorem</li></ol>", "1. lorem\n"),
+        "#, "- lorem\n- \n    - ipsum\n- dolor\n\n"),
+        ("<ol><li contenteditable=\"true\">lorem</li></ol>", "1. lorem\n\n"),
         (r#"
 <ol>
     <li contenteditable=\"true\">lorem</li>
@@ -345,7 +353,7 @@ fn contenteditable_element() {
     </ol>
     <li contenteditable=\"true\">dolor</li>
 </ol>
-        "#, "1. lorem\n1. \n    1. ipsum\n1. dolor\n"),
+        "#, "1. lorem\n1. \n    1. ipsum\n1. dolor\n\n"),
         (r#"
 <ol>
     <li contenteditable=\"true\">lorem-1</li>
@@ -373,6 +381,7 @@ fn contenteditable_element() {
     - ipsum-4
 1. lorem-3
 1. lorem-4
+
 "#),
         (r#"
 <table>
@@ -411,7 +420,7 @@ fn contenteditable_element() {
         ("<code contenteditable=\"true\">lorem</code>", "`lorem`"),
         ("<pre contenteditable=\"true\">lorem</pre>", "```\nlorem\n```\n\n"),
         ("<pre contenteditable=\"true\"><code lang=\"rust\">println!(\"lorem\");</code></pre>", "```rust\nprintln!(\"lorem\");\n```\n\n"),
-        ("<blockquote contenteditable=\"true\">lorem</blockquote>", "> lorem\n"),
+        ("<blockquote contenteditable=\"true\">lorem</blockquote>", "> lorem\n\n"),
         ("<a href=\"href_str\" contenteditable=\"true\">caption</a>", "[caption](href_str)"),
     ];
     assert(cases);
