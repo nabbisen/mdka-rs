@@ -8,12 +8,12 @@ use crate::utils::element::*;
 
 /// parse html str
 pub fn parse_html(html: &str) -> RcDom {
-    let optimized_html = optimze_html_to_be_well_parsed(html);
+    let optimized_html = optimize_html_to_be_well_parsed(html);
     parse_document(RcDom::default(), ParseOpts::default()).from_utf8().read_from(&mut optimized_html.as_bytes()).unwrap()
 }
 
 /// fix dirtily parsed with: `>\n<`, `>  <`
-fn optimze_html_to_be_well_parsed(html: &str) -> String {
+fn optimize_html_to_be_well_parsed(html: &str) -> String {
     let mut ret = String::new();
 
     let chars: Vec<char> = html.chars().collect();
