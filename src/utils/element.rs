@@ -86,9 +86,9 @@ pub fn style_text_align(style: &String) -> Option<&str> {
 }
 
 /// parse class str to find align attr
-pub fn class_text_align(class: &String) -> Option<&str> {
-    for s in class.split(' ') {
-        match s.replace("\\\"", "").replace(";", "").as_str() {
+pub fn class_text_align(class_list: &String) -> Option<&str> {
+    for class in class_list.split(' ') {
+        match class.replace("\\\"", "").replace(";", "").as_str() {
             "text-left" => return Some("left"),
             "text-center" => return Some("center"),
             "text-right" => return Some("right"),
