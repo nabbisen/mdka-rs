@@ -43,7 +43,7 @@ pub fn manipulate_children(node: &Handle, indent_size: Option<usize>) -> String 
 pub fn manipulate_element(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let name = element_name(node);
     let ret = match name.as_str() {
-        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => manipulate_heading(node, indent_size, attrs_map, &name),
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => manipulate_heading(node, indent_size, attrs_map, name.as_str()),
         "div" => manipulate_block(node, indent_size, attrs_map, false),
         "p" => manipulate_block(node, indent_size, attrs_map, true),
         "span" => manipulate_inline(node, indent_size, attrs_map, InlineStyle::Regular),

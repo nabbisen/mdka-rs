@@ -69,13 +69,13 @@ pub fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
 pub fn inner_text(node: &Handle) -> String {
     let mut ret = String::new();
     for child in node.children.borrow().iter() {
-        ret = inner_text_scan(child, ret);
+        ret = inner_text_scan(child, ret.as_str());
     }
     ret
 }
 
 /// scan inner nodes recursively to generate inner text
-fn inner_text_scan(node: &Handle, s: String) -> String {
+fn inner_text_scan(node: &Handle, s: &str) -> String {
     match node.data {
         NodeData::Text { ref contents } => {
             let escaped = contents.borrow().escape_default().to_string();
@@ -89,9 +89,9 @@ fn inner_text_scan(node: &Handle, s: String) -> String {
         NodeData::Element {
             ..
         } => {
-            let mut ret = s;
+            let mut ret = s.to_string();
             for child in node.children.borrow().iter() {
-                ret = inner_text_scan(child, ret)
+                ret = inner_text_scan(child, ret.as_str())
             }
             ret
         },
