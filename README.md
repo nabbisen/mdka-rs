@@ -1,5 +1,5 @@
 # mdka
-**HTML to Markdown** converter written in Rust.
+**HTML to Markdown (MD)** converter written in Rust.
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=latest)](https://crates.io/crates/mdka)
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka/latest)
