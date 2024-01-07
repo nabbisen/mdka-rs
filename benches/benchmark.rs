@@ -1,5 +1,5 @@
 /// 
-/// usage
+/// usage:
 ///
 /// ```
 /// cargo bench
