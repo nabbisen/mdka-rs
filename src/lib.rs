@@ -21,6 +21,7 @@ use crate::utils::node::parse_html;
 /// let ret = from_html(input);
 /// assert_eq!(ret, expect);
 /// ```
+/// 
 pub fn from_html(html: &str) -> String {
     let dom = parse_html(html);
     components::node::manipulate_node(&dom.document, None::<usize>)

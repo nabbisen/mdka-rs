@@ -7,7 +7,7 @@
 [![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka/latest)
 
 A kind of text manipulator named mdka. "ka" means "化 (か)" pointing to conversion.    
-Focused on:
+Designed with in mind:
 
 - Fast speed
 - Low memory consumption
