@@ -13,7 +13,10 @@ use crate::utils::node::parse_html;
 /// ```
 /// use mdka::from_html;
 /// 
-/// let input = "<h1>heading 1</h1>\n<p>Hello, world.</p>";
+/// let input = r#"
+/// <h1>heading 1</h1>
+/// <p>Hello, world.</p>
+/// "#;
 /// let expect = "# heading 1\n\nHello, world.\n\n";
 /// let ret = from_html(input);
 /// assert_eq!(ret, expect);
