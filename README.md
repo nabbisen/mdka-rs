@@ -18,7 +18,7 @@ Focused on:
 
 ```toml
 [dependencies]
-mdka = "^1.0.4"
+mdka = "1.0"
 ```
 
 `awesome.rs`
