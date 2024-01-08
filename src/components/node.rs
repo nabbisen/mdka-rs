@@ -11,8 +11,8 @@ use crate::INDENT_DEFAULT_SIZE;
 pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
-            let escaped = contents.borrow().escape_default().to_string();
-            escaped.replace("\\n", "\n").replace("\\r", "\r").trim_end().to_owned()
+            let contents_str = contents.borrow().to_string();
+            contents_str.trim_end().to_owned()
         },
         NodeData::Element {
             attrs: ref node_attrs,

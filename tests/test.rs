@@ -273,6 +273,42 @@ fn empty_element() {
 }
 
 #[test]
+fn unicode() {
+    let cases = vec![
+        ("<div>あいうえお</div>", "あいうえお\n"),
+        ("<div>春夏秋冬</div>", "春夏秋冬\n"),
+        (r#"
+<p>文字のテスト
+    <ul>
+        <li>გამარჯობა
+        <li>السلام عليكم
+        <li>وعلیکم السلام
+    </ul>
+    <table>
+        <tr>
+            <td>Název knihy</td>
+        </tr>
+        <tr>
+            <td>Blod på snø</td>
+        </tr>
+    </table>
+</p>
+        "#, r#"文字のテスト
+
+- გამარჯობა
+- السلام عليكم
+- وعلیکم السلام
+
+| Název knihy |
+| --- |
+| Blod på snø |
+
+"#),
+    ];
+    assert(cases);
+}
+
+#[test]
 fn empty_document() {
     let cases = vec![
         ("<html></html>", ""),
