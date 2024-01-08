@@ -178,7 +178,7 @@ fn new_line() {
 }
 
 #[test]
-fn devider() {
+fn divider() {
     let cases = vec![
         ("<hr>", "\n---\n"),
         ("1<hr>2", "1\n---\n2"),

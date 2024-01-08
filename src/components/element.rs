@@ -141,13 +141,13 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, attrs_map: &H
                                 }
                             }
                         };
-                        let devider = match align {
+                        let divider = match align {
                             Some("left") => ":--- ",
                             Some("center") => " --- ",
                             Some("right") => " ---:",
                             _ => " --- "
                         };
-                        row = format!("{}{}|", row, devider);
+                        row = format!("{}{}|", row, divider);
                     },
                     _ => {}
                 };
