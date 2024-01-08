@@ -18,7 +18,7 @@ Designed with in mind:
 
 ```toml
 [dependencies]
-mdka = "1.1"
+mdka = "1.2"
 ```
 
 `awesome.rs`

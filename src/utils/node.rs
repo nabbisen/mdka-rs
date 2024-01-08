@@ -78,12 +78,11 @@ pub fn inner_text(node: &Handle) -> String {
 fn inner_text_scan(node: &Handle, s: &str) -> String {
     match node.data {
         NodeData::Text { ref contents } => {
-            let escaped = contents.borrow().escape_default().to_string();
-            let replaced = escaped.replace("\\n", "\n").replace("\\r", "\r").trim_end().to_owned();
+            let contents_str = contents.borrow().to_string().trim_end().to_owned();
             if s.is_empty() {
-                replaced
+                contents_str
             } else {
-                format!("{} {}", s, replaced)
+                format!("{} {}", s, contents_str)
             }
         },
         NodeData::Element {
