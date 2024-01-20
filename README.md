@@ -1,10 +1,12 @@
 # mdka
-**HTML to Markdown (MD)** converter written in Rust.
+**HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=latest)](https://crates.io/crates/mdka)
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka/latest)
 [![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
 [![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka/latest)
+
+## Summary
 
 A kind of text manipulator named mdka. "ka" means "化 (か)" pointing to conversion.    
 Designed with in mind:
@@ -39,3 +41,7 @@ fn awesome_fn() {
     // 
 }
 ```
+
+## Acknowledgements
+
+Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
