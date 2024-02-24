@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.2.1"
+version = "1.2.2"
 edition = "2021"
 authors = ["nabbisen <nabbisen@scqr.net>"]
 license = "Apache-2.0"
@@ -9,7 +9,7 @@ repository = "https://github.com/nabbisen/mdka-rs"
 readme = "README.md"
 categories = ["development-tools", "parsing", "parser-implementations"]
 keywords = ["html", "markdown", "parser", "conversion"]
-rust-version = "1.75.0"
+rust-version = "1.76.0"
 
 [lib]
 name = "mdka"
