@@ -12,7 +12,16 @@ pub fn manipulate_node(node: &Handle, indent_size: Option<usize>) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
             let contents_str = contents.borrow().to_string();
-            contents_str.trim_end().to_owned()
+            let trailing = if let Some(s) = contents_str.split("\n").last() {
+                if !s.is_empty() && s.trim().is_empty() {
+                    " "
+                } else {
+                    ""
+                }
+            } else {
+                ""
+            };
+            format!("{}{}", contents_str.trim_end(), trailing)
         },
         NodeData::Element {
             attrs: ref node_attrs,
