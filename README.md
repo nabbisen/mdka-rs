@@ -31,8 +31,7 @@ use mdka::from_html
 fn awesome_fn() {
     let input = r#"
 <h1>heading 1</h1>
-<p>Hello, world.</p>
-"#;
+<p>Hello, world.</p>"#;
     let ret = from_html(input);
     println!("{}", ret);
     // # heading 1
