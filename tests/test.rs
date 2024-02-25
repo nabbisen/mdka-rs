@@ -82,7 +82,7 @@ fn table() {
         </tr>
     </tbody>
 </table>
-"#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n"),
+"#, "| h1 | h2 |\n| --- | --- |\n| d1-1 | d1-2 |\n| d2-1 | d2-2 |\n\n\n"),
         (r#"
 <table><thead><tr>
     <th style=\"text-align: left ;\">h1</th>
@@ -122,7 +122,7 @@ fn preformatted() {
         </ol>
     <li>b
 </ul>
-        "#, "- a\n    1. \n        ```\n        <div>1</div>2\n        ```\n        \n        \n- b\n\n "),
+        "#, "- a\n    1. \n        ```\n        <div>1</div>2\n        ```\n        \n        \n- b\n\n\n        "),
     ];
     assert(cases);
 }
@@ -141,7 +141,7 @@ fn blockquote() {
     </li>
     <li>ipsum</li>
 </ul>
-"#, "- due to it:    \n    > lorem\n- ipsum\n\n"),
+"#, "- due to it:    \n    > lorem\n- ipsum\n\n\n"),
     ];
     assert(cases);
 }
@@ -173,6 +173,8 @@ fn new_line() {
         ("1<br>2", "1    \n2"),
         ("1<br><br>2", "1    \n    \n2"),
         ("1\n2", "1\n2"),
+        (r#"1\n2
+        "#, "1\\n2\n        "),
     ];
     assert(cases);
 }
@@ -303,7 +305,8 @@ fn unicode() {
 | --- |
 | Blod på snø |
 
- "#),
+
+        "#),
     ];
     assert(cases);
 }
@@ -379,7 +382,7 @@ fn contenteditable_element() {
     </ul>
     <li contenteditable=\"true\">dolor</li>
 </ul>
-        "#, "- lorem\n- \n    - ipsum\n- dolor\n\n "),
+        "#, "- lorem\n- \n    - ipsum\n- dolor\n\n\n        "),
         ("<ol><li contenteditable=\"true\">lorem</li></ol>", "1. lorem\n\n"),
         (r#"
 <ol>
@@ -389,7 +392,7 @@ fn contenteditable_element() {
     </ol>
     <li contenteditable=\"true\">dolor</li>
 </ol>
-        "#, "1. lorem\n1. \n    1. ipsum\n1. dolor\n\n "),
+        "#, "1. lorem\n1. \n    1. ipsum\n1. dolor\n\n\n        "),
         (r#"
 <ol>
     <li contenteditable=\"true\">lorem-1</li>
@@ -418,7 +421,8 @@ fn contenteditable_element() {
 1. lorem-3
 1. lorem-4
 
- "#),
+
+        "#),
         (r#"
 <table>
     <thead>
@@ -432,7 +436,7 @@ fn contenteditable_element() {
         </tr>
     </tbody>
 </table>
-        "#, "| h1 |\n| --- |\n| d1 |\n\n "),
+        "#, "| h1 |\n| --- |\n| d1 |\n\n\n        "),
         (r#"
 <table contenteditable=\"true\">
     <thead contenteditable=\"true\">
@@ -452,7 +456,7 @@ fn contenteditable_element() {
         </tr>
     </tbody>
 </table>
-        "#, "| h1 | h2 |\n| --- | --- |\n| d1 | d2 |\n| d3 | d4 |\n\n "),
+        "#, "| h1 | h2 |\n| --- | --- |\n| d1 | d2 |\n| d3 | d4 |\n\n\n        "),
         ("<code contenteditable=\"true\">lorem</code>", "`lorem`"),
         ("<pre contenteditable=\"true\">lorem</pre>", "```\nlorem\n```\n\n"),
         ("<pre contenteditable=\"true\"><code lang=\"rust\">println!(\"lorem\");</code></pre>", "```rust\nprintln!(\"lorem\");\n```\n\n"),
@@ -476,7 +480,7 @@ fn unsupported() {
 <svg width="100" height="100">
   <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
 </svg>
-        "#, " "),
+        "#, "\n        "),
         ("<customtag></customtag>", ""),
         ("<div customattr=\"some\">lorem</div>", "lorem\n"),
         ("<div data-id=\"some\">lorem</div>", "lorem\n"),

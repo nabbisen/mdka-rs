@@ -15,8 +15,7 @@ use crate::utils::node::parse_html;
 /// 
 /// let input = r#"
 /// <h1>heading 1</h1>
-/// <p>Hello, world.</p>
-/// "#;
+/// <p>Hello, world.</p>"#;
 /// let expect = "# heading 1\n\nHello, world.\n\n";
 /// let ret = from_html(input);
 /// assert_eq!(ret, expect);
