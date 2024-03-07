@@ -10,8 +10,8 @@ use crate::INDENT_DEFAULT_SIZE;
 use crate::INDENT_UNIT_SIZE;
 
 /// h1, h2, h3, h4, h5, h6
-pub fn manipulate_heading(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, name: &str) -> String {
-    let content = manipulate_children(node, indent_size);
+pub fn heading_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, name: &str) -> String {
+    let content = children_md(node, indent_size);
     
     if is_emtpy_element(content.as_str(), attrs_map) { return content }
     if content.is_empty() {
@@ -32,8 +32,8 @@ pub enum InlineStyle {
     Italic,
 }
 /// span
-pub fn manipulate_inline(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, inline_style: InlineStyle) -> String{
-    let mut content = manipulate_children(node, indent_size);
+pub fn inline_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, inline_style: InlineStyle) -> String{
+    let mut content = children_md(node, indent_size);
     if is_emtpy_element(content.as_str(), attrs_map) { return content }
 
     match inline_style {
@@ -53,8 +53,8 @@ fn italic(s: &str) -> String {
 }
 
 /// div, p
-pub fn manipulate_block(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_paragraph: bool) -> String{
-    let content = manipulate_children(node, indent_size);
+pub fn block_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_paragraph: bool) -> String{
+    let content = children_md(node, indent_size);
 
     if is_emtpy_element(content.as_str(), attrs_map) { return content }
     if content.is_empty() {
@@ -69,7 +69,7 @@ pub fn manipulate_block(node: &Handle, indent_size: Option<usize>, attrs_map: &H
 }
 
 /// ul, ol, li
-pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_ordered: bool) -> String {
+pub fn list_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_ordered: bool) -> String {
     let prefix = if is_ordered { "1." } else { "-"};
 
     let current_indent_size = indent_size.unwrap_or(INDENT_DEFAULT_SIZE);
@@ -82,7 +82,7 @@ pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, attrs_map: &Ha
         let (child_name, child_attrs_map) = element_name_attrs_map(child);
         let child_content = match child_name.as_str() {
             "li" => {
-                let child_children_content = manipulate_children(child, next_indent_size);
+                let child_children_content = children_md(child, next_indent_size);
                 let is_last = i == node.children.borrow().len() - 1;
                 let new_line = if is_last { "" } else { "\n" };
                 let s = format!("{}{} {}{}", indent_str, prefix, child_children_content, new_line);
@@ -108,7 +108,7 @@ pub fn manipulate_list(node: &Handle, indent_size: Option<usize>, attrs_map: &Ha
 }
 
 /// table, thead, tbody, tr, th, td
-pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
+pub fn table_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let trs = find_trs(node);
     let mut content = String::new();
     let indent_str = indent(indent_size);
@@ -120,7 +120,7 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, attrs_map: &H
             let name = element_name(td);
             let _ = match name.as_str() {
                 "th" | "td" => {
-                    row = format!("{} {} |", row, manipulate_node(td, Some(INDENT_DEFAULT_SIZE)));
+                    row = format!("{} {} |", row, node_md(td, Some(INDENT_DEFAULT_SIZE)));
                 },
                 _ => {}
             };
@@ -170,7 +170,7 @@ pub fn manipulate_table(node: &Handle, indent_size: Option<usize>, attrs_map: &H
 }
 
 /// pre, code
-pub fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_inline: bool) -> String {
+pub fn preformatted_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_inline: bool) -> String {
     if is_inline {
         let content = inner_html(node, indent_size);
 
@@ -229,8 +229,8 @@ pub fn manipulate_preformatted(node: &Handle, indent_size: Option<usize>, attrs_
 }
 
 /// blockquote
-pub fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
-    let md_str = manipulate_children(node, indent_size);
+pub fn blockquote_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
+    let md_str = children_md(node, indent_size);
 
     if is_emtpy_element(md_str.as_str(), attrs_map) { return md_str }
     if md_str.is_empty() {
@@ -255,7 +255,7 @@ pub fn manipulate_blockquote(node: &Handle, indent_size: Option<usize>, attrs_ma
 }
 
 /// a
-pub fn manipulate_link(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
+pub fn link_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let content = inner_text(node);
     let empty_str = String::new();
     let href = attrs_map.get("href").unwrap_or(&empty_str);
@@ -270,7 +270,7 @@ pub fn manipulate_link(node: &Handle, indent_size: Option<usize>, attrs_map: &Ha
 }
 
 /// img, video
-pub fn manipulate_media(_node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
+pub fn media_md(_node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>) -> String {
     let empty_str = String::new();
     let src = attrs_map.get("src").unwrap_or(&empty_str);
     let alt = attrs_map.get("alt").unwrap_or(&empty_str);
