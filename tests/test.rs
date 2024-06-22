@@ -96,7 +96,11 @@ fn table() {
     <th class=\"text-center text-italic\">h2</th>
     <th class=\"text-bold text-right text-center\">h3</th>
 </thead><tbody><tr><td>d1</td><td>d2</td><td>d3</td></tr></tbody></table>"#,
-        "| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n")
+        "| h1 | h2 | h3 |\n|:--- | --- | ---:|\n| d1 | d2 | d3 |\n\n"),
+        (r#"<!DOCTYPE html><meta http-equiv="content-type" content="text/html; charset=utf-8"><table><tbody><tr><td valign="top"><img src="icons/folder.gif" alt="[DIR]"></td><td><a href="https://blog.getreu.net/">blog.getreu.net/</a></td><td align="right">2020-03-22 11:08  </td><td align="right">  - </td><td> </td></tr>
+<tr><td valign="top"><img src="icons/folder.gif" alt="[DIR]"></td><td><a href="getreu.net/">getreu.net/</a></td><td align="right">2020-03-22 10:59  </td><td align="right">  - </td><td> </td></tr>
+<tr><td valign="top"><img src="icons/folder.gif" alt="[DIR]"></td><td><a href="test/">test/</a></td><td align="right">2020-03-22 10:59  </td><td align="right">  -</td></tr></tbody></table>"#,
+        "| ![[DIR]](icons/folder.gif) | [blog.getreu.net/](https://blog.getreu.net/) | 2020-03-22 11:08 | - |  |\n| --- | --- | --- | --- | --- |\n| ![[DIR]](icons/folder.gif) | [getreu.net/](getreu.net/) | 2020-03-22 10:59 | - |  |\n| ![[DIR]](icons/folder.gif) | [test/](test/) | 2020-03-22 10:59 | - |\n\n")
     ];
     assert(cases);
 }
