@@ -120,7 +120,8 @@ pub fn table_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<S
             let name = element_name(td);
             let _ = match name.as_str() {
                 "th" | "td" => {
-                    row = format!("{} {} |", row, node_md(td, Some(INDENT_DEFAULT_SIZE)));
+                    let md = node_md(td, Some(INDENT_DEFAULT_SIZE)).trim_end().to_string();
+                    row = format!("{} {} |", row, md);
                 },
                 _ => {}
             };
