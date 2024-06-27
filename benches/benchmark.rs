@@ -70,7 +70,8 @@ println!(\"Hello, world.\")
 <a href="/somewhere">something</a>
 
 <img src="nice-image" alt="great-caption">
-<video src="the-same" alt="the-same">
+<audio src="nice-audio" alt="great-caption">
+<video src="nice-video" alt="great-caption">
 "#;
 
 fn benchmarkee(c: &mut Criterion) {

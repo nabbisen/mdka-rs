@@ -67,7 +67,7 @@ pub fn element_md(
         "code" => preformatted_md(node, indent_size, attrs_map, true),
         "blockquote" => blockquote_md(node, indent_size, attrs_map),
         "a" => link_md(node, indent_size, attrs_map),
-        "img" | "video" => media_md(node, indent_size, attrs_map),
+        "img" | "audio" | "video" => media_md(node, indent_size, attrs_map),
         "br" => "    \n".to_owned(),
         "hr" => "\n---\n".to_owned(),
         "html" | "body" | "main" | "header" | "footer" | "nav" | "section" | "article"

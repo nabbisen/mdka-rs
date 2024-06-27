@@ -203,12 +203,16 @@ fn media() {
             "![awesome image](/some-dir/some-file.ext)\n",
         ),
         (
-            "<img alt=\"awesome image\" src=\"/some-dir/some-file.ext\">",
-            "![awesome image](/some-dir/some-file.ext)\n",
+            "<img alt=\"awesome image\" src=\"/some-dir/some-file.ext1\">",
+            "![awesome image](/some-dir/some-file.ext1)\n",
         ),
         (
-            "<video src=\"/some-dir/some-file.ext2\" alt=\"awesome video\">",
-            "![awesome video](/some-dir/some-file.ext2)\n",
+            "<audio src=\"/some-dir/some-file.ext2\" alt=\"awesome audio\">",
+            "![awesome audio](/some-dir/some-file.ext2)\n",
+        ),
+        (
+            "<video src=\"/some-dir/some-file.ext3\" alt=\"awesome video\">",
+            "![awesome video](/some-dir/some-file.ext3)\n",
         ),
     ];
     assert(cases);
@@ -332,6 +336,9 @@ fn empty_element() {
         ("<img alt=\"\"></img>", ""),
         ("<img src=\"src_str\">", "![](src_str)\n"),
         ("<img id=\"myid\"></img>", "<span id=\"myid\"></span>"),
+        ("<audio></audio>", ""),
+        ("<audio src=\"src_str\">", "![](src_str)\n"),
+        ("<audio alt=\"alt_str\">", "![alt_str]()\n"),
         ("<video></video>", ""),
         ("<video src=\"src_str\">", "![](src_str)\n"),
         ("<video alt=\"alt_str\">", "![alt_str]()\n"),
@@ -423,6 +430,7 @@ fn empty_enclosed() {
         ),
         ("<a id=\"myid\"></a>", "<span id=\"myid\"></span>"),
         ("<img id=\"myid\"></img>", "<span id=\"myid\"></span>"),
+        ("<audio id=\"myid\"></audio>", "<span id=\"myid\"></span>"),
         ("<video id=\"myid\"></video>", "<span id=\"myid\"></span>"),
     ];
     assert(cases);

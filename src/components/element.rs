@@ -352,7 +352,7 @@ pub fn link_md(
     enclose(enclosed.as_str(), indent_size, attrs_map, false)
 }
 
-/// img, video
+/// img, audio, video
 pub fn media_md(
     _node: &Handle,
     indent_size: Option<usize>,
