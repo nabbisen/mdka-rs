@@ -13,11 +13,11 @@ const TRIAL_HTML: &str = r#"
 /// available for trial run and the result will be printed out
 ///
 /// usage:
-/// 
+///
 /// ```
 /// cargo run --example trial
 /// ```
-/// 
+///
 fn main() {
     let ret = from_html(TRIAL_HTML);
     println!("{}", ret);

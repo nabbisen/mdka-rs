@@ -1,4 +1,4 @@
-/// 
+///
 /// usage:
 ///
 /// ```
@@ -7,7 +7,6 @@
 ///
 /// will be generated: target/criterion/report/index.html
 ///
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use mdka::from_html;

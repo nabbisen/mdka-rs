@@ -12,7 +12,7 @@ use crate::utils::node::parse_html;
 ///
 /// ```
 /// use mdka::from_html;
-/// 
+///
 /// let input = r#"
 /// <h1>heading 1</h1>
 /// <p>Hello, world.</p>"#;
@@ -20,7 +20,7 @@ use crate::utils::node::parse_html;
 /// let ret = from_html(input);
 /// assert_eq!(ret, expect);
 /// ```
-/// 
+///
 pub fn from_html(html: &str) -> String {
     let dom = parse_html(html);
     components::node::node_md(&dom.document, None::<usize>)

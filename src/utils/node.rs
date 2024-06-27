@@ -1,15 +1,18 @@
-use html5ever::{parse_document, ParseOpts};
 use html5ever::serialize::{serialize, SerializeOpts, TraversalScope};
 use html5ever::tendril::TendrilSink;
-use markup5ever_rcdom::{RcDom, NodeData, Handle, SerializableHandle};
+use html5ever::{parse_document, ParseOpts};
+use markup5ever_rcdom::{Handle, NodeData, RcDom, SerializableHandle};
 
-use crate::INDENT_DEFAULT_SIZE;
 use crate::utils::element::*;
+use crate::INDENT_DEFAULT_SIZE;
 
 /// parse html str
 pub fn parse_html(html: &str) -> RcDom {
     let optimized_html = optimize_html_to_be_well_parsed(html);
-    parse_document(RcDom::default(), ParseOpts::default()).from_utf8().read_from(&mut optimized_html.as_bytes()).unwrap()
+    parse_document(RcDom::default(), ParseOpts::default())
+        .from_utf8()
+        .read_from(&mut optimized_html.as_bytes())
+        .unwrap()
 }
 
 /// trim spaces and new lines between end of tag and start of next tag
@@ -24,9 +27,7 @@ fn optimize_html_to_be_well_parsed(html: &str) -> String {
     while let Some(pos) = chars[start..].iter().position(|&c| c == '>') {
         let end = match chars[(start + pos)..].iter().position(|&c| c == '<') {
             Some(end_pos) => start + pos + end_pos,
-            None => {
-                break
-            }
+            None => break,
         };
 
         let start_to_bracket_end = &chars[start..(start + pos)].iter().collect::<String>();
@@ -56,11 +57,14 @@ pub fn inner_html(node: &Handle, indent_size: Option<usize>) -> String {
     let serialized = String::from_utf8(buf).unwrap();
     if INDENT_DEFAULT_SIZE < indent_size.unwrap_or(INDENT_DEFAULT_SIZE) {
         let indent_str = indent(indent_size);
-        serialized.split("\n").into_iter().fold(String::new(), |mut acc, x| {
-            let s = format!("{}{}", indent_str, &x);
-            acc.push_str(s.as_str());
-            acc
-        })
+        serialized
+            .split("\n")
+            .into_iter()
+            .fold(String::new(), |mut acc, x| {
+                let s = format!("{}{}", indent_str, &x);
+                acc.push_str(s.as_str());
+                acc
+            })
     } else {
         serialized
     }
@@ -85,16 +89,14 @@ fn inner_text_scan(node: &Handle, s: &str) -> String {
             } else {
                 format!("{} {}", s, contents_str)
             }
-        },
-        NodeData::Element {
-            ..
-        } => {
+        }
+        NodeData::Element { .. } => {
             let mut ret = s.to_string();
             for child in node.children.borrow().iter() {
                 ret = inner_text_scan(child, ret.as_str())
             }
             ret
-        },
-        _ => { String::new() }
+        }
+        _ => String::new(),
     }
 }

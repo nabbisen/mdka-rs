@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use html5ever::Attribute;
-use markup5ever_rcdom::{NodeData, Handle};
+use markup5ever_rcdom::{Handle, NodeData};
 
 use crate::INDENT_DEFAULT_SIZE;
 
@@ -13,10 +13,8 @@ pub fn element_name_attrs_map(node: &Handle) -> (String, HashMap<String, String>
             ref name,
             attrs: ref node_attrs,
             ..
-        } => {
-            (name.local.to_string(), attrs_map(node_attrs))
-        },
-        _ => { (String::new(), HashMap::<String, String>::new()) }
+        } => (name.local.to_string(), attrs_map(node_attrs)),
+        _ => (String::new(), HashMap::<String, String>::new()),
     }
 }
 
@@ -44,13 +42,13 @@ pub fn attrs_map(node_attrs: &RefCell<Vec<Attribute>>) -> HashMap<String, String
                 attr_key = String::new();
                 attr_value = String::new();
             };
-            continue
+            continue;
         };
         let is_quote_start = v.trim_start().starts_with("\\\"") && !v.trim_end().ends_with("\\\"");
         if is_quote_start {
             attr_key = k;
             attr_value = v;
-            continue
+            continue;
         };
 
         map.insert(k, v);
@@ -65,7 +63,7 @@ pub fn find_trs(node: &Handle) -> Vec<Handle> {
         let name = element_name(child);
         let _ = match name.as_str() {
             "tr" => trs.push(child.clone()),
-            _ => trs.append(&mut find_trs(&child))
+            _ => trs.append(&mut find_trs(&child)),
         };
     }
     trs
@@ -75,11 +73,11 @@ pub fn find_trs(node: &Handle) -> Vec<Handle> {
 pub fn style_text_align(style: &String) -> Option<&str> {
     if let Some(start) = style.find("text-align") {
         for pos in (start + "text-align".len())..style.len() {
-            if style.as_bytes()[pos] == b':' {      
+            if style.as_bytes()[pos] == b':' {
                 if let Some(end) = style[pos..].find(';') {
-                    return Some((style[(pos + 1)..(pos + end)]).trim()); 
-                } 
-            } 
+                    return Some((style[(pos + 1)..(pos + end)]).trim());
+                }
+            }
         }
     }
     None
@@ -105,7 +103,7 @@ pub fn indent(indent_size: Option<usize>) -> String {
 
 /// generate trailing new line with or without indent
 pub fn block_trailing_new_line(indent_size: Option<usize>) -> String {
-    let indent = indent_size.unwrap(); 
+    let indent = indent_size.unwrap();
     if indent == INDENT_DEFAULT_SIZE {
         "\n".to_owned()
     } else {
@@ -118,13 +116,25 @@ pub fn is_emtpy_element(content: &str, attrs_map: &HashMap<String, String>) -> b
     content.is_empty() && !requires_enclosure(attrs_map)
 }
 
-/// generate span enclosure to apply block style 
-pub fn enclose(s: &str, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, requires_new_line: bool) -> String {
+/// generate span enclosure to apply block style
+pub fn enclose(
+    s: &str,
+    indent_size: Option<usize>,
+    attrs_map: &HashMap<String, String>,
+    requires_new_line: bool,
+) -> String {
     if requires_enclosure(attrs_map) {
-        let new_line = if requires_new_line { "\n".to_owned() } else { String::new() };
+        let new_line = if requires_new_line {
+            "\n".to_owned()
+        } else {
+            String::new()
+        };
         let indent_str = indent(indent_size);
         let enclosure_attrs = enclosure_attrs(attrs_map);
-        format!("{}{}<span{}>{}{}</span>{}", new_line, indent_str, enclosure_attrs, new_line, s, new_line)
+        format!(
+            "{}{}<span{}>{}{}</span>{}",
+            new_line, indent_str, enclosure_attrs, new_line, s, new_line
+        )
     } else {
         s.to_string()
     }
@@ -145,9 +155,28 @@ fn enclosure_attrs(attrs_map: &HashMap<String, String>) -> String {
     let style = attrs_map.get("style");
     let id = attrs_map.get("id");
 
-    let padding_left = if style.is_some() || id.is_some() { " " } else { "" };
-    let id_attr = if id.is_some() { format!("id=\"{}\"", id.clone().unwrap()) } else { String::new() };
-    let padding_center = if style.is_some() && id.is_some() { " " } else { "" };
-    let style_attr = if style.is_some() { format!("style=\"{}\"", style.clone().unwrap()) } else { String::new() };
-    format!("{}{}{}{}", padding_left, id_attr, padding_center, style_attr)
+    let padding_left = if style.is_some() || id.is_some() {
+        " "
+    } else {
+        ""
+    };
+    let id_attr = if id.is_some() {
+        format!("id=\"{}\"", id.clone().unwrap())
+    } else {
+        String::new()
+    };
+    let padding_center = if style.is_some() && id.is_some() {
+        " "
+    } else {
+        ""
+    };
+    let style_attr = if style.is_some() {
+        format!("style=\"{}\"", style.clone().unwrap())
+    } else {
+        String::new()
+    };
+    format!(
+        "{}{}{}{}",
+        padding_left, id_attr, padding_center, style_attr
+    )
 }
