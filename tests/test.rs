@@ -110,11 +110,13 @@ fn table() {
 fn preformatted() {
     let cases = vec![
         ("<pre>1</pre>", "```\n1\n```\n\n"),
-        ("<code>1</code>", "`1`"),
+        ("<code>1</code>", " `1` "),
         ("<pre><code>1</code></pre>", "```\n1\n```\n\n"),
         ("<pre><code lang=\"rust\">1</code></pre>", "```rust\n1\n```\n\n"),
         ("<pre><div>1</div></pre>", "```\n<div>1</div>\n```\n\n"),
-        ("<code><div>1</div></code>", "`<div>1</div>`"),
+        ("<code><div>1</div></code>", " `<div>1</div>` "),
+        ("<p>start <pre><div>a</div></pre> end</p>", "start\n\n```\n<div>a</div>\n```\n\nend"),
+        ("<p>start <code><div>a</div></code> end</p>", "start\n\n `a` \nend"),
         (r#"
 <ul>
     <li>a
@@ -154,8 +156,9 @@ fn blockquote() {
 #[test]
 fn link() {
     let cases = vec![
-        ("<a href=\"https://some-fqdn/some-dir/some-point\">Click me</a>", "[Click me](https://some-fqdn/some-dir/some-point)"),
-        ("<a>no link</a>", "[no link]()"),
+        ("<a href=\"https://some-fqdn/some-dir/some-point\">Click me</a>", " [Click me](https://some-fqdn/some-dir/some-point) "),
+        ("<a>no link</a>", " [no link]() "),
+        ("<p>This is some link:<a href=\"somewhere1\">link1</a>and also:<a href=\"somewhere2\">link2</a>.</p>", "This is some link: [link1](somewhere1) and also: [link2](somewhere2) .\n\n"),
     ];
     assert(cases);
 }
@@ -210,7 +213,7 @@ fn semantic() {
         ("<header>lorem</header>", "lorem"),
         ("<footer>lorem</footer>", "lorem"),
         ("<nav>lorem</nav>", "lorem"),
-        ("<nav><a href=\"href_str\">caption</a></nav>", "[caption](href_str)"),
+        ("<nav><a href=\"href_str\">caption</a></nav>", " [caption](href_str) "),
         ("<section>lorem</section>", "lorem"),
         ("<section><p>lorem</p></section>", "lorem\n\n"),
         ("<article>lorem</article>", "lorem"),
@@ -263,8 +266,8 @@ fn empty_element() {
         ("<a></a>", ""),
         ("<a href></a>", ""),
         ("<a href=\"\"></a>", ""),
-        ("<a href=\"href_str\"></a>", "[](href_str)"),
-        ("<a>caption</a>", "[caption]()"),
+        ("<a href=\"href_str\"></a>", " [](href_str) "),
+        ("<a>caption</a>", " [caption]() "),
         ("<img></img>", ""),
         ("<img src></img>", ""),
         ("<img src=\"\"></img>", ""),
@@ -462,11 +465,11 @@ fn contenteditable_element() {
     </tbody>
 </table>
         "#, "| h1 | h2 |\n| --- | --- |\n| d1 | d2 |\n| d3 | d4 |\n\n\n        "),
-        ("<code contenteditable=\"true\">lorem</code>", "`lorem`"),
+        ("<code contenteditable=\"true\">lorem</code>", " `lorem` "),
         ("<pre contenteditable=\"true\">lorem</pre>", "```\nlorem\n```\n\n"),
         ("<pre contenteditable=\"true\"><code lang=\"rust\">println!(\"lorem\");</code></pre>", "```rust\nprintln!(\"lorem\");\n```\n\n"),
         ("<blockquote contenteditable=\"true\">lorem</blockquote>", "> lorem\n\n"),
-        ("<a href=\"href_str\" contenteditable=\"true\">caption</a>", "[caption](href_str)"),
+        ("<a href=\"href_str\" contenteditable=\"true\">caption</a>", " [caption](href_str) "),
     ];
     assert(cases);
 }
@@ -505,8 +508,8 @@ fn readme_usage() {
 
 /// general purpose assertion
 fn assert(cases: Vec<(&str, &str)>) {
-    for (input, expect) in cases {
+    for (i, (input, expect)) in cases.into_iter().enumerate() {
         let output = from_html(input);
-        assert_eq!(output, expect);
+        assert_eq!(output, expect, "\ncase #{}", i + 1);
     }
 }

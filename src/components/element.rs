@@ -174,14 +174,14 @@ pub fn table_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<S
 pub fn preformatted_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<String, String>, is_inline: bool) -> String {
     if is_inline {
         let content = inner_html(node, indent_size);
-
+        
         if is_emtpy_element(content.as_str(), attrs_map) { return content }
         if content.is_empty() {
             let empty_str = String::new();
             return enclose(empty_str.as_str(), indent_size, attrs_map, false)
         }
 
-        let enclosed = format!("`{}`", content);
+        let enclosed = format!(" `{}` ", content);
         return enclose(enclosed.as_str(), indent_size, attrs_map, false);
     }
 
@@ -266,7 +266,7 @@ pub fn link_md(node: &Handle, indent_size: Option<usize>, attrs_map: &HashMap<St
         return enclose(empty_str.as_str(), indent_size, attrs_map, false)
     }
 
-    let enclosed = format!("[{}]({})", content, href);
+    let enclosed = format!(" [{}]({}) ", content, href);
     enclose(enclosed.as_str(), indent_size, attrs_map, false)
 }
 
