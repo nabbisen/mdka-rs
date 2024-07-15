@@ -285,7 +285,7 @@ fn attrs() {
         ),
         (
             "<h1 id=\"myid\" style=\"color: orange;\">1</h1>",
-            "\n<span id=\"myid\" style=\"color: orange;\">\n# 1\n\n</span>\n",
+            "\n<span id=\"myid\"></span>\n<span style=\"color: orange;\">\n# 1\n\n</span>\n",
         ),
     ];
     assert(cases);
