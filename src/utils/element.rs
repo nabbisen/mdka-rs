@@ -123,20 +123,39 @@ pub fn enclose(
     attrs_map: &HashMap<String, String>,
     requires_new_line: bool,
 ) -> String {
-    if requires_enclosure(attrs_map) {
-        let new_line = if requires_new_line {
-            "\n".to_owned()
-        } else {
-            String::new()
-        };
-        let indent_str = indent(indent_size);
-        let enclosure_attrs = enclosure_attrs(attrs_map);
+    if !requires_enclosure(attrs_map) {
+        return s.to_string()
+    }
+
+    let new_line = if requires_new_line {
+        "\n".to_owned()
+    } else {
+        String::new()
+    };
+    let indent_str = indent(indent_size);
+
+    let id = attrs_map.get("id");
+    let style = attrs_map.get("style");
+    
+    let id_tag = if let Some(id) = id {
+        // id attr
+        format!("{}{}<span id=\"{}\"></span>", new_line, indent_str, id.clone())
+    } else {
+        String::new()
+    };
+
+    if let Some(style) = style {
+        // style attr
+        let style_attr = format!(" style=\"{}\"", style.clone());
         format!(
-            "{}{}<span{}>{}{}</span>{}",
-            new_line, indent_str, enclosure_attrs, new_line, s, new_line
+            "{}{}{}<span{}>{}{}</span>{}",
+            id_tag, new_line, indent_str, style_attr, new_line, s, new_line
         )
     } else {
-        s.to_string()
+        format!(
+            "{}{}{}{}{}",
+            id_tag, new_line, indent_str, s, new_line
+        )
     }
 }
 
@@ -148,35 +167,4 @@ fn requires_enclosure(attrs_map: &HashMap<String, String>) -> bool {
         let k = attr_key.to_string();
         attrs_map.contains_key(k.as_str())
     })
-}
-
-/// generate attrs of enclosure
-fn enclosure_attrs(attrs_map: &HashMap<String, String>) -> String {
-    let style = attrs_map.get("style");
-    let id = attrs_map.get("id");
-
-    let padding_left = if style.is_some() || id.is_some() {
-        " "
-    } else {
-        ""
-    };
-    let id_attr = if id.is_some() {
-        format!("id=\"{}\"", id.clone().unwrap())
-    } else {
-        String::new()
-    };
-    let padding_center = if style.is_some() && id.is_some() {
-        " "
-    } else {
-        ""
-    };
-    let style_attr = if style.is_some() {
-        format!("style=\"{}\"", style.clone().unwrap())
-    } else {
-        String::new()
-    };
-    format!(
-        "{}{}{}{}",
-        padding_left, id_attr, padding_center, style_attr
-    )
 }
