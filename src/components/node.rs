@@ -65,30 +65,12 @@ pub fn element_md(
     let ret = match name.as_str() {
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
             heading_md(node, indent_size, attrs_map, name.as_str(), parents)
-        },
+        }
         "div" => block_md(node, indent_size, attrs_map, false, parents),
         "p" => block_md(node, indent_size, attrs_map, true, parents),
-        "span" => inline_md(
-            node,
-            indent_size,
-            attrs_map,
-            InlineStyle::Regular,
-            parents,
-        ),
-        "b" | "strong" => inline_md(
-            node,
-            indent_size,
-            attrs_map,
-            InlineStyle::Bold,
-            parents,
-        ),
-        "i" | "em" => inline_md(
-            node,
-            indent_size,
-            attrs_map,
-            InlineStyle::Italic,
-            parents,
-        ),
+        "span" => inline_md(node, indent_size, attrs_map, InlineStyle::Regular, parents),
+        "b" | "strong" => inline_md(node, indent_size, attrs_map, InlineStyle::Bold, parents),
+        "i" | "em" => inline_md(node, indent_size, attrs_map, InlineStyle::Italic, parents),
         "ul" => list_md(node, indent_size, attrs_map, false, parents),
         "ol" => list_md(node, indent_size, attrs_map, true, parents),
         "table" => table_md(node, indent_size, attrs_map, parents),
@@ -101,7 +83,9 @@ pub fn element_md(
         "br" => "    \n".to_owned(),
         "hr" => "\n---\n".to_owned(),
         "html" | "body" | "main" | "header" | "footer" | "nav" | "section" | "article"
-        | "aside" | "time" | "address" | "figure" | "figcaption" => children_md(node, None, parents),
+        | "aside" | "time" | "address" | "figure" | "figcaption" => {
+            children_md(node, None, parents)
+        }
         // skip: script, style, svg
         _ => String::new(),
     };
