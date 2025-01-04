@@ -124,7 +124,7 @@ pub fn enclose(
     requires_new_line: bool,
 ) -> String {
     if !requires_enclosure(attrs_map) {
-        return s.to_string()
+        return s.to_string();
     }
 
     let new_line = if requires_new_line {
@@ -136,10 +136,15 @@ pub fn enclose(
 
     let id = attrs_map.get("id");
     let style = attrs_map.get("style");
-    
+
     let id_tag = if let Some(id) = id {
         // id attr
-        format!("{}{}<span id=\"{}\"></span>", new_line, indent_str, id.clone())
+        format!(
+            "{}{}<span id=\"{}\"></span>",
+            new_line,
+            indent_str,
+            id.clone()
+        )
     } else {
         String::new()
     };
@@ -152,10 +157,7 @@ pub fn enclose(
             id_tag, new_line, indent_str, style_attr, new_line, s, new_line
         )
     } else {
-        format!(
-            "{}{}{}{}{}",
-            id_tag, new_line, indent_str, s, new_line
-        )
+        format!("{}{}{}{}{}", id_tag, new_line, indent_str, s, new_line)
     }
 }
 
