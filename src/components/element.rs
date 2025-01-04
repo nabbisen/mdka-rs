@@ -15,8 +15,9 @@ pub fn heading_md(
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
     name: &str,
+    parents: &Vec<String>,
 ) -> String {
-    let content = children_md(node, indent_size);
+    let content = children_md(node, indent_size, parents);
 
     if is_emtpy_element(content.as_str(), attrs_map) {
         return content;
@@ -51,30 +52,32 @@ pub fn inline_md(
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
     inline_style: InlineStyle,
-    parent_element: &str,
+    parents: &Vec<String>,
 ) -> String {
-    let mut content = children_md(node, indent_size);
+    let mut content = children_md(node, indent_size, parents);
     if is_emtpy_element(content.as_str(), attrs_map) {
         return content;
     }
 
     match inline_style {
-        InlineStyle::Bold => content = bold(content.as_str(), parent_element),
-        InlineStyle::Italic => content = italic(content.as_str(), parent_element),
+        InlineStyle::Bold => content = bold(content.as_str(), parents),
+        InlineStyle::Italic => content = italic(content.as_str(), parents),
         _ => {}
     }
     enclose(content.as_str(), indent_size, attrs_map, false)
 }
 /// b, strong
-fn bold(s: &str, parent_element: &str) -> String {
-    match parent_element {
+fn bold(s: &str, parents: &Vec<String>) -> String {
+    let parent_element = parents.last().unwrap();
+    match parent_element.as_str() {
         "i" | "em" => format!("**{}**", s),
         _ => format!(" **{}** ", s),
     }
 }
 /// i, em
-fn italic(s: &str, parent_element: &str) -> String {
-    match parent_element {
+fn italic(s: &str, parents: &Vec<String>) -> String {
+    let parent_element = parents.last().unwrap();
+    match parent_element.as_str() {
         "b" | "strong" => format!("_{}_", s),
         _ => format!(" _{}_ ", s),
     }
@@ -86,8 +89,9 @@ pub fn block_md(
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
     is_paragraph: bool,
+    parents: &Vec<String>,
 ) -> String {
-    let content = children_md(node, indent_size);
+    let content = children_md(node, indent_size, parents);
 
     if is_emtpy_element(content.as_str(), attrs_map) {
         return content;
@@ -113,6 +117,7 @@ pub fn list_md(
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
     is_ordered: bool,
+    parents: &Vec<String>,
 ) -> String {
     let prefix = if is_ordered { "1." } else { "-" };
 
@@ -126,7 +131,7 @@ pub fn list_md(
         let (child_name, child_attrs_map) = element_name_attrs_map(child);
         let child_content = match child_name.as_str() {
             "li" => {
-                let child_children_content = children_md(child, next_indent_size);
+                let child_children_content = children_md(child, next_indent_size, parents);
                 let is_last = i == node.children.borrow().len() - 1;
                 let new_line = if is_last { "" } else { "\n" };
                 let s = format!(
@@ -167,6 +172,7 @@ pub fn table_md(
     node: &Handle,
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
+    parents: &Vec<String>,
 ) -> String {
     let trs = find_trs(node);
     let mut content = String::new();
@@ -181,7 +187,10 @@ pub fn table_md(
             let name = element_name(td);
             let _ = match name.as_str() {
                 "th" | "td" => {
-                    let md = node_md(td, Some(INDENT_DEFAULT_SIZE), name.as_str())
+                    let name = name.clone();
+                    let mut parents = parents.clone();
+                    parents.push(name);
+                    let md = node_md(td, Some(INDENT_DEFAULT_SIZE), &parents)
                         .trim_end()
                         .to_string();
                     row = format!("{} {} |", row, md);
@@ -309,8 +318,9 @@ pub fn blockquote_md(
     node: &Handle,
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
+    parents: &Vec<String>,
 ) -> String {
-    let md_str = children_md(node, indent_size);
+    let md_str = children_md(node, indent_size, parents);
 
     if is_emtpy_element(md_str.as_str(), attrs_map) {
         return md_str;
