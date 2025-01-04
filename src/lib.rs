@@ -23,5 +23,5 @@ use crate::utils::node::parse_html;
 ///
 pub fn from_html(html: &str) -> String {
     let dom = parse_html(html);
-    components::node::node_md(&dom.document, None::<usize>)
+    components::node::root_node_md(&dom.document, None::<usize>)
 }

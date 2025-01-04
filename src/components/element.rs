@@ -51,6 +51,7 @@ pub fn inline_md(
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
     inline_style: InlineStyle,
+    parent_element: &str,
 ) -> String {
     let mut content = children_md(node, indent_size);
     if is_emtpy_element(content.as_str(), attrs_map) {
@@ -58,19 +59,25 @@ pub fn inline_md(
     }
 
     match inline_style {
-        InlineStyle::Bold => content = bold(content.as_str()),
-        InlineStyle::Italic => content = italic(content.as_str()),
+        InlineStyle::Bold => content = bold(content.as_str(), parent_element),
+        InlineStyle::Italic => content = italic(content.as_str(), parent_element),
         _ => {}
     }
     enclose(content.as_str(), indent_size, attrs_map, false)
 }
 /// b, strong
-fn bold(s: &str) -> String {
-    format!(" **{}** ", s)
+fn bold(s: &str, parent_element: &str) -> String {
+    match parent_element {
+        "i" | "em" => format!("**{}**", s),
+        _ => format!(" **{}** ", s),
+    }
 }
 /// i, em
-fn italic(s: &str) -> String {
-    format!(" *{}* ", s)
+fn italic(s: &str, parent_element: &str) -> String {
+    match parent_element {
+        "b" | "strong" => format!("_{}_", s),
+        _ => format!(" _{}_ ", s),
+    }
 }
 
 /// div, p
@@ -174,7 +181,7 @@ pub fn table_md(
             let name = element_name(td);
             let _ = match name.as_str() {
                 "th" | "td" => {
-                    let md = node_md(td, Some(INDENT_DEFAULT_SIZE))
+                    let md = node_md(td, Some(INDENT_DEFAULT_SIZE), name.as_str())
                         .trim_end()
                         .to_string();
                     row = format!("{} {} |", row, md);

@@ -7,8 +7,13 @@ use crate::utils::element::*;
 
 use crate::INDENT_DEFAULT_SIZE;
 
+/// entry point
+pub fn root_node_md(node: &Handle, indent_size: Option<usize>) -> String {
+    node_md(node, indent_size, "")
+}
+
 /// main process on node
-pub fn node_md(node: &Handle, indent_size: Option<usize>) -> String {
+pub fn node_md(node: &Handle, indent_size: Option<usize>, parent_element: &str) -> String {
     let ret = match node.data {
         NodeData::Text { ref contents } => {
             let contents_str = contents.borrow().to_string();
@@ -19,7 +24,7 @@ pub fn node_md(node: &Handle, indent_size: Option<usize>) -> String {
             ..
         } => {
             let attrs_map = attrs_map(node_attrs);
-            element_md(node, indent_size, &attrs_map)
+            element_md(node, indent_size, &attrs_map, parent_element)
         }
         NodeData::Document | NodeData::Doctype { .. } => children_md(node, None),
         // skip: comments
@@ -37,8 +42,13 @@ pub fn children_md(node: &Handle, indent_size: Option<usize>) -> String {
     } else {
         INDENT_DEFAULT_SIZE
     };
+    let name = element_name(node);
     for child in node.children.borrow().iter() {
-        ret = format!("{}{}", ret, node_md(child, Some(next_indent_size)));
+        ret = format!(
+            "{}{}",
+            ret,
+            node_md(child, Some(next_indent_size), name.as_str())
+        );
     }
     ret
 }
@@ -48,6 +58,7 @@ pub fn element_md(
     node: &Handle,
     indent_size: Option<usize>,
     attrs_map: &HashMap<String, String>,
+    parent_element: &str,
 ) -> String {
     let name = element_name(node);
     let ret = match name.as_str() {
@@ -56,9 +67,27 @@ pub fn element_md(
         }
         "div" => block_md(node, indent_size, attrs_map, false),
         "p" => block_md(node, indent_size, attrs_map, true),
-        "span" => inline_md(node, indent_size, attrs_map, InlineStyle::Regular),
-        "b" | "strong" => inline_md(node, indent_size, attrs_map, InlineStyle::Bold),
-        "i" | "em" => inline_md(node, indent_size, attrs_map, InlineStyle::Italic),
+        "span" => inline_md(
+            node,
+            indent_size,
+            attrs_map,
+            InlineStyle::Regular,
+            parent_element,
+        ),
+        "b" | "strong" => inline_md(
+            node,
+            indent_size,
+            attrs_map,
+            InlineStyle::Bold,
+            parent_element,
+        ),
+        "i" | "em" => inline_md(
+            node,
+            indent_size,
+            attrs_map,
+            InlineStyle::Italic,
+            parent_element,
+        ),
         "ul" => list_md(node, indent_size, attrs_map, false),
         "ol" => list_md(node, indent_size, attrs_map, true),
         "table" => table_md(node, indent_size, attrs_map),
