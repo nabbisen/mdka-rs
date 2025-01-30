@@ -9,6 +9,8 @@ use crate::utils::node::*;
 use crate::INDENT_DEFAULT_SIZE;
 use crate::INDENT_UNIT_SIZE;
 
+const CODE_LANGUAGE_CLASS_PREFIX: &str = "language-";
+
 /// h1, h2, h3, h4, h5, h6
 pub fn heading_md(
     node: &Handle,
@@ -286,12 +288,32 @@ pub fn preformatted_md(
 
     let prefix = if code_node.is_some() {
         let code_lang = match code_node.unwrap().data {
-            NodeData::Element { ref attrs, .. } => attrs
-                .borrow()
-                .iter()
-                .find(|attr| attr.name.local.to_string().as_str() == "lang")
-                .map(|attr| attr.value.to_string())
-                .unwrap_or(String::new()),
+            NodeData::Element { ref attrs, .. } => {
+                let vec = attrs.borrow().to_owned();
+                let class_list_attr = vec
+                    .iter()
+                    .find(|attr| attr.name.local.to_string().as_str() == "class");
+                match class_list_attr {
+                    Some(class_list_attr) => {
+                        let class_list_str = class_list_attr.value.to_string();
+                        let language_class = class_list_str
+                            .split(" ")
+                            .find(|class| class.starts_with(CODE_LANGUAGE_CLASS_PREFIX));
+                        match language_class {
+                            Some(language_class) => language_class
+                                .strip_prefix(CODE_LANGUAGE_CLASS_PREFIX)
+                                .unwrap()
+                                .to_owned(),
+                            _ => String::new(),
+                        }
+                    }
+                    _ => vec
+                        .iter()
+                        .find(|attr| attr.name.local.to_string().as_str() == "lang")
+                        .map(|attr| attr.value.to_string())
+                        .unwrap_or(String::new()),
+                }
+            }
             _ => String::new(),
         };
         format!("```{}", code_lang)
