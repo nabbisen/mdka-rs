@@ -1,58 +1,21 @@
 use std::collections::HashMap;
 
-use markup5ever_rcdom::{Handle, NodeData};
+use markup5ever_rcdom::Handle;
 
-use crate::components::element::*;
-use crate::utils::element::*;
+use crate::{nodes::node::children_md, INDENT_DEFAULT_SIZE};
 
-use crate::INDENT_DEFAULT_SIZE;
-
-/// entry point
-pub fn root_node_md(node: &Handle, indent_size: Option<usize>) -> String {
-    node_md(node, indent_size, &vec![])
-}
-
-/// main process on node
-pub fn node_md(node: &Handle, indent_size: Option<usize>, parents: &Vec<String>) -> String {
-    let ret = match node.data {
-        NodeData::Text { ref contents } => {
-            let contents_str = contents.borrow().to_string();
-            contents_str
-        }
-        NodeData::Element {
-            attrs: ref node_attrs,
-            ..
-        } => {
-            let attrs_map = attrs_map(node_attrs);
-            element_md(node, indent_size, &attrs_map, parents)
-        }
-        NodeData::Document | NodeData::Doctype { .. } => children_md(node, None, parents),
-        // skip: comments
-        NodeData::Comment { .. } => String::new(),
-        NodeData::ProcessingInstruction { .. } => unreachable!(),
-    };
-    ret
-}
-
-/// process on children of node
-pub fn children_md(node: &Handle, indent_size: Option<usize>, parents: &Vec<String>) -> String {
-    let mut ret = String::new();
-    let next_indent_size = if indent_size.is_some() {
-        indent_size.unwrap()
-    } else {
-        INDENT_DEFAULT_SIZE
-    };
-    let mut parents = parents.clone();
-    parents.push(element_name(node));
-    for child in node.children.borrow().iter() {
-        ret = format!(
-            "{}{}",
-            ret,
-            node_md(child, Some(next_indent_size), &parents)
-        );
-    }
-    ret
-}
+use super::{
+    tags::general_purpose::{block_md, inline_md},
+    tags::heading::heading_md,
+    tags::link::link_md,
+    tags::list::list_md,
+    tags::media::media_md,
+    tags::preformatted::preformatted_md,
+    tags::table::table_md,
+    tags::text_content::blockquote_md,
+    types::InlineStyle,
+    util::element_name,
+};
 
 /// process by element type
 pub fn element_md(
