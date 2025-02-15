@@ -6,8 +6,7 @@ use super::super::utils::{
     block_trailing_new_line, element_name, enclose, indent, is_emtpy_element,
 };
 
-use super::super::consts::INDENT_DEFAULT_SIZE;
-use crate::nodes::utils::inner_html;
+use super::super::{consts::INDENT_DEFAULT_SIZE, utils::inner_html};
 
 /// code language class prefix
 const CODE_LANGUAGE_CLASS_PREFIX: &str = "language-";

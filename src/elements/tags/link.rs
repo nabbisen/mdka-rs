@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use crate::nodes::utils::inner_text;
-
-use super::super::utils::{enclose, is_emtpy_element};
+use super::super::utils::{enclose, inner_text, is_emtpy_element};
 
 /// a
 pub fn link_md(
