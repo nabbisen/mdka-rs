@@ -2,8 +2,10 @@ use markup5ever_rcdom::{Handle, NodeData};
 
 use crate::elements::element::element_md;
 
-use crate::elements::util::{attrs_map, element_name};
-use crate::INDENT_DEFAULT_SIZE;
+use crate::elements::{
+    consts::INDENT_DEFAULT_SIZE,
+    utils::{attrs_map, element_name},
+};
 
 /// entry point
 pub fn root_node_md(node: &Handle, indent_size: Option<usize>) -> String {

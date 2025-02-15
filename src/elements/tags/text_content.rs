@@ -2,11 +2,12 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use crate::{
-    elements::util::block_trailing_new_line, nodes::node::children_md, INDENT_DEFAULT_SIZE,
-};
+use crate::{elements::utils::block_trailing_new_line, nodes::node::children_md};
 
-use super::super::util::{enclose, indent, is_emtpy_element};
+use super::super::{
+    consts::INDENT_DEFAULT_SIZE,
+    utils::{enclose, indent, is_emtpy_element},
+};
 
 /// b, strong
 pub fn bold(s: &str, parents: &Vec<String>) -> String {

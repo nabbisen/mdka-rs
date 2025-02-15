@@ -4,7 +4,7 @@ use markup5ever_rcdom::Handle;
 
 use crate::nodes::node::children_md;
 
-use super::super::util::{block_trailing_new_line, enclose, is_emtpy_element};
+use super::super::utils::{block_trailing_new_line, enclose, is_emtpy_element};
 
 /// h1, h2, h3, h4, h5, h6
 pub fn heading_md(

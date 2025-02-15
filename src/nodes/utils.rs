@@ -3,8 +3,7 @@ use html5ever::tendril::TendrilSink;
 use html5ever::{parse_document, ParseOpts};
 use markup5ever_rcdom::{Handle, NodeData, RcDom, SerializableHandle};
 
-use crate::elements::util::*;
-use crate::INDENT_DEFAULT_SIZE;
+use crate::elements::{consts::INDENT_DEFAULT_SIZE, utils::indent};
 
 /// parse html str
 pub fn parse_html(html: &str) -> RcDom {

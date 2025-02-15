@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use crate::{nodes::node::children_md, INDENT_DEFAULT_SIZE, INDENT_UNIT_SIZE};
+use crate::nodes::node::children_md;
 
-use super::super::util::{
-    block_trailing_new_line, element_name_attrs_map, enclose, indent, is_emtpy_element,
+use super::super::{
+    consts::{INDENT_DEFAULT_SIZE, INDENT_UNIT_SIZE},
+    utils::{block_trailing_new_line, element_name_attrs_map, enclose, indent, is_emtpy_element},
 };
 
 /// ul, ol, li

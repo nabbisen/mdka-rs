@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use super::super::util::{block_trailing_new_line, enclose, is_emtpy_element};
+use super::super::utils::{block_trailing_new_line, enclose, is_emtpy_element};
 
 /// img, audio, video
 pub fn media_md(

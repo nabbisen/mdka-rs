@@ -5,7 +5,7 @@ use markup5ever_rcdom::Handle;
 use crate::nodes::node::children_md;
 
 use super::super::types::InlineStyle;
-use super::super::util::{block_trailing_new_line, enclose, indent, is_emtpy_element};
+use super::super::utils::{block_trailing_new_line, enclose, indent, is_emtpy_element};
 use super::text_content::{bold, italic};
 
 /// span

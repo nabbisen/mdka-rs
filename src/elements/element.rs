@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use crate::{nodes::node::children_md, INDENT_DEFAULT_SIZE};
+use crate::nodes::node::children_md;
 
 use super::{
+    consts::INDENT_DEFAULT_SIZE,
     tags::general_purpose::{block_md, inline_md},
     tags::heading::heading_md,
     tags::link::link_md,
@@ -14,7 +15,7 @@ use super::{
     tags::table::table_md,
     tags::text_content::blockquote_md,
     types::InlineStyle,
-    util::element_name,
+    utils::element_name,
 };
 
 /// process by element type

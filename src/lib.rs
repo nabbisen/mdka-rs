@@ -1,12 +1,9 @@
 //! HTML to Markdown converter - Lightweight library written in Rust.
 
-const INDENT_DEFAULT_SIZE: usize = 0;
-const INDENT_UNIT_SIZE: usize = 4;
-
 mod elements;
 mod nodes;
 
-use nodes::{node::root_node_md, util::parse_html};
+use nodes::{node::root_node_md, utils::parse_html};
 
 /// Convert HTML to Markdown
 ///

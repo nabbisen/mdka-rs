@@ -2,12 +2,15 @@ use std::collections::HashMap;
 
 use markup5ever_rcdom::Handle;
 
-use super::super::util::{
-    block_trailing_new_line, class_text_align, element_name, element_name_attrs_map, enclose,
-    find_trs, indent, is_emtpy_element, style_text_align,
+use super::super::{
+    consts::INDENT_DEFAULT_SIZE,
+    utils::{
+        block_trailing_new_line, class_text_align, element_name, element_name_attrs_map, enclose,
+        find_trs, indent, is_emtpy_element, style_text_align,
+    },
 };
 
-use crate::{nodes::node::node_md, INDENT_DEFAULT_SIZE};
+use crate::nodes::node::node_md;
 
 /// table, thead, tbody, tr, th, td
 pub fn table_md(
