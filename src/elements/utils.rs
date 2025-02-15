@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use html5ever::Attribute;
 use markup5ever_rcdom::{Handle, NodeData};
 
-use crate::INDENT_DEFAULT_SIZE;
+use super::consts::INDENT_DEFAULT_SIZE;
 
 /// get name and attrs of element from node data
 pub fn element_name_attrs_map(node: &Handle) -> (String, HashMap<String, String>) {
