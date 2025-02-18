@@ -81,8 +81,10 @@ jobs:
         run: |
           mkdir -p "$HOME/${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
+          echo "target/${{ matrix.target }}/release:"
           ls "target/${{ matrix.target }}/release"
           mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "$HOME/${ARTIFACT_DIR}"
+          echo "$HOME/${ARTIFACT_DIR}:"
           ls "$HOME/${ARTIFACT_DIR}"
       
       - name: Upload Rust build artifacts
