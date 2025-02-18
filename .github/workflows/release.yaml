@@ -1,20 +1,8 @@
 name: Build
 
 on:
-  # todo: prd
-  #release:
-  #  types: [created]
-
-  #push:
-  #  tags:
-  #    - "*.*.*"
-  #pull_request:
-  #merge_group:
-
-  # todo: debug
-  push:
-    branches:
-      - ci-py-itg
+  release:
+    types: [created]
 
 permissions:
   #contents: write
