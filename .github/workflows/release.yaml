@@ -35,23 +35,23 @@ jobs:
           - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             tag: LINUX-aarch64-musl
-            ext: .tar.gz
+            binext: 
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
-            ext: .tar.gz
+            binext: 
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             tag: LINUX-x86_64-musl
-            ext: .tar.gz
+            binext: 
           - target: aarch64-apple-darwin
             os: macos-latest
             tag: MACOS-x86_64
-            ext: .tar.gz
+            binext: 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             tag: WINDOWS-x86_64-msvc
-            ext: .zip
+            binext: .exe
 
     steps:
       - name: Checkout repository
@@ -66,38 +66,15 @@ jobs:
       - name: Build the Rust extension
         run: |
           mkdir ${WORKDIR}
-          cargo build --release --locked --bin ${PRODUCT_BASENAME} --target ${WORKDIR}
-
-      - name: macOS artifact
-        if: matrix.target == 'aarch64-apple-darwin'
-        # flush disk cache to mitigate a bug with BSD tar on macOS where first 8MB of file are sometimes all NUL bytes.
-        # https://github.com/actions/cache/issues/403
-        # https://github.com/rust-lang/cargo/issues/8603
-        run: |
-          sudo /usr/sbin/purge
-      
-      - name: Linux / macOS artifacts
-        if: >
-          matrix.target == 'aarch64-unknown-linux-musl' ||
-          matrix.target == 'x86_64-unknown-linux-gnu' ||
-          matrix.target == 'x86_64-unknown-linux-musl' ||
-          matrix.target == 'aarch64-apple-darwin'
-        run: |
+          cargo build --release --target ${matrix.target} --bin ${PRODUCT_BASENAME} --target-dir ${WORKDIR} --locked
           cd ${WORKDIR}
           mkdir ${ARTIFACT_DIR}
-          tar czf ${ARTIFACT_DIR}/${ARTIFACT_ASSET_PREFIX}-${matrix.target}{matrix.ext} ${ARTIFACT_ASSET_PREFIX}-${matrix.target}
-      
-      - name: Windows artifact
-        if: matrix.target == 'x86_64-pc-windows-msvc'
-        run: |
-          cd ${WORKDIR}
-          mkdir ${ARTIFACT_DIR}/
-          7z a -w ${ARTIFACT_DIR}/${ARTIFACT_ASSET_PREFIX}-${matrix.target}{matrix.ext} ${ARTIFACT_ASSET_PREFIX}-${matrix.target}
+          mv ${PRODUCT_BASENAME}${matrix.binext} ${ARTIFACT_DIR}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
+          name: ${{ env.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}
           path: ${{ env.WORKDIR }}/${{ env.ARTIFACT_DIR }}/
 
 #      - name: Set up Python
