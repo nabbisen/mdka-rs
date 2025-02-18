@@ -16,6 +16,8 @@ permissions:
 
 env:
   PRODUCT_BASENAME: mdka
+  TAG: ${{ github.ref_name }}          # tag or branch name
+  ARTIFACT_DIR: ${{ github.run_id }}   # unique number
 
 jobs:
   build:
@@ -23,24 +25,24 @@ jobs:
     strategy:
       matrix:
         target:
-          - aarch64-unknown-linux-musl
+          # - aarch64-unknown-linux-musl
           - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
+          # - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
         include:
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            tag: LINUX-aarch64-musl
-            binext: 
+          # - target: aarch64-unknown-linux-musl
+          #   os: ubuntu-latest
+          #   tag: LINUX-aarch64-musl
+          #   binext: 
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
             binext: 
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            tag: LINUX-x86_64-musl
-            binext: 
+          # - target: x86_64-unknown-linux-musl
+          #   os: ubuntu-latest
+          #   tag: LINUX-x86_64-musl
+          #   binext: 
           - target: aarch64-apple-darwin
             os: macos-latest
             tag: MACOS-x86_64
@@ -49,11 +51,6 @@ jobs:
             os: windows-latest
             tag: WINDOWS-x86_64-msvc
             binext: .exe
-
-    env:
-      WORKDIR: ${{ github.run_id }}
-      ARTIFACT_ASSET_PREFIX: ${{ env.PRODUCT_BASENAME }}-${{ github.ref_name }}
-      ARTIFACT_DIR: artifact
 
     steps:
       - name: Checkout repository
@@ -65,24 +62,24 @@ jobs:
           toolchain: stable
           component: clippy
 
-      - name: Rust toolchain
-        if: >
-          matrix.target == 'aarch64-unknown-linux-musl' ||
-          matrix.target == 'x86_64-unknown-linux-musl'
-        run: |
-          rustup target add ${{ matrix.target }}
+      # - name: Rust toolchain
+      #   if: >
+      #     matrix.target == 'aarch64-unknown-linux-musl' ||
+      #     matrix.target == 'x86_64-unknown-linux-musl'
+      #   run: |
+      #     rustup target add ${{ matrix.target }}
 
       - name: Build the Rust extension
         run: |
-          mkdir -p ${WORKDIR}/${ARTIFACT_DIR}
+          mkdir ${ARTIFACT_DIR}
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
           mv target/release/${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${ARTIFACT_ASSET_PREFIX}-${{ matrix.target }}
-          path: ${WORKDIR}/${ARTIFACT_DIR}/
+          name: ${PRODUCT_BASENAME}-${TAG}-${{ matrix.target }}
+          path: ${ARTIFACT_DIR}/
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
