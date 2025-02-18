@@ -73,21 +73,21 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y musl-tools
           rustup target add ${{ matrix.target }}
-          mkdir -p ~/.cargo
-          echo "[${{ matrix.target }}]" >> ~/.cargo/config.toml
-          echo "linker = \"musl-gcc\"" >> ~/.cargo/config.toml
+          mkdir -p "$HOME/.cargo"
+          echo "[${{ matrix.target }}]" >> "$HOME/.cargo/config.toml"
+          echo "linker = \"musl-gcc\"" >> "$HOME/.cargo/config.toml"
 
       - name: Build the Rust extension
         run: |
-          mkdir "~/${ARTIFACT_DIR}"
+          mkdir ""$HOME/${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "~/${ARTIFACT_DIR}"
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" ""$HOME/${ARTIFACT_DIR}"
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: "${PRODUCT_BASENAME}-${TAG}-${{ matrix.target }}"
-          path: "~/${ARTIFACT_DIR}"
+          path: "$HOME/${ARTIFACT_DIR}"
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
