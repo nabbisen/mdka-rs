@@ -16,8 +16,8 @@ permissions:
 
 env:
   PRODUCT_BASENAME: mdka
-  WORKDIR: ${GITHUB_RUN_ID}
-  ARTIFACT_ASSET_PREFIX: ${PRODUCT_BASENAME}-${GITHUB_REF_NAME}
+  WORKDIR: ${{ env.GITHUB_RUN_ID }}
+  ARTIFACT_ASSET_PREFIX: ${{ env.PRODUCT_BASENAME }}-${{ env.GITHUB_REF_NAME }}
   ARTIFACT_DIR: artifact
 
 jobs:
@@ -72,11 +72,11 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir ${WORKDIR}
-          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --target-dir ${WORKDIR} --locked
-          cd ${WORKDIR}
-          mkdir ${ARTIFACT_DIR}
-          mv ${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
+          mkdir ${{ env.WORKDIR }}
+          cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --target-dir ${{ env.WORKDIR }} --locked
+          cd ${{ env.WORKDIR }}
+          mkdir ${{ env.ARTIFACT_DIR }}
+          mv ${{ env.PRODUCT_BASENAME }}${{ matrix.binext }} ${{ env.ARTIFACT_DIR }}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
