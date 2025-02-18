@@ -12,7 +12,7 @@ fn main() {
 }
 
 // [lib.crate-type] on target platform
-fn crate_type(_target: &str) -> String {
+fn crate_type(target: &str) -> String {
     // get the enabled features (e.g., pyo3)
     let features: Vec<String> = env::var("CARGO_FEATURES")
         .unwrap_or_default()
@@ -23,7 +23,7 @@ fn crate_type(_target: &str) -> String {
     // set the default crate-type
     let mut crate_type = String::from("rlib");
     // check if the "pyo3" feature is enabled
-    if features.contains(&"pyo3".to_string()) {
+    if target.contains("musl") || features.contains(&"pyo3".to_string()) {
         // set to "cdylib" if "pyo3" feature is enabled
         crate_type = "cdylib".to_string();
     }
