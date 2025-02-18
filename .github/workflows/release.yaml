@@ -79,20 +79,15 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir "${ARTIFACT_DIR}"
+          mkdir "~/${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}"
-          ls "target/${{ matrix.target }}/release/"
-          ls "target/${{ matrix.target }}/"
-          ls "target/"
-          ls "${ARTIFACT_DIR}"
-          ls ~
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "~/${ARTIFACT_DIR}"
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: "${PRODUCT_BASENAME}-${TAG}-${{ matrix.target }}"
-          path: "${ARTIFACT_DIR}/"
+          path: "~/${ARTIFACT_DIR}"
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
