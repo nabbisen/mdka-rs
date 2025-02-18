@@ -36,16 +36,17 @@ jobs:
     strategy:
       matrix:
         target:
-          - aarch64-unknown-linux-musl
+          #- aarch64-unknown-linux-musl
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
         include:
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            tag: LINUX-aarch64-musl
-            binext: 
+          # failed due to collect2 erorr in ld - cc
+          #- target: aarch64-unknown-linux-musl
+          #  os: ubuntu-latest
+          #  tag: LINUX-aarch64-musl
+          #  binext: 
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
@@ -75,7 +76,6 @@ jobs:
 
       - name: Rust toolchain
         if: >
-          matrix.target == 'aarch64-unknown-linux-musl' ||
           matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt update && sudo apt install -y musl-tools
@@ -86,20 +86,15 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir -p "${ARTIFACT_DIR}"
+          mkdir -p _artifact-dest
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}"
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" _artifact-dest
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
-        # must pass
-        env:
-          PRODUCT_BASENAME: ${{ env.PRODUCT_BASENAME }}
-          TAG: ${{ env.TAG }}
-          ARTIFACT_DIR: ${{ env.ARTIFACT_DIR }}
         with:
           name: "${PRODUCT_BASENAME}-${TAG}-${{ matrix.target }}"
-          path: "${ARTIFACT_DIR}/*"
+          path: "_artifact-dest/*"
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
