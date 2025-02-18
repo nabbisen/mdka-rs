@@ -63,6 +63,13 @@ jobs:
           toolchain: stable
           component: clippy
 
+      - name: Rust toolchain
+        if: >
+          matrix.target == 'aarch64-unknown-linux-musl' ||
+          matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          rustup target add ${{ matrix.target }}
+
       - name: Build the Rust extension
         run: |
           mkdir ${WORKDIR}
