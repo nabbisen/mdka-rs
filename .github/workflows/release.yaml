@@ -17,7 +17,7 @@ permissions:
 env:
   PRODUCT_BASENAME: mdka
   WORKDIR: ${{ github.run_id }}
-  ARTIFACT_ASSET_PREFIX: ${{ env.PRODUCT_BASENAME }}-${{ github.ref_name }}
+  ARTIFACT_ASSET_PREFIX: ${PRODUCT_BASENAME}-${{ github.ref_name }}
   ARTIFACT_DIR: artifact
 
 jobs:
