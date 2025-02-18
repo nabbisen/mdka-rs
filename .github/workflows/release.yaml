@@ -54,9 +54,9 @@ jobs:
             ext: .zip
 
     env:
-      WORKDIR: ${{ vars.WORKDIR }}
-      ARTIFACT_ASSET_PREFIX: ${{ vars.ARTIFACT_ASSET_PREFIX }}
-      ARTIFACT_DIR: ${{ vars.ARTIFACT_DIR }}
+      WORKDIR: ${{ env.WORKDIR }}
+      ARTIFACT_ASSET_PREFIX: ${{ env.ARTIFACT_ASSET_PREFIX }}
+      ARTIFACT_DIR: ${{ env.ARTIFACT_DIR }}
 
     steps:
       - name: Checkout repository
