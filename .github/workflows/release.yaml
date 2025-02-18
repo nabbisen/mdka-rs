@@ -93,7 +93,7 @@ jobs:
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_BASENAME }}#${{ matrix.target }}@${{ env.TAG }}
+          name: ${{ env.PRODUCT_BASENAME }}@${{ matrix.target }}#${{ env.TAG }}
           path: ${{ env.ARTIFACT_DIR }}/*
 
 #      - name: Set up Python
