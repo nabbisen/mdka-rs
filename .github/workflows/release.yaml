@@ -53,11 +53,6 @@ jobs:
             tag: WINDOWS-x86_64-msvc
             ext: .zip
 
-    env:
-      WORKDIR: ${{ env.WORKDIR }}
-      ARTIFACT_ASSET_PREFIX: ${{ env.ARTIFACT_ASSET_PREFIX }}
-      ARTIFACT_DIR: ${{ env.ARTIFACT_DIR }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
