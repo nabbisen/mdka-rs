@@ -1,0 +1,175 @@
+name: Build
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  #contents: write
+  contents: read
+  id-token: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PRODUCT_BASENAME: mdka
+  TAG: ${{ github.ref_name }}          # tag or branch name
+  ARTIFACT_DIR: ${{ github.run_id }}   # unique number
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        target:
+          #- aarch64-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
+        include:
+          # failed due to collect2 erorr in ld - cc
+          #- target: aarch64-unknown-linux-musl
+          #  os: ubuntu-latest
+          #  tag: LINUX-aarch64-musl
+          #  binext: 
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            tag: LINUX-x86_64-gnu
+            binext: 
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-x86_64-musl
+            binext: 
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            tag: MACOS-x86_64
+            binext: 
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            tag: WINDOWS-x86_64-msvc
+            binext: .exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          component: clippy
+
+      - name: Rust toolchain
+        if: >
+          matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt update && sudo apt install -y musl-tools
+          rustup target add ${{ matrix.target }}
+          mkdir -p "$HOME/.cargo"
+          echo "[${{ matrix.target }}]" >> "$HOME/.cargo/config.toml"
+          echo "linker = \"musl-gcc\"" >> "$HOME/.cargo/config.toml"
+
+      - name: Build the Rust extension
+        run: |
+          mkdir -p "${ARTIFACT_DIR}/${PRODUCT_BASENAME}#${{ env.TAG }}"
+          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}/${PRODUCT_BASENAME}#${{ env.TAG }}/"
+      
+      - name: Upload Rust build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PRODUCT_BASENAME }}@${{ matrix.tag }}#${{ env.TAG }}
+          path: ${{ env.ARTIFACT_DIR }}/*
+
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: "3.13"
+#
+#      - name: Install dependencies
+#        run: |
+#          python -m pip install --upgrade pip build setuptools
+#
+#      - name: Build Python package (using setuptools)
+#        run: python -m build  # This generates `.whl` and `.tar.gz` files in the `dist/` directory
+#
+#      - name: Upload Python build artifacts
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: python-package-${{ matrix.os }}
+#          path: dist/*  # Uploads the contents of `dist/` (wheel, tar.gz, etc.)
+#
+#      - name: Create and package extra files (config, test data)
+#        run: |
+#          mkdir -p release-package
+#          cp path/to/config/example.conf release-package/  # Example config file
+#          cp -r path/to/test-data/* release-package/       # Test data files
+#          
+#          # Include Rust executables, Python artifacts (if necessary), and extra files
+#          cp target/release/* release-package/  # Copy Rust build artifacts (executables)
+#
+#          # Create a .tar.gz or .zip file of the release package
+#          tar -czvf release-package.tar.gz -C release-package .  # .tar.gz format
+#          # Alternatively, for .zip:
+#          # zip -r release-package.zip release-package/*
+#
+#      - name: Upload release package to GitHub
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: release-package-${{ matrix.os }}
+#          path: release-package.tar.gz  # Upload the .tar.gz file (or .zip if you choose that format)
+#
+#  release:
+#    runs-on: ubuntu-latest  # Release will be done only on Ubuntu (or you can adjust)
+#    needs: build  # Ensures the release job runs only after the build job completes successfully
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: "3.x"
+#
+#      - name: Install dependencies
+#        run: |
+#          python -m pip install --upgrade pip build setuptools
+#
+#      - name: Create GitHub release
+#        id: create_release
+#        uses: gh action to create the release from the tag
+#        with:
+#          tag_name: ${{ github.ref }}
+#          release_name: Release ${{ github.ref }}
+#          body: 'Release of the Python package with built files.'
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Publish to PyPI
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          password: ${{ secrets.PYPI_API_TOKEN }}
+#
+#      - name: Upload Rust build artifacts to GitHub
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          files: target/release/*  # Uploads the built Rust binaries from `target/release/`
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Upload Python build artifacts to GitHub
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          files: dist/*  # Uploads the built Python package files (whl, tar.gz, etc.) from `dist/`
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Upload extended release package to GitHub
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          files: release-package.tar.gz  # Uploads the .tar.gz (or .zip) file created with extra files
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
