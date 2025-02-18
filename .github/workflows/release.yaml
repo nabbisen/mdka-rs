@@ -8,9 +8,13 @@ on:
   #push:
   #  tags:
   #    - "*.*.*"
-  # todo: debug only
-  pull_request:
-  merge_group:
+  #pull_request:
+  #merge_group:
+
+  # todo: debug
+  push:
+    branches:
+      - ci-py-itg
 
 permissions:
   #contents: write
