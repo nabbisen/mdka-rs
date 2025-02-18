@@ -95,7 +95,7 @@ jobs:
           7z a -w ${ARTIFACT_DIR}/${ARTIFACT_ASSET_PREFIX}-${matrix.target}{matrix.ext} ${ARTIFACT_ASSET_PREFIX}-${matrix.target}
       
       - name: Upload Rust build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
           path: ${{ env.WORKDIR }}/${{ env.ARTIFACT_DIR }}/
