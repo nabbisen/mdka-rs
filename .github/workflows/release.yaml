@@ -73,7 +73,7 @@ jobs:
         run: |
           mkdir ${ARTIFACT_DIR}
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv target/release/${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
+          mv target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
