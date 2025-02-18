@@ -97,8 +97,8 @@ jobs:
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
-          path: ${{ WORKDIR }}/${{ ARTIFACT_DIR }}/
+          name: ${{ variables.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
+          path: ${{ variables.WORKDIR }}/${{ variables.ARTIFACT_DIR }}/
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
