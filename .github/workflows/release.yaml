@@ -52,7 +52,7 @@ jobs:
 
     env:
       WORKDIR: ${{ github.run_id }}
-      ARTIFACT_ASSET_PREFIX: ${PRODUCT_BASENAME}-${{ github.ref_name }}
+      ARTIFACT_ASSET_PREFIX: ${{ env.PRODUCT_BASENAME }}-${{ github.ref_name }}
       ARTIFACT_DIR: artifact
 
     steps:
@@ -74,11 +74,9 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir ${WORKDIR}
-          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --target-dir ${WORKDIR} --locked
-          cd ${WORKDIR}
-          mkdir ${ARTIFACT_DIR}
-          mv ${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
+          mkdir -p ${WORKDIR}/${ARTIFACT_DIR}
+          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
+          mv target/release/${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
