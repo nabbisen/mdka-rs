@@ -12,7 +12,7 @@ fn main() {
 }
 
 // [lib.crate-type] on target platform
-fn crate_type(target: &str) -> String {
+fn crate_type(_target: &str) -> String {
     // get the enabled features (e.g., pyo3)
     let features: Vec<String> = env::var("CARGO_FEATURES")
         .unwrap_or_default()
@@ -27,16 +27,16 @@ fn crate_type(target: &str) -> String {
         // set to "cdylib" if "pyo3" feature is enabled
         crate_type = "cdylib".to_string();
     }
-    // if targeting musl (either x86_64 or aarch64), set crate-type to staticlib
-    if target.contains("musl") {
-        // override crate-type for musl
-        crate_type = "staticlib".to_string();
-    }
-    // if both pyo3 and musl are enabled, prefer staticlib for musl
-    if features.contains(&"pyo3".to_string()) && target.contains("musl") {
-        // musl with pyo3 should use staticlib
-        crate_type = "staticlib".to_string();
-    }
+    // // if targeting musl (either x86_64 or aarch64), set crate-type to staticlib
+    // if target.contains("musl") {
+    //     // override crate-type for musl
+    //     crate_type = "staticlib".to_string();
+    // }
+    // // if both pyo3 and musl are enabled, prefer staticlib for musl
+    // if features.contains(&"pyo3".to_string()) && target.contains("musl") {
+    //     // musl with pyo3 should use staticlib
+    //     crate_type = "staticlib".to_string();
+    // }
     crate_type
 }
 
