@@ -66,10 +66,10 @@ jobs:
       - name: Build the Rust extension
         run: |
           mkdir ${WORKDIR}
-          cargo build --release --target ${matrix.target} --bin ${PRODUCT_BASENAME} --target-dir ${WORKDIR} --locked
+          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --target-dir ${WORKDIR} --locked
           cd ${WORKDIR}
           mkdir ${ARTIFACT_DIR}
-          mv ${PRODUCT_BASENAME}${matrix.binext} ${ARTIFACT_DIR}
+          mv ${PRODUCT_BASENAME}${{ matrix.binext }} ${ARTIFACT_DIR}
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
