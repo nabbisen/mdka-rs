@@ -16,6 +16,17 @@ Designed with in mind:
 - Easy usage
 
 ## Usage
+
+### Executable
+
+[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
+
+```
+$ ./mdka <html-text> # not html file path
+```
+
+### Development with Rust and cargo
+
 `Cargo.toml`
 
 ```toml
