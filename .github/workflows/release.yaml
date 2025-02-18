@@ -1,13 +1,16 @@
 name: Build
 
 on:
-  release:
-    types: [created]
+  # todo: prd
+  #release:
+  #  types: [created]
+
   #push:
   #  tags:
   #    - "*.*.*"
-  #pull_request:
-  #merge_group:
+  # todo: debug only
+  pull_request:
+  merge_group:
 
 permissions:
   #contents: write
