@@ -79,9 +79,9 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir ""$HOME/${ARTIFACT_DIR}"
+          mkdir "$HOME/${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" ""$HOME/${ARTIFACT_DIR}"
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "$HOME/${ARTIFACT_DIR}"
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
