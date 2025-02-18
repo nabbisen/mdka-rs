@@ -36,9 +36,9 @@ jobs:
     strategy:
       matrix:
         target:
-          # - aarch64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
           - x86_64-unknown-linux-gnu
-          # - x86_64-unknown-linux-musl
+          - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
         include:
@@ -86,19 +86,19 @@ jobs:
 
       - name: Build the Rust extension
         run: |
-          mkdir -p "$HOME/${ARTIFACT_DIR}"
+          mkdir -p "${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
           echo "target/${{ matrix.target }}/release:"
           ls "target/${{ matrix.target }}/release"
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "$HOME/${ARTIFACT_DIR}"
-          echo "$HOME/${ARTIFACT_DIR}:"
-          ls "$HOME/${ARTIFACT_DIR}"
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}"
+          echo "${ARTIFACT_DIR}:"
+          ls "${ARTIFACT_DIR}"
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: "${PRODUCT_BASENAME}-${TAG}-${{ matrix.target }}"
-          path: "$HOME/${ARTIFACT_DIR}/*"
+          path: "${ARTIFACT_DIR}/*"
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
