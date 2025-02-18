@@ -71,6 +71,9 @@ jobs:
 
       - name: Build the Rust extension
         run: |
+          echo "ARTIFACT_DIR=${ARTIFACT_DIR}"
+          echo "PRODUCT_BASENAME=${PRODUCT_BASENAME}"
+          echo "TAG=${TAG}"
           mkdir "${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
           mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}"
