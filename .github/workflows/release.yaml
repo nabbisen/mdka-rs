@@ -14,6 +14,10 @@ permissions:
   contents: read
   id-token: write
 
+defaults:
+  run:
+    shell: bash
+
 env:
   PRODUCT_BASENAME: mdka
   TAG: ${{ github.ref_name }}          # tag or branch name
@@ -31,18 +35,18 @@ jobs:
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
         include:
-          # - target: aarch64-unknown-linux-musl
-          #   os: ubuntu-latest
-          #   tag: LINUX-aarch64-musl
-          #   binext: 
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-aarch64-musl
+            binext: 
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
             binext: 
-          # - target: x86_64-unknown-linux-musl
-          #   os: ubuntu-latest
-          #   tag: LINUX-x86_64-musl
-          #   binext: 
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-x86_64-musl
+            binext: 
           - target: aarch64-apple-darwin
             os: macos-latest
             tag: MACOS-x86_64
@@ -62,18 +66,19 @@ jobs:
           toolchain: stable
           component: clippy
 
-      # - name: Rust toolchain
-      #   if: >
-      #     matrix.target == 'aarch64-unknown-linux-musl' ||
-      #     matrix.target == 'x86_64-unknown-linux-musl'
-      #   run: |
-      #     rustup target add ${{ matrix.target }}
+      - name: Rust toolchain
+        if: >
+          matrix.target == 'aarch64-unknown-linux-musl' ||
+          matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt update && sudo apt install -y musl-tools
+          rustup target add ${{ matrix.target }}
+          mkdir -p ~/.cargo
+          echo "[${{ matrix.target }}]" >> ~/.cargo/config.toml
+          echo "linker = \"musl-gcc\"" >> ~/.cargo/config.toml
 
       - name: Build the Rust extension
         run: |
-          echo "ARTIFACT_DIR=${ARTIFACT_DIR}"
-          echo "PRODUCT_BASENAME=${PRODUCT_BASENAME}"
-          echo "TAG=${TAG}"
           mkdir "${ARTIFACT_DIR}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
           mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}"
