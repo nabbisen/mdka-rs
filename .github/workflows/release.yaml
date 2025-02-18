@@ -16,9 +16,6 @@ permissions:
 
 env:
   PRODUCT_BASENAME: mdka
-  WORKDIR: ${{ github.run_id }}
-  ARTIFACT_ASSET_PREFIX: ${PRODUCT_BASENAME}-${{ github.ref_name }}
-  ARTIFACT_DIR: artifact
 
 jobs:
   build:
@@ -52,6 +49,11 @@ jobs:
             os: windows-latest
             tag: WINDOWS-x86_64-msvc
             binext: .exe
+
+    env:
+      WORKDIR: ${{ github.run_id }}
+      ARTIFACT_ASSET_PREFIX: ${{ env.PRODUCT_BASENAME }}-${{ github.ref_name }}
+      ARTIFACT_DIR: artifact
 
     steps:
       - name: Checkout repository
