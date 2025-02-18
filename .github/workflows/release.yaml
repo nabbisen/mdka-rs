@@ -24,33 +24,34 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      target:
-        - aarch64-unknown-linux-musl
-        - x86_64-unknown-linux-gnu
-        - x86_64-unknown-linux-musl
-        - aarch64-apple-darwin
-        - x86_64-pc-windows-msvc
-      include:
-        - target: aarch64-unknown-linux-musl
-          os: ubuntu-latest
-          tag: LINUX-aarch64-musl
-          ext: .tar.gz
-        - target: x86_64-unknown-linux-gnu
-          os: ubuntu-latest
-          tag: LINUX-x86_64-gnu
-          ext: .tar.gz
-        - target: x86_64-unknown-linux-musl
-          os: ubuntu-latest
-          tag: LINUX-x86_64-musl
-          ext: .tar.gz
-        - target: aarch64-apple-darwin
-          os: macos-latest
-          tag: MACOS-x86_64
-          ext: .tar.gz
-        - target: x86_64-pc-windows-msvc
-          os: windows-latest
-          tag: WINDOWS-x86_64-msvc
-          ext: .zip
+      matrix:
+        target:
+          - aarch64-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
+        include:
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-aarch64-musl
+            ext: .tar.gz
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            tag: LINUX-x86_64-gnu
+            ext: .tar.gz
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-x86_64-musl
+            ext: .tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            tag: MACOS-x86_64
+            ext: .tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            tag: WINDOWS-x86_64-msvc
+            ext: .zip
 
     steps:
       - name: Checkout repository
