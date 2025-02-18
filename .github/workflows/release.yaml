@@ -53,6 +53,11 @@ jobs:
             tag: WINDOWS-x86_64-msvc
             ext: .zip
 
+    env:
+      WORKDIR: ${{ vars.WORKDIR }}
+      ARTIFACT_ASSET_PREFIX: ${{ vars.ARTIFACT_ASSET_PREFIX }}
+      ARTIFACT_DIR: ${{ vars.ARTIFACT_DIR }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -97,8 +102,8 @@ jobs:
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ variables.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
-          path: ${{ variables.WORKDIR }}/${{ variables.ARTIFACT_DIR }}/
+          name: ${{ env.ARTIFACT_ASSET_PREFIX }}-${{ matrix.target }}${{ matrix.ext }}
+          path: ${{ env.WORKDIR }}/${{ env.ARTIFACT_DIR }}/
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
