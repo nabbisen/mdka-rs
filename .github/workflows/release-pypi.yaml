@@ -64,12 +64,20 @@ jobs:
       - name: Install maturin
         run: |
           python -m venv venv
-          source venv/bin/activate
+          if [ -d "venv/Scripts" ]; then
+            source venv/Scripts/activate
+          else
+            source venv/bin/activate
+          fi
           pip install -U pip maturin
 
       - name: Build Python wheel
         run: |
-          source venv/bin/activate
+          if [ -d "venv/Scripts" ]; then
+            source venv/Scripts/activate
+          else
+            source venv/bin/activate
+          fi
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
       - name: Prepare artifacts
         run: |
