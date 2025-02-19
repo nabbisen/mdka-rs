@@ -61,14 +61,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+      - name: Install maturin
+        run: |
+          python -m venv .venv
+          if [ -d ".venv/Scripts" ]; then
+            source ".venv/Scripts/activate"
+          else
+            source ".venv/bin/activate"
+          fi
+          pip install maturin # caution: pip install -U pip failed in windows vm
 
       - name: Build Python wheel
         run: |
-          pip install maturin # caution: pip install -U pip failed in windows vm
-          maturin build --release -F pyo3 --target ${{ matrix.target }} --locked -i python3
+          if [ -d ".venv/Scripts" ]; then
+            source ".venv/Scripts/activate"
+          else
+            source ".venv/bin/activate"
+          fi
+          maturin build --release -F pyo3 --target ${{ matrix.target }} --locked -i python
       
       - name: Prepare artifacts
         run: |
