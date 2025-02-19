@@ -1,4 +1,4 @@
-name: Release Executable
+name: Executable Release
 
 on:
   release:
