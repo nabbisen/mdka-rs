@@ -69,6 +69,7 @@ jobs:
 
       - name: Build Python wheel
         run: |
+          source venv/bin/activate
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
       - name: Prepare artifacts
         run: |
