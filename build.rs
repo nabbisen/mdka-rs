@@ -12,7 +12,7 @@ fn main() {
 }
 
 // [lib.crate-type] on target platform
-fn crate_type(target: &str) -> String {
+fn crate_type(_target: &str) -> String {
     // get the enabled features (e.g., pyo3)
     let features: Vec<String> = env::var("CARGO_FEATURES")
         .unwrap_or_default()
