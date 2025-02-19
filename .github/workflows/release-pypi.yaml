@@ -1,0 +1,79 @@
+name: Release Executable
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: read
+  # used to sign the release artifacts
+  id-token: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PRODUCT_BASENAME: mdka
+  TAG: ${{ github.ref_name }}          # tag or branch name
+  ARTIFACT_PATH: ${{ github.run_id }}  # unique number
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # - name: Linux-aarch64-musl
+          #   target: aarch64-unknown-linux-musl
+          #   os: ubuntu-latest
+          - name: Linux-x64-gnu
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            tag: LINUX-x86_64-gnu
+          # - name: Linux-x64-musl
+          #   target: x86_64-unknown-linux-musl
+          #   os: ubuntu-latest
+          - name: macOS-aarch64
+            target: aarch64-apple-darwin
+            os: macos-latest
+          - name: Windows-x64
+            target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+      
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            "$HOME/.cargo/registry"
+            "$HOME/.cargo/git"
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Build Python wheel
+        run: |
+          pip install maturin # caution: pip install -U pip failed in windows vm
+          maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
+      
+      - name: Prepare artifacts
+        run: |
+          mv "target/wheels" "${ARTIFACT_PATH}"
+      
+      - name: Upload maturin build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pywhl-${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}#${{ env.TAG }}
+          path: ${{ env.ARTIFACT_PATH }}/wheels/*

@@ -16,6 +16,17 @@ Designed with in mind:
 - Easy usage
 
 ## Usage
+
+### Executable
+
+[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
+
+```
+$ ./mdka <html-text> # not html file path
+```
+
+### Development with Rust and cargo
+
 `Cargo.toml`
 
 ```toml
@@ -40,6 +51,28 @@ fn awesome_fn() {
     // 
 }
 ```
+
+### Python integration
+
+As of 1.3.1, this library can be called from Python script.
+[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer `.whl` for multiple platforms.
+
+Install:
+
+```toml
+$ pip install ./${RELEASES_ARTIFACT_FOR_PLATFORM}.whl
+```
+
+`awesome.py`
+
+```python
+from mdka import md_from_html
+
+print(md_from_html("<p>Hello, world.</p>"))
+# Hello, world.
+# 
+```
+
 
 ## Acknowledgements
 
