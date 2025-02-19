@@ -63,20 +63,20 @@ jobs:
 
       - name: Install maturin
         run: |
-          python -m venv venv
-          if [ -d "venv/Scripts" ]; then
-            source venv/Scripts/activate
+          python -m venv .venv
+          if [ -d ".venv/Scripts" ]; then
+            source ".venv/Scripts/activate"
           else
-            source venv/bin/activate
+            source ".venv/bin/activate"
           fi
-          pip install -U pip maturin
+          pip install maturin # caution: pip install -U pip failed in windows vm
 
       - name: Build Python wheel
         run: |
-          if [ -d "venv/Scripts" ]; then
-            source venv/Scripts/activate
+          if [ -d ".venv/Scripts" ]; then
+            source ".venv/Scripts/activate"
           else
-            source venv/bin/activate
+            source ".venv/bin/activate"
           fi
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
       - name: Prepare artifacts
