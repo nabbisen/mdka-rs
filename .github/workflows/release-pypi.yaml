@@ -27,16 +27,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Linux-aarch64-musl
-            target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
+          # - name: Linux-aarch64-musl
+          #   target: aarch64-unknown-linux-musl
+          #   os: ubuntu-latest
           - name: Linux-x64-gnu
             target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
-          - name: Linux-x64-musl
-            target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
+          # - name: Linux-x64-musl
+          #   target: x86_64-unknown-linux-musl
+          #   os: ubuntu-latest
           - name: macOS-aarch64
             target: aarch64-apple-darwin
             os: macos-latest
@@ -73,12 +73,10 @@ jobs:
       
       - name: Prepare artifacts
         run: |
-          ARTIFACT_ROOT_DIR=${PRODUCT_BASENAME}#${{ env.TAG }}
-          mkdir -p "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}"
-          mv "target/wheels" "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}"
+          mv "target/wheels" "${ARTIFACT_PATH}"
       
       - name: Upload maturin build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: pywhl-${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}#${{ env.TAG }}
-          path: ${{ env.ARTIFACT_PATH }}/*
+          path: ${{ env.ARTIFACT_PATH }}/wheels/*
