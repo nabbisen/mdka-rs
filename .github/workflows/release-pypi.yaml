@@ -61,6 +61,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
       - name: Install maturin
         run: |
           python -m venv .venv
@@ -79,6 +83,7 @@ jobs:
             source ".venv/bin/activate"
           fi
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
+      
       - name: Prepare artifacts
         run: |
           ARTIFACT_ROOT_DIR=${PRODUCT_BASENAME}#${{ env.TAG }}
