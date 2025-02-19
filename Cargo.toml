@@ -15,7 +15,7 @@ rust-version = "1.74.0"
 
 [lib]
 name = "mdka"
-crate-type = ["rlib"] # defined due to target platform by build.rs
+crate-type = ["rlib", "cdylib"]
 
 [profile.release]     # shrink executable size
 opt-level = "z"
