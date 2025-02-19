@@ -19,40 +19,35 @@ defaults:
 env:
   PRODUCT_BASENAME: mdka
   TAG: ${{ github.ref_name }}          # tag or branch name
-  ARTIFACT_DIR: ${{ github.run_id }}   # unique number
+  ARTIFACT_PATH: ${{ github.run_id }}  # unique number
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        target:
-          - aarch64-unknown-linux-musl
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-          - aarch64-apple-darwin
-          - x86_64-pc-windows-msvc
         include:
-          - target: aarch64-unknown-linux-musl
+          - name: Linux-aarch64-musl
+            target: aarch64-unknown-linux-musl
             os: ubuntu-latest
-            tag: LINUX-aarch64-musl
-            binext: 
-          - target: x86_64-unknown-linux-gnu
+            bin_ext: 
+          - name: Linux-x64-gnu
+            target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
-            binext: 
-          - target: x86_64-unknown-linux-musl
+            bin_ext: 
+          - name: Linux-x64-musl
+            target: x86_64-unknown-linux-musl
             os: ubuntu-latest
-            tag: LINUX-x86_64-musl
-            binext: 
-          - target: aarch64-apple-darwin
+            bin_ext: 
+          - name: macOS-aarch64
+            target: aarch64-apple-darwin
             os: macos-latest
-            tag: MACOS-x86_64
-            binext: 
-          - target: x86_64-pc-windows-msvc
+            bin_ext: 
+          - name: Windows-x64
+            target: x86_64-pc-windows-msvc
             os: windows-latest
-            tag: WINDOWS-x86_64-msvc
-            binext: .exe
+            bin_ext: .exe
 
     steps:
       - name: Checkout repository
@@ -71,17 +66,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Build the Rust extension
+      - name: Build Rust executable
         run: |
-          mkdir -p "${ARTIFACT_DIR}/${PRODUCT_BASENAME}#${{ env.TAG }}"
           cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
-          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.binext }}" "${ARTIFACT_DIR}/${PRODUCT_BASENAME}#${{ env.TAG }}/"
+
+      - name: Prepare artifacts
+        run: |
+          ARTIFACT_ROOT_DIR=${PRODUCT_BASENAME}#${{ env.TAG }}
+          mkdir -p "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}"
+          mv "target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.bin_ext }}" "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}/"
       
       - name: Upload Rust build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_BASENAME }}@${{ matrix.tag }}#${{ env.TAG }}
-          path: ${{ env.ARTIFACT_DIR }}/*
+          name: ${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}#${{ env.TAG }}
+          path: ${{ env.ARTIFACT_PATH }}/*
 
 #      - name: Set up Python
 #        uses: actions/setup-python@v5
