@@ -83,7 +83,7 @@ jobs:
         run: |
           ARTIFACT_ROOT_DIR=${PRODUCT_BASENAME}#${{ env.TAG }}
           mkdir -p "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}"
-          mv "target/wheels/*" "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}/"
+          mv "target/wheels" "${ARTIFACT_PATH}/${ARTIFACT_ROOT_DIR}"
       
       - name: Upload maturin build artifacts
         uses: actions/upload-artifact@v4
