@@ -10,7 +10,7 @@ on:
   #   types: [created]
   push:
     branches:
-      - ci-py-itg
+      - dev
 
 permissions:
   contents: read
