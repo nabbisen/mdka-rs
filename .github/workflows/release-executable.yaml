@@ -5,9 +5,7 @@ on:
     types: [created]
 
 permissions:
-  contents: read
-  # used to sign the release artifacts
-  id-token: write
+  contents: write
 
 defaults:
   run:
@@ -15,8 +13,8 @@ defaults:
 
 env:
   PRODUCT_BASENAME: mdka
-  TAG: ${{ github.ref_name }}          # tag or branch name
-  WORKDIR: ${{ github.run_id }}  # unique number
+  TAG: ${{ github.ref_name }}        # tag or branch name
+  JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
 
 jobs:
   build:
@@ -44,7 +42,7 @@ jobs:
             target: aarch64-apple-darwin
             os: macos-latest
             bin_ext: 
-            asset_ext: .tar.gz
+            asset_ext: .zip
           - name: Windows-x64
             target: x86_64-pc-windows-msvc
             os: windows-latest
@@ -71,20 +69,19 @@ jobs:
 
       - name: Build Rust executable
         run: |
-          cargo build --release --target ${{ matrix.target }} --bin ${PRODUCT_BASENAME} --locked
+          cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
 
       # [ release asset ]
       - name: Prepare for release asset
         run: |
-          BUILT_FILEPATH=target/${{ matrix.target }}/release/${PRODUCT_BASENAME}${{ matrix.bin_ext }}
+          BUILT_FILEPATH=target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
           RELEASE_ASSET_BASENAME=${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}
-          RELEASE_SRC=${WORKDIR}/${RELEASE_ASSET_BASENAME}
-          RELEASE_ASSET=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}
-
-          mkdir -p "${RELEASE_SRC}"
-          mv "${BUILT_FILEPATH}" "${RELEASE_SRC}/"
-          echo "RELEASE_SRC=${RELEASE_SRC}" >> $GITHUB_ENV
-          echo "RELEASE_ASSET=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}" >> $GITHUB_ENV
+          RELEASE_SRC_DIR=${RELEASE_ASSET_BASENAME}
+          RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}
+          mkdir -p "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}"
+          mv "${BUILT_FILEPATH}" "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}/"
+          echo "RELEASE_SRC_DIR=${RELEASE_SRC_DIR}" >> $GITHUB_ENV
+          echo "RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}" >> $GITHUB_ENV
 
       # BSD tar on macOS: first 8MB of the file are sometimes all NUL byte
       # refs: https://github.com/actions/cache/issues/403 , https://github.com/rust-lang/cargo/issues/8603
@@ -94,14 +91,22 @@ jobs:
           sudo /usr/sbin/purge
       
       - name: Create archive as release asset - Linux / macOS
-        if: matrix.target != 'x86_64-pc-windows-msvc'
+        if: >
+          matrix.target != 'aarch64-apple-darwin' &&
+          matrix.target != 'x86_64-pc-windows-msvc'
         run: |
-          tar czf ${RELEASE_ASSET} "${RELEASE_SRC}"
+          cd "${{ env.JOB_WORKDIR }}"
+          tar czf "../${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
+      
       - name: Create archive as release asset - Windows
-        if: matrix.target == 'x86_64-pc-windows-msvc'
+        if: >
+          matrix.target == 'aarch64-apple-darwin' ||
+          matrix.target == 'x86_64-pc-windows-msvc'
         run: |
-          7z a ${RELEASE_ASSET} "${RELEASE_SRC}"
+          cd "${{ env.JOB_WORKDIR }}"
+          7z a "../${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
+      
       - name: Update release with new asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.ref_name }} ${RELEASE_ASSET}
+        run: gh release upload ${{ github.ref_name }} ${RELEASE_ASSET_FILENAME}
