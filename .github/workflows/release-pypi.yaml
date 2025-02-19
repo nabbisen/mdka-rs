@@ -16,7 +16,7 @@ defaults:
 env:
   PRODUCT_BASENAME: mdka
   TAG: ${{ github.ref_name }}          # tag or branch name
-  ARTIFACT_PATH: ${{ github.run_id }}  # unique number
+  WORKDIR: ${{ github.run_id }}  # unique number
 
 jobs:
   build:
@@ -27,24 +27,30 @@ jobs:
           # - name: Linux-aarch64-musl
           #   target: aarch64-unknown-linux-musl
           #   os: ubuntu-latest
+          #   asset_ext: .tar.gz
           - name: Linux-x64-gnu
             target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
+            asset_ext: .tar.gz
           # - name: Linux-x64-musl
           #   target: x86_64-unknown-linux-musl
           #   os: ubuntu-latest
+          #   asset_ext: .tar.gz
           - name: macOS-aarch64
             target: aarch64-apple-darwin
             os: macos-latest
+            asset_ext: .tar.gz
           - name: Windows-x64
             target: x86_64-pc-windows-msvc
             os: windows-latest
+            asset_ext: .zip
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # [ build ]
       - name: Install Rust
         run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
       
@@ -68,12 +74,32 @@ jobs:
           pip install maturin # caution: pip install -U pip failed in windows vm
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
       
-      - name: Prepare artifacts
+      # [ release asset ]
+      - name: Prepare for release asset
         run: |
-          mv "target/wheels" "${ARTIFACT_PATH}"
+          mkdir -p "${{ env.WORKDIR }}"
+          mv "target/wheels" "${{ env.WORKDIR }}/"
+          echo "RELEASE_SRC=${{ env.WORKDIR }}/wheels" >> $GITHUB_ENV
+          echo "RELEASE_ASSET=pywhl-${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}${{ matrix.asset_ext }}" >> $GITHUB_ENV
       
-      - name: Upload maturin build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pywhl-${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}#${{ env.TAG }}
-          path: ${{ env.ARTIFACT_PATH }}/wheels/*
+      # BSD tar on macOS: first 8MB of the file are sometimes all NUL byte
+      # refs: https://github.com/actions/cache/issues/403 , https://github.com/rust-lang/cargo/issues/8603
+      - name: Mitigate macOS tar bug
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: |
+          sudo /usr/sbin/purge
+      
+      - name: Create archive as release asset - Linux / macOS
+        if: matrix.target != 'x86_64-pc-windows-msvc'
+        run: |
+          tar czf ${RELEASE_ASSET} "${RELEASE_SRC}"
+
+      - name: Create archive as release asset - Windows
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        run: |
+          7z a ${RELEASE_ASSET} "${RELEASE_SRC}"
+
+      - name: Update release with new asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} ${RELEASE_ASSET}
