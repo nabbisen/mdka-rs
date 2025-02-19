@@ -27,17 +27,16 @@ jobs:
     strategy:
       matrix:
         target:
-          #- aarch64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
           - aarch64-apple-darwin
           - x86_64-pc-windows-msvc
         include:
-          # failed due to collect2 erorr in ld - cc
-          #- target: aarch64-unknown-linux-musl
-          #  os: ubuntu-latest
-          #  tag: LINUX-aarch64-musl
-          #  binext: 
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            tag: LINUX-aarch64-musl
+            binext: 
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
@@ -59,21 +58,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust
+        run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+      
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
         with:
-          toolchain: stable
-          component: clippy
-
-      - name: Rust toolchain
-        if: >
-          matrix.target == 'x86_64-unknown-linux-musl'
-        run: |
-          sudo apt update && sudo apt install -y musl-tools
-          rustup target add ${{ matrix.target }}
-          mkdir -p "$HOME/.cargo"
-          echo "[${{ matrix.target }}]" >> "$HOME/.cargo/config.toml"
-          echo "linker = \"musl-gcc\"" >> "$HOME/.cargo/config.toml"
+          path: |
+            "$HOME/.cargo/registry"
+            "$HOME/.cargo/git"
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build the Rust extension
         run: |
