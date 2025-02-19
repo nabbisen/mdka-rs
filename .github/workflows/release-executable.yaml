@@ -1,12 +1,14 @@
-name: Build
+name: Release Executable
 
 on:
-  release:
-    types: [created]
-
+  # release:
+  #   types: [created]
+  push:
+    branches:
+      - ci-py-itg
 permissions:
-  #contents: write
   contents: read
+  # used to sign the release artifacts
   id-token: write
 
 defaults:
