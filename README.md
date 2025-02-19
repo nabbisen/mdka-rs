@@ -60,7 +60,7 @@ As of 1.3.1, this library can be called from Python script.
 Install:
 
 ```console
-$ pip install ./${RELEASES_ARTIFACT_FOR_PLATFORM}.whl
+$ pip install ./${RELEASE_ASSET_FOR_PLATFORM}.whl
 ```
 
 `awesome.py`
