@@ -27,16 +27,16 @@ jobs:
     strategy:
       matrix:
         include:
-          # - name: Linux-aarch64-musl
-          #   target: aarch64-unknown-linux-musl
-          #   os: ubuntu-latest
+          - name: Linux-aarch64-musl
+            target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
           - name: Linux-x64-gnu
             target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             tag: LINUX-x86_64-gnu
-          # - name: Linux-x64-musl
-          #   target: x86_64-unknown-linux-musl
-          #   os: ubuntu-latest
+          - name: Linux-x64-musl
+            target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
           - name: macOS-aarch64
             target: aarch64-apple-darwin
             os: macos-latest
@@ -60,11 +60,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      
-      - name: Build Python wheel
+
+      - name: Python environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      
+      - name: Build Python wheel
         run: |
           pip install maturin # caution: pip install -U pip failed in windows vm
           maturin build --release -F pyo3 --target ${{ matrix.target }} --locked
