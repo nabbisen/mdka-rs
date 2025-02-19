@@ -59,7 +59,7 @@ As of 1.3.1, this library can be called from Python script.
 
 Install:
 
-```toml
+```console
 $ pip install ./${RELEASES_ARTIFACT_FOR_PLATFORM}.whl
 ```
 
