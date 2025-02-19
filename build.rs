@@ -23,7 +23,7 @@ fn crate_type(target: &str) -> String {
     // set the default crate-type
     let mut crate_type = String::from("rlib");
     // check if the "pyo3" feature is enabled
-    if target.contains("musl") || features.contains(&"pyo3".to_string()) {
+    if features.contains(&"pyo3".to_string()) {
         // set to "cdylib" if "pyo3" feature is enabled
         crate_type = "cdylib".to_string();
     }
