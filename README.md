@@ -54,13 +54,12 @@ fn awesome_fn() {
 
 ### Python integration
 
-As of 1.3.1, this library can be called from Python script.
-[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer `.whl` for multiple platforms.
+Bindings for Python are supported. Python scripts can import this Rust library to use the function(s).
 
 Install:
 
 ```console
-$ pip install ./${RELEASE_ASSET_FOR_PLATFORM}.whl
+$ pip install mdka
 ```
 
 `awesome.py`
@@ -77,3 +76,4 @@ print(md_from_html("<p>Hello, world.</p>"))
 ## Acknowledgements
 
 Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
+Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python.

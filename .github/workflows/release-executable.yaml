@@ -26,28 +26,27 @@ jobs:
             target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             bin_ext: 
-            asset_ext: .tar.gz
+            archive_ext: .tar.gz
           - name: Linux-x64-gnu
             target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            tag: LINUX-x86_64-gnu
             bin_ext: 
-            asset_ext: .tar.gz
+            archive_ext: .tar.gz
           - name: Linux-x64-musl
             target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             bin_ext: 
-            asset_ext: .tar.gz
+            archive_ext: .tar.gz
           - name: macOS-aarch64
             target: aarch64-apple-darwin
             os: macos-latest
             bin_ext: 
-            asset_ext: .zip
+            archive_ext: .zip
           - name: Windows-x64
             target: x86_64-pc-windows-msvc
             os: windows-latest
             bin_ext: .exe
-            asset_ext: .zip
+            archive_ext: .zip
 
     steps:
       - name: Checkout repository
@@ -57,12 +56,13 @@ jobs:
       - name: Install Rust
         run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
       
-      - name: Cache cargo registry and build
+      - name: Cache cargo dependencies and build
         uses: actions/cache@v4
         with:
           path: |
-            "$HOME/.cargo/registry"
-            "$HOME/.cargo/git"
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -77,11 +77,11 @@ jobs:
           BUILT_FILEPATH=target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
           RELEASE_ASSET_BASENAME=${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}
           RELEASE_SRC_DIR=${RELEASE_ASSET_BASENAME}
-          RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}
+          RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.archive_ext }}
           mkdir -p "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}"
           mv "${BUILT_FILEPATH}" "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}/"
           echo "RELEASE_SRC_DIR=${RELEASE_SRC_DIR}" >> $GITHUB_ENV
-          echo "RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.asset_ext }}" >> $GITHUB_ENV
+          echo "RELEASE_ASSET_FILENAME=${RELEASE_ASSET_FILENAME}" >> $GITHUB_ENV
 
       # BSD tar on macOS: first 8MB of the file are sometimes all NUL byte
       # refs: https://github.com/actions/cache/issues/403 , https://github.com/rust-lang/cargo/issues/8603
