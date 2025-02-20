@@ -21,8 +21,26 @@ Designed with in mind:
 
 [Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
 
+```console
+$ ./mdka <html-text> # as to alternative usage, running with `-h` | `--help` shows help
 ```
-$ ./mdka <html-text> # not html file path
+
+#### Help
+
+```console
+$ ./mdka -h
+Usage:
+  -h, --help             : Help is shown.
+  <html_text>            : Direct parameter is taken as HTML text to be converted. Either this or <html_filepath> is required.
+  -i <html_filepath>     : Read HTML text from it. Optional.
+  -o <markdown_filepath> : Write Markdown result to it. Optional.
+  --overwrites           : Overwrite if Markdown file exists. Optional.
+
+Examples:
+  ./target/release/mdka "<p>Hello, world.</p>"
+  ./target/release/mdka -i input.html
+  ./target/release/mdka -o output.md "<p>Hello, world.</p>"
+  ./target/release/mdka -i input.html -o output.md --overwrites
 ```
 
 ### Development with Rust and cargo
@@ -64,6 +82,8 @@ $ pip install mdka
 
 `awesome.py`
 
+#### Convert from HTML text
+
 ```python
 from mdka import md_from_html
 
@@ -72,6 +92,31 @@ print(md_from_html("<p>Hello, world.</p>"))
 # 
 ```
 
+#### Convert from HTML file
+
+```python
+from mdka import md_from_file
+
+print(md_from_file("tests/fixtures/simple-01.html"))
+# Hello, world.
+# 
+```
+
+#### Convert from HTML text and write the result to file
+
+```python
+from mdka import md_from_html_to_file
+
+md_from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False) # third parameter is `overwrites` Boolean
+```
+
+#### Convert from HTML file and write the result to file
+
+```python
+from mdka import md_from_file_to_file
+
+md_from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False) # third parameter is `overwrites` Boolean
+```
 
 ## Acknowledgements
 
