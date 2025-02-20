@@ -22,7 +22,8 @@ Designed with in mind:
 [Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
 
 ```console
-$ ./mdka <html-text> # as to alternative usage, running with `-h` | `--help` shows help
+$ ./mdka <html-text>
+converted-to-markdown-text will be printed
 ```
 
 #### Help
@@ -37,10 +38,10 @@ Usage:
   --overwrites           : Overwrite if Markdown file exists. Optional.
 
 Examples:
-  ./target/release/mdka "<p>Hello, world.</p>"
-  ./target/release/mdka -i input.html
-  ./target/release/mdka -o output.md "<p>Hello, world.</p>"
-  ./target/release/mdka -i input.html -o output.md --overwrites
+  ./mdka "<p>Hello, world.</p>"
+  ./mdka -i input.html
+  ./mdka -o output.md "<p>Hello, world.</p>"
+  ./mdka -i input.html -o output.md --overwrites
 ```
 
 ### Development with Rust and cargo
