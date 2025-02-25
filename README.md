@@ -73,7 +73,7 @@ fn awesome_fn() {
 
 ### Python integration
 
-Bindings for Python are supported. Python scripts can import this Rust library to use the function(s).
+Binding for Python is supported. Python scripts can import this Rust library to use the functions.
 
 Install:
 
@@ -93,6 +93,22 @@ print(md_from_html("<p>Hello, world.</p>"))
 # 
 ```
 
+##### Paramter(s)
+
+| position | name / description |
+| --- | --- |
+| 1 | html_text |
+
+##### Return
+
+String
+
+##### Error(s)
+
+(None)
+
+---
+
 #### Convert from HTML file
 
 ```python
@@ -103,21 +119,73 @@ print(md_from_file("tests/fixtures/simple-01.html"))
 # 
 ```
 
+##### Paramter(s)
+
+| position | name / description |
+| --- | --- |
+| 1 | html_filepath |
+
+##### Return
+
+String
+
+##### Error(s)
+
+File I/O
+
+---
+
 #### Convert from HTML text and write the result to file
 
 ```python
 from mdka import md_from_html_to_file
 
-md_from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False) # third parameter is `overwrites` Boolean
+md_from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False)
 ```
+
+##### Paramter(s)
+
+| position | name / description |
+| --- | --- |
+| 1 | html_text |
+| 2 | markdown_filepath |
+| 3 | overwrites : Overwrite if Markdown file exists. |
+
+##### Return
+
+(None)
+
+##### Error(s)
+
+File I/O
+
+---
 
 #### Convert from HTML file and write the result to file
 
 ```python
 from mdka import md_from_file_to_file
 
-md_from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False) # third parameter is `overwrites` Boolean
+md_from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
 ```
+
+##### Paramter(s)
+
+| position | name / description |
+| --- | --- |
+| 1 | html_filepath |
+| 2 | markdown_filepath |
+| 3 | overwrites : Overwrite if Markdown file exists. |
+
+---
+
+##### Return
+
+(None)
+
+##### Error(s)
+
+File I/O
 
 ## Acknowledgements
 
