@@ -46,7 +46,7 @@ fn awesome_fn() {
 
 ### Executable
 
-[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
+[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms.
 
 ```console
 $ ./mdka <html-text>
