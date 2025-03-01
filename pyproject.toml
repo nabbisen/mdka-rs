@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "mdka"
-dynamic = ["version"]
+dynamic = ["version", "authors", "license", "description", "repository", "readme", "keywords"]
 
 requires-python = ">=3.8"
 classifiers = [
