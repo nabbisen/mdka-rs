@@ -17,33 +17,6 @@ Designed with in mind:
 
 ## Usage
 
-### Executable
-
-[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
-
-```console
-$ ./mdka <html-text>
-converted-to-markdown-text will be printed
-```
-
-#### Help
-
-```console
-$ ./mdka -h
-Usage:
-  -h, --help             : Help is shown.
-  <html_text>            : Direct parameter is taken as HTML text to be converted. Either this or <html_filepath> is required.
-  -i <html_filepath>     : Read HTML text from it. Optional.
-  -o <markdown_filepath> : Write Markdown result to it. Optional.
-  --overwrites           : Overwrite if Markdown file exists. Optional.
-
-Examples:
-  ./mdka "<p>Hello, world.</p>"
-  ./mdka -i input.html
-  ./mdka -o output.md "<p>Hello, world.</p>"
-  ./mdka -i input.html -o output.md --overwrites
-```
-
 ### Development with Rust and cargo
 
 `Cargo.toml`
@@ -71,6 +44,33 @@ fn awesome_fn() {
 }
 ```
 
+### Executable
+
+[Releases](https://github.com/nabbisen/mdka-rs/releases)' **Assets** offer executables for multiple platforms.
+
+```console
+$ ./mdka <html-text>
+converted-to-markdown-text will be printed
+```
+
+#### Executable help
+
+```console
+$ ./mdka -h
+Usage:
+  -h, --help             : Help is shown.
+  <html_text>            : Direct parameter is taken as HTML text to be converted. Either this or <html_filepath> is required.
+  -i <html_filepath>     : Read HTML text from it. Optional.
+  -o <markdown_filepath> : Write Markdown result to it. Optional.
+  --overwrites           : Overwrite if Markdown file exists. Optional.
+
+Examples:
+  ./mdka "<p>Hello, world.</p>"
+  ./mdka -i input.html
+  ./mdka -o output.md "<p>Hello, world.</p>"
+  ./mdka -i input.html -o output.md --overwrites
+```
+
 ### Python integration
 
 Binding for Python is supported. Python scripts can import this Rust library to use the functions.
@@ -83,8 +83,6 @@ $ pip install mdka
 
 `awesome.py`
 
-#### Convert from HTML text
-
 ```python
 from mdka import md_from_html
 
@@ -93,99 +91,7 @@ print(md_from_html("<p>Hello, world.</p>"))
 # 
 ```
 
-##### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_text |
-
-##### Return
-
-String
-
-##### Error(s)
-
-(None)
-
----
-
-#### Convert from HTML file
-
-```python
-from mdka import md_from_file
-
-print(md_from_file("tests/fixtures/simple-01.html"))
-# Hello, world.
-# 
-```
-
-##### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_filepath |
-
-##### Return
-
-String
-
-##### Error(s)
-
-File I/O
-
----
-
-#### Convert from HTML text and write the result to file
-
-```python
-from mdka import md_from_html_to_file
-
-md_from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False)
-```
-
-##### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_text |
-| 2 | markdown_filepath |
-| 3 | overwrites : Overwrite if Markdown file exists. |
-
-##### Return
-
-(None)
-
-##### Error(s)
-
-File I/O
-
----
-
-#### Convert from HTML file and write the result to file
-
-```python
-from mdka import md_from_file_to_file
-
-md_from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
-```
-
-##### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_filepath |
-| 2 | markdown_filepath |
-| 3 | overwrites : Overwrite if Markdown file exists. |
-
----
-
-##### Return
-
-(None)
-
-##### Error(s)
-
-File I/O
+More Python code examples with specs are [here](docs/BINDINGS_FOR_PYTHON.md).
 
 ## Acknowledgements
 
