@@ -73,7 +73,7 @@ Examples:
 
 ### Python integration
 
-Binding for Python is supported. Python scripts can import this Rust library to use the functions.
+Bindings for Python are supported. Python scripts can import this Rust library to use the functions.
 
 Install:
 

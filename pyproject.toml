@@ -4,13 +4,20 @@ build-backend = "maturin"
 
 [project]
 name = "mdka"
-dynamic = ["version", "authors", "license", "description", "repository", "readme", "keywords"]
+dynamic = ["version", "author", "author_email", "license", "summary", "project_url", "keywords"]
+readme = "docs/BINDINGS_FOR_PYTHON.md"
 
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Operating System :: OS Independent",
 ]
 
 [tool.maturin]

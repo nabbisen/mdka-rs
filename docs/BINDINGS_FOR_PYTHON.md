@@ -1,5 +1,19 @@
 # mdka: Bindings for Python
 
+## Summary
+
+**HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
+
+A kind of text manipulator named mdka. "ka" means "化 (か)" pointing to conversion.    
+
+Bindings for Python are supported. Python scripts can import this Rust library to use the functions.
+
+## Install
+
+```console
+$ pip install mdka
+```
+
 ## Code examples
 
 `awesome.py`
