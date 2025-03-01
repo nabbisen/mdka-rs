@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.4.0"
+version = "1.4.1"
 
 edition = "2021"
 authors = ["nabbisen <nabbisen@scqr.net>"]
@@ -28,7 +28,7 @@ codegen-units = 1
 opt-level = 1         # slightly optimize
 lto = false           # disable link-time optimizations
 # strip = "debuginfo" # reduce size
-# incremental = true
+incremental = true
 
 [features]
 default = []
