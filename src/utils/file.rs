@@ -2,6 +2,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
+/// read content from file whose path is specified
 pub fn read_from_filepath<'a>(filepath: &str) -> Result<String, String> {
     let path = Path::new(filepath);
 
@@ -14,6 +15,7 @@ pub fn read_from_filepath<'a>(filepath: &str) -> Result<String, String> {
     Ok(ret)
 }
 
+/// write content into file whose path is specified
 pub fn write_to_filepath(content: &str, filepath: &str, overwrites: bool) -> Result<(), String> {
     let path = Path::new(filepath);
 
