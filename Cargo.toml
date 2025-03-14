@@ -1,16 +1,16 @@
 [package]
 name = "mdka"
-version = "1.4.3"
-
+version = "1.4.4"
 edition = "2021"
-authors = ["nabbisen <nabbisen@scqr.net>"]
-license = "Apache-2.0"
 
 description = "HTML to Markdown converter"
-repository = "https://github.com/nabbisen/mdka-rs"
-readme = "README.md"
+authors = ["nabbisen <nabbisen@scqr.net>"]
+license = "Apache-2.0"
 categories = ["development-tools", "parsing", "parser-implementations"]
 keywords = ["html", "markdown", "parser", "conversion"]
+repository = "https://github.com/nabbisen/mdka-rs"
+readme = "README.md"
+
 rust-version = "1.74.0"
 
 [lib]

@@ -1,4 +1,4 @@
-name: Executable Release
+name: Executable
 
 on:
   release:
@@ -13,7 +13,7 @@ defaults:
 
 env:
   PRODUCT_BASENAME: mdka
-  TAG: ${{ github.ref_name }}        # tag or branch name
+  TAG: ${{ github.ref_name }}            # tag or branch name
   JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
 
 jobs:

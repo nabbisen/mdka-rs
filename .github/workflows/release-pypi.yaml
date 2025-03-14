@@ -4,7 +4,7 @@
 #
 #    maturin generate-ci github
 #
-name: PyPi Release
+name: PyPi
 
 on:
   release:
