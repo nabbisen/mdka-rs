@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.4.4"
+version = "1.4.5"
 edition = "2021"
 
 description = "HTML to Markdown converter"
@@ -37,7 +37,7 @@ pyo3 = ["dep:pyo3"]
 [dependencies]
 html5ever = "^0.27"
 markup5ever_rcdom = "^0.3"
-pyo3 = { version = "^0.23", features = ["extension-module"], optional = true }
+pyo3 = { version = "^0.24", features = ["extension-module"], optional = true }
 
 [dev-dependencies]
 criterion = "^0.5"

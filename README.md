@@ -2,10 +2,10 @@
 **HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=latest)](https://crates.io/crates/mdka)
-[![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka/latest)
-[![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka/latest)
-[![Executable](https://github.com/nabbisen/quick-diff-me/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/quick-diff-me/actions/workflows/)
-[![PyPi](https://github.com/nabbisen/quick-diff-me/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/quick-diff-me/actions/workflows/)
+[![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
+[![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka)
+[![Executable](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml)
+[![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
 [![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
 
 ## Summary
