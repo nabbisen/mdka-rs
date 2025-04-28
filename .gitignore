@@ -15,4 +15,4 @@ target/
 
 # custom
 tests/tmp/*
-!tests/tmp/
+!tests/tmp/.gitkeep
