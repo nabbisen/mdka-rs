@@ -90,7 +90,7 @@ jobs:
         run: |
           sudo /usr/sbin/purge
       
-      - name: Create archive as release asset - Linux / macOS
+      - name: Create archive as release asset - Linux
         if: >
           matrix.target != 'aarch64-apple-darwin' &&
           matrix.target != 'x86_64-pc-windows-msvc'
@@ -98,7 +98,7 @@ jobs:
           cd "${{ env.JOB_WORKDIR }}"
           tar czf "../${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
       
-      - name: Create archive as release asset - Windows
+      - name: Create archive as release asset - Windows / macOS
         if: >
           matrix.target == 'aarch64-apple-darwin' ||
           matrix.target == 'x86_64-pc-windows-msvc'
