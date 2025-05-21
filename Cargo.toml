@@ -33,15 +33,23 @@ incremental = true
 [features]
 default = []
 pyo3 = ["dep:pyo3"]
+napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
 
 [dependencies]
 html5ever = "^0.27"
 markup5ever_rcdom = "^0.3"
+# binding for python
 pyo3 = { version = "0", features = ["extension-module"], optional = true }
+# binding for node.js
+napi = { version = "2", default-features = false, features = ["napi5", "async"], optional = true }
+napi-derive = { version = "2", optional = true }
 
 [dev-dependencies]
 criterion = "0"
 maturin = "1"
+
+[build-dependencies]
+napi-build = { version = "2", optional = true }
 
 [[example]]
 name = "trial"

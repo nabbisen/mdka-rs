@@ -1,5 +1,6 @@
 use std::env;
 
+#[cfg(not(feature = "napi"))]
 use mdka::{from_file, from_file_to_file, from_html, from_html_to_file};
 
 struct ExecutableParam {
@@ -11,13 +12,16 @@ struct ExecutableParam {
 
 /// app entry point on executable
 fn main() {
-    let validated = validate_or_show_help();
-    match validated {
-        Ok(params_or_none) => match params_or_none {
-            Some(params) => convert_html_to_markdown(params),
-            None => (),
-        },
-        Err(_) => (),
+    #[cfg(not(feature = "napi"))]
+    {
+        let validated = validate_or_show_help();
+        match validated {
+            Ok(params_or_none) => match params_or_none {
+                Some(params) => convert_html_to_markdown(params),
+                None => (),
+            },
+            Err(_) => (),
+        }
     }
 }
 

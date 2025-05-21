@@ -1,0 +1,61 @@
+{
+    "name": "mdka",
+    "version": "0.9.0",
+    "description": "HTML to Markdown converter",
+    "author": "nabbisen<nabbisen@scqr.net>",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nabbisen/mdka-rs.git"
+    },
+    "keywords": [
+        "html",
+        "markdown",
+        "conversion"
+    ],
+    "files": [
+        "index.js",
+        "index.d.ts",
+        "scripts"
+    ],
+    "main": "index.js",
+    "types": "index.d.ts",
+    "bin": {
+        "apimokka": "scripts/runner.js"
+    },
+    "napi": {
+        "name": "mdka",
+        "package": {
+            "name": "@mdka"
+        },
+        "triples": {
+            "defaults": false,
+            "additional": [
+                "x86_64-unknown-linux-gnu",
+                "arm64-apple-darwin",
+                "x86_64-pc-windows-msvc"
+            ]
+        }
+    },
+    "devDependencies": {
+        "@napi-rs/cli": "^2.18.4",
+        "ava": "^6.3.0"
+    },
+    "ava": {
+        "timeout": "3m"
+    },
+    "engines": {
+        "node": ">= 12"
+    },
+    "scripts": {
+        "artifacts": "napi artifacts",
+        "build": "napi build --release --platform --features napi",
+        "build:debug": "napi build --platform --features napi",
+        "build:local": "napi build --platform --features napi --cargo-cwd ../",
+        "test": "ava",
+        "universal": "napi universal",
+        "version": "napi version",
+        "create-npm-dir": "napi create-npm-dir -t .",
+        "prepublishOnly": "napi prepublish --skip-gh-release"
+    }
+}

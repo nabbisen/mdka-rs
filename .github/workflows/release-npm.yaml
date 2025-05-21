@@ -1,0 +1,140 @@
+name: npm
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+  id-token: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PRODUCT_BASENAME: mdka
+  TAG: ${{ github.ref_name }}            # tag or branch name
+  JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: Linux-x64-gnu
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive_ext: .tar.gz
+            napiplatform: linux-x64-gnu
+          - name: macOS-aarch64
+            target: aarch64-apple-darwin
+            os: macos-latest
+            archive_ext: .zip
+            napiplatform: darwin-arm64
+          - name: Windows-x64
+            target: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive_ext: .zip
+            napiplatform: win32-x64-msvc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # [ Node.js dependencies ]
+      - name: Prepare napi
+        run: cp -r napi/* .
+        # todo: better ? to replace w/
+        # working-directory: napi
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      
+      - name: Install npm packages
+        run: npm install
+      
+      # [ build ]
+      - name: Install Rust
+        run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+      
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build Rust executable
+        run: |
+          npm run build
+
+      # [ release asset ]
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: ${{ env.PRODUCT_BASENAME }}.*.node
+          if-no-files-found: error
+  
+  publish:
+    name: Publish on release tags
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if release tag
+        run: |
+          if [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "${TAG}: Semantic versioning tagged - OK"
+          else
+            echo "Not a release tag. Skipped."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Prepare napi
+        run: cp -r napi/* .
+        # todo: better ? to replace w/
+        # working-directory: napi
+      
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Move artifacts
+        run: |
+          npm run create-npm-dir
+          npm run artifacts
+      
+      - name: List packages
+        run: ls -R ./npm
+        shell: bash
+      
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm config set provenance true
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          npm publish --access public

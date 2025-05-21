@@ -21,9 +21,9 @@ $ pip install mdka
 ### Convert from HTML text
 
 ```python
-from mdka import md_from_html
+from mdka import from_html
 
-print(md_from_html("<p>Hello, world.</p>"))
+print(from_html("<p>Hello, world.</p>"))
 # Hello, world.
 # 
 ```
@@ -47,9 +47,9 @@ String
 ### Convert from HTML file
 
 ```python
-from mdka import md_from_file
+from mdka import from_file
 
-print(md_from_file("tests/fixtures/simple-01.html"))
+print(from_file("tests/fixtures/simple-01.html"))
 # Hello, world.
 # 
 ```
@@ -73,9 +73,9 @@ File I/O
 ### Convert from HTML text and write the result to file
 
 ```python
-from mdka import md_from_html_to_file
+from mdka import from_html_to_file
 
-md_from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False)
+from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False)
 ```
 
 #### Paramter(s)
@@ -99,9 +99,9 @@ File I/O
 ### Convert from HTML file and write the result to file
 
 ```python
-from mdka import md_from_file_to_file
+from mdka import from_file_to_file
 
-md_from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
+from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
 ```
 
 #### Paramter(s)
