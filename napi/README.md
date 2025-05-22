@@ -1,4 +1,5 @@
 # mdka
+
 **HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
 
 ## Summary
@@ -10,6 +11,8 @@ Designed with in mind:
 - Low memory consumption
 - Easy usage
 
+Bindings for Node.js are supported. Functions are available Node.js scripts can import. For more details about functions, check out [the docs](https://github.com/nabbisen/mdka-rs/blob/main/docs/functions.md).
+
 ## Install
 
 ```console
@@ -18,113 +21,45 @@ $ npm install mdka
 
 ---
 
-## Code examples
-
-`awesome.js`
+## Usage
 
 ### Convert from HTML text
 
 ```js
-import { from_html } from "mdka"
+const { from_html } = require("mdka")
 
 console.log(from_html("<p>Hello, world.</p>"))
 # Hello, world.
 # 
 ```
 
-#### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_text |
-
-#### Return
-
-String
-
-#### Error(s)
-
-(None)
-
----
-
 ### Convert from HTML file
 
 ```js
-import { from_file } from "mdka"
+const { from_file } = require("mdka")
 
 console.log(from_file("tests/fixtures/simple-01.html"))
 # Hello, world.
 # 
 ```
 
-#### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_filepath |
-
-#### Return
-
-String
-
-#### Error(s)
-
-File I/O
-
----
-
 ### Convert from HTML text and write the result to file
 
 ```js
-import { from_html_to_file } from "mdka"
+const { from_html_to_file } = require("mdka")
 
 from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", false)
 ```
 
-#### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_text |
-| 2 | markdown_filepath |
-| 3 | overwrites : Overwrite if Markdown file exists. |
-
-#### Return
-
-(None)
-
-#### Error(s)
-
-File I/O
-
----
-
 ### Convert from HTML file and write the result to file
 
 ```js
-import { from_file_to_file } from "mdka"
+const { from_file_to_file } = require("mdka")
 
 from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", false)
 ```
 
-#### Paramter(s)
-
-| position | name / description |
-| --- | --- |
-| 1 | html_filepath |
-| 2 | markdown_filepath |
-| 3 | overwrites : Overwrite if Markdown file exists. |
-
 ---
-
-#### Return
-
-(None)
-
-#### Error(s)
-
-File I/O
 
 ## 🤝 Open-source, with care
 

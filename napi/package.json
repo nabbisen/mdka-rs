@@ -11,7 +11,19 @@
     "keywords": [
         "html",
         "markdown",
-        "conversion"
+        "html-to-markdown",
+        "markdown-generator",
+        "generate-markdown",
+        "html-parser",
+        "text",
+        "string",
+        "document",
+        "convert",
+        "converter",
+        "parser",
+        "transform",
+        "napi",
+        "native-addon"
     ],
     "files": [
         "index.js",
@@ -19,13 +31,10 @@
     ],
     "main": "index.js",
     "types": "index.d.ts",
-    "bin": {
-        "apimokka": "scripts/runner.js"
-    },
     "napi": {
         "name": "mdka",
         "package": {
-            "name": "@mdka/"
+            "name": "@mdka/lib"
         },
         "triples": {
             "defaults": false,
