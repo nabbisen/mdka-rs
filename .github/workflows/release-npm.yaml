@@ -93,7 +93,8 @@ jobs:
     steps:
       - name: Check if release tag
         run: |
-          if [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+             [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]-rc\.[0-9]+$ ]]; then
             echo "${TAG}: Semantic versioning tagged - OK"
           else
             echo "Not a release tag. Skipped."
