@@ -26,9 +26,9 @@ $ npm install mdka
 ### Convert from HTML text
 
 ```js
-const { from_html } = require("mdka")
+const { fromHtml } = require("mdka")
 
-console.log(from_html("<p>Hello, world.</p>"))
+console.log(fromHtml("<p>Hello, world.</p>"))
 # Hello, world.
 # 
 ```
@@ -36,9 +36,9 @@ console.log(from_html("<p>Hello, world.</p>"))
 ### Convert from HTML file
 
 ```js
-const { from_file } = require("mdka")
+const { fromFile } = require("mdka")
 
-console.log(from_file("tests/fixtures/simple-01.html"))
+console.log(fromFile("tests/fixtures/simple-01.html"))
 # Hello, world.
 # 
 ```
@@ -46,17 +46,17 @@ console.log(from_file("tests/fixtures/simple-01.html"))
 ### Convert from HTML text and write the result to file
 
 ```js
-const { from_html_to_file } = require("mdka")
+const { fromHtmlToFile } = require("mdka")
 
-from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", false)
+fromHtmlToFile("<p>Hello, world.</p>", "tests/tmp/out.md", false)
 ```
 
 ### Convert from HTML file and write the result to file
 
 ```js
-const { from_file_to_file } = require("mdka")
+const { fromFileToFile } = require("mdka")
 
-from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", false)
+fromFileToFile("tests/fixtures/simple-01.html", "tests/tmp/out.md", false)
 ```
 
 ---

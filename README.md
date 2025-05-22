@@ -78,9 +78,9 @@ $ npm install mdka
 
 ```js
 // awesome.js
-const { from_html } = require("mdka")
+const { fromHtml } = require("mdka")
 
-console.log(from_html("<p>Hello, world.</p>"))
+console.log(fromHtml("<p>Hello, world.</p>"))
 // Hello, world.
 // 
 ```
