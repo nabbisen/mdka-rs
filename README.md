@@ -95,6 +95,12 @@ print(md_from_html("<p>Hello, world.</p>"))
 
 More Python code examples with specs are [here](docs/BINDINGS_FOR_PYTHON.md).
 
+## 🤝 Open-source, with care
+
+This project is lovingly built and maintained by volunteers.  
+We hope it helps streamline your API development.  
+Please understand that the project has its own direction — while we welcome feedback, it might not fit every edge case 🌱
+
 ## Acknowledgements
 
 Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
