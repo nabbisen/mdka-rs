@@ -2,12 +2,16 @@
 
 mod elements;
 mod nodes;
-#[cfg(feature = "pyo3")]
-pub mod python_bindings;
 mod utils;
 
 use nodes::{node::root_node_md, utils::parse_html};
 use utils::file::{read_from_filepath, write_to_filepath};
+
+#[cfg(feature = "pyo3")]
+pub mod python_bindings;
+
+#[cfg(feature = "napi")]
+pub mod nodejs_bindings;
 
 /// Convert HTML to Markdown
 ///

@@ -1,4 +1,4 @@
-# mdka: Bindings for Python
+# mdka
 
 **HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
 
@@ -11,12 +11,12 @@ Designed with in mind:
 - Low memory consumption
 - Easy usage
 
-Bindings for Python are supported. Functions are available Python scripts can import. For more details about functions, check out [the docs](https://github.com/nabbisen/mdka-rs/blob/main/docs/functions.md).
+Bindings for Node.js are supported. Functions are available Node.js scripts can import. For more details about functions, check out [the docs](https://github.com/nabbisen/mdka-rs/blob/main/docs/functions.md).
 
 ## Install
 
 ```console
-$ pip install mdka
+$ npm install mdka
 ```
 
 ---
@@ -25,38 +25,38 @@ $ pip install mdka
 
 ### Convert from HTML text
 
-```python
-from mdka import from_html
+```js
+const { fromHtml } = require("mdka")
 
-print(from_html("<p>Hello, world.</p>"))
+console.log(fromHtml("<p>Hello, world.</p>"))
 # Hello, world.
 # 
 ```
 
 ### Convert from HTML file
 
-```python
-from mdka import from_file
+```js
+const { fromFile } = require("mdka")
 
-print(from_file("tests/fixtures/simple-01.html"))
+console.log(fromFile("tests/fixtures/simple-01.html"))
 # Hello, world.
 # 
 ```
 
 ### Convert from HTML text and write the result to file
 
-```python
-from mdka import from_html_to_file
+```js
+const { fromHtmlToFile } = require("mdka")
 
-from_html_to_file("<p>Hello, world.</p>", "tests/tmp/out.md", False)
+fromHtmlToFile("<p>Hello, world.</p>", "tests/tmp/out.md", false)
 ```
 
 ### Convert from HTML file and write the result to file
 
-```python
-from mdka import from_file_to_file
+```js
+const { fromFileToFile } = require("mdka")
 
-from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
+fromFileToFile("tests/fixtures/simple-01.html", "tests/tmp/out.md", false)
 ```
 
 ---

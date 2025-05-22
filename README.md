@@ -1,4 +1,5 @@
 # mdka
+
 **HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=latest)](https://crates.io/crates/mdka)
@@ -19,18 +20,16 @@ Designed with in mind:
 
 ## Usage
 
-### Development with Rust and cargo
-
-`Cargo.toml`
+### Rust with cargo
 
 ```toml
+# Cargo.toml
 [dependencies]
 mdka = "1"
 ```
 
-`awesome.rs`
-
 ```rust
+// awesome.rs
 use mdka::from_html
 
 fn awesome_fn() {
@@ -46,46 +45,22 @@ fn awesome_fn() {
 }
 ```
 
+For more details about functions, the docs live [here](docs/functions.md).
+
 ### Executable
 
-[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms.
-
-```console
-$ ./mdka <html-text>
-converted-to-markdown-text will be printed
-```
-
-#### Executable help
-
-```console
-$ ./mdka -h
-Usage:
-  -h, --help             : Help is shown.
-  <html_text>            : Direct parameter is taken as HTML text to be converted. Either this or <html_filepath> is required.
-  -i <html_filepath>     : Read HTML text from it. Optional.
-  -o <markdown_filepath> : Write Markdown result to it. Optional.
-  --overwrites           : Overwrite if Markdown file exists. Optional.
-
-Examples:
-  ./mdka "<p>Hello, world.</p>"
-  ./mdka -i input.html
-  ./mdka -o output.md "<p>Hello, world.</p>"
-  ./mdka -i input.html -o output.md --overwrites
-```
+[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms. → [For usage](docs/executable.md)
 
 ### Python integration
 
-Bindings for Python are supported. Python scripts can import this Rust library to use the functions.
-
-Install:
+Bindings for Python are supported. → [For more examples](docs/BINDINGS_FOR_PYTHON.md)
 
 ```console
 $ pip install mdka
 ```
 
-`awesome.py`
-
 ```python
+# awesome.py
 from mdka import md_from_html
 
 print(md_from_html("<p>Hello, world.</p>"))
@@ -93,9 +68,30 @@ print(md_from_html("<p>Hello, world.</p>"))
 # 
 ```
 
-More Python code examples with specs are [here](docs/BINDINGS_FOR_PYTHON.md).
+### Node.js integration
+
+Bindings for Node.js are supported. → [For more examples](napi/README.md)
+
+```console
+$ npm install mdka
+```
+
+```js
+// awesome.js
+const { fromHtml } = require("mdka")
+
+console.log(fromHtml("<p>Hello, world.</p>"))
+// Hello, world.
+// 
+```
+
+## 🤝 Open-source, with care
+
+This project is lovingly built and maintained by volunteers.  
+We hope it helps streamline your API development.  
+Please understand that the project has its own direction — while we welcome feedback, it might not fit every edge case 🌱
 
 ## Acknowledgements
 
 Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
-Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python.
+Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for [Node.js](https://nodejs.org/).
