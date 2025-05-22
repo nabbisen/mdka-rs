@@ -61,7 +61,7 @@ from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
 
 ---
 
-## 🤝 Open-source, with care
+## Open-source, with care
 
 This project is lovingly built and maintained by volunteers.  
 We hope it helps streamline your API development.  
@@ -69,5 +69,5 @@ Please understand that the project has its own direction — while we welcome fe
 
 ## Acknowledgements
 
-Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
-Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for [Node.js](https://nodejs.org/).
+Depends on Servo's [html5ever](https://github.com/servo/html5ever) / markup5ever.
+Also, on PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for Node.js.

@@ -20,7 +20,7 @@ Designed with in mind:
 
 ## Usage
 
-### Rust with cargo
+### 🌠 Rust with cargo
 
 ```toml
 # Cargo.toml
@@ -45,15 +45,15 @@ fn awesome_fn() {
 }
 ```
 
-For more details about functions, the docs live [here](docs/functions.md).
+For more details about functions, check out [the docs](docs/functions.md).
 
-### Executable
+### 🧩 Executable
 
-[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms. → [For usage](docs/executable.md)
+[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms → [For usage](docs/executable.md).
 
-### Python integration
+### 🧩 Python integration
 
-Bindings for Python are supported. → [For more examples](docs/BINDINGS_FOR_PYTHON.md)
+Bindings for Python are supported → [For more examples](docs/BINDINGS_FOR_PYTHON.md#usage) | [PyPi](https://pypi.org/project/mdka/).
 
 ```console
 $ pip install mdka
@@ -68,9 +68,9 @@ print(md_from_html("<p>Hello, world.</p>"))
 # 
 ```
 
-### Node.js integration
+### 🧩 Node.js integration
 
-Bindings for Node.js are supported. → [For more examples](napi/README.md)
+Bindings for Node.js are supported → [For more examples](napi/README.md#usage) | [npm](https://www.npmjs.com/package/mdka).
 
 ```console
 $ npm install mdka
@@ -85,13 +85,15 @@ console.log(fromHtml("<p>Hello, world.</p>"))
 // 
 ```
 
-## 🤝 Open-source, with care
+---
+
+## Open-source, with care
 
 This project is lovingly built and maintained by volunteers.  
-We hope it helps streamline your API development.  
+We hope it helps streamline your work.  
 Please understand that the project has its own direction — while we welcome feedback, it might not fit every edge case 🌱
 
 ## Acknowledgements
 
-Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
-Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for [Node.js](https://nodejs.org/).
+Depends on Servo's [html5ever](https://github.com/servo/html5ever) / markup5ever.
+Also, on PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for Node.js.
