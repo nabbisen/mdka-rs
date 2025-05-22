@@ -1,6 +1,6 @@
 {
     "name": "mdka",
-    "version": "1.5.0-rc.3",
+    "version": "1.5.0-rc.4",
     "description": "HTML to Markdown converter",
     "author": "nabbisen<nabbisen@scqr.net>",
     "license": "Apache-2.0",
@@ -25,7 +25,7 @@
     "napi": {
         "name": "mdka",
         "package": {
-            "name": "@mdka"
+            "name": "@mdka/"
         },
         "triples": {
             "defaults": false,
