@@ -14,6 +14,8 @@ Bindings for Python are supported. Python scripts can import this Rust library t
 $ pip install mdka
 ```
 
+---
+
 ## Code examples
 
 `awesome.py`
@@ -121,3 +123,16 @@ from_file_to_file("tests/fixtures/simple-01.html", "tests/tmp/out.md", False)
 #### Error(s)
 
 File I/O
+
+---
+
+## 🤝 Open-source, with care
+
+This project is lovingly built and maintained by volunteers.  
+We hope it helps streamline your API development.  
+Please understand that the project has its own direction — while we welcome feedback, it might not fit every edge case 🌱
+
+## Acknowledgements
+
+Depends on [Servo](https://servo.org/)'s [html5ever](https://github.com/servo/html5ever) / markup5ever.
+Also, on [PyO3](https://github.com/PyO3)'s [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for [Node.js](https://nodejs.org/).

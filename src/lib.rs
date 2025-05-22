@@ -11,7 +11,7 @@ use utils::file::{read_from_filepath, write_to_filepath};
 pub mod python_bindings;
 
 #[cfg(feature = "napi")]
-use napi_derive::napi;
+pub mod nodejs_bindings;
 
 /// Convert HTML to Markdown
 ///
