@@ -1429,7 +1429,7 @@ dependencies = [
 
 [[package]]
 name = "mdka"
-version = "1.5.1"
+version = "1.5.2"
 dependencies = [
  "criterion",
  "html5ever",

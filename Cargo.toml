@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.5.1"
+version = "1.5.2"
 edition = "2021"
 
 description = "HTML to Markdown converter"
@@ -11,7 +11,7 @@ keywords = ["html", "markdown", "parser", "conversion"]
 repository = "https://github.com/nabbisen/mdka-rs"
 readme = "README.md"
 
-rust-version = "1.74.0"
+rust-version = "1.77.0"
 
 [lib]
 name = "mdka"
