@@ -29,8 +29,8 @@ $ npm install mdka
 const { fromHtml } = require("mdka")
 
 console.log(fromHtml("<p>Hello, world.</p>"))
-# Hello, world.
-# 
+// Hello, world.
+// 
 ```
 
 ### Convert from HTML file
@@ -39,8 +39,8 @@ console.log(fromHtml("<p>Hello, world.</p>"))
 const { fromFile } = require("mdka")
 
 console.log(fromFile("tests/fixtures/simple-01.html"))
-# Hello, world.
-# 
+// Hello, world.
+// 
 ```
 
 ### Convert from HTML text and write the result to file
