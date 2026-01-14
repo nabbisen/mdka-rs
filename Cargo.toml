@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.6.2"
+version = "1.6.3"
 edition = "2024"
 
 description = "HTML to Markdown converter"
