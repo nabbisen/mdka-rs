@@ -1,6 +1,6 @@
 [package]
 name = "mdka"
-version = "1.6.5"
+version = "1.6.6-rc.1"
 edition = "2024"
 
 description = "HTML to Markdown converter"
@@ -41,8 +41,8 @@ markup5ever_rcdom = "^0.3"
 # binding for python
 pyo3 = { version = "0.27", features = ["extension-module"], optional = true }
 # binding for node.js
-napi = { version = "2", default-features = false, features = ["napi5", "async"], optional = true }
-napi-derive = { version = "2", optional = true }
+napi = { version = "3", default-features = false, features = ["napi5", "async"], optional = true }
+napi-derive = { version = "3", optional = true }
 
 [dev-dependencies]
 criterion = "0"
