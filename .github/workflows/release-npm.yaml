@@ -125,7 +125,7 @@ jobs:
       
       - name: Move artifacts
         run: |
-          npm run create-npm-dirs
+          npm run create-npm-dir
           npm run artifacts
       
       - name: List packages

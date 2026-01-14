@@ -1,6 +1,6 @@
 {
     "name": "mdka",
-    "version": "1.6.4",
+    "version": "1.6.5",
     "description": "HTML to Markdown converter",
     "author": "nabbisen<nabbisen@scqr.net>",
     "license": "Apache-2.0",
@@ -32,18 +32,21 @@
     "main": "index.js",
     "types": "index.d.ts",
     "napi": {
-        "binaryName": "mdka",
+        "name": "mdka",
         "package": {
             "name": "@mdka/lib"
         },
-        "targets": [
-            "x86_64-unknown-linux-gnu",
-            "aarch64-apple-darwin",
-            "x86_64-pc-windows-msvc"
-        ]
+        "triples": {
+            "defaults": false,
+            "additional": [
+                "x86_64-unknown-linux-gnu",
+                "arm64-apple-darwin",
+                "x86_64-pc-windows-msvc"
+            ]
+        }
     },
     "devDependencies": {
-        "@napi-rs/cli": "^3.5.1",
+        "@napi-rs/cli": "^2.18.4",
         "ava": "^6.4.1"
     },
     "ava": {
@@ -56,11 +59,11 @@
         "artifacts": "napi artifacts",
         "build": "napi build --release --platform --features napi",
         "build:debug": "napi build --platform --features napi",
-        "build:local": "napi build --platform --features napi --manifest-path ../Cargo.toml",
+        "build:local": "napi build --platform --features napi --cargo-cwd ../",
         "test": "ava",
         "universal": "napi universal",
         "version": "napi version",
-        "create-npm-dirs": "napi create-npm-dirs",
-        "prepublishOnly": "napi pre-publish --no-gh-release"
+        "create-npm-dir": "napi create-npm-dir -t .",
+        "prepublishOnly": "napi prepublish --skip-gh-release"
     }
 }

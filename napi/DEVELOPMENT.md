@@ -2,7 +2,7 @@
 
 ## Where are files around multiple platforms support
 
-`npm/` directory under here (`napi/`) will be automatically generated in GitHub Actions CI workflow with `napi create-npm-dirs`.
+`npm/` directory under here (`napi/`) will be automatically generated in GitHub Actions CI workflow with `napi create-npm-dir`.
 
 ## Maintenance
 
