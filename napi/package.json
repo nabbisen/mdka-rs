@@ -1,6 +1,6 @@
 {
     "name": "mdka",
-    "version": "1.5.4",
+    "version": "1.6.0",
     "description": "HTML to Markdown converter",
     "author": "nabbisen<nabbisen@scqr.net>",
     "license": "Apache-2.0",
@@ -32,34 +32,31 @@
     "main": "index.js",
     "types": "index.d.ts",
     "napi": {
-        "name": "mdka",
+        "binaryName": "mdka",
         "package": {
             "name": "@mdka/lib"
         },
-        "triples": {
-            "defaults": false,
-            "additional": [
-                "x86_64-unknown-linux-gnu",
-                "arm64-apple-darwin",
-                "x86_64-pc-windows-msvc"
-            ]
-        }
+        "targets": [
+            "x86_64-unknown-linux-gnu",
+            "aarch64-apple-darwin",
+            "x86_64-pc-windows-msvc"
+        ]
     },
     "devDependencies": {
-        "@napi-rs/cli": "^2.18.4",
-        "ava": "^6.3.0"
+        "@napi-rs/cli": "^3.5.1",
+        "ava": "^6.4.1"
     },
     "ava": {
         "timeout": "3m"
     },
     "engines": {
-        "node": ">= 12"
+        "node": ">= 20"
     },
     "scripts": {
         "artifacts": "napi artifacts",
         "build": "napi build --release --platform --features napi",
         "build:debug": "napi build --platform --features napi",
-        "build:local": "napi build --platform --features napi --cargo-cwd ../",
+        "build:local": "napi build --platform --features napi --manifest-path ../Cargo.toml",
         "test": "ava",
         "universal": "napi universal",
         "version": "napi version",

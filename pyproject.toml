@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=1.8,<2.0"]
+requires = ["maturin>=1.11,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -7,7 +7,7 @@ name = "mdka"
 dynamic = ["version", "author", "author_email", "license", "summary", "project_url", "keywords"]
 readme = "docs/BINDINGS_FOR_PYTHON.md"
 
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
