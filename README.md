@@ -4,7 +4,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
 [![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
-[![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/package/mdka)
+[![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka)
 [![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
 
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
