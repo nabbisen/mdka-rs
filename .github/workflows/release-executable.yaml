@@ -50,14 +50,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # [ build ]
       - name: Install Rust
         run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
       
       - name: Cache cargo dependencies and build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
