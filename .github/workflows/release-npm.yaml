@@ -79,7 +79,7 @@ jobs:
 
       # [ release asset ]
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.target }}
           path: ${{ env.PRODUCT_BASENAME }}.*.node
