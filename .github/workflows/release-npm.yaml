@@ -56,7 +56,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: ~/node/package-lock.json
+          cache-dependency-path: node/package-lock.json
       
       - name: Working directory
         run: cd node
