@@ -105,4 +105,4 @@ cd mdka/node
 npm run build
 ```
 
-Rust 1.82 以上と Cargo が必要です。
+Rust 1.85 以上と Cargo が必要です。
