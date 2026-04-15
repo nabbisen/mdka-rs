@@ -23,8 +23,13 @@ jobs:
             target: x86_64
           - runner: ubuntu-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -39,19 +44,22 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      
+
+      # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
+          working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter -F pyo3
+          args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
+      
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
@@ -62,8 +70,13 @@ jobs:
             target: x86_64
           - runner: ubuntu-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -79,18 +92,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       
+      # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
+          working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter -F pyo3
+          args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
+      
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -99,8 +115,13 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -117,17 +138,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       
+      # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
+          working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter -F pyo3
+          args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -136,8 +160,13 @@ jobs:
         platform:
           - runner: macos-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -153,32 +182,43 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       
+      # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
+          working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter -F pyo3
+          args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   sdist:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
+
+      # [ Pyo3 dependencies ]
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
+          working-directory: python
           command: sdist
           args: --out dist
+      
       - name: Upload sdist
         uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
-          path: dist
+          path: python/dist
 
   release:
     name: Release
@@ -192,17 +232,25 @@ jobs:
       contents: write
       # Used to generate artifact attestation
       attestations: write
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/download-artifact@v8
+
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4
         with:
+          working-directory: python
           subject-path: 'wheels-*/*'
+      
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
+          working-directory: python
           command: upload
           args: --non-interactive --skip-existing wheels-*/*

@@ -1,92 +1,165 @@
 # mdka
 
-**HTML to Markdown (MD)** converter written in [Rust](https://www.rust-lang.org/).
+**A Rust library for converting HTML to Markdown.**
 
-[![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
-[![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
-[![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka)
-[![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
+mdka balances conversion quality with runtime efficiency —
+readable output from real-world HTML, without sacrificing speed or memory.
 
-[![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
-[![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka)
-[![Executable](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml)
-[![npm](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml)
-[![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
+---
 
-## Summary
+## Why mdka?
 
-A kind of text manipulator named mdka. "ka" means "化 (か)" pointing to conversion.    
-Designed with in mind:
+There are several good HTML-to-Markdown converters in the Rust ecosystem.
+mdka's specific focus is:
 
-- Fast speed
-- Low memory consumption
-- Easy usage
+**Reliable output from diverse HTML sources.**
+It is built on [scraper](https://crates.io/crates/scraper), which uses
+[html5ever](https://github.com/servo/html5ever) — the HTML5 parser from
+the Servo browser engine. html5ever applies the same parsing algorithm that
+web browsers use, so it handles malformed tags, deeply nested structures,
+CMS output, and SPA-rendered DOM without special-casing.
 
-## Usage
+**Crash resistance.**
+Conversion uses non-recursive DFS throughout. There is no stack overflow,
+no matter the nesting depth.
 
-### 🌠 Rust with cargo
+**Configurable pre-processing.**
+Five [conversion modes](#conversion-modes) let you tune what gets kept or
+stripped — from noise-free LLM input to lossless archiving.
+
+**Multi-language.**
+The same Rust implementation is accessible from Node.js (napi-rs v3) and
+Python (PyO3 0.28).
+
+> **On speed and memory:** streaming rewriters which, for example, uses
+> `lol_html` internally are often faster on simple inputs
+> because they skip the full DOM build. If raw throughput on clean,
+> well-formed HTML is the only requirement, they are worth evaluating.
+> mdka is the better fit when stability, mode control, and crash safety matter.
+> See the [full benchmark notes](./docs/src/benchmarks/results.md).
+
+---
+
+## Quick Start
+
+### Try it from the command line
+
+```bash
+cargo install mdka-cli
+
+echo '<h1>Hello</h1><p><strong>world</strong></p>' | mdka
+# # Hello
+#
+# **world**
+```
+
+```bash
+mdka page.html                          # → page.md  (same directory)
+mdka --mode minimal --drop-shell *.html # strip nav/header/footer
+mdka --help                             # full option list
+```
+
+### Add to a Rust project
 
 ```toml
 # Cargo.toml
 [dependencies]
-mdka = "1"
+mdka = "2"
 ```
 
 ```rust
-// awesome.rs
-use mdka::from_html
+use mdka::html_to_markdown;
 
-fn awesome_fn() {
-    let input = r#"
-<h1>heading 1</h1>
-<p>Hello, world.</p>"#;
-    let ret = from_html(input);
-    println!("{}", ret);
-    // # heading 1
-    // 
-    // Hello, world.
-    // 
-}
+let md = html_to_markdown("<h1>Hello</h1><p><em>world</em></p>");
+// "# Hello\n\n*world*\n"
 ```
 
-For more details about functions, check out [the docs](docs/functions.md).
+With options:
 
-### 🧩 Executable
+```rust
+use mdka::{html_to_markdown_with};
+use mdka::options::{ConversionMode, ConversionOptions};
 
-[**Assets**](https://github.com/nabbisen/mdka-rs/releases/latest) in Releases offer executables for multiple platforms → [For usage](docs/executable.md).
-
-### 🧩 Python integration
-
-Bindings for Python are supported → [For more examples](docs/BINDINGS_FOR_PYTHON.md#usage) | [PyPi](https://pypi.org/project/mdka/).
-
-```console
-$ pip install mdka
+let opts = ConversionOptions::for_mode(ConversionMode::Minimal)
+    .drop_interactive_shell(true);
+let md = html_to_markdown_with(html, &opts);
 ```
 
-```python
-# awesome.py
-from mdka import md_from_html
+### Add to a Node.js project
 
-print(md_from_html("<p>Hello, world.</p>"))
-# Hello, world.
-# 
-```
-
-### 🧩 Node.js integration
-
-Bindings for Node.js are supported → [For more examples](napi/README.md#usage) | [npm](https://www.npmjs.com/package/mdka).
-
-```console
-$ npm install mdka
+```bash
+npm install mdka
 ```
 
 ```js
-// awesome.js
-const { fromHtml } = require("mdka")
+const { htmlToMarkdown, htmlToMarkdownWith } = require('mdka')
 
-console.log(fromHtml("<p>Hello, world.</p>"))
-// Hello, world.
-// 
+const md = htmlToMarkdown('<h1>Hello</h1>')
+
+const md = await htmlToMarkdownWithAsync(html, {
+  mode: 'minimal',
+  dropInteractiveShell: true,
+})
+```
+
+### Add to a Python project
+
+```bash
+pip install mdka
+```
+
+```python
+import mdka
+
+md = mdka.html_to_markdown('<h1>Hello</h1>')
+
+md = mdka.html_to_markdown_with(
+    html,
+    mode=mdka.ConversionMode.MINIMAL,
+    drop_interactive_shell=True,
+)
+```
+
+---
+
+## Conversion Modes
+
+| Mode | Use when |
+|---|---|
+| `Balanced` | General use — default |
+| `Strict` | Debugging, diff comparison |
+| `Minimal` | LLM input, text extraction |
+| `Semantic` | SPA content, ARIA-aware pipelines |
+| `Preserve` | Archiving, audit trails |
+
+---
+
+## Learn More
+
+Full documentation lives in the [`docs/`](./docs/) folder,
+built as an [mdBook](https://rust-lang.github.io/mdBook/) project.
+
+| Topic | Link |
+|---|---|
+| Installation | [docs/src/getting-started/installation.md](./docs/src/getting-started/installation.md) |
+| Rust usage & examples | [docs/src/getting-started/usage-rust.md](./docs/src/getting-started/usage-rust.md) |
+| Node.js usage | [docs/src/getting-started/usage-nodejs.md](./docs/src/getting-started/usage-nodejs.md) |
+| Python usage | [docs/src/getting-started/usage-python.md](./docs/src/getting-started/usage-python.md) |
+| CLI reference | [docs/src/getting-started/usage-cli.md](./docs/src/getting-started/usage-cli.md) |
+| API reference | [docs/src/api/index.md](./docs/src/api/index.md) |
+| Conversion modes | [docs/src/api/modes.md](./docs/src/api/modes.md) |
+| ConversionOptions | [docs/src/api/options.md](./docs/src/api/options.md) |
+| Supported elements | [docs/src/api/elements.md](./docs/src/api/elements.md) |
+| Design philosophy | [docs/src/design/philosophy.md](./docs/src/design/philosophy.md) |
+| Architecture | [docs/src/design/architecture.md](./docs/src/design/architecture.md) |
+| Benchmarks | [docs/src/benchmarks/results.md](./docs/src/benchmarks/results.md) |
+
+To build the docs locally (requires mdBook):
+
+```bash
+cd docs
+mdbook build   # output → docs/book/
+mdbook serve   # live-reload preview at http://localhost:3000
 ```
 
 ---

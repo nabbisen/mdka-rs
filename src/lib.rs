@@ -1,100 +1,196 @@
-//! HTML to Markdown converter - Lightweight library written in Rust.
+//! HTML to Markdown converter - Lightweight and optimized library.
+//!
+//! CLI ツールとしての使い方は [`mdka-cli`](../mdka_cli/index.html) を参照。
+//!
+//! # Quick start
+//!
+//! ```rust
+//! use mdka::{html_to_markdown, html_to_markdown_with};
+//! use mdka::options::{ConversionMode, ConversionOptions};
+//!
+//! // default mode (balanced)
+//! let md = html_to_markdown("<h1>Hello</h1>");
+//! assert!(md.contains("# Hello"));
+//!
+//! // convert by specifying the mode
+//! let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+//! let md = html_to_markdown_with("<h1>Hello</h1>", &opts);
+//! assert!(md.contains("# Hello"));
+//! ```
 
-mod elements;
-mod nodes;
+pub mod options;
+
+mod renderer;
+mod traversal;
 mod utils;
 
-use nodes::{node::root_node_md, utils::parse_html};
-use utils::file::{read_from_filepath, write_to_filepath};
+#[doc(hidden)]
+pub mod alloc_counter;
 
-#[cfg(feature = "pyo3")]
-pub mod python_bindings;
+use std::fs;
+use std::path::{Path, PathBuf};
+use thiserror::Error;
 
-#[cfg(feature = "napi")]
-pub mod nodejs_bindings;
+pub use options::{ConversionMode, ConversionOptions};
 
-/// Convert HTML to Markdown
-///
-/// ```
-/// use mdka::from_html;
-///
-/// let html_text = r#"
-/// <h1>heading 1</h1>
-/// <p>Hello, world.</p>"#;
-/// let expect = "# heading 1\n\nHello, world.\n\n";
-///
-/// let ret = from_html(html_text);
-/// assert_eq!(ret, expect);
-/// ```
-///
-pub fn from_html(html_text: &str) -> String {
-    let dom = parse_html(html_text);
-    root_node_md(&dom.document, None::<usize>)
+// ── エラー型 ───────────────────────────────────────────────────────────────
+
+#[derive(Error, Debug)]
+pub enum MdkaError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
-/// Convert HTML to Markdown
-///
-/// ```
-/// use mdka::from_file;
-///
-/// let html_filepath = "tests/fixtures/simple-01.html";
-/// let expect = "# heading 1\n\nHello, world.\n\n";
-///
-/// let ret = from_file(html_filepath).expect("Failed to read");
-/// assert_eq!(ret.as_str(), expect);
-/// ```
-///
-pub fn from_file(html_filepath: &str) -> Result<String, String> {
-    let html_text = read_from_filepath(html_filepath)
-        .expect(format!("Failed to read: {}", html_filepath).as_str());
-    Ok(from_html(html_text.as_str()))
+// ── 変換結果型 ─────────────────────────────────────────────────────────────
+
+/// ファイル変換の結果。入力パスと出力パスを保持する。
+#[derive(Debug, Clone)]
+pub struct ConvertResult {
+    /// 変換した入力ファイルのパス。
+    pub src: PathBuf,
+    /// 書き出した出力ファイルのパス。
+    pub dest: PathBuf,
 }
 
-/// Convert HTML to Markdown
+// ── 文字列変換 API ─────────────────────────────────────────────────────────
+
+/// HTML 文字列を Markdown 文字列に変換する（既定モード: `balanced`）。
 ///
+/// # Example
+///
+/// ```rust
+/// let md = mdka::html_to_markdown("<h1>Hello</h1>");
+/// assert!(md.contains("# Hello"));
 /// ```
-/// use mdka::from_html_to_file;
-///
-/// let html_text = r#"
-/// <h1>heading 1</h1>
-/// <p>Hello, world.</p>"#;
-/// let markdown_filepath = "tests/tmp/from_html_file_doc_test_result.html";
-/// let expect = "# heading 1\n\nHello, world.\n\n";
-///
-/// let ret = from_html_to_file(html_text, markdown_filepath, true).expect("Failed to write");
-/// let markdown_file_content = std::fs::read_to_string(markdown_filepath).expect("Failed to read from markdown filepath");
-/// assert_eq!(expect, markdown_file_content);
-/// ```
-///
-pub fn from_html_to_file(
-    html_text: &str,
-    markdown_filepath: &str,
-    overwrites: bool,
-) -> Result<(), String> {
-    let md = from_html(html_text);
-    write_to_filepath(md.as_str(), markdown_filepath, overwrites)
+pub fn html_to_markdown(html: &str) -> String {
+    html_to_markdown_with(html, &ConversionOptions::default())
 }
 
-/// Convert HTML to Markdown
+/// HTML 文字列を指定した [`ConversionOptions`] で Markdown に変換する。
 ///
+/// 1回のパース + 1回のトラバースで変換を完了する。
+/// 前処理（タグ除外・アンラップ）はトラバース時にインライン実行される。
+///
+/// # Example
+///
+/// ```rust
+/// use mdka::options::{ConversionMode, ConversionOptions};
+///
+/// let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+/// let md = mdka::html_to_markdown_with(
+///     "<nav><a href='/'>Home</a></nav><main><p>Content</p></main>",
+///     &opts,
+/// );
+/// assert!(md.contains("Content"));
 /// ```
-/// use mdka::from_file_to_file;
 ///
-/// let html_filepath = "tests/fixtures/simple-01.html";
-/// let markdown_filepath = "tests/tmp/from_html_file_doc_test_result.html";
-/// let expect = "# heading 1\n\nHello, world.\n\n";
+/// Note:
+/// This library builds a full DOM tree in memory using the `html5ever` parser before conversion.
+/// While the traversal itself is stack-safe and non-recursive, memory consumption scales linearly with the input size.
+/// For extremely large HTML files (e.g., 5MB+),
+/// please be aware of the memory overhead compared to stream-based parsers like `lol_html``.
+pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String {
+    let document = scraper::Html::parse_document(html);
+    traversal::traverse(&document, opts)
+}
+
+// ── 単体ファイル変換 API ───────────────────────────────────────────────────
+
+/// 単一の HTML ファイルを Markdown に変換する（既定モード: `balanced`）。
 ///
-/// let ret = from_file_to_file(html_filepath, markdown_filepath, true).expect("Failed to write");
-/// let markdown_file_content = std::fs::read_to_string(markdown_filepath).expect("Failed to read from markdown filepath");
-/// assert_eq!(expect, markdown_file_content);
+/// `out_dir` が `None` の場合は入力ファイルと同じディレクトリに
+/// 拡張子を `.md` に変えて出力する。
+///
+/// # Example
+///
+/// ```rust,no_run
+/// // 同じディレクトリに index.md を生成
+/// let result = mdka::html_file_to_markdown("index.html", None::<&str>).unwrap();
+///
+/// // 別ディレクトリに出力
+/// let result = mdka::html_file_to_markdown("index.html", Some("out/")).unwrap();
+/// println!("{} -> {}", result.src.display(), result.dest.display());
 /// ```
+pub fn html_file_to_markdown(
+    path: impl AsRef<Path>,
+    out_dir: Option<impl AsRef<Path>>,
+) -> Result<ConvertResult, MdkaError> {
+    html_file_to_markdown_with(path, out_dir, &ConversionOptions::default())
+}
+
+/// 単一の HTML ファイルを指定した [`ConversionOptions`] で Markdown に変換する。
 ///
-pub fn from_file_to_file(
-    html_filepath: &str,
-    markdown_filepath: &str,
-    overwrites: bool,
-) -> Result<(), String> {
-    let html = read_from_filepath(html_filepath)
-        .expect(format!("Failed to read: {}", html_filepath).as_str());
-    from_html_to_file(html.as_str(), markdown_filepath, overwrites)
+/// `out_dir` が `None` の場合は入力ファイルと同じディレクトリに出力する。
+pub fn html_file_to_markdown_with(
+    path: impl AsRef<Path>,
+    out_dir: Option<impl AsRef<Path>>,
+    opts: &ConversionOptions,
+) -> Result<ConvertResult, MdkaError> {
+    let path = path.as_ref();
+    let resolved_out_dir = match out_dir {
+        Some(d) => d.as_ref().to_path_buf(),
+        None => path
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .to_path_buf(),
+    };
+    let dest = do_convert_file(path, &resolved_out_dir, opts)?;
+    Ok(ConvertResult {
+        src: path.to_path_buf(),
+        dest,
+    })
+}
+
+// ── バルクファイル変換 API（parallel フィーチャー） ─────────────────────────
+
+/// 複数の HTML ファイルを rayon で並列変換し、`out_dir` へ書き出す（既定モード）。
+#[cfg(feature = "parallel")]
+pub fn html_files_to_markdown<'a, P>(
+    paths: &'a [P],
+    out_dir: &Path,
+) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+where
+    P: AsRef<Path> + Sync,
+{
+    html_files_to_markdown_with(paths, out_dir, &ConversionOptions::default())
+}
+
+/// 複数の HTML ファイルを指定した [`ConversionOptions`] で並列変換し `out_dir` へ書き出す。
+///
+/// Important: Unlike single-file conversion,
+/// `out_dir` is **required** for bulk processing
+/// to ensure a consistent and predictable output location for all generated files.
+#[cfg(feature = "parallel")]
+pub fn html_files_to_markdown_with<'a, P>(
+    paths: &'a [P],
+    out_dir: &Path,
+    opts: &ConversionOptions,
+) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+where
+    P: AsRef<Path> + Sync,
+{
+    use rayon::prelude::*;
+    paths
+        .par_iter()
+        .map(|path| (path, do_convert_file(path.as_ref(), out_dir, opts)))
+        .collect()
+}
+
+// ── 共通コア ───────────────────────────────────────────────────────────────
+
+/// HTML ファイルを読み込み → 変換 → 書き出しする共通処理。
+/// 単体変換・バルク変換の両方から呼ばれる。
+fn do_convert_file(
+    src: &Path,
+    out_dir: &Path,
+    opts: &ConversionOptions,
+) -> Result<PathBuf, MdkaError> {
+    // out_dir が存在しない場合は自動作成する
+    fs::create_dir_all(out_dir)?;
+    let html = fs::read_to_string(src)?;
+    let md = html_to_markdown_with(&html, opts);
+    let stem = src.file_stem().unwrap_or_default();
+    let dest = out_dir.join(stem).with_extension("md");
+    fs::write(&dest, md)?;
+    Ok(dest)
 }

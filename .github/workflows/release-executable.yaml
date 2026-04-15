@@ -47,7 +47,10 @@ jobs:
             os: windows-latest
             bin_ext: .exe
             archive_ext: .zip
-
+    
+    defaults:
+      run:
+        working-directory: cli
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

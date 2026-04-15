@@ -39,28 +39,27 @@ jobs:
             archive_ext: .zip
             napiplatform: win32-x64-msvc
 
+    defaults:
+      run:
+        working-directory: node
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       
       # [ Node.js dependencies ]
-      - name: Prepare napi
-        run: cp -r napi/* .
-        # todo: better ? to replace w/
-        # working-directory: napi
-      
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: node/package-lock.json
       
       - name: Install npm packages
         run: npm install
       
       # [ build ]
       - name: Install Rust
-        run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+        run: bash ../.github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
       
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
@@ -82,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.target }}
-          path: ${{ env.PRODUCT_BASENAME }}.*.node
+          path: node/${{ env.PRODUCT_BASENAME }}.*.node
           if-no-files-found: error
   
   publish:
@@ -90,6 +89,10 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: node
     steps:
       - name: Check if release tag
         run: |
@@ -103,30 +106,26 @@ jobs:
 
       - uses: actions/checkout@v6
 
-      - name: Prepare napi
-        run: cp -r napi/* .
-        # todo: better ? to replace w/
-        # working-directory: napi
-      
       - name: Setup node
         uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
           cache: npm
-      
+            
       - name: Install dependencies
         run: npm install
       
       - name: Download all artifacts
         uses: actions/download-artifact@v8
         with:
+          working-directory: node
           path: artifacts
       
       - name: Move artifacts
         run: |
-          npm run create-npm-dir
-          npm run artifacts
+          npx napi create-npm-dir -t .
+          npx napi artifacts
       
       - name: List packages
         run: ls -R ./npm

@@ -1,60 +1,63 @@
+[workspace]
+members  = [".", "node", "python", "cli"]
+resolver = "2"
+
 [package]
-name = "mdka"
-version = "1.6.9"
+name    = "mdka"
+version = "2.0.0"
 edition = "2024"
 
-description = "HTML to Markdown converter"
-authors = ["nabbisen <nabbisen@scqr.net>"]
-license = "Apache-2.0"
-categories = ["development-tools", "parsing", "parser-implementations"]
-keywords = ["html", "markdown", "parser", "conversion"]
-repository = "https://github.com/nabbisen/mdka-rs"
-readme = "README.md"
+description   = "HTML to Markdown converter"
+authors       = ["nabbisen <nabbisen@scqr.net>"]
+license       = "Apache-2.0"
+categories    = ["text-processing", "parsing", "development-tools"]
+keywords      = ["html", "markdown", "converter", "html2md"]
+repository    = "https://github.com/nabbisen/mdka-rs"
+readme        = "README.md"
+documentation = "https://docs.rs/mdka"
 
-rust-version = "1.85.0"
-
-[lib]
-name = "mdka"
-crate-type = ["rlib", "cdylib"]
-
-[profile.release]     # shrink executable size
-opt-level = "z"
-lto = true
-# panic = "abort"
-strip = true
+[profile.release]
+lto           = "thin"
+strip         = "symbols"
 codegen-units = 1
 
-[profile.dev]         # to reasonably improve productivity
-opt-level = 1         # slightly optimize
-lto = false           # disable link-time optimizations
-# strip = "debuginfo" # reduce size
-incremental = true
+[profile.bench]
+opt-level = 3
+lto       = "thin"
+[[bench]]
+name = "convert"
+harness = false
+[[bench]]
+name = "parallel"
+harness = false
+[[bench]]
+name = "scaling"
+harness = false
+[[bench]]
+name = "memory"
+harness = false
 
 [features]
-default = []
-pyo3 = ["dep:pyo3"]
-napi = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
+default  = ["parallel"]
+parallel = ["dep:rayon"]
+jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
 
 [dependencies]
-html5ever = "^0.27"
-markup5ever_rcdom = "^0.3"
-# binding for python
-pyo3 = { version = "0.27", features = ["extension-module"], optional = true }
-# binding for node.js
-napi = { version = "2", default-features = false, features = ["napi5", "async"], optional = true }
-napi-derive = { version = "2", optional = true }
+scraper = "0.26"
+thiserror = "1"
+ego-tree = "0.11"
+rayon = { version = "1", optional = true }
+tikv-jemallocator = { version = "0.6", optional = true }
+tikv-jemalloc-ctl = { version = "0.6", optional = true }
 
 [dev-dependencies]
-criterion = "0"
-maturin = "1"
+criterion = { version = "0.8", features = ["html_reports"] }
+rand = "0.10"
 
-[build-dependencies]
-napi-build = { version = "2", optional = true }
-
-[[example]]
-name = "trial"
-path = "examples/trial.rs"
-
-[[bench]]
-name = "benchmark"
-harness = false
+mdka-v1 = { package = "mdka", version = "1.6.9" }
+html2md = "0.2.15"
+fast-html2md = { package = "fast_html2md", version = "0.0.61" }
+htmd = "0.5.4"
+html-to-markdown-rs = "3.1.0"
+html2text = "0.16.7"
+dom_smoothie = "0.17.0"
