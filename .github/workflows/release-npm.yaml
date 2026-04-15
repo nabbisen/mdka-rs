@@ -56,7 +56,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: node/package-lock.json
+          cache-dependency-path: ~/node/package-lock.json
+      
+      - name: Working directory
+        run: cd node
       
       - name: Install npm packages
         run: npm install
@@ -78,7 +81,6 @@ jobs:
 
       - name: Build Rust executable
         run: |
-          cd node
           npm run build
 
       # [ release asset ]
