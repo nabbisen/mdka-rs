@@ -57,7 +57,7 @@ jobs:
 
       # [ build ]
       - name: Install Rust
-        run: bash .github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+        run: bash ../.github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
       
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
