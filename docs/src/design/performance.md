@@ -1,8 +1,26 @@
-# Benchmark Results
+# Performance and Design Philosophy
 
-This section summarizes the latest run as reference data, not as a verdict.
+## The Focus of mdka
 
-## Test Setup
+The Rust ecosystem offers a variety of excellent HTML-to-Markdown converters. Many of these projects prioritize feature-richness, complex edge-case handling, or high extensibility. 
+
+`mdka` takes a different approach. Our mission is to provide a **"minimalist, lightweight, and memory-efficient"** converter, specifically optimized for resource-constrained environments or high-concurrency tasks where overhead must be kept to an absolute minimum. 
+
+The benchmarks presented here are not intended to rank libraries or declare a "winner." Instead, they serve as internal metrics to verify whether `mdka` is successfully meeting its own design goals. We believe in choosing the right tool for the specific job, and we encourage developers to explore the diverse range of libraries available in the ecosystem to find the one that best fits their needs.
+
+## The Evolution: v1 to v2
+
+With the release of v2, `mdka` underwent a complete architectural overhaul. We moved away from the original implementation to a ground-up rewrite focused on:
+
+- **Stack-Safe Traversal:** Implementing a non-recursive Deep First Search (DFS) to prevent stack overflow even with deeply nested HTML.
+- **Optimized Memory Allocation:** Reducing unnecessary clones and leveraging Rust’s ownership model to minimize peak memory usage.
+- **Streamlined Processing:** Simplifying the conversion logic to achieve a predictable and lightweight execution path.
+
+This rewrite resulted in a dramatic performance leap and a significantly reduced memory footprint compared to our previous version.
+
+## Benchmark Results
+
+The following data demonstrates how the v2 architecture has improved our efficiency and how it aligns with our goal of "reasonable speed with minimal resource consumption."
 
 All libraries were benchmarked under the same conditions: Linux x86_64 6.19, Rust 1.94.1, Criterion 0.8, 28 logical cores, 3 s warm-up, and 3 s measurement. The figures below are wall-clock medians from Criterion. The log also records outliers for each run, so small differences should be read with some caution.
 
@@ -19,7 +37,7 @@ All libraries were benchmarked under the same conditions: Linux x86_64 6.19, Rus
 | **html2text** | 0.16.7 | `html5ever` | Text-oriented converter |
 | **dom_smoothie** | 0.17.0 | `dom_query` (`html5ever`) | DOM-oriented converter |
 
-These libraries do not share the same design. `lol_html` is a streaming rewriter and can be very fast on clean input. mdka uses a full HTML5 parse through `scraper` / `html5ever`, which adds overhead, but it is a better fit when malformed HTML, deep nesting, or stable output matter.
+These libraries do not share the same design and do have different approach and goals.
 
 ## Conversion Speed
 
@@ -34,8 +52,6 @@ These libraries do not share the same design. `lol_html` is a streaming rewriter
 
 mdka v2 is clearly ahead of mdka v1 in this run. The gain is small on the smallest input, but it becomes much more visible as the input gets larger or structurally harder: around 1.75× faster on medium, 6.1× on large, 11.4× on deep_nest, and 4.4× on flat. On malformed input, v2 is also faster than v1 and the fastest.
 
-`fast_html2md` as a streaming rewriter remains the fastest option on the more typical clean-input cases here.
-
 ## Memory Allocation
 
 | Dataset | mdka v2 | mdka_v1 | html2md | fast_html2md | htmd | html_to_markdown_rs | html2text | dom_smoothie |
@@ -47,12 +63,10 @@ mdka v2 is clearly ahead of mdka v1 in this run. The gain is small on the smalle
 | flat | **3.93 MB** | 7.90 MB | 7.87 MB | 7.46 MB | 4.84 MB | 7.87 MB | 40.28 MB | 35.47 MB |
 | malformed | **44.7 KB** | 91.6 KB | 71.4 KB | 145 KB | 62.3 KB | 71.4 KB | 464.4 KB | 1.63 MB |
 
-In this run, mdka v2 uses less heap than `fast_html2md` on every listed dataset, and it stays well below `html2text` and `dom_smoothie`. `html_to_markdown_rs` is smaller on `deep_nest`, but mdka still keeps its allocation profile compact there while using the same non-recursive traversal strategy.
+In this run, mdka v2 uses less heap than v1.
 
-## Takeaway
+## Summary
 
-The latest run suggests a more settled position for mdka v2 than v1. It is not the fastest converter in the set, and it does not need to be. The project still appears to be aiming for a quieter balance: stable output from HTML5 parsing, crash resistance, predictable traversal, and a memory profile that stays restrained across a wide range of inputs.
+As shown in the results, the transition to v2 has allowed us to achieve our objectives of being lightweight and memory-efficient while maintaining competitive speed. 
 
-For clean HTML where peak throughput is the only concern, `fast_html2md` still deserves a careful look. For projects that value resilience, mode control, and steady behavior across messy input, mdka v2 looks more mature than mdka v1 in this benchmark set.
-
-`htmd` is also competitive, especially on medium and large inputs, and shows a relatively efficient memory profile on several datasets.
+We recognize that other libraries may offer more features or different trade-offs that make them better suited for certain applications. `mdka` aims to be the best choice for those who prioritize a simple, "Unix-style" tool that does one thing—conversion—with the smallest possible footprint.
