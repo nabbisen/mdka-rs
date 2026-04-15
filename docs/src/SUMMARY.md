@@ -31,6 +31,5 @@
 
 - [Design Philosophy](./design/philosophy.md)
 - [Performance Philosophy](./design/performance.md)
-    - [Benchmark results](./design/performance.md#benchmark-results)
 - [Architecture](./design/architecture.md)
 - [Features](./design/features.md)
