@@ -156,9 +156,8 @@ Full documentation lives in the [`docs/`](./docs/) folder, published as GitHub P
 | ConversionOptions | [docs/src/api/options.md](./docs/src/api/options.md) |
 | Supported elements | [docs/src/api/elements.md](./docs/src/api/elements.md) |
 | Design philosophy | [docs/src/design/philosophy.md](./docs/src/design/philosophy.md) |
-| Performance philosophy | [docs/src/design/performance.md](./docs/src/design/performance.md) |
+| Performance concern | [docs/src/design/performance.md](./docs/src/design/performance.md) |
 | Architecture | [docs/src/design/architecture.md](./docs/src/design/architecture.md) |
-| Benchmarks | [docs/src/design/performance.md#benchmark-results](./docs/src/design/performance.md#benchmark-results) |
 
  Note: docs are built as an [mdBook](https://rust-lang.github.io/mdBook/) project. To build them locally (requires mdBook):
 
