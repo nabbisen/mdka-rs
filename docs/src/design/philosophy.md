@@ -60,4 +60,4 @@ The conversion pipeline is designed to minimise heap allocations:
 - No regular expressions are used at runtime (avoiding compiled regex objects).
 - The output `String` is pre-allocated with a capacity estimate.
 - The `#[global_allocator]` counter in the CLI and benchmarks measures this
-  directly — see the [Benchmarks](../benchmarks/results.md) chapter.
+  directly.

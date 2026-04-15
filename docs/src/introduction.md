@@ -36,14 +36,11 @@ mdka is a good fit if you need:
 - **Memory efficiency** at scale (bulk file conversion, streaming pipelines)
 - **Multi-language access** from a single underlying Rust implementation
 
-If raw speed on simple, well-formed HTML is the only concern,
-a streaming rewriter such as `fast_html2md` (which uses `lol_html` internally)
-will be faster.
-See the [Benchmarks](./benchmarks/results.md) chapter for an honest comparison.
+If raw speed on simple, well-formed HTML is the only concern, a streaming rewriter will be faster.
 
 ## Quick Navigation
 
 - New to mdka? Start with [Installation](./getting-started/installation.md).
 - Ready to integrate? Jump to [Usage & Examples](./getting-started/usage.md).
 - Evaluating? Read [Design Philosophy](./design/philosophy.md) and
-  [Benchmark Results](./benchmarks/results.md).
+  [Performance Philosophy](./design/performance.md).
