@@ -1,6 +1,6 @@
 {
   "name": "mdka",
-  "version": "2.0.0-rc.4",
+  "version": "2.0.0-rc.1",
   "description": "省メモリ・高速なHTML to Markdownコンバータ (Rust製) のNode.jsバインディング",
   "main": "index.js",
   "types": "index.d.ts",
