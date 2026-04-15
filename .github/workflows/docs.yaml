@@ -8,51 +8,47 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
   pages: write
+  id-token: write
 
-defaults:
-  run:
-    shell: bash
-
-env:
-  PRODUCT_BASENAME: mdka
-  TAG: ${{ github.ref_name }}            # tag or branch name
-  JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  docs:
+  build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: docs
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      
-      - name: Install mdBook and extension(s)
-        run: |
-          MDBOOK_URL=$(curl -sL https://api.github.com/repos/rust-lang/mdBook/releases/latest \
-          | jq -r '.assets[] | select(.name | test("x86_64-unknown-linux-gnu\\.tar\\.gz$")) | .browser_download_url')
-          echo mdbook: $MDBOOK_URL
-          curl -L $MDBOOK_URL | tar -xz
-          sudo mv mdbook /usr/local/bin/
-          MDBOOK_MERMAID_URL=$(curl -sL https://api.github.com/repos/badboy/mdbook-mermaid/releases/latest \
-          | jq -r '.assets[] | select(.name | test("x86_64-unknown-linux-gnu\\.tar\\.gz$")) | .browser_download_url')
-          echo mdbook-mermaid: $MDBOOK_MERMAID_URL
-          curl -L $MDBOOK_MERMAID_URL | tar -xz
-          sudo mv mdbook-mermaid /usr/local/bin/
-      
-      - name: mdbook build
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: docs
-        run: |
-          mdbook build
-      
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+
+      - name: Set up Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Install mdBook
+        run: cargo install mdbook --no-default-features --features search --vers "^0.5" --locked
+
+      - name: Build book
+        run: mdbook build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/book
-      
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v6

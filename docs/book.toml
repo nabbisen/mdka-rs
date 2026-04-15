@@ -4,18 +4,16 @@ authors     = ["nabbisen<nabbisen@scqr.net>"]
 description = "mdka: A HTML to Markdown converter"
 
 language    = "en"
-
 src         = "src"
 
 [build]
 build-dir = "book"
 
 [output.html]
+site-url            = "/mdka/"
 git-repository-url  = "https://github.com/nabbisen/mdka-rs"
 edit-url-template   = "https://github.com/nabbisen/mdka-rs/edit/main/docs/{path}"
-
 no-section-label    = false
-
 additional-css      = []
 
 [output.html.search]
