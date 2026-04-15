@@ -83,6 +83,12 @@ pub fn html_to_markdown(html: &str) -> String {
 /// );
 /// assert!(md.contains("Content"));
 /// ```
+///
+/// Note:
+/// This library builds a full DOM tree in memory using the `html5ever` parser before conversion.
+/// While the traversal itself is stack-safe and non-recursive, memory consumption scales linearly with the input size.
+/// For extremely large HTML files (e.g., 5MB+),
+/// please be aware of the memory overhead compared to stream-based parsers like `lol_html``.
 pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String {
     let document = scraper::Html::parse_document(html);
     traversal::traverse(&document, opts)
@@ -150,6 +156,10 @@ where
 }
 
 /// 複数の HTML ファイルを指定した [`ConversionOptions`] で並列変換し `out_dir` へ書き出す。
+///
+/// Important: Unlike single-file conversion,
+/// `out_dir` is **required** for bulk processing
+/// to ensure a consistent and predictable output location for all generated files.
 #[cfg(feature = "parallel")]
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],

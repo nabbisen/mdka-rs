@@ -150,6 +150,8 @@ fn html_to_markdown_with(
     ::mdka::html_to_markdown_with(html, &opts)
 }
 
+/// # The `html_to_markdown_many` function releases the Python GIL and utilizes `rayon`
+/// to perform conversions in parallel across multiple CPU cores for maximum throughput.
 #[pyfunction]
 fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> {
     py.detach(|| {

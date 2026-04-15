@@ -11,10 +11,10 @@ export interface ConversionOptions {
    * - `"preserve"` 元情報最大保持。アーカイブ・監査用
    */
   mode?: 'balanced' | 'strict' | 'minimal' | 'semantic' | 'preserve'
-  preserveIds?:          boolean
-  preserveClasses?:      boolean
-  preserveDataAttrs?:    boolean
-  preserveAriaAttrs?:    boolean
+  preserveIds?: boolean
+  preserveClasses?: boolean
+  preserveDataAttrs?: boolean
+  preserveAriaAttrs?: boolean
   dropInteractiveShell?: boolean
 }
 
@@ -22,9 +22,9 @@ export interface ConversionOptions {
 
 export interface ConvertResult {
   /** 変換した入力ファイルのパス */
-  src:    string
+  src: string
   /** 書き出した出力ファイルのパス */
-  dest?:  string
+  dest?: string
   /** 変換失敗時のエラーメッセージ（バルク変換のみ） */
   error?: string
 }
@@ -33,6 +33,10 @@ export interface ConvertResult {
 
 export declare function htmlToMarkdown(html: string): string
 export declare function htmlToMarkdownWith(html: string, options?: ConversionOptions): string
+/** This function offloads the conversion task to a background thread pool using `tokio::task::spawn_blocking`,
+ *  ensuring the V8 main thread remains unblocked.
+ *  When processing multiple files (e.g., using Promise.all),
+ *  tasks will run concurrently on the underlying thread pool. */
 export declare function htmlToMarkdownAsync(html: string): Promise<string>
 export declare function htmlToMarkdownWithAsync(html: string, options?: ConversionOptions): Promise<string>
 
