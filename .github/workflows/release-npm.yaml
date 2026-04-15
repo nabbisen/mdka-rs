@@ -57,10 +57,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          working-directory: node
           node-version: 24
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: node/package-lock.json
       
       - name: Install npm packages
         run: npm install
@@ -72,7 +71,6 @@ jobs:
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
-          working-directory: node
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -119,7 +117,6 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v6
         with:
-          working-directory: node
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
           cache: npm

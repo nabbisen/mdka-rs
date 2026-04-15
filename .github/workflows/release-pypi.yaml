@@ -44,7 +44,6 @@ jobs:
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
-          working-directory: python
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -93,7 +92,6 @@ jobs:
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
-          working-directory: python
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -141,7 +139,6 @@ jobs:
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
-          working-directory: python
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -187,7 +184,6 @@ jobs:
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
-          working-directory: python
           path: |
             ~/.cargo/registry
             ~/.cargo/git
