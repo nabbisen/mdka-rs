@@ -1,5 +1,7 @@
 //! Node.js バインディング for mdka (napi-rs v3)
 
+use std::str::FromStr;
+
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -16,17 +18,22 @@ pub struct JsConversionOptions {
     pub drop_interactive_shell: Option<bool>,
 }
 
-fn to_rust_opts(js: Option<JsConversionOptions>) -> mdka::ConversionOptions {
+fn to_rust_opts(js: Option<JsConversionOptions>) -> Result<mdka::ConversionOptions> {
     let js = match js {
         Some(j) => j,
-        None => return mdka::ConversionOptions::default(),
+        None => return Ok(mdka::ConversionOptions::default()),
     };
-    let mode = js
-        .mode
-        .as_deref()
-        .and_then(mdka::ConversionMode::from_str)
-        .unwrap_or_default();
+
+    let mode = match js.mode.as_deref() {
+        Some(x) => match mdka::ConversionMode::from_str(x) {
+            Ok(x) => x,
+            Err(err) => return Err(Error::from_reason(err.to_string())),
+        },
+        None => mdka::ConversionMode::default(),
+    };
+
     let mut opts = mdka::ConversionOptions::for_mode(mode);
+
     if let Some(v) = js.preserve_ids {
         opts.preserve_ids = v;
     }
@@ -42,7 +49,8 @@ fn to_rust_opts(js: Option<JsConversionOptions>) -> mdka::ConversionOptions {
     if let Some(v) = js.drop_interactive_shell {
         opts.drop_interactive_shell = v;
     }
-    opts
+
+    Ok(opts)
 }
 
 // ─── 変換結果 ─────────────────────────────────────────────────────────────
@@ -66,8 +74,11 @@ pub fn html_to_markdown(html: String) -> String {
 }
 
 #[napi]
-pub fn html_to_markdown_with(html: String, options: Option<JsConversionOptions>) -> String {
-    mdka::html_to_markdown_with(&html, &to_rust_opts(options))
+pub fn html_to_markdown_with(html: String, options: Option<JsConversionOptions>) -> Result<String> {
+    match to_rust_opts(options) {
+        Ok(x) => Ok(mdka::html_to_markdown_with(&html, &x)),
+        Err(err) => Err(err),
+    }
 }
 
 #[napi]
@@ -82,7 +93,7 @@ pub async fn html_to_markdown_with_async(
     html: String,
     options: Option<JsConversionOptions>,
 ) -> Result<String> {
-    let opts = to_rust_opts(options);
+    let opts = to_rust_opts(options)?;
     tokio::task::spawn_blocking(move || mdka::html_to_markdown_with(&html, &opts))
         .await
         .map_err(|e| Error::from_reason(format!("task panicked: {e}")))
@@ -114,7 +125,7 @@ pub async fn html_file_to_markdown_with(
     out_dir: Option<String>,
     options: Option<JsConversionOptions>,
 ) -> Result<ConvertResult> {
-    let opts = to_rust_opts(options);
+    let opts = to_rust_opts(options)?;
     tokio::task::spawn_blocking(move || -> std::result::Result<ConvertResult, String> {
         let out_dir_ref = out_dir.as_deref();
         mdka::html_file_to_markdown_with(&path, out_dir_ref, &opts)
@@ -146,7 +157,7 @@ pub async fn html_files_to_markdown_with(
     out_dir: String,
     options: Option<JsConversionOptions>,
 ) -> Result<Vec<ConvertResult>> {
-    let opts = to_rust_opts(options);
+    let opts = to_rust_opts(options)?;
     tokio::task::spawn_blocking(move || -> std::result::Result<Vec<ConvertResult>, String> {
         use std::path::Path;
         let out = Path::new(&out_dir);
