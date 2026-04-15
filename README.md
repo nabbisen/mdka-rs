@@ -31,13 +31,6 @@ stripped — from noise-free LLM input to lossless archiving.
 The same Rust implementation is accessible from Node.js (napi-rs v3) and
 Python (PyO3 0.28).
 
-> **On speed and memory:** streaming rewriters which, for example, uses
-> `lol_html` internally are often faster on simple inputs
-> because they skip the full DOM build. If raw throughput on clean,
-> well-formed HTML is the only requirement, they are worth evaluating.
-> mdka is the better fit when stability, mode control, and crash safety matter.
-> See the [full benchmark notes](./docs/src/benchmarks/results.md).
-
 ---
 
 ## Quick Start
@@ -174,4 +167,5 @@ Please understand that the project has its own direction — while we welcome fe
 ## Acknowledgements
 
 Depends on [scraper](https://crates.io/crates/scraper), Servo's [html5ever](https://github.com/servo/html5ever) / markup5ever.
+
 Also, [napi-rs](https://github.com/napi-rs/napi-rs) on binding for Node.js and PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python.
