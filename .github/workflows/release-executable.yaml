@@ -47,7 +47,10 @@ jobs:
             os: windows-latest
             bin_ext: .exe
             archive_ext: .zip
-
+    
+    defaults:
+      run:
+        working-directory: cli
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -69,7 +72,6 @@ jobs:
 
       - name: Build Rust executable
         run: |
-          cd cli
           cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
 
       # [ release asset ]

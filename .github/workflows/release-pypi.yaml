@@ -30,6 +30,10 @@ jobs:
             target: x86_64
           - runner: ubuntu-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -51,7 +55,6 @@ jobs:
       # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
-        working-directory: python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -62,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
@@ -73,6 +76,10 @@ jobs:
             target: x86_64
           - runner: ubuntu-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -94,7 +101,6 @@ jobs:
       # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
-        working-directory: python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -105,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -114,6 +120,10 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -136,7 +146,6 @@ jobs:
       # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
-        working-directory: python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -146,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -155,6 +164,10 @@ jobs:
         platform:
           - runner: macos-latest
             target: aarch64
+    
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -176,7 +189,6 @@ jobs:
       # [ Pyo3 dependencies ]
       - name: Build wheels
         uses: PyO3/maturin-action@v1
-        working-directory: python
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
@@ -186,10 +198,14 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: python/dist
+          path: dist
 
   sdist:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -198,13 +214,13 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
-          args: --out python/dist
+          args: --out dist
       
       - name: Upload sdist
         uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
-          path: python/dist
+          path: dist
 
   release:
     name: Release
@@ -219,6 +235,9 @@ jobs:
       # Used to generate artifact attestation
       attestations: write
     
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/download-artifact@v8
 
