@@ -1,6 +1,7 @@
 /**
- * mdka Node.js バインディング — 使用例 (ESM)
- * node example.mjs で実行
+ * mdka Node.js binding — Usage (ESM)
+ * How to run:
+ *     node example.mjs
  */
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
@@ -18,12 +19,12 @@ const html = `
 <p>Rust 製の高速 HTML → Markdown コンバータです。</p>
 <h2>特徴</h2>
 <ul>
-  <li><strong>省メモリ</strong>: html2md 比 40% 削減</li>
+  <li><strong>省メモリ</strong>: v1 比で劇的に向上</li>
   <li><strong>高速</strong>: 非再帰 DFS + シングルパス正規化</li>
   <li><strong>堅牢</strong>: 10,000 段ネストでもクラッシュしない</li>
 </ul>
 <blockquote>
-  <p>O(n) のスケーリング特性を確認済み (10KB〜5MB)</p>
+  <p>大サイズファイルにも対応可能 (10KB〜5MB)</p>
 </blockquote>
 <pre><code class="language-js">const md = htmlToMarkdown('&lt;h1&gt;Hello&lt;/h1&gt;')</code></pre>
 `

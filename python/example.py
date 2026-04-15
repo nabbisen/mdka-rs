@@ -1,7 +1,7 @@
 """
-mdka Python バインディング — 使用例
+mdka Python binding — Usage
 
-実行方法:
+How to run:
     cd python/
     python example.py
 """
@@ -14,15 +14,15 @@ print(f"mdka v{mdka.__version__}\n")
 # ── 1. 同期変換 ────────────────────────────────────────────────────────────
 html = """
 <h1>mdka デモ</h1>
-<p>Rust 製の高速 HTML → Markdown コンバータです。</p>
+<p>Rust 製の高速 HTML → Markdown converter です。</p>
 <h2>特徴</h2>
 <ul>
-  <li><strong>省メモリ</strong>: html2md 比 40% 削減</li>
+  <li><strong>省メモリ</strong>: v1 比で劇的に向上</li>
   <li><strong>高速</strong>: 非再帰 DFS + シングルパス正規化</li>
   <li><strong>堅牢</strong>: 10,000 段ネストでもクラッシュしない</li>
 </ul>
 <blockquote>
-  <blockquote><p>O(n) スケーリング確認済み</p></blockquote>
+  <blockquote><p>大サイズファイルにも対応可能</p></blockquote>
 </blockquote>
 <pre><code class="language-python">md = mdka.html_to_markdown(html)</code></pre>
 """
