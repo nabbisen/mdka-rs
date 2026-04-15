@@ -52,6 +52,7 @@ tikv-jemalloc-ctl = { version = "0.6", optional = true }
 criterion = { version = "0.8", features = ["html_reports"] }
 rand = "0.10"
 
+mdka-v1 = { package = "mdka", version = "1.6.9" }
 html2md = "0.2.15"
 fast-html2md = { package = "fast_html2md", version = "0.0.61" }
 htmd = "0.5.4"

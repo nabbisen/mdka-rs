@@ -1130,6 +1130,16 @@ dependencies = [
 
 [[package]]
 name = "mdka"
+version = "1.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd2732b47890a721c59b78e955378ff5ad13a403746ee1088ce752b7266f87ea"
+dependencies = [
+ "html5ever 0.27.0",
+ "markup5ever_rcdom 0.3.0",
+]
+
+[[package]]
+name = "mdka"
 version = "2.0.0-rc.1"
 dependencies = [
  "criterion",
@@ -1140,6 +1150,7 @@ dependencies = [
  "html-to-markdown-rs",
  "html2md",
  "html2text",
+ "mdka 1.6.9",
  "rand 0.10.1",
  "rayon",
  "scraper",
@@ -1152,14 +1163,14 @@ dependencies = [
 name = "mdka-cli"
 version = "2.0.0-rc.1"
 dependencies = [
- "mdka",
+ "mdka 2.0.0-rc.1",
 ]
 
 [[package]]
 name = "mdka-node"
 version = "2.0.0-rc.1"
 dependencies = [
- "mdka",
+ "mdka 2.0.0-rc.1",
  "napi",
  "napi-build",
  "napi-derive",
@@ -1170,7 +1181,7 @@ dependencies = [
 name = "mdka-python"
 version = "2.0.0"
 dependencies = [
- "mdka",
+ "mdka 2.0.0-rc.1",
  "pyo3",
  "rayon",
 ]

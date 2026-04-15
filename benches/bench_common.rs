@@ -97,6 +97,10 @@ pub const TARGETS: &[BenchTarget] = &[
         run_fn: run_mdka,
     },
     BenchTarget {
+        name: "mdka_v1",
+        run_fn: run_mdka_v1,
+    },
+    BenchTarget {
         name: "html2md",
         run_fn: run_html2md,
     },
@@ -124,17 +128,13 @@ pub const TARGETS: &[BenchTarget] = &[
 
 /// スキップ対象の [ライブラリ名, データセット名] の組み合わせ
 #[allow(dead_code)]
-pub const SKIP_LIST: &[(&str, &str)] = &[("dom_smoothie", "deep_nest")];
+pub const SKIP_LIST: &[(&str, &str)] = &[("dom_smoothie", "deep_nest"), ("dom_smoothie", "5m")];
 
 /// スキップ判定
 #[allow(dead_code)]
 pub fn is_skipped(lib_name: &str, dataset_name: &str) -> bool {
     // 明示的なスキップリスト
     if SKIP_LIST.contains(&(lib_name, dataset_name)) {
-        return true;
-    }
-    // scaling ベンチマーク用の特殊ルール: "5m" などの巨大データは mdka 以外スキップ
-    if dataset_name == "5m" && lib_name != "mdka" {
         return true;
     }
     false
@@ -146,6 +146,12 @@ pub fn is_skipped(lib_name: &str, dataset_name: &str) -> bool {
 #[inline]
 pub fn run_mdka(html: &str) -> String {
     mdka::html_to_markdown(html)
+}
+
+#[allow(dead_code)]
+#[inline]
+pub fn run_mdka_v1(html: &str) -> String {
+    mdka_v1::from_html(html)
 }
 
 #[allow(dead_code)]
