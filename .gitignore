@@ -16,6 +16,8 @@ target/
 *.swp
 .DS_Store
 
+*.log
+
 # napi
 node_modules/
 *.node
