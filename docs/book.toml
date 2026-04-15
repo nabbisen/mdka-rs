@@ -1,9 +1,10 @@
 [book]
-title       = "mdka — HTML to Markdown"
-authors     = ["mdka contributors"]
+title       = "mdka — HTML to Markdown converter"
+authors     = ["nabbisen<nabbisen@scqr.net>"]
+description = "mdka: A HTML to Markdown converter"
+
 language    = "en"
 src         = "src"
-description = "mdka: A HTML to Markdown converter"
 
 [build]
 build-dir = "book"
@@ -16,5 +17,5 @@ no-section-label    = false
 additional-css      = []
 
 [output.html.search]
-enable  = true
-limit   = 20
+enable        = true
+limit-results = 20

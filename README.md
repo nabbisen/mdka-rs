@@ -46,6 +46,7 @@ Python (PyO3 0.28).
 
 ```bash
 cargo install mdka-cli
+
 echo '<h1>Hello</h1><p><strong>world</strong></p>' | mdka
 # # Hello
 #
