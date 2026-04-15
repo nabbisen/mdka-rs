@@ -29,7 +29,7 @@ stripped — from noise-free LLM input to lossless archiving.
 
 **Multi-language.**
 The same Rust implementation is accessible from Node.js (napi-rs v3) and
-Python (PyO3 0.28).
+Python (PyO3 v0).
 
 ---
 

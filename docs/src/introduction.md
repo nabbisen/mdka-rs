@@ -25,7 +25,7 @@ without sacrificing speed or memory.
 - **Configurable**: five [conversion modes](./api/modes.md) let you tune the
   pre-processing pipeline — from noise-free LLM input to lossless archiving.
 - **Multi-language**: available as a Rust library, a Node.js package (napi-rs v3),
-  and a Python package (PyO3 0.28).
+  and a Python package (PyO3 v0).
 
 ## When to Choose mdka
 
