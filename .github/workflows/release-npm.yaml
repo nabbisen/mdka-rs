@@ -44,10 +44,8 @@ jobs:
         uses: actions/checkout@v6
       
       # [ Node.js dependencies ]
-      - name: Prepare napi
-        run: cp -r napi/* .
-        # todo: better ? to replace w/
-        # working-directory: napi
+      - name: Working directory
+        run: cd node
       
       - name: Setup Node.js
         uses: actions/setup-node@v6
