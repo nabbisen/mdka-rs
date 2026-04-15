@@ -1,6 +1,6 @@
 [package]
 name        = "mdka-python"
-version     = "2.0.0"
+version = "2.0.0-rc.2"
 edition     = "2024"
 description = "Python bindings for mdka – HTML to Markdown converter"
 license     = "Apache-2.0"
