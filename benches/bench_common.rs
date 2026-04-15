@@ -78,7 +78,66 @@ pub fn print_env_info() {
 
 #[allow(dead_code)]
 pub fn print_end() {
-    eprintln!("════════════════════════════════════\n");
+    eprintln!("═════════════════ END ══════════════\n");
+}
+
+// ── ベンチマーク対象管理 ───────────────────────────────────────────────────────────
+
+/// ベンチマーク対象のライブラリ定義
+#[allow(dead_code)]
+pub struct BenchTarget {
+    pub name: &'static str,
+    pub run_fn: fn(&str) -> String,
+}
+/// 全ベンチマーク対象を一元管理
+#[allow(dead_code)]
+pub const TARGETS: &[BenchTarget] = &[
+    BenchTarget {
+        name: "mdka",
+        run_fn: run_mdka,
+    },
+    BenchTarget {
+        name: "html2md",
+        run_fn: run_html2md,
+    },
+    BenchTarget {
+        name: "fast_html2md",
+        run_fn: run_fast_html2md,
+    },
+    BenchTarget {
+        name: "htmd",
+        run_fn: run_htmd,
+    },
+    BenchTarget {
+        name: "html_to_markdown_rs",
+        run_fn: run_html_to_markdown_rs,
+    },
+    BenchTarget {
+        name: "html2text",
+        run_fn: run_html2text,
+    },
+    BenchTarget {
+        name: "dom_smoothie",
+        run_fn: run_dom_smoothie,
+    },
+];
+
+/// スキップ対象の [ライブラリ名, データセット名] の組み合わせ
+#[allow(dead_code)]
+pub const SKIP_LIST: &[(&str, &str)] = &[("dom_smoothie", "deep_nest")];
+
+/// スキップ判定
+#[allow(dead_code)]
+pub fn is_skipped(lib_name: &str, dataset_name: &str) -> bool {
+    // 明示的なスキップリスト
+    if SKIP_LIST.contains(&(lib_name, dataset_name)) {
+        return true;
+    }
+    // scaling ベンチマーク用の特殊ルール: "5m" などの巨大データは mdka 以外スキップ
+    if dataset_name == "5m" && lib_name != "mdka" {
+        return true;
+    }
+    false
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
