@@ -1,0 +1,37 @@
+{
+  "name": "mdka",
+  "version": "2.0.0-rc.1",
+  "description": "省メモリ・高速なHTML to Markdownコンバータ (Rust製) のNode.jsバインディング",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "Apache-2.0",
+  "keywords": [
+    "html",
+    "markdown",
+    "html2md",
+    "converter",
+    "napi",
+    "rust"
+  ],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
+  "napi": {
+    "name": "mdka",
+    "triples": {
+      "defaults": true
+    }
+  },
+  "scripts": {
+    "build": "cargo build -p mdka-node --release && cp ../target/release/libmdka_node.so mdka_node.linux-x64-gnu.node",
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  },
+  "engines": {
+    "node": ">= 16"
+  }
+}

@@ -1,0 +1,15 @@
+[package]
+name        = "mdka-cli"
+version     = "2.0.0-rc.1"
+edition     = "2024"
+description = "mdka の CLI 実行ファイル"
+license     = "Apache-2.0"
+readme      = "../README.md"
+repository  = "https://github.com/nabbisen/mdka-rs"
+
+[[bin]]
+name = "mdka"
+path = "src/main.rs"
+
+[dependencies]
+mdka = { path = ".." }

@@ -13,9 +13,8 @@ target/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
-# custom
-tests/tmp/*
-!tests/tmp/.gitkeep
+*.swp
+.DS_Store
 
 # napi
 node_modules/
@@ -25,3 +24,11 @@ bun.lockb
 .env
 .env.*
 !.env.example
+
+python/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# mdBook build output
+docs/book/
