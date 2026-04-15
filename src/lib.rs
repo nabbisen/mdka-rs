@@ -20,7 +20,6 @@
 
 pub mod options;
 
-mod preprocessor;
 mod renderer;
 mod traversal;
 mod utils;
@@ -28,7 +27,6 @@ mod utils;
 #[doc(hidden)]
 pub mod alloc_counter;
 
-use rayon::prelude::*;
 use std::fs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -70,6 +68,9 @@ pub fn html_to_markdown(html: &str) -> String {
 
 /// HTML 文字列を指定した [`ConversionOptions`] で Markdown に変換する。
 ///
+/// 1回のパース + 1回のトラバースで変換を完了する。
+/// 前処理（タグ除外・アンラップ）はトラバース時にインライン実行される。
+///
 /// # Example
 ///
 /// ```rust
@@ -84,9 +85,7 @@ pub fn html_to_markdown(html: &str) -> String {
 /// ```
 pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String {
     let document = scraper::Html::parse_document(html);
-    let cleaned = preprocessor::preprocess(&document, opts);
-    let cleaned_doc = scraper::Html::parse_document(&cleaned);
-    traversal::traverse(&cleaned_doc)
+    traversal::traverse(&document, opts)
 }
 
 // ── 単体ファイル変換 API ───────────────────────────────────────────────────
@@ -136,9 +135,10 @@ pub fn html_file_to_markdown_with(
     })
 }
 
-// ── バルクファイル変換 API ─────────────────────────────────────────────────
+// ── バルクファイル変換 API（parallel フィーチャー） ─────────────────────────
 
 /// 複数の HTML ファイルを rayon で並列変換し、`out_dir` へ書き出す（既定モード）。
+#[cfg(feature = "parallel")]
 pub fn html_files_to_markdown<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -150,6 +150,7 @@ where
 }
 
 /// 複数の HTML ファイルを指定した [`ConversionOptions`] で並列変換し `out_dir` へ書き出す。
+#[cfg(feature = "parallel")]
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -158,6 +159,7 @@ pub fn html_files_to_markdown_with<'a, P>(
 where
     P: AsRef<Path> + Sync,
 {
+    use rayon::prelude::*;
     paths
         .par_iter()
         .map(|path| (path, do_convert_file(path.as_ref(), out_dir, opts)))

@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::utils;
 
 #[derive(Debug, Clone)]
@@ -55,6 +57,12 @@ impl MarkdownRenderer {
     // ─── 改行制御 ──────────────────────────────────────────────────────────
 
     pub fn ensure_newlines(&mut self, count: usize) {
+        // 出力が空のときは先頭に改行を入れない
+        // （scraper が補完する <html><body> の begin_block 対策）
+        if self.output.is_empty() {
+            self.at_line_start = true;
+            return;
+        }
         while self.newlines_emitted < count {
             self.output.push('\n');
             self.newlines_emitted += 1;
@@ -374,13 +382,6 @@ impl MarkdownRenderer {
         // 末尾の空白・改行を除去
         let end = self.output.trim_end().len();
         self.output.truncate(end);
-        // 先頭の空白・改行を除去（scraper が <html><body> ラッパーを補完するため
-        // body の begin_block が先頭に \n\n を出力してしまうのを打ち消す）
-        let start = self.output.len() - self.output.trim_start().len();
-        // in-place で先頭を削除
-        if start > 0 {
-            self.output.drain(..start);
-        }
         if !self.output.is_empty() {
             self.output.push('\n');
         }
@@ -388,22 +389,8 @@ impl MarkdownRenderer {
     }
 }
 
-/// usize を String へ直接書き込む（format! によるアロケーション回避）
-///
-/// # Safety
-/// ASCII 数字（0x30–0x39）のみを書き込むため、UTF-8 不変条件が成立する。
+/// usize を String へ直接書き込む（`format!` によるアロケーション回避）。
 #[inline]
-fn push_usize(s: &mut String, mut n: usize) {
-    if n == 0 {
-        s.push('0');
-        return;
-    }
-    let start = s.len();
-    while n > 0 {
-        s.push((b'0' + (n % 10) as u8) as char);
-        n /= 10;
-    }
-    // SAFETY: 追加したのは ASCII 数字のみ。バイト列反転は UTF-8 安全。
-    let bytes = unsafe { s.as_bytes_mut() };
-    bytes[start..].reverse();
+fn push_usize(s: &mut String, n: usize) {
+    let _ = write!(s, "{n}");
 }

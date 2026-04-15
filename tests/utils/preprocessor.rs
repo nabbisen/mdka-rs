@@ -2,21 +2,18 @@
 //!
 //! モードに応じて DOM ノードをフィルタリングし、変換用 HTML を再構築する。
 //! 非再帰 DFS（`Vec` スタック）を使用するためスタックオーバーフローが発生しない。
+//!
+//! **注**: メインの変換パイプライン（`html_to_markdown_with`）はこのモジュールを
+//! 経由せず、`traversal` モジュール内で前処理をインライン実行する。
+//! このモジュールは前処理済み HTML 文字列を直接取得したい場合のユーティリティ
+//! として残してある。
 
 use scraper::{Html, Node};
 
 use crate::options::{ConversionMode, ConversionOptions};
+use crate::utils;
 
-// ─── 定数 ─────────────────────────────────────────────────────────────────
-
-const ALWAYS_DROP: &[&str] = &[
-    "script", "style", "meta", "link", "template", "iframe", "object", "embed", "noscript",
-];
-
-const SHELL_TAGS: &[&str] = &["nav", "header", "footer", "aside"];
-
-/// アンラップ候補のラッパー系タグ（構造タグ以外）。
-const WRAPPER_TAGS: &[&str] = &["span", "div", "section", "article", "main"];
+// ─── 意味属性（常に保持） ─────────────────────────────────────────────────
 
 const SEMANTIC_ATTRS: &[&str] = &[
     "href", "src", "alt", "title", "lang", "dir", "type", "start", "colspan", "rowspan",
@@ -29,12 +26,9 @@ const SEMANTIC_ATTRS: &[&str] = &[
 pub fn preprocess(document: &Html, opts: &ConversionOptions) -> String {
     let mut out = String::with_capacity(document.html().len());
 
-    // スタックの各エントリは (ノード, 開きタグ出力済みか)
-    // Enter: 開きタグを出力して子を積む
-    // Leave: 閉じタグを出力する
     enum Frame<'a> {
         Enter(ego_tree::NodeRef<'a, Node>),
-        Leave { tag: String },
+        Leave { tag: &'a str },
     }
 
     let mut stack: Vec<Frame> = vec![Frame::Enter(document.tree.root())];
@@ -43,26 +37,26 @@ pub fn preprocess(document: &Html, opts: &ConversionOptions) -> String {
         match frame {
             Frame::Enter(node) => match node.value() {
                 Node::Document | Node::Fragment => {
-                    // 子をすべて逆順でプッシュ
                     for child in node.children().rev() {
                         stack.push(Frame::Enter(child));
                     }
                 }
                 Node::Element(elem) => {
-                    let tag = elem.name().to_ascii_lowercase();
+                    // html5ever はタグ名を小文字正規化済みで返す
+                    let tag = elem.name();
 
                     // 全モード共通除外
-                    if ALWAYS_DROP.contains(&tag.as_str()) {
+                    if utils::is_skip_tag(tag) {
                         continue;
                     }
                     // シェル除外
-                    if opts.drop_interactive_shell && SHELL_TAGS.contains(&tag.as_str()) {
+                    if opts.drop_interactive_shell && utils::is_shell_tag(tag) {
                         continue;
                     }
                     // ラッパーアンラップ
                     if opts.unwrap_unknown_wrappers
-                        && WRAPPER_TAGS.contains(&tag.as_str())
-                        && !is_structural(&tag)
+                        && utils::is_wrapper_tag(tag)
+                        && !utils::is_structural_tag(tag)
                     {
                         for child in node.children().rev() {
                             stack.push(Frame::Enter(child));
@@ -72,17 +66,17 @@ pub fn preprocess(document: &Html, opts: &ConversionOptions) -> String {
 
                     // 開きタグを出力
                     out.push('<');
-                    out.push_str(&tag);
+                    out.push_str(tag);
                     emit_attrs(elem, opts, &mut out);
 
-                    if is_void_element(&tag) {
+                    if is_void_element(tag) {
                         out.push('>');
                         continue;
                     }
                     out.push('>');
 
-                    // 閉じタグを後で出力するためにプッシュ
-                    stack.push(Frame::Leave { tag: tag.clone() });
+                    // 閉じタグを後で出力するためにプッシュ（借用のみ・アロケーション不要）
+                    stack.push(Frame::Leave { tag });
 
                     // 子を逆順でプッシュ
                     for child in node.children().rev() {
@@ -111,7 +105,7 @@ pub fn preprocess(document: &Html, opts: &ConversionOptions) -> String {
             },
             Frame::Leave { tag } => {
                 out.push_str("</");
-                out.push_str(&tag);
+                out.push_str(tag);
                 out.push('>');
             }
         }
@@ -186,57 +180,27 @@ fn emit_attrs(elem: &scraper::node::Element, opts: &ConversionOptions, out: &mut
     }
 }
 
+/// 属性値を正しくエスケープして出力する。
 #[inline]
 fn push_attr(out: &mut String, key: &str, val: &str) {
     out.push(' ');
     out.push_str(key);
     out.push_str("=\"");
     for ch in val.chars() {
-        if ch == '"' {
-            out.push_str("&quot;");
-        } else {
-            out.push(ch);
+        match ch {
+            '"' => out.push_str("&quot;"),
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            c => out.push(c),
         }
     }
     out.push('"');
 }
 
-// ─── ヘルパー ──────────────────────────────────────────────────────────────
+// ─── Utils ────────────────────────────────────────────────────────────────
 
-fn is_structural(tag: &str) -> bool {
-    matches!(
-        tag,
-        "h1" | "h2"
-            | "h3"
-            | "h4"
-            | "h5"
-            | "h6"
-            | "p"
-            | "ul"
-            | "ol"
-            | "li"
-            | "blockquote"
-            | "pre"
-            | "code"
-            | "table"
-            | "thead"
-            | "tbody"
-            | "tr"
-            | "th"
-            | "td"
-            | "a"
-            | "img"
-            | "strong"
-            | "b"
-            | "em"
-            | "i"
-            | "hr"
-            | "br"
-            | "figure"
-            | "figcaption"
-    )
-}
-
+/// Void 要素（自己閉じ・子なし）。
+#[inline]
 fn is_void_element(tag: &str) -> bool {
     matches!(
         tag,

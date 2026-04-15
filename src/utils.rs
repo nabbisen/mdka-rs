@@ -1,7 +1,104 @@
-//! テキスト正規化・属性抽出ヘルパー
+//! テキスト正規化・属性抽出・タグ分類ヘルパー
 //!
 //! すべての処理は正規表現を使わず、`char` イテレータによる
 //! シングルパスのステートマシンとして実装されている。
+
+#[cfg(test)]
+mod tests;
+
+// ─── タグ分類（traversal / preprocessor 共通） ────────────────────────────
+
+/// コンテンツごと常にスキップするタグ。
+#[inline]
+pub(crate) fn is_skip_tag(tag: &str) -> bool {
+    matches!(
+        tag,
+        "script"
+            | "style"
+            | "meta"
+            | "link"
+            | "template"
+            | "iframe"
+            | "object"
+            | "embed"
+            | "noscript"
+            | "head"
+            | "svg"
+    )
+}
+
+/// シェル要素（minimal モードで除外対象）。
+#[inline]
+pub(crate) fn is_shell_tag(tag: &str) -> bool {
+    matches!(tag, "nav" | "header" | "footer" | "aside")
+}
+
+/// アンラップ候補のラッパータグ。
+#[inline]
+pub(crate) fn is_wrapper_tag(tag: &str) -> bool {
+    matches!(tag, "span" | "div" | "section" | "article" | "main")
+}
+
+/// 構造タグ（アンラップ対象外）。
+#[inline]
+pub(crate) fn is_structural_tag(tag: &str) -> bool {
+    matches!(
+        tag,
+        "h1" | "h2"
+            | "h3"
+            | "h4"
+            | "h5"
+            | "h6"
+            | "p"
+            | "ul"
+            | "ol"
+            | "li"
+            | "blockquote"
+            | "pre"
+            | "code"
+            | "table"
+            | "thead"
+            | "tbody"
+            | "tr"
+            | "th"
+            | "td"
+            | "a"
+            | "img"
+            | "strong"
+            | "b"
+            | "em"
+            | "i"
+            | "hr"
+            | "br"
+            | "figure"
+            | "figcaption"
+    )
+}
+
+// moved to /tests/utils/preprocessor.rs
+// /// Void 要素（自己閉じ・子なし）。
+// #[inline]
+// pub(crate) fn is_void_element(tag: &str) -> bool {
+//     matches!(
+//         tag,
+//         "area"
+//             | "base"
+//             | "br"
+//             | "col"
+//             | "embed"
+//             | "hr"
+//             | "img"
+//             | "input"
+//             | "link"
+//             | "meta"
+//             | "param"
+//             | "source"
+//             | "track"
+//             | "wbr"
+//     )
+// }
+
+// ─── テキスト正規化 ───────────────────────────────────────────────────────
 
 /// シングルパス テキスト正規化 + Markdownエスケープ。
 ///
@@ -71,24 +168,3 @@ pub fn extract_code_lang(class: Option<&str>) -> Option<&str> {
         .find(|cls| cls.starts_with("language-"))
         .map(|cls| &cls["language-".len()..])
 }
-
-/// `[text](url)` または `[text](url "title")` を生成する。
-#[allow(dead_code)]
-pub fn fmt_link(text: &str, url: &str, title: Option<&str>) -> String {
-    match title {
-        Some(t) if !t.is_empty() => format!("[{}]({} \"{}\")", text, url, t),
-        _ => format!("[{}]({})", text, url),
-    }
-}
-
-/// `![alt](url)` または `![alt](url "title")` を生成する。
-#[allow(dead_code)]
-pub fn fmt_image(alt: &str, url: &str, title: Option<&str>) -> String {
-    match title {
-        Some(t) if !t.is_empty() => format!("![{}]({} \"{}\")", alt, url, t),
-        _ => format!("![{}]({})", alt, url),
-    }
-}
-
-#[cfg(test)]
-mod tests;

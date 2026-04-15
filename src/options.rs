@@ -42,15 +42,25 @@ impl ConversionMode {
     }
 
     /// 文字列からモードを解析する。大文字小文字を区別しない。
-    /// 不明な文字列の場合は `None` を返す。
-    pub fn from_str(s: &str) -> Option<Self> {
+    ///
+    /// `std::str::FromStr` を実装しているため、
+    /// `"balanced".parse::<ConversionMode>()` でも利用できる。
+    pub fn parse_mode(s: &str) -> Option<Self> {
+        s.parse().ok()
+    }
+}
+
+impl std::str::FromStr for ConversionMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
-            "balanced" => Some(Self::Balanced),
-            "strict" => Some(Self::Strict),
-            "minimal" => Some(Self::Minimal),
-            "semantic" => Some(Self::Semantic),
-            "preserve" => Some(Self::Preserve),
-            _ => None,
+            "balanced" => Ok(Self::Balanced),
+            "strict" => Ok(Self::Strict),
+            "minimal" => Ok(Self::Minimal),
+            "semantic" => Ok(Self::Semantic),
+            "preserve" => Ok(Self::Preserve),
+            other => Err(format!("unknown conversion mode: {other}")),
         }
     }
 }

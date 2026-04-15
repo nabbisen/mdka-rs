@@ -64,26 +64,30 @@ fn test_extract_code_lang() {
     assert_eq!(extract_code_lang(None), None);
 }
 
+// ─── タグ分類ヘルパーのテスト ──────────────────────────────────────────────
+
 #[test]
-fn test_fmt_link() {
-    assert_eq!(
-        fmt_link("Click", "https://example.com", None),
-        "[Click](https://example.com)"
-    );
-    assert_eq!(
-        fmt_link("Click", "https://example.com", Some("Tip")),
-        "[Click](https://example.com \"Tip\")"
-    );
+fn test_is_skip_tag() {
+    assert!(is_skip_tag("script"));
+    assert!(is_skip_tag("style"));
+    assert!(is_skip_tag("head"));
+    assert!(is_skip_tag("svg"));
+    assert!(!is_skip_tag("div"));
+    assert!(!is_skip_tag("p"));
 }
 
 #[test]
-fn test_fmt_image() {
-    assert_eq!(
-        fmt_image("alt text", "img.png", None),
-        "![alt text](img.png)"
-    );
-    assert_eq!(
-        fmt_image("alt", "img.png", Some("caption")),
-        "![alt](img.png \"caption\")"
-    );
+fn test_is_shell_tag() {
+    assert!(is_shell_tag("nav"));
+    assert!(is_shell_tag("footer"));
+    assert!(!is_shell_tag("main"));
+}
+
+#[test]
+fn test_is_structural_tag() {
+    assert!(is_structural_tag("h1"));
+    assert!(is_structural_tag("p"));
+    assert!(is_structural_tag("a"));
+    assert!(!is_structural_tag("div"));
+    assert!(!is_structural_tag("span"));
 }

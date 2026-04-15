@@ -38,13 +38,15 @@ name = "memory"
 harness = false
 
 [features]
+default  = ["parallel"]
+parallel = ["dep:rayon"]
 jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
 
 [dependencies]
 scraper = "0.26"
-rayon = "1"
 thiserror = "1"
 ego-tree = "0.11"
+rayon = { version = "1", optional = true }
 tikv-jemallocator = { version = "0.6", optional = true }
 tikv-jemalloc-ctl = { version = "0.6", optional = true }
 

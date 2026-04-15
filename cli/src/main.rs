@@ -26,6 +26,7 @@ static ALLOCATOR: mdka::alloc_counter::CountingAllocator = mdka::alloc_counter::
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process;
+use std::str::FromStr;
 
 use mdka::options::{ConversionMode, ConversionOptions};
 
@@ -91,9 +92,9 @@ fn main() {
             }
             "-m" | "--mode" => {
                 let m = iter.next().unwrap_or_default();
-                mode = ConversionMode::from_str(&m).unwrap_or_else(|| {
+                mode = ConversionMode::from_str(&m).unwrap_or_else(|err| {
                     eprintln!(
-                        "error: unknown mode '{m}'. \
+                        "error: {err}. \
                                Valid: balanced|strict|minimal|semantic|preserve"
                     );
                     process::exit(1);

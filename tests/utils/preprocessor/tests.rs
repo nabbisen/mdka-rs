@@ -3,7 +3,7 @@ use crate::options::ConversionOptions;
 
 fn run(html: &str, opts: &ConversionOptions) -> String {
     let doc = Html::parse_document(html);
-    preprocess(&doc, opts)
+    utils::preprocessor::preprocess(&doc, opts)
 }
 
 #[test]
@@ -110,6 +110,6 @@ fn test_deep_nest_no_stack_overflow() {
     let close = "</div>".repeat(10_000);
     let html = format!("{}<p>deep</p>{}", open, close);
     let doc = Html::parse_document(&html);
-    let out = preprocess(&doc, &ConversionOptions::default());
+    let out = utils::preprocessor::preprocess(&doc, &ConversionOptions::default());
     assert!(out.contains("deep"), "deep content missing");
 }

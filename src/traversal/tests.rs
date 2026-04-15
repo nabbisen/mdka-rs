@@ -1,8 +1,9 @@
 use super::*;
+use crate::options::ConversionOptions;
 
 fn conv(html: &str) -> String {
     let doc = Html::parse_document(html);
-    traverse(&doc)
+    traverse(&doc, &ConversionOptions::default())
 }
 
 #[test]
@@ -22,7 +23,7 @@ fn test_deep_nest_no_overflow() {
     let close: String = "</div>".repeat(10_000);
     let html = format!("{}<p>deep</p>{}", open, close);
     let doc = Html::parse_document(&html);
-    let md = traverse(&doc);
+    let md = traverse(&doc, &ConversionOptions::default());
     assert!(
         md.contains("deep"),
         "output: {:?}",
