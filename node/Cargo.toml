@@ -1,6 +1,6 @@
 [package]
 name        = "mdka-node"
-version = "2.0.0"
+version = "2.0.1"
 edition     = "2024"
 description = "Node.js bindings for mdka – HTML to Markdown converter"
 repository  = "https://github.com/nabbisen/mdka-rs"
