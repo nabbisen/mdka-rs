@@ -128,7 +128,7 @@ jobs:
       
       - name: Move artifacts
         run: |
-          npx napi create-npm-dir -t .
+          npx napi create-npm-dirs -t .
           npx napi artifacts
       
       - name: List packages
