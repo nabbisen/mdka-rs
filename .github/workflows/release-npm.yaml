@@ -87,9 +87,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          working-directory: node
           name: bindings-${{ matrix.target }}
-          path: ${{ env.PRODUCT_BASENAME }}.*.node
+          path: node/${{ env.PRODUCT_BASENAME }}.*.node
           if-no-files-found: error
   
   publish:

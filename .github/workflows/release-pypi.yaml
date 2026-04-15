@@ -65,9 +65,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          working-directory: python
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
@@ -113,9 +112,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          working-directory: python
           name: wheels-musllinux-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -159,9 +157,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          working-directory: python
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -204,9 +201,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          working-directory: python
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: python/dist
 
   sdist:
     runs-on: ubuntu-latest
@@ -228,9 +224,8 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v7
         with:
-          working-directory: python
           name: wheels-sdist
-          path: dist
+          path: python/dist
 
   release:
     name: Release
