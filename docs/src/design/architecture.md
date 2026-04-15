@@ -7,15 +7,16 @@ mdka/
 ├── src/               mdka library crate (lib only)
 │   ├── lib.rs             Public API surface
 │   ├── options.rs         ConversionMode, ConversionOptions
-│   ├── preprocessor.rs    DOM pre-processing pipeline
 │   ├── traversal.rs       Markdown conversion traversal
 │   ├── renderer.rs        MarkdownRenderer state machine
 │   ├── utils.rs           Whitespace normalisation + escaping
 │   └── alloc_counter.rs   Custom allocator (for benchmarks)
+├── tests/             integration test modules
+│   └── utils/preprocessor.rs    DOM pre-processing pipeline
 ├── cli/               mdka-cli binary crate
 │   └── src/main.rs        Argument parsing + dispatch
 ├── node/              Node.js bindings (napi-rs v3)
-├── python/            Python bindings (PyO3 0.28)
+├── python/            Python bindings (PyO3 v0)
 ├── benches/           criterion benchmarks
 └── examples/          Allocation measurement tool
 ```

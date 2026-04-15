@@ -44,7 +44,7 @@ The same Rust implementation is accessible from three languages:
 |---|---|---|
 | Rust | `mdka` on crates.io | native library |
 | Node.js | `mdka` on npm | napi-rs v3 native module |
-| Python | `mdka` on PyPI | PyO3 0.28 extension module |
+| Python | `mdka` on PyPI | PyO3 v0 extension module |
 
 All three call the same underlying conversion code and produce
 identical output for identical input.

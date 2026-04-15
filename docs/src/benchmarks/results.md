@@ -10,14 +10,14 @@ All libraries were benchmarked under the same conditions: Linux x86_64 6.19, Rus
 
 | Library | Version | HTML parser | Approach |
 |---|---:|---|---|
-| **mdka** | 2.0.0-rc.3 | `scraper` (`html5ever`) | Full DOM tree; non-recursive DFS |
+| **mdka** | 2.0.0 | `scraper` (`html5ever`) | Full DOM tree; non-recursive DFS |
 | **mdka_v1** | 1.6.9 | `html5ever` | Full DOM tree; older implementation |
-| **html2md** | 0.2.15 | `html5ever`-based | DOM-based converter |
+| **html2md** | 0.2.15 | `html5ever` | DOM-based converter |
 | **fast_html2md** | 0.0.61 | `lol_html` | Streaming rewriter |
-| **htmd** | 0.5.4 | `html5ever`-based | DOM-based converter |
-| **html_to_markdown_rs** | 3.1.0 | `html5ever`-based | DOM-based converter |
-| **html2text** | 0.16.7 | parser not stated in the log | Text-oriented converter |
-| **dom_smoothie** | 0.17.0 | parser not stated in the log | DOM-oriented converter |
+| **htmd** | 0.5.4 | `html5ever` | DOM-based converter |
+| **html_to_markdown_rs** | 3.1.0 | `html5ever` | DOM-based converter |
+| **html2text** | 0.16.7 | `html5ever` | Text-oriented converter |
+| **dom_smoothie** | 0.17.0 | `dom_query` (`html5ever`) | DOM-oriented converter |
 
 These libraries do not share the same design. `lol_html` is a streaming rewriter and can be very fast on clean input. mdka uses a full HTML5 parse through `scraper` / `html5ever`, which adds overhead, but it is a better fit when malformed HTML, deep nesting, or stable output matter.
 

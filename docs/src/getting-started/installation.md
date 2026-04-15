@@ -6,12 +6,12 @@ Add mdka to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mdka = "0.3"
+mdka = "2"
 ```
 
 That is the only step. mdka has no system dependencies.
 
-**Minimum Supported Rust Version:** 1.82
+**Minimum Supported Rust Version:** 1.85 (2024 Edition)
 
 ## As a CLI Binary
 
@@ -38,9 +38,9 @@ npm install mdka
 yarn add mdka
 ```
 
-Requires Node.js 16 or later.
-Pre-built binaries are bundled for Linux x86-64, macOS arm64, macOS x64, and Windows x64.
-On other platforms, run `npm run build` (requires Rust 1.82+).
+Requires Node.js 16 or later.    
+Pre-built binaries are bundled for major platforms such as Linux, macOS and Windows of specific architecture.    
+On other platforms, run `npm run build` with Rust installed.
 
 ## As a Python Package
 
@@ -49,5 +49,5 @@ pip install mdka
 ```
 
 Requires Python 3.8 or later.
-Pre-built wheels are provided for CPython 3.8–3.12 on major platforms.
-To build from source: `pip install mdka --no-binary mdka` (requires Rust 1.82+).
+Pre-built wheels are provided for CPython on major platforms.
+To build from source: `pip install mdka --no-binary mdka` with Rust installed.
