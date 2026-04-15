@@ -151,8 +151,9 @@ built as an [mdBook](https://rust-lang.github.io/mdBook/) project.
 | ConversionOptions | [docs/src/api/options.md](./docs/src/api/options.md) |
 | Supported elements | [docs/src/api/elements.md](./docs/src/api/elements.md) |
 | Design philosophy | [docs/src/design/philosophy.md](./docs/src/design/philosophy.md) |
+| Performance philosophy | [docs/src/design/performance.md](./docs/src/design/performance.md) |
 | Architecture | [docs/src/design/architecture.md](./docs/src/design/architecture.md) |
-| Benchmarks | [docs/src/benchmarks/results.md](./docs/src/benchmarks/results.md) |
+| Benchmarks | [docs/src/design/performance.md#benchmark-results.md](./docs/src/design/performance.md#benchmark-results.md) |
 
 To build the docs locally (requires mdBook):
 
@@ -172,5 +173,5 @@ Please understand that the project has its own direction — while we welcome fe
 
 ## Acknowledgements
 
-Depends on Servo's [html5ever](https://github.com/servo/html5ever) / markup5ever.
-Also, on PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python. [napi-rs](https://github.com/napi-rs/napi-rs) for binding for Node.js.
+Depends on [scraper](https://crates.io/crates/scraper), Servo's [html5ever](https://github.com/servo/html5ever) / markup5ever.
+Also, [napi-rs](https://github.com/napi-rs/napi-rs) on binding for Node.js and PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python.
