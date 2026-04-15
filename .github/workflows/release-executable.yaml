@@ -1,15 +1,8 @@
 name: Executable
 
-# on:
-#   release:
-#     types: [created]
-# todo: delete:
 on:
-  push:
-    branches:
-      - 2.0.0-dev
-  # manual run
-  workflow_dispatch:
+  release:
+    types: [created]
 
 permissions:
   contents: write
