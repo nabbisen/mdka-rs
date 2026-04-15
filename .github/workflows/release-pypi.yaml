@@ -237,6 +237,9 @@ jobs:
       run:
         working-directory: python
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      
       - uses: actions/download-artifact@v8
 
       - name: Generate artifact attestation
