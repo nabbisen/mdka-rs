@@ -59,7 +59,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: node/package-lock.json
       
       - name: Install npm packages
         run: npm install
@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.target }}
-          path: ${{ env.PRODUCT_BASENAME }}.*.node
+          path: node/${{ env.PRODUCT_BASENAME }}.*.node
           if-no-files-found: error
   
   publish:
