@@ -72,7 +72,6 @@ jobs:
 
       - name: Build Rust executable
         run: |
-          pwd
           cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
 
       # [ release asset ]
