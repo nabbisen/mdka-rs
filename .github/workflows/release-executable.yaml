@@ -7,7 +7,7 @@ name: Executable
 on:
   push:
     branches:
-      - main
+      - 2.0.2-dev
   # manual run
   workflow_dispatch:
 
