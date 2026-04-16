@@ -3,7 +3,6 @@ name: Executable
 on:
   release:
     types: [created]
-todo: delete
 
 permissions:
   contents: write
