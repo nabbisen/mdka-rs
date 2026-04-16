@@ -1,8 +1,15 @@
 name: Executable
 
+# on:
+#   release:
+#     types: [created]
+# todo: delete
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+  # manual run
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -77,6 +84,8 @@ jobs:
       # [ release asset ]
       - name: Prepare for release asset
         run: |
+          pwd
+          ls
           BUILT_FILEPATH=target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
           RELEASE_ASSET_BASENAME=${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}
           RELEASE_SRC_DIR=${RELEASE_ASSET_BASENAME}
