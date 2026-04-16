@@ -1,0 +1,37 @@
+{
+  "name": "@mdka/lib-linux-x64-gnu",
+  "version": "2.0.2",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "mdka.linux-x64-gnu.node"
+  ],
+  "description": "HTML to Markdown converter",
+  "author": "nabbisen<nabbisen@scqr.net>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nabbisen/mdka-rs.git"
+  },
+  "keywords": [
+    "html",
+    "markdown",
+    "html-to-markdown",
+    "markdown-generator",
+    "generate-markdown",
+    "html-parser",
+    "text",
+    "document",
+    "convert",
+    "converter",
+    "parser",
+    "transform",
+    "rust",
+    "napi",
+    "native-addon"
+  ]
+}

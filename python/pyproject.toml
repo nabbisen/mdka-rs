@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name            = "mdka"
-version = "2.0.1"
+version = "2.0.2"
 description     = "省メモリ・高速な HTML to Markdown コンバータ (Rust製)"
 readme          = "README.md"
 license         = "Apache-2.0"
