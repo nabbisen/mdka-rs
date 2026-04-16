@@ -1,6 +1,6 @@
 # mdka
 
-**A Rust library for converting HTML to Markdown.**
+**HTML to Markdown convert written in Rust.**
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
 [![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
