@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 name       = "mdka_node"
 
 [dependencies]
-mdka        = { path = ".." }
+mdka        = { workspace = true }
 napi        = { version = "=3.8.4", features = ["napi4", "async"] }
 napi-derive = "=3.5.3"
 tokio       = { version = "1", features = ["rt-multi-thread"] }

@@ -11,6 +11,6 @@ name       = "mdka_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-mdka  = { path = "..", default-features = true }
+mdka  = { workspace = true }
 pyo3  = { version = "0.28", features = ["extension-module"] }
 rayon = "1"

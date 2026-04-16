@@ -1216,17 +1216,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "mdka"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd42dfb9f4cdaa1f752a213e30f9acb8142763e15e239c2e4fca05c6373d5ad0"
+dependencies = [
+ "ego-tree",
+ "rayon",
+ "scraper",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "mdka-cli"
 version = "2.0.2"
 dependencies = [
- "mdka 2.0.2",
+ "mdka 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "mdka-node"
 version = "2.0.2"
 dependencies = [
- "mdka 2.0.2",
+ "mdka 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "napi",
  "napi-build",
  "napi-derive",
@@ -1237,7 +1249,7 @@ dependencies = [
 name = "mdka-python"
 version = "2.0.2"
 dependencies = [
- "mdka 2.0.2",
+ "mdka 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pyo3",
  "rayon",
 ]
