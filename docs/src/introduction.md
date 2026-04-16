@@ -43,4 +43,4 @@ If raw speed on simple, well-formed HTML is the only concern, a streaming rewrit
 - New to mdka? Start with [Installation](./getting-started/installation.md).
 - Ready to integrate? Jump to [Usage & Examples](./getting-started/usage.md).
 - Evaluating? Read [Design Philosophy](./design/philosophy.md) and
-  [Performance Philosophy](./design/performance.md).
+  [Performance Concern](./design/performance.md).
