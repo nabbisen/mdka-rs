@@ -21,7 +21,7 @@ async function run(name, fn) {
   }
 }
 
-;(async () => {
+; (async () => {
   console.log('\n=== mdka Node.js binding tests ===\n')
 
   // ── 同期 API ──────────────────────────────────────────────────────────
@@ -124,10 +124,10 @@ async function run(name, fn) {
   await run('htmlToMarkdownAsync: concurrent calls', async () => {
     const inputs = ['<h1>A</h1>', '<h2>B</h2>', '<p>C</p>', '<ul><li>D</li></ul>']
     const results = await Promise.all(inputs.map(h => htmlToMarkdownAsync(h)))
-    assert.ok(results[0].includes('# A'),  `got: ${results[0]}`)
+    assert.ok(results[0].includes('# A'), `got: ${results[0]}`)
     assert.ok(results[1].includes('## B'), `got: ${results[1]}`)
-    assert.ok(results[2].includes('C'),    `got: ${results[2]}`)
-    assert.ok(results[3].includes('- D'),  `got: ${results[3]}`)
+    assert.ok(results[2].includes('C'), `got: ${results[2]}`)
+    assert.ok(results[3].includes('- D'), `got: ${results[3]}`)
   })
 
   await run('htmlToMarkdownAsync: large input', async () => {
@@ -147,7 +147,7 @@ async function run(name, fn) {
     const results = await htmlFilesToMarkdown([htmlFile], outDir)
     assert.equal(results.length, 1)
     assert.ok(!results[0].error, `error: ${results[0].error}`)
-    assert.ok(results[0].dest,   'dest missing')
+    assert.ok(results[0].dest, 'dest missing')
     const content = fs.readFileSync(results[0].dest, 'utf8')
     assert.ok(content.includes('# File Test'), `content: ${content}`)
 
@@ -192,166 +192,173 @@ async function run(name, fn) {
   }
 })()
 
-// ── ConversionOptions / モード別テスト ───────────────────────────────────
-;(async () => {
-  const {
-    htmlToMarkdownWith, htmlToMarkdownWithAsync, htmlFilesToMarkdownWith
-  } = require('./index')
-  const fs = require('fs'), path = require('path'), os = require('os')
+  // ── ConversionOptions / モード別テスト ───────────────────────────────────
+  ; (async () => {
+    const {
+      htmlToMarkdownWith, htmlToMarkdownWithAsync, htmlFilesToMarkdownWith
+    } = require('./index')
+    const fs = require('fs'), path = require('path'), os = require('os')
 
-  console.log('\n=== ConversionOptions / mode tests ===\n')
+    console.log('\n=== ConversionOptions / mode tests ===\n')
 
-  await run('htmlToMarkdownWith: minimal drops nav', () => {
-    const md = htmlToMarkdownWith(
-      '<nav><a href="/">Home</a></nav><main><p>Content</p></main>',
-      { mode: 'minimal', dropInteractiveShell: true }
-    )
-    assert.ok(!md.includes('Home'),   `nav leaked: ${md}`)
-    assert.ok(md.includes('Content'), `content missing: ${md}`)
-  })
-
-  await run('htmlToMarkdownWith: balanced keeps aria', () => {
-    const md = htmlToMarkdownWith(
-      '<button aria-label="close">X</button>',
-      { mode: 'balanced' }
-    )
-    // aria-label は前処理で保持されるが MD には出ない（テキストのみ）
-    assert.ok(md.includes('X'), `button text missing: ${md}`)
-  })
-
-  await run('htmlToMarkdownWith: strict keeps class in output html (pre-process)', () => {
-    // strict モードは class を保持するが変換後 MD には影響しない
-    const md = htmlToMarkdownWith('<p class="intro">Hello</p>', { mode: 'strict' })
-    assert.ok(md.includes('Hello'), `text missing: ${md}`)
-  })
-
-  await run('htmlToMarkdownWith: preserve mode keeps comments via pre-processing', () => {
-    const md = htmlToMarkdownWith('<!-- meta --><p>Text</p>', { mode: 'preserve' })
-    assert.ok(md.includes('Text'), `text missing: ${md}`)
-  })
-
-  await run('htmlToMarkdownWith: semantic keeps aria-label text', () => {
-    const md = htmlToMarkdownWith(
-      '<article aria-labelledby="t"><h1 id="t">Title</h1><p>Body</p></article>',
-      { mode: 'semantic', preserveAriaAttrs: true }
-    )
-    assert.ok(md.includes('# Title'), `heading missing: ${md}`)
-    assert.ok(md.includes('Body'),    `body missing: ${md}`)
-  })
-
-  await run('htmlToMarkdownWithAsync: mode option respected', async () => {
-    const md = await htmlToMarkdownWithAsync(
-      '<nav>nav</nav><p>Main</p>',
-      { mode: 'minimal', dropInteractiveShell: true }
-    )
-    assert.ok(md.includes('Main'), `main missing: ${md}`)
-    assert.ok(!md.includes('nav'), `nav leaked: ${md}`)
-  })
-
-  await run('htmlFilesToMarkdownWith: minimal mode', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-mode-'))
-    const out = path.join(tmp, 'out')
-    fs.mkdirSync(out)
-    const f = path.join(tmp, 'test.html')
-    fs.writeFileSync(f, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
-    const results = await htmlFilesToMarkdownWith([f], out, {
-      mode: 'minimal', dropInteractiveShell: true
+    await run('htmlToMarkdownWith: minimal drops nav', () => {
+      const md = htmlToMarkdownWith(
+        '<nav><a href="/">Home</a></nav><main><p>Content</p></main>',
+        { mode: 'minimal', dropInteractiveShell: true }
+      )
+      assert.ok(!md.includes('Home'), `nav leaked: ${md}`)
+      assert.ok(md.includes('Content'), `content missing: ${md}`)
     })
-    assert.equal(results.length, 1)
-    const content = fs.readFileSync(results[0].dest, 'utf8')
-    assert.ok(content.includes('# Title'), `title missing: ${content}`)
-    fs.rmSync(tmp, { recursive: true })
-  })
 
-  await run('ConversionOptions: unknown mode falls back to balanced', () => {
-    const md = htmlToMarkdownWith('<h1>Hi</h1>', { mode: 'nonexistent' })
-    assert.ok(md.includes('# Hi'), `got: ${md}`)
-  })
-
-  console.log(`\n${'─'.repeat(40)}`)
-  console.log(`  passed: ${passed}  failed: ${failed}`)
-  if (failed > 0) { process.exit(1) }
-})()
-
-// ── htmlFileToMarkdown テスト ──────────────────────────────────────────────
-;(async () => {
-  const { htmlFileToMarkdown, htmlFileToMarkdownWith } = require('./index')
-  const fs = require('fs'), path = require('path'), os = require('os')
-
-  console.log('\n=== htmlFileToMarkdown tests ===\n')
-
-  await run('htmlFileToMarkdown: same dir output (outDir=null)', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
-    const src = path.join(tmp, 'page.html')
-    fs.writeFileSync(src, '<h1>Single File</h1><p>Content</p>')
-
-    const r = await htmlFileToMarkdown(src)
-    assert.ok(r.src,  'src missing')
-    assert.ok(r.dest, 'dest missing')
-    const expectedDest = path.join(tmp, 'page.md')
-    assert.equal(r.dest, expectedDest, `expected ${expectedDest}, got ${r.dest}`)
-    assert.ok(fs.existsSync(expectedDest), 'output file not created')
-    const content = fs.readFileSync(expectedDest, 'utf8')
-    assert.ok(content.includes('# Single File'), `got: ${content}`)
-    fs.rmSync(tmp, { recursive: true })
-  })
-
-  await run('htmlFileToMarkdown: explicit outDir', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
-    const outDir = path.join(tmp, 'out')
-    fs.mkdirSync(outDir)
-    const src = path.join(tmp, 'article.html')
-    fs.writeFileSync(src, '<h2>Article</h2><p>Body</p>')
-
-    const r = await htmlFileToMarkdown(src, outDir)
-    assert.equal(r.dest, path.join(outDir, 'article.md'))
-    const content = fs.readFileSync(r.dest, 'utf8')
-    assert.ok(content.includes('## Article'), `got: ${content}`)
-    fs.rmSync(tmp, { recursive: true })
-  })
-
-  await run('htmlFileToMarkdown: nonexistent file rejects', async () => {
-    try {
-      await htmlFileToMarkdown('/no/such/file.html')
-      assert.fail('should have thrown')
-    } catch (e) {
-      assert.ok(e instanceof Error, `expected Error, got ${e}`)
-    }
-  })
-
-  await run('htmlFileToMarkdownWith: mode option', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
-    const src = path.join(tmp, 'spa.html')
-    fs.writeFileSync(src, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
-
-    const r = await htmlFileToMarkdownWith(src, null, {
-      mode: 'minimal', dropInteractiveShell: true
+    await run('htmlToMarkdownWith: balanced keeps aria', () => {
+      const md = htmlToMarkdownWith(
+        '<button aria-label="close">X</button>',
+        { mode: 'balanced' }
+      )
+      // aria-label は前処理で保持されるが MD には出ない（テキストのみ）
+      assert.ok(md.includes('X'), `button text missing: ${md}`)
     })
-    const content = fs.readFileSync(r.dest, 'utf8')
-    assert.ok(content.includes('# Title'), `title missing: ${content}`)
-    assert.ok(!content.includes('nav'),    `nav leaked: ${content}`)
-    fs.rmSync(tmp, { recursive: true })
-  })
 
-  await run('htmlFileToMarkdown consistency with htmlFilesToMarkdown', async () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-consist-'))
-    const out1 = path.join(tmp, 'out1')
-    const out2 = path.join(tmp, 'out2')
-    fs.mkdirSync(out1); fs.mkdirSync(out2)
-    const src = path.join(tmp, 'test.html')
-    fs.writeFileSync(src, '<h1>Hello</h1><p>World <strong>bold</strong></p>')
+    await run('htmlToMarkdownWith: strict keeps class in output html (pre-process)', () => {
+      // strict モードは class を保持するが変換後 MD には影響しない
+      const md = htmlToMarkdownWith('<p class="intro">Hello</p>', { mode: 'strict' })
+      assert.ok(md.includes('Hello'), `text missing: ${md}`)
+    })
 
-    const { htmlFilesToMarkdown } = require('./index')
-    const r1 = await htmlFileToMarkdown(src, out1)
-    const results = await htmlFilesToMarkdown([src], out2)
+    await run('htmlToMarkdownWith: preserve mode keeps comments via pre-processing', () => {
+      const md = htmlToMarkdownWith('<!-- meta --><p>Text</p>', { mode: 'preserve' })
+      assert.ok(md.includes('Text'), `text missing: ${md}`)
+    })
 
-    const c1 = fs.readFileSync(r1.dest, 'utf8')
-    const c2 = fs.readFileSync(results[0].dest, 'utf8')
-    assert.equal(c1, c2, `single vs bulk output mismatch:\n${c1}\nvs\n${c2}`)
-    fs.rmSync(tmp, { recursive: true })
-  })
+    await run('htmlToMarkdownWith: semantic keeps aria-label text', () => {
+      const md = htmlToMarkdownWith(
+        '<article aria-labelledby="t"><h1 id="t">Title</h1><p>Body</p></article>',
+        { mode: 'semantic', preserveAriaAttrs: true }
+      )
+      assert.ok(md.includes('# Title'), `heading missing: ${md}`)
+      assert.ok(md.includes('Body'), `body missing: ${md}`)
+    })
 
-  console.log(`\n${'─'.repeat(40)}`)
-  console.log(`  passed: ${passed}  failed: ${failed}`)
-  if (failed > 0) { process.exit(1) }
-})()
+    await run('htmlToMarkdownWithAsync: mode option respected', async () => {
+      const md = await htmlToMarkdownWithAsync(
+        '<nav>nav</nav><p>Main</p>',
+        { mode: 'minimal', dropInteractiveShell: true }
+      )
+      assert.ok(md.includes('Main'), `main missing: ${md}`)
+      assert.ok(!md.includes('nav'), `nav leaked: ${md}`)
+    })
+
+    await run('htmlFilesToMarkdownWith: minimal mode', async () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-mode-'))
+      const out = path.join(tmp, 'out')
+      fs.mkdirSync(out)
+      const f = path.join(tmp, 'test.html')
+      fs.writeFileSync(f, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
+      const results = await htmlFilesToMarkdownWith([f], out, {
+        mode: 'minimal', dropInteractiveShell: true
+      })
+      assert.equal(results.length, 1)
+      const content = fs.readFileSync(results[0].dest, 'utf8')
+      assert.ok(content.includes('# Title'), `title missing: ${content}`)
+      fs.rmSync(tmp, { recursive: true })
+    })
+
+    await run('ConversionOptions: unknown mode falls back to balanced', () => {
+      assert.throws(
+        () => {
+          const md = htmlToMarkdownWith('<h1>Hi</h1>', { mode: 'nonexistent' })
+        },
+        {
+          name: 'Error',
+          message: 'unknown conversion mode: nonexistent'
+        }
+      );
+    })
+
+    console.log(`\n${'─'.repeat(40)}`)
+    console.log(`  passed: ${passed}  failed: ${failed}`)
+    if (failed > 0) { process.exit(1) }
+  })()
+
+  // ── htmlFileToMarkdown テスト ──────────────────────────────────────────────
+  ; (async () => {
+    const { htmlFileToMarkdown, htmlFileToMarkdownWith } = require('./index')
+    const fs = require('fs'), path = require('path'), os = require('os')
+
+    console.log('\n=== htmlFileToMarkdown tests ===\n')
+
+    await run('htmlFileToMarkdown: same dir output (outDir=null)', async () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
+      const src = path.join(tmp, 'page.html')
+      fs.writeFileSync(src, '<h1>Single File</h1><p>Content</p>')
+
+      const r = await htmlFileToMarkdown(src)
+      assert.ok(r.src, 'src missing')
+      assert.ok(r.dest, 'dest missing')
+      const expectedDest = path.join(tmp, 'page.md')
+      assert.equal(r.dest, expectedDest, `expected ${expectedDest}, got ${r.dest}`)
+      assert.ok(fs.existsSync(expectedDest), 'output file not created')
+      const content = fs.readFileSync(expectedDest, 'utf8')
+      assert.ok(content.includes('# Single File'), `got: ${content}`)
+      fs.rmSync(tmp, { recursive: true })
+    })
+
+    await run('htmlFileToMarkdown: explicit outDir', async () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
+      const outDir = path.join(tmp, 'out')
+      fs.mkdirSync(outDir)
+      const src = path.join(tmp, 'article.html')
+      fs.writeFileSync(src, '<h2>Article</h2><p>Body</p>')
+
+      const r = await htmlFileToMarkdown(src, outDir)
+      assert.equal(r.dest, path.join(outDir, 'article.md'))
+      const content = fs.readFileSync(r.dest, 'utf8')
+      assert.ok(content.includes('## Article'), `got: ${content}`)
+      fs.rmSync(tmp, { recursive: true })
+    })
+
+    await run('htmlFileToMarkdown: nonexistent file rejects', async () => {
+      try {
+        await htmlFileToMarkdown('/no/such/file.html')
+        assert.fail('should have thrown')
+      } catch (e) {
+        assert.ok(e instanceof Error, `expected Error, got ${e}`)
+      }
+    })
+
+    await run('htmlFileToMarkdownWith: mode option', async () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
+      const src = path.join(tmp, 'spa.html')
+      fs.writeFileSync(src, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
+
+      const r = await htmlFileToMarkdownWith(src, null, {
+        mode: 'minimal', dropInteractiveShell: true
+      })
+      const content = fs.readFileSync(r.dest, 'utf8')
+      assert.ok(content.includes('# Title'), `title missing: ${content}`)
+      assert.ok(!content.includes('nav'), `nav leaked: ${content}`)
+      fs.rmSync(tmp, { recursive: true })
+    })
+
+    await run('htmlFileToMarkdown consistency with htmlFilesToMarkdown', async () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-consist-'))
+      const out1 = path.join(tmp, 'out1')
+      const out2 = path.join(tmp, 'out2')
+      fs.mkdirSync(out1); fs.mkdirSync(out2)
+      const src = path.join(tmp, 'test.html')
+      fs.writeFileSync(src, '<h1>Hello</h1><p>World <strong>bold</strong></p>')
+
+      const { htmlFilesToMarkdown } = require('./index')
+      const r1 = await htmlFileToMarkdown(src, out1)
+      const results = await htmlFilesToMarkdown([src], out2)
+
+      const c1 = fs.readFileSync(r1.dest, 'utf8')
+      const c2 = fs.readFileSync(results[0].dest, 'utf8')
+      assert.equal(c1, c2, `single vs bulk output mismatch:\n${c1}\nvs\n${c2}`)
+      fs.rmSync(tmp, { recursive: true })
+    })
+
+    console.log(`\n${'─'.repeat(40)}`)
+    console.log(`  passed: ${passed}  failed: ${failed}`)
+    if (failed > 0) { process.exit(1) }
+  })()
