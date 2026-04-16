@@ -1,6 +1,6 @@
 [package]
 name        = "mdka-cli"
-version = "2.0.1"
+version = "2.0.2"
 edition     = "2024"
 description = "mdka の CLI 実行ファイル"
 license     = "Apache-2.0"

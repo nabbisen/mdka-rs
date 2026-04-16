@@ -2,7 +2,7 @@
 #
 # version.sh – Cargo, Node.js, Python 関連ファイルのバージョンを一括更新
 #
-# 必要ツール: cargo, jq, awk, grep
+# 必要ツール: cargo, jq, awk, grep, find
 
 # ---------- ヘルプ ----------
 show_help() {
@@ -12,6 +12,7 @@ Usage: ${0##*/} [OPTIONS]
 Options:
   -l, --list                List each crate with its current version.
   -u, --update VERSION      Set all Cargo, npm, and pip files to VERSION.
+                            Includes package.json in subdirectories of packages.
   -d, --dry-run             Show what would be changed, but do not modify files.
   -h, --help                Show this help and exit.
 
@@ -37,7 +38,7 @@ done
 [ "$NO_OPTION" -eq 1 ] && show_help
 
 # ---------- ツール確認 ----------
-for cmd in cargo jq awk; do
+for cmd in cargo jq awk find; do
     command -v "$cmd" >/dev/null 2>&1 || { printf 'Error: %s not found.\n' "$cmd" >&2; exit 1; }
 done
 
@@ -96,11 +97,25 @@ if [ "$UPDATE_MODE" -eq 1 ]; then
     echo "$METADATA_JSON" | jq -r '.packages[] | .manifest_path' | while read -r cargo_toml; do
         crate_dir=$(dirname "$cargo_toml")
         
-        # Cargo.toml 更新
+        # 1. Cargo.toml 更新
         update_file "$cargo_toml" "toml" "$NEW_VERSION"
 
-        # 同一ディレクトリ内の package.json / pyproject.toml をチェック
-        update_file "$crate_dir/package.json" "json" "$NEW_VERSION"
+        # 2. [拡張] 直下のサブディレクトリにある package.json を検索・更新
+        # find で crate_dir の直下 (-maxdepth 1) のディレクトリを探し、
+        # その中にある package.json を見つける
+        find "$crate_dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | \
+        while IFS= read -r -d '' subdir; do
+            sub_pkg_json="$subdir/package.json"
+            if [ -f "$sub_pkg_json" ]; then
+                update_file "$sub_pkg_json" "json" "$NEW_VERSION"
+            fi
+            sub_pkg_lock_json="$subdir/package-lock.json"
+            if [ -f "$sub_pkg_lock_json" ]; then
+                update_file "$sub_pkg_lock_json" "json" "$NEW_VERSION"
+            fi
+        done
+
+        # 3. 同一ディレクトリ内の pyproject.toml をチェック
         update_file "$crate_dir/pyproject.toml" "toml" "$NEW_VERSION"
     done
 
