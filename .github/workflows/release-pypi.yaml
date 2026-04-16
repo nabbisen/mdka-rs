@@ -24,9 +24,6 @@ jobs:
           - runner: ubuntu-latest
             target: aarch64
     
-    defaults:
-      run:
-        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -40,7 +37,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            python/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -71,9 +68,6 @@ jobs:
           - runner: ubuntu-latest
             target: aarch64
     
-    defaults:
-      run:
-        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -87,7 +81,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            python/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -133,7 +127,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            python/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -161,9 +155,6 @@ jobs:
           - runner: macos-latest
             target: aarch64
     
-    defaults:
-      run:
-        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -177,7 +168,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            python/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
@@ -200,9 +191,6 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: python
     steps:
       - uses: actions/checkout@v6
 
@@ -233,19 +221,18 @@ jobs:
       # Used to generate artifact attestation
       attestations: write
     
-    defaults:
-      run:
-        working-directory: python
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       
       - uses: actions/download-artifact@v8
+        with:
+          path: python
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'wheels-*/*'
+          subject-path: 'python/wheels-*/*'
       
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}

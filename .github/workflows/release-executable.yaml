@@ -48,16 +48,13 @@ jobs:
             bin_ext: .exe
             archive_ext: .zip
     
-    defaults:
-      run:
-        working-directory: cli
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       # [ build ]
       - name: Install Rust
-        run: bash ../.github/workflows/scripts/install-rust.sh stable ${{ matrix.target }}
+        run: bash ".github/workflows/scripts/install-rust.sh" stable ${{ matrix.target }}
       
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
@@ -65,27 +62,26 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            cli/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
       - name: Build Rust executable
+        working-directory: cli
         run: |
           cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
 
       # [ release asset ]
       - name: Prepare for release asset
-        # prevent pwsh used in windows
-        shell: bash
         run: |
-          BUILT_FILEPATH=../target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
+          BUILT_FILEPATH=target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
           RELEASE_ASSET_BASENAME=${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}
           RELEASE_SRC_DIR=${RELEASE_ASSET_BASENAME}
           RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.archive_ext }}
           mkdir -p "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}"
           mv "${BUILT_FILEPATH}" "${{ env.JOB_WORKDIR }}/${RELEASE_SRC_DIR}/"
-          echo "RELEASE_SRC_DIR=${RELEASE_SRC_DIR}" >> $GITHUB_ENV
+          echo "RELEASE_SRC_DIR=${RELEASE_SRC_DIR}/" >> $GITHUB_ENV
           echo "RELEASE_ASSET_FILENAME=${RELEASE_ASSET_FILENAME}" >> $GITHUB_ENV
 
       # BSD tar on macOS: first 8MB of the file are sometimes all NUL byte
@@ -99,19 +95,20 @@ jobs:
         if: >
           matrix.target != 'aarch64-apple-darwin' &&
           matrix.target != 'x86_64-pc-windows-msvc'
+        working-directory: ${{ env.JOB_WORKDIR }}
         run: |
-          cd "${{ env.JOB_WORKDIR }}"
-          tar czf "../${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
+          tar czf "${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
       
       - name: Create archive as release asset - Windows / macOS
         if: >
           matrix.target == 'aarch64-apple-darwin' ||
           matrix.target == 'x86_64-pc-windows-msvc'
+        working-directory: ${{ env.JOB_WORKDIR }}
         run: |
-          cd "${{ env.JOB_WORKDIR }}"
-          7z a "../${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
+          7z a "${RELEASE_ASSET_FILENAME}" "${RELEASE_SRC_DIR}"
       
       - name: Update release with new asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{ env.JOB_WORKDIR }}
         run: gh release upload ${{ github.ref_name }} ${RELEASE_ASSET_FILENAME}
