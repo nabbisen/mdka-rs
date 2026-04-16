@@ -1,6 +1,6 @@
 # mdka
 
-**HTML to Markdown convert written in Rust.**
+**A HTML to Markdown convert written in Rust.**
 
 [![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
 [![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
@@ -13,10 +13,17 @@
 [![npm](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml)
 [![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
 
+A kind of text manipulator named mdka. "ka" means "化 (か)" pointing to conversion.
+Designed with in mind:
+
+- Fast speed
+- Low memory consumption
+- Easy usage
+
 mdka balances conversion quality with runtime efficiency —
 readable output from real-world HTML, without sacrificing speed or memory.
 
-https://nabbisen.github.io/mdka-rs/
+Documentation: https://nabbisen.github.io/mdka-rs/
 
 ---
 
@@ -146,18 +153,18 @@ Full documentation lives in the [`docs/`](./docs/) folder, published as GitHub P
 
 | Topic | Link |
 |---|---|
-| Installation | [/docs/src/getting-started/installation.md](/docs/src/getting-started/installation.md) |
-| Rust usage & examples | [/docs/src/getting-started/usage-rust.md](/docs/src/getting-started/usage-rust.md) |
-| Node.js usage | [/docs/src/getting-started/usage-nodejs.md](/docs/src/getting-started/usage-nodejs.md) |
-| Python usage | [/docs/src/getting-started/usage-python.md](/docs/src/getting-started/usage-python.md) |
-| CLI reference | [/docs/src/getting-started/usage-cli.md](/docs/src/getting-started/usage-cli.md) |
-| API reference | [/docs/src/api/index.md](/docs/src/api/index.md) |
-| Conversion modes | [/docs/src/api/modes.md](/docs/src/api/modes.md) |
-| ConversionOptions | [/docs/src/api/options.md](/docs/src/api/options.md) |
-| Supported elements | [/docs/src/api/elements.md](/docs/src/api/elements.md) |
-| Design philosophy | [/docs/src/design/philosophy.md](/docs/src/design/philosophy.md) |
-| Performance concern | [/docs/src/design/performance.md](/docs/src/design/performance.md) |
-| Architecture | [/docs/src/design/architecture.md](/docs/src/design/architecture.md) |
+| Installation | [/getting-started/installation](https://nabbisen.github.io/mdka-rs/getting-started/installation) |
+| Rust usage & examples | [/getting-started/usage-rust](https://nabbisen.github.io/mdka-rs/getting-started/usage-rust) |
+| Node.js usage | [/getting-started/usage-nodejs](https://nabbisen.github.io/mdka-rs/getting-started/usage-nodejs) |
+| Python usage | [/getting-started/usage-python](https://nabbisen.github.io/mdka-rs/getting-started/usage-python) |
+| CLI reference | [/getting-started/usage-cli](https://nabbisen.github.io/mdka-rs/getting-started/usage-cli) |
+| API reference | [/api/index](https://nabbisen.github.io/mdka-rs/api/index) |
+| Conversion modes | [/api/modes](https://nabbisen.github.io/mdka-rs/api/modes) |
+| ConversionOptions | [/api/options](https://nabbisen.github.io/mdka-rs/api/options) |
+| Supported elements | [/api/elements](https://nabbisen.github.io/mdka-rs/api/elements) |
+| Design philosophy | [/design/philosophy](https://nabbisen.github.io/mdka-rs/design/philosophy) |
+| Performance concern | [/design/performance](https://nabbisen.github.io/mdka-rs/design/performance) |
+| Architecture | [/design/architecture](https://nabbisen.github.io/mdka-rs/design/architecture) |
 
  Note: docs are built as an [mdBook](https://rust-lang.github.io/mdBook/) project. To build them locally (requires mdBook):
 

@@ -1,6 +1,6 @@
 # mdka
 
-**mdka** is a Rust library for converting HTML to Markdown.
+**mdka** is a HTML to Markdown written in Rust. "ka" means "化 (か)" pointing to conversion.
 
 It aims to strike a practical balance between **conversion quality**
 and **runtime efficiency** — readable output from real-world HTML,
