@@ -18,11 +18,16 @@ With the release of v2, `mdka` underwent a complete architectural overhaul. We m
 
 This rewrite resulted in a dramatic performance leap and a significantly reduced memory footprint compared to our previous version.
 
-## Benchmark Results
+## Benchmark Results (2026-04-15)
 
 The following data demonstrates how the v2 architecture has improved our efficiency and how it aligns with our goal of "reasonable speed with minimal resource consumption."
 
-All libraries were benchmarked under the same conditions: Linux x86_64 6.19, Rust 1.94.1, Criterion 0.8, 28 logical cores, 3 s warm-up, and 3 s measurement. The figures below are wall-clock medians from Criterion. The log also records outliers for each run, so small differences should be read with some caution.
+The figures below are wall-clock medians from Criterion. The log also records outliers for each run, so small differences should be read with some caution.
+
+### Conditions
+
+All libraries were benchmarked under the same conditions:    
+Linux x86_64 6.19, Rust 1.94.1, Criterion 0.8, 28 logical cores, 3 s warm-up, and 3 s measurement.
 
 ## Libraries Under Test
 
