@@ -1,8 +1,15 @@
 name: npm
 
+# on:
+#   release:
+#     types: [created]
+# todo: delete
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+  # manual run
+  workflow_dispatch:
 
 permissions:
   contents: write
