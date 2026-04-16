@@ -146,18 +146,18 @@ Full documentation lives in the [`docs/`](./docs/) folder, published as GitHub P
 
 | Topic | Link |
 |---|---|
-| Installation | [docs/src/getting-started/installation.md](./docs/src/getting-started/installation.md) |
-| Rust usage & examples | [docs/src/getting-started/usage-rust.md](./docs/src/getting-started/usage-rust.md) |
-| Node.js usage | [docs/src/getting-started/usage-nodejs.md](./docs/src/getting-started/usage-nodejs.md) |
-| Python usage | [docs/src/getting-started/usage-python.md](./docs/src/getting-started/usage-python.md) |
-| CLI reference | [docs/src/getting-started/usage-cli.md](./docs/src/getting-started/usage-cli.md) |
-| API reference | [docs/src/api/index.md](./docs/src/api/index.md) |
-| Conversion modes | [docs/src/api/modes.md](./docs/src/api/modes.md) |
-| ConversionOptions | [docs/src/api/options.md](./docs/src/api/options.md) |
-| Supported elements | [docs/src/api/elements.md](./docs/src/api/elements.md) |
-| Design philosophy | [docs/src/design/philosophy.md](./docs/src/design/philosophy.md) |
-| Performance concern | [docs/src/design/performance.md](./docs/src/design/performance.md) |
-| Architecture | [docs/src/design/architecture.md](./docs/src/design/architecture.md) |
+| Installation | [/docs/src/getting-started/installation.md](/docs/src/getting-started/installation.md) |
+| Rust usage & examples | [/docs/src/getting-started/usage-rust.md](/docs/src/getting-started/usage-rust.md) |
+| Node.js usage | [/docs/src/getting-started/usage-nodejs.md](/docs/src/getting-started/usage-nodejs.md) |
+| Python usage | [/docs/src/getting-started/usage-python.md](/docs/src/getting-started/usage-python.md) |
+| CLI reference | [/docs/src/getting-started/usage-cli.md](/docs/src/getting-started/usage-cli.md) |
+| API reference | [/docs/src/api/index.md](/docs/src/api/index.md) |
+| Conversion modes | [/docs/src/api/modes.md](/docs/src/api/modes.md) |
+| ConversionOptions | [/docs/src/api/options.md](/docs/src/api/options.md) |
+| Supported elements | [/docs/src/api/elements.md](/docs/src/api/elements.md) |
+| Design philosophy | [/docs/src/design/philosophy.md](/docs/src/design/philosophy.md) |
+| Performance concern | [/docs/src/design/performance.md](/docs/src/design/performance.md) |
+| Architecture | [/docs/src/design/architecture.md](/docs/src/design/architecture.md) |
 
  Note: docs are built as an [mdBook](https://rust-lang.github.io/mdBook/) project. To build them locally (requires mdBook):
 

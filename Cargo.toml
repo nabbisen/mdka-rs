@@ -3,11 +3,11 @@ members  = [".", "node", "python", "cli"]
 resolver = "2"
 
 [workspace.dependencies]
-mdka = "2.0.2"
+mdka = "2.0.3"
 
 [package]
 name    = "mdka"
-version = "2.0.2"
+version = "2.0.3"
 edition = "2024"
 
 description   = "HTML to Markdown converter"
