@@ -76,8 +76,10 @@ jobs:
 
       # [ release asset ]
       - name: Prepare for release asset
+        # prevent pwsh used in windows
+        shell: bash
         run: |
-          BUILT_FILEPATH="../target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}"
+          BUILT_FILEPATH=../target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
           RELEASE_ASSET_BASENAME=${{ env.PRODUCT_BASENAME }}@${{ matrix.name }}-${{ env.TAG }}
           RELEASE_SRC_DIR=${RELEASE_ASSET_BASENAME}
           RELEASE_ASSET_FILENAME=${RELEASE_ASSET_BASENAME}${{ matrix.archive_ext }}
