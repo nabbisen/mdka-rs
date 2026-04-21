@@ -2,7 +2,7 @@
 name        = "mdka-cli"
 version = "2.0.3"
 edition     = "2024"
-description = "mdka の CLI 実行ファイル"
+description = "CLI executable for mdka – a HTML to Markdown converter"
 license     = "Apache-2.0"
 readme      = "../README.md"
 repository  = "https://github.com/nabbisen/mdka-rs"

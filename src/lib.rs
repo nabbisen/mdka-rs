@@ -1,6 +1,8 @@
 //! HTML to Markdown converter - Lightweight and optimized library.
 //!
-//! CLI ツールとしての使い方は [`mdka-cli`](../mdka_cli/index.html) を参照。
+//! Usage as CLI tool is in [`mdka-cli`](../mdka_cli/index.html).
+//!
+//! Full documentation: https://nabbisen.github.io/mdka-rs/
 //!
 //! # Quick start
 //!

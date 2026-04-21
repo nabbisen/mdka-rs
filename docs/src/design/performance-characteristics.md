@@ -1,4 +1,4 @@
-# Performance Concern
+# Performance Characteristics
 
 ## The Focus of mdka
 

@@ -43,8 +43,8 @@ The same Rust implementation is accessible from three languages:
 | Language | Package | Mechanism |
 |---|---|---|
 | Rust | `mdka` on crates.io | native library |
-| Node.js | `mdka` on npm | napi-rs v3 native module |
-| Python | `mdka` on PyPI | PyO3 v0 extension module |
+| Node.js | `mdka` on npm | napi-rs native module |
+| Python | `mdka` on PyPI | PyO3 extension module |
 
 All three call the same underlying conversion code and produce
 identical output for identical input.
@@ -77,7 +77,8 @@ The runtime dependencies of the `mdka` library crate are:
 | `scraper` | HTML parsing (html5ever wrapper) |
 | `ego-tree` | DOM tree traversal |
 | `rayon` | Parallel file conversion |
+| `tikv-jemallocator`, `tikv-jemalloc-ctl` | Ensures fragmentation avoidance and scalable concurrency |
 | `thiserror` | `MdkaError` derive macro |
 
-Benchmark and comparison dependencies (`fast_html2md`, `criterion`) are
+Benchmark and comparison dependencies (`criterion`, competitors) are
 `[dev-dependencies]` and do not affect library consumers.

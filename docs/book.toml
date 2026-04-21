@@ -1,7 +1,7 @@
 [book]
 title       = "mdka — HTML to Markdown converter"
 authors     = ["nabbisen<nabbisen@scqr.net>"]
-description = "mdka: A HTML to Markdown converter"
+description = "mdka: A HTML to Markdown converter that balances conversion quality with runtime efficiency"
 
 language    = "en"
 

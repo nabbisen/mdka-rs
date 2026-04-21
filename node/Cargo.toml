@@ -2,7 +2,7 @@
 name        = "mdka-node"
 version = "2.0.3"
 edition     = "2024"
-description = "Node.js bindings for mdka – HTML to Markdown converter"
+description = "Node.js bindings for mdka – a HTML to Markdown converter"
 repository  = "https://github.com/nabbisen/mdka-rs"
 license     = "Apache-2.0"
 

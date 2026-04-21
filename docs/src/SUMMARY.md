@@ -30,6 +30,6 @@
 # Design & Architecture
 
 - [Design Philosophy](./design/philosophy.md)
-- [Performance Concern](./design/performance.md)
+- [Performance Characteristics](./design/performance-characteristics.md)
 - [Architecture](./design/architecture.md)
 - [Features](./design/features.md)

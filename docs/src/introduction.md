@@ -24,8 +24,8 @@ without sacrificing speed or memory.
   nesting will not overflow the stack.
 - **Configurable**: five [conversion modes](./api/modes.md) let you tune the
   pre-processing pipeline — from noise-free LLM input to lossless archiving.
-- **Multi-language**: available as a Rust library, a Node.js package (napi-rs v3),
-  and a Python package (PyO3 v0).
+- **Multi-language**: available as a Rust library, a Node.js package (napi-rs),
+  and a Python package (PyO3).
 
 ## When to Choose mdka
 
@@ -43,4 +43,4 @@ If raw speed on simple, well-formed HTML is the only concern, a streaming rewrit
 - New to mdka? Start with [Installation](./getting-started/installation.md).
 - Ready to integrate? Jump to [Usage & Examples](./getting-started/usage.md).
 - Evaluating? Read [Design Philosophy](./design/philosophy.md) and
-  [Performance Concern](./design/performance.md).
+  [Performance Characteristics](./design/performance-characteristics.md).
