@@ -1,6 +1,6 @@
 [package]
 name        = "mdka-cli"
-version = "2.0.3"
+version = "2.1.0"
 edition     = "2024"
 description = "CLI executable for mdka – a HTML to Markdown converter"
 license     = "Apache-2.0"
