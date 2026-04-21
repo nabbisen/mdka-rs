@@ -3,7 +3,7 @@ members  = [".", "node", "python", "cli"]
 resolver = "2"
 
 [workspace.dependencies]
-mdka = { path = "." }
+mdka = { version = "2.1.0", path = "." }
 
 [package]
 name    = "mdka"
