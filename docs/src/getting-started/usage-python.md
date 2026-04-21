@@ -31,20 +31,20 @@ import mdka
 # Strip nav/header/footer — useful for LLM pre-processing
 md = mdka.html_to_markdown_with(
     html,
-    mode=mdka.ConversionMode.MINIMAL,
+    mode=mdka.ConversionMode.Minimal,
     drop_interactive_shell=True,
 )
 
 # Preserve ARIA attributes for accessibility-aware output
 md = mdka.html_to_markdown_with(
     html,
-    mode=mdka.ConversionMode.SEMANTIC,
+    mode=mdka.ConversionMode.Semantic,
     preserve_aria_attrs=True,
 )
 ```
 
-Available modes: `ConversionMode.BALANCED` (default), `STRICT`, `MINIMAL`,
-`SEMANTIC`, `PRESERVE`.
+Available modes: `ConversionMode.Balanced` (default), `Strict`, `Minimal`,
+`Semantic`, `Preserve`.
 
 ## Parallel Batch Conversion (GIL released)
 
@@ -76,7 +76,7 @@ result = mdka.html_file_to_markdown("page.html", "out/")
 result = mdka.html_file_to_markdown(
     "page.html",
     "out/",
-    mode=mdka.ConversionMode.MINIMAL,
+    mode=mdka.ConversionMode.Minimal,
     drop_interactive_shell=True,
 )
 ```

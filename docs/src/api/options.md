@@ -34,13 +34,13 @@ let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 
 `for_mode` returns sensible defaults for the chosen mode. See the table below.
 
-### Builder methods
+### Modify fields after creation
 
 ```rust
-let opts = ConversionOptions::for_mode(ConversionMode::Balanced)
-    .drop_interactive_shell(true)   // also strip nav/header/footer/aside
-    .preserve_ids(false)            // don't keep id= attributes
-    .preserve_aria_attrs(true);     // (already true in Balanced, shown for clarity)
+let mut opts = ConversionOptions::for_mode(ConversionMode::Balanced);
+opts.drop_interactive_shell = true; // also strip nav/header/footer/aside
+opts.preserve_ids           = false; // don't keep id= attributes
+opts.preserve_aria_attrs    = true;  // (already true in Balanced, shown for clarity)
 ```
 
 ### Default

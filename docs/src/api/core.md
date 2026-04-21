@@ -35,8 +35,8 @@ value that controls pre-processing and conversion behaviour.
 ```rust
 use mdka::options::{ConversionMode, ConversionOptions};
 
-let opts = ConversionOptions::for_mode(ConversionMode::Minimal)
-    .drop_interactive_shell(true);
+let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+opts.drop_interactive_shell = true;
 let md = mdka::html_to_markdown_with(html, &opts);
 ```
 

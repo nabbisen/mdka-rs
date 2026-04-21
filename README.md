@@ -93,8 +93,8 @@ With options:
 use mdka::{html_to_markdown_with};
 use mdka::options::{ConversionMode, ConversionOptions};
 
-let opts = ConversionOptions::for_mode(ConversionMode::Minimal)
-    .drop_interactive_shell(true);
+let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+opts.drop_interactive_shell = true;
 let md = html_to_markdown_with(html, &opts);
 ```
 
@@ -128,7 +128,7 @@ md = mdka.html_to_markdown('<h1>Hello</h1>')
 
 md = mdka.html_to_markdown_with(
     html,
-    mode=mdka.ConversionMode.MINIMAL,
+    mode=mdka.ConversionMode.Minimal,
     drop_interactive_shell=True,
 )
 ```

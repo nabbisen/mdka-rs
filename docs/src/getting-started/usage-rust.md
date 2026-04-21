@@ -43,8 +43,8 @@ use mdka::{html_to_markdown_with};
 use mdka::options::{ConversionMode, ConversionOptions};
 
 // Strip navigation and extract body text — good for LLM input
-let opts = ConversionOptions::for_mode(ConversionMode::Minimal)
-    .drop_interactive_shell(true);
+let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+opts.drop_interactive_shell = true;
 
 let html = r#"
     <header><nav><a href="/">Home</a></nav></header>
