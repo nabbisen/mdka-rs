@@ -7,7 +7,7 @@ mdka = { version = "2.1.0", path = "." }
 
 [package]
 name    = "mdka"
-version = "2.1.1"
+version = "2.1.2"
 edition = "2024"
 
 description   = "A HTML to Markdown converter that balances conversion quality with runtime efficiency"

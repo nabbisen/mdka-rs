@@ -4,9 +4,9 @@ build-backend = "maturin"
 
 [project]
 name            = "mdka"
-version = "2.1.1"
+version = "2.1.2"
 description     = "A HTML to Markdown converter that balances conversion quality with runtime efficiency written in Rust"
-readme          = "README.md"
+readme          = "../README.md"
 license         = "Apache-2.0"
 requires-python = ">=3.8"
 keywords        = ["html", "markdown", "converter"]
