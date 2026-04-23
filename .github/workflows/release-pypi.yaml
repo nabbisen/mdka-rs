@@ -234,6 +234,11 @@ jobs:
         with:
           subject-path: 'python/wheels-*/*'
       
+      - name: Copy readme from root
+        working-directory: python
+        run: |
+          cp -f ../README.md .
+      
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: PyO3/maturin-action@v1
