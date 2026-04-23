@@ -103,7 +103,7 @@ if [ "$UPDATE_MODE" -eq 1 ]; then
         # 2. [拡張] 直下のサブディレクトリにある package.json を検索・更新
         # find で crate_dir の直下 (-maxdepth 1) のディレクトリを探し、
         # その中にある package.json を見つける
-        find "$crate_dir" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | \
+        find "$crate_dir" -mindepth 1 -maxdepth 2 -type d -print0 2>/dev/null | \
         while IFS= read -r -d '' subdir; do
             sub_pkg_json="$subdir/package.json"
             if [ -f "$sub_pkg_json" ]; then
