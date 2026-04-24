@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name            = "mdka"
-version = "2.1.3"
+version = "2.1.4"
 description     = "A HTML to Markdown converter that balances conversion quality with runtime efficiency written in Rust"
 readme          = "README.md"
 license         = "Apache-2.0"
