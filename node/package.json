@@ -1,6 +1,6 @@
 {
   "name": "mdka",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "A HTML to Markdown converter that balances conversion quality with runtime efficiency written in Rust",
   "author": "nabbisen<nabbisen@scqr.net>",
   "license": "Apache-2.0",
