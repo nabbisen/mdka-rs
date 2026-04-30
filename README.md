@@ -5,13 +5,14 @@
 [![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
 [![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
 [![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka)
-[![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
-
+[![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)    
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
 [![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka)
 [![Executable](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml)
 [![npm](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml)
 [![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
+
+![logo](/docs/src/assets/logo.png)
 
 mdka balances conversion quality with runtime efficiency —
 readable output from real-world HTML, without sacrificing speed or memory.    

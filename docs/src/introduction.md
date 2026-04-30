@@ -2,6 +2,8 @@
 
 **mdka** is a HTML to Markdown written in Rust. "ka" means "化 (か)" pointing to conversion.
 
+![logo](assets/logo.png)
+
 It aims to strike a practical balance between **conversion quality**
 and **runtime efficiency** — readable output from real-world HTML,
 without sacrificing speed or memory.
