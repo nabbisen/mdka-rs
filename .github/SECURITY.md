@@ -1,12 +1,21 @@
 ## 🛡️ Security Policy
 
-### Reporting a Vulnerability
+## Reporting a vulnerability
 
-If you discover a potential security issue or vulnerability in this software, **please do not create a public issue**.
+Please **do not** open a public GitHub issue for a suspected security
+problem. Instead, please report it privately using GitHub's security advisory feature:
 
-Instead, kindly report it privately by sending an [email 📧](nabbisen@scqr.net])
+> https://github.com/nabbisen/mdka-rs/security/advisories/new
 
-We will do our best to assess and respond in a timely manner, but please understand that this project is maintained voluntarily in free time. Thank you for your understanding and responsible disclosure.
+Please include:
+
+- A description of the issue and the affected crate(s).
+- The version, commit hash, or branch the report applies to.
+- A reproducer if at all possible: minimal code, scripted server responses, or a `cargo test` invocation that demonstrates the issue.
+- Your assessment of the impact.
+
+We aim to acknowledge any report within seven days, and to publish a
+fix or a clear timeline within thirty days of acknowledgement.
 
 ### Supported Versions
 

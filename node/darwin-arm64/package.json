@@ -11,7 +11,7 @@
     "mdka.darwin-arm64.node"
   ],
   "description": "HTML to Markdown converter",
-  "author": "nabbisen<nabbisen@scqr.net>",
+  "author": "nabbisen",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
