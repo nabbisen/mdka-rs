@@ -1,6 +1,6 @@
 {
   "name": "@mdka/lib-win32-x64-msvc",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "os": [
     "win32"
   ],

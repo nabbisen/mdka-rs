@@ -3,11 +3,11 @@ members  = [".", "node", "python", "cli"]
 resolver = "2"
 
 [workspace.dependencies]
-mdka = { version = "2.1.0", path = "." }
+mdka = { version = "2.1.6", path = "." }
 
 [package]
 name    = "mdka"
-version = "2.1.5"
+version = "2.1.6"
 edition = "2024"
 
 description   = "A HTML to Markdown converter that balances conversion quality with runtime efficiency"
@@ -46,12 +46,12 @@ parallel = ["dep:rayon"]
 jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
 
 [dependencies]
-scraper = "0.26"
+scraper = "0.27"
 thiserror = "2"
 ego-tree = "0.11"
 rayon = { version = "1", optional = true }
-tikv-jemallocator = { version = "0.6", optional = true }
-tikv-jemalloc-ctl = { version = "0.6", optional = true }
+tikv-jemallocator = { version = "0.7", optional = true }
+tikv-jemalloc-ctl = { version = "0.7", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
