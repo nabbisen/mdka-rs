@@ -49,7 +49,7 @@ fn main() {
         "html2text",
         "dom_smoothie"
     );
-    let border = format!("{}", "-".repeat(122));
+    let border = "-".repeat(122);
     println!("{}", border);
 
     for (name, path) in &datasets {

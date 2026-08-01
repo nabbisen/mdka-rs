@@ -185,6 +185,9 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
     drop_interactive_shell=None))]
+// This argument list is the published Python keyword-argument API; restructuring
+// it to satisfy clippy would break the published surface.
+#[allow(clippy::too_many_arguments)]
 fn html_file_to_markdown(
     py: Python<'_>,
     path: String,
@@ -222,6 +225,9 @@ fn html_file_to_markdown(
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
     drop_interactive_shell=None))]
+// This argument list is the published Python keyword-argument API; restructuring
+// it to satisfy clippy would break the published surface.
+#[allow(clippy::too_many_arguments)]
 fn html_files_to_markdown(
     py: Python<'_>,
     paths: Vec<String>,

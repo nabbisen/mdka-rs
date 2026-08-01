@@ -35,7 +35,7 @@ fn main() {
         "html2text",
         "dom_smoothie"
     );
-    let border = format!("{}", "-".repeat(122));
+    let border = "-".repeat(122);
     println!("{}", border);
 
     for (label, rel) in &datasets {
@@ -62,9 +62,9 @@ fn main() {
         //         let _ = fast_html2md::rewrite_html(&html, false);
         //     })
         // };
-         let t_fast = wall_us(|| {
-                let _ = fast_html2md::rewrite_html(&html, false);
-            });
+        let t_fast = wall_us(|| {
+            let _ = fast_html2md::rewrite_html(&html, false);
+        });
         let t_htmd = wall_us(|| {
             let _ = htmd::HtmlToMarkdown::new().convert(&html);
         });

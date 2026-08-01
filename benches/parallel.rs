@@ -31,7 +31,7 @@ fn make_pool(threads: usize) -> rayon::ThreadPool {
 }
 
 fn parallel_run(html: &str, pool: &rayon::ThreadPool) -> Vec<String> {
-    let inputs: Vec<&str> = std::iter::repeat(html).take(REPEAT).collect();
+    let inputs: Vec<&str> = std::iter::repeat_n(html, REPEAT).collect();
     pool.install(|| {
         inputs
             .par_iter()
