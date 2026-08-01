@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-rust-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-rust-
+
+      - name: Ensure rustfmt and clippy components
+        run: rustup component add rustfmt clippy
+
+      - name: cargo fmt --check
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace --locked
+
+      - name: cargo build
+        run: cargo build --workspace --locked
+
+  msrv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-msrv1.88-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-msrv1.88-
+
+      # Pinned to the published MSRV (rust-version in Cargo.toml). Corrected
+      # 2026-08-02 from 1.85 to 1.88: scraper (both 0.26.0 and 0.27.0) uses
+      # let-chains, stabilized in 1.88 — the 1.85 claim was never true. Do not
+      # raise this further to make resolution pass; that redefines the
+      # published MSRV, which is an owner decision.
+      - name: Install Rust 1.88 (MSRV)
+        run: |
+          rustup toolchain install 1.88 --profile minimal
+          rustup override set 1.88
+
+      # --all-targets is deliberately omitted: bench dev-dependencies require a
+      # newer toolchain and are advisory only, not part of the published MSRV.
+      # --locked verifies the same dependency set the `rust` job saw.
+      - name: cargo check
+        run: cargo check --workspace --locked
+
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: node/package-lock.json
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-node-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-node-
+
+      - name: npm ci
+        working-directory: node
+        run: npm ci
+
+      - name: npm run build
+        working-directory: node
+        run: npm run build
+
+      - name: node test.js
+        working-directory: node
+        run: node test.js
+
+      # index.d.ts is generated from Rust doc comments and is both committed and
+      # published to npm. This keeps the shipped type definitions honest.
+      - name: Verify index.d.ts has no drift
+        run: git diff --exit-code node/index.d.ts
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-python-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-python-
+
+      # python/pyproject.toml declares readme = "README.md" but the README lives
+      # at the repository root. Required — omitting this fails the build (see
+      # commit 3da9ce3, "fix readme was missing in pypi").
+      - name: Stage README for maturin
+        run: cp -f README.md python/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Install maturin and pytest
+        run: |
+          uv venv
+          uv pip install maturin pytest
+
+      - name: maturin develop
+        working-directory: python
+        run: |
+          source ../.venv/bin/activate
+          maturin develop
+
+      - name: pytest
+        working-directory: python
+        run: |
+          source ../.venv/bin/activate
+          python -m pytest test_mdka.py

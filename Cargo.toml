@@ -9,6 +9,7 @@ mdka = { version = "2.1.6", path = "." }
 name    = "mdka"
 version = "2.1.6"
 edition = "2024"
+rust-version = "1.88"
 
 description   = "A HTML to Markdown converter that balances conversion quality with runtime efficiency"
 authors       = ["nabbisen"]

@@ -11,7 +11,7 @@ mdka = "2"
 
 That is the only step. mdka has no system dependencies.
 
-**Minimum Supported Rust Version:** 1.85 (2024 Edition)
+**Minimum Supported Rust Version:** 1.88 (2024 Edition)
 
 ## As a CLI Binary
 
