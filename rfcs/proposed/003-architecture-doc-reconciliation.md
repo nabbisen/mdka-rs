@@ -40,6 +40,13 @@ false or incomplete:
 | `elements.md:57-58` | Always-removed list omits `<svg>` and `<head>` | Both are removed unconditionally — `src/utils.rs:13-28` lists them |
 | `options.md:104` | `drop_interactive_shell` is "Disabled by default in all modes" | Contradicts the table at `options.md:62` in the same file. `Minimal` sets it `true` (`src/options.rs:144`); the table is right and the prose is wrong |
 | `modes.md:57-58` | Minimal removes shell elements "optionally… when `drop_interactive_shell` is true" | Misleading: `for_mode(Minimal)` already sets it true |
+| `modes.md:96` | Preserve "retains HTML comments in the pre-processed output" | False, same error as `elements.md`. Comments are dropped in every mode. |
+| `philosophy.md:38` | Non-recursion applies "both in the pre-processing pipeline and in the Markdown conversion step" | Asserts two traversals. There is one. |
+| `philosophy.md:50` | Mode presets "are applied in a pre-processing pass" | Asserts a separate pass. Preprocessing is inline in the single traversal. |
+
+The last three were found during a full `docs/src/` sweep at RFC 003 handoff
+preparation (2026-08-02), after RFC 004 landed. All were verified against the
+current build.
 
 ## Goals
 
@@ -134,11 +141,12 @@ Reference outputs already captured at 2.1.6:
 1. `architecture.md` describes a three-step pipeline with no preprocess or re-parse step.
 2. `architecture.md` states explicitly that no intermediate serialisation occurs.
 3. The workspace layout tree matches the repository after RFC 004.
-4. `elements.md` states comments are removed in all modes.
+4. `elements.md` **and `modes.md`** state comments are removed in all modes.
 5. `elements.md` lists `<svg>` and `<head>` among always-removed elements.
 6. `options.md` and `modes.md` agree with `src/options.rs` on `drop_interactive_shell` defaults.
-7. No `preserve_*` or `drop_presentation_attrs` description is modified.
-8. `mdbook build` succeeds with no broken links.
+7. `philosophy.md` no longer asserts a separate pre-processing pass or traversal.
+8. No `preserve_*` or `drop_presentation_attrs` description is modified.
+9. `mdbook build` succeeds with no broken links.
 
 ## Prohibited shortcuts
 

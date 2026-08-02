@@ -115,13 +115,30 @@ git tag -d '2.0.`'
 
 Quote the name — the backtick is shell-significant in some shells.
 
-Two consequences to carry into your review request, because they mean the
-underlying issue is *not* closed:
+> **CORRECTION 2026-08-02 — the two consequences below were wrong.**
+>
+> The implementer checked and reported that the malformed tag was **never on
+> the remote**. Verified at review: `git ls-remote --tags origin` returns 114
+> refs and none matches it, and `git fetch --tags` did not reinstate it after
+> deletion. It was local-only to this machine.
+>
+> Both numbered points below are therefore void. The *instruction* — delete
+> locally, exclude from the changelog — was correct and unchanged; only my
+> stated reason for it was false. Retained struck-through so the correction is
+> legible rather than silently rewritten.
+>
+> Closing detail found at review: `refs/tags/2.0.1^{}` dereferences to
+> `d21467fc…`, the same commit the malformed tag pointed at. It was a
+> mistyped first attempt at tagging `2.0.1`, re-run correctly moments later.
+> No release is missing from the changelog.
 
-1. The remote copy remains authoritative, so **the tag returns on the next
-   `git fetch --tags`**. This is a local tidy-up, not a removal.
-2. The malformed tag therefore still appears in any tag-driven reconstruction
-   done from a fresh clone. Exclude it from the changelog regardless, and note
+~~Two consequences to carry into your review request, because they mean the
+underlying issue is *not* closed:~~
+
+1. ~~The remote copy remains authoritative, so **the tag returns on the next
+   `git fetch --tags`**. This is a local tidy-up, not a removal.~~
+2. ~~The malformed tag therefore still appears in any tag-driven reconstruction
+   done from a fresh clone.~~ Exclude it from the changelog regardless, and note
    the exclusion explicitly.
 
 Do not delete, create, or modify any other tag, and do not touch the remote
