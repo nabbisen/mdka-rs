@@ -57,8 +57,8 @@ let md = mdka::html_to_markdown_with(html, &opts);
 **Goal:** Extract the body text and essential structure; discard everything else.
 
 - Removes all decorative attributes (`class`, `style`, `data-*`, `aria-*`)
-- Optionally removes shell elements (`nav`, `header`, `footer`, `aside`)
-  when [`drop_interactive_shell`](./options.md) is `true`
+- Removes shell elements (`nav`, `header`, `footer`, `aside`) —
+  [`drop_interactive_shell`](./options.md) is `true` by default in this mode
 - Unwraps generic wrappers (`div`, `span`, `section`, `article`) that add no meaning
 - Ideal for piping content into an LLM prompt or a search index
 
@@ -93,7 +93,7 @@ let md = mdka::html_to_markdown_with(html, &opts);
 **Goal:** Maximum fidelity to the original HTML. Lose as little information as possible.
 
 - Retains all attributes, including `class`, `data-*`, `aria-*`, `id`, and unknowns
-- Retains HTML comments in the pre-processed output
+- Does not retain HTML comments — no mode does; see [Supported HTML Elements](./elements.md)
 - Does not unwrap any elements
 - Intended for archiving or audit scenarios where the original structure matters
 

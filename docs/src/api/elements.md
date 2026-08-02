@@ -55,11 +55,10 @@ These elements and all their descendants are removed unconditionally,
 regardless of conversion mode:
 
 `<script>` · `<style>` · `<meta>` · `<link>` · `<template>` ·
-`<iframe>` · `<object>` · `<embed>` · `<noscript>`
+`<iframe>` · `<object>` · `<embed>` · `<noscript>` · `<head>` · `<svg>`
 
-HTML comments are removed in all modes **except `Preserve`**, where they
-are retained as `<!-- … -->` in the pre-processed DOM (though they do not
-appear in Markdown output).
+HTML comments are removed in **all** conversion modes, including
+`Preserve`. No mode retains comment content.
 
 ## Shell Elements
 

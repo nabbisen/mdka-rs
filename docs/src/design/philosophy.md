@@ -35,9 +35,9 @@ result is always a well-formed DOM tree, regardless of the input quality.
 
 A common failure mode in tree-processing code is stack overflow on deeply
 nested input. mdka uses an explicit `Vec`-based stack (non-recursive DFS)
-for every tree traversal — both in the pre-processing pipeline and in the
-Markdown conversion step. This means it handles any nesting depth that
-fits in heap memory.
+for its single tree traversal, which applies preprocessing and Markdown
+conversion together in one pass. This means it handles any nesting depth
+that fits in heap memory.
 
 ## Configurable Pre-Processing
 
@@ -47,9 +47,9 @@ extraction pipeline wants to remove. A document being archived for audit
 purposes should retain as much as possible.
 
 The five [conversion modes](../api/modes.md) encode these intent differences
-as named, opinionated presets. They are applied in a pre-processing pass
-that filters the DOM before Markdown conversion runs — keeping the
-conversion logic itself simple and mode-agnostic.
+as named, opinionated presets. They are applied inline during the single
+tree traversal, filtering as the DOM is walked rather than as a separate
+step — keeping the conversion logic itself simple and mode-agnostic.
 
 ## One Allocator, Minimal Copies
 

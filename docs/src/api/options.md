@@ -101,7 +101,7 @@ Enabled in `Balanced`, `Minimal`, and `Semantic`.
 Whether to remove `<nav>`, `<header>`, `<footer>`, and `<aside>` elements
 **and all their children**.
 Useful for content extraction from full web pages.
-Disabled by default in all modes; opt in explicitly.
+Enabled by default in `Minimal`; disabled by default in every other mode.
 
 ### `unwrap_unknown_wrappers`
 Whether to replace generic container elements (`<div>`, `<span>`,

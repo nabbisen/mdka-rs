@@ -12,7 +12,6 @@ mdka/
 │   ├── utils.rs           Whitespace normalisation + escaping
 │   └── alloc_counter.rs   Custom allocator (for benchmarks)
 ├── tests/             integration test modules
-│   └── utils/preprocessor.rs    DOM pre-processing pipeline
 ├── cli/               mdka-cli binary crate
 │   └── src/main.rs        Argument parsing + dispatch
 ├── node/              Node.js bindings (napi-rs v3)
@@ -29,29 +28,25 @@ Each call to `html_to_markdown_with` follows these steps:
 HTML string
     │
     ▼
-[1] Parse          scraper::Html::parse_document()
-    │               → html5ever DOM tree (tolerant HTML5 parsing)
+[1] Parse        scraper::Html::parse_document()
+    │             → html5ever DOM (tolerant HTML5 parsing)
     ▼
-[2] Pre-process    preprocessor::preprocess(&doc, opts)
-    │               → filtered HTML string
-    │               Non-recursive DFS over ego-tree nodes
-    │               Drops: script, style, iframe, …
-    │               Filters attributes per ConversionOptions
-    │               Removes shell elements (if opted in)
-    │               Unwraps anonymous wrappers (if opted in)
+[2] Traverse     traversal::traverse(&doc, opts)
+    │             → non-recursive DFS over ego-tree, Enter/Leave events
+    │             Preprocessing is applied inline during this traversal:
+    │               · drops script/style/head/svg/… unconditionally
+    │               · drops shell elements when opted in
+    │               · unwraps generic wrappers when opted in
+    │             Drives MarkdownRenderer
     ▼
-[3] Re-parse       scraper::Html::parse_document(&cleaned)
-    │               → clean DOM for conversion
-    ▼
-[4] Convert        traversal::traverse(&doc)
-    │               → Markdown string
-    │               Non-recursive DFS with Enter/Leave events
-    │               Drives MarkdownRenderer via event callbacks
-    ▼
-[5] Finalise       renderer.finish()
-                    → trim leading/trailing whitespace
-                    → ensure single trailing newline
+[3] Finalise     renderer.finish()
+                  → trim trailing whitespace, single trailing newline
 ```
+
+There is no intermediate HTML serialisation and no second parse. An earlier
+version of the engine preprocessed HTML into a filtered HTML string and
+re-parsed it before conversion; that round trip was removed, and this page now
+describes the single-parse, single-traversal pipeline that actually runs.
 
 ## MarkdownRenderer
 
