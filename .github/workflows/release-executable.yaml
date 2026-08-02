@@ -32,6 +32,7 @@ jobs:
       - name: Require green CI on the released commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           run_id=$(gh run list --commit "${{ github.sha }}" \

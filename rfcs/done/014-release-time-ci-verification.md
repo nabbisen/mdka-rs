@@ -233,3 +233,76 @@ is what it delivers under the approved merge policy — with release-time
 enforcement provided here. RFC 001's acceptance criteria are unchanged and
 remain met; only the characterisation changes, so that the record does not claim
 enforcement the project does not have.
+
+---
+
+## Post-implementation correction — 2026-08-02
+
+Recorded after the guard's first live exercise, during the `2.1.7` release.
+The RFC is retained above as written; this section states what was wrong.
+
+### The guard failed on every real release
+
+All three `verify-ci` jobs failed within ~2 seconds of the `2.1.7` release
+event, before reaching the `gh run list` query:
+
+```
+failed to determine base repo: failed to run git:
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+**Root cause:** the job template above runs no `actions/checkout`, and `gh`
+infers its target repository from the working directory's git remote when
+neither `--repo` nor `GH_REPO` is supplied. A fresh Actions runner has no
+working-directory git repo until a checkout step runs, so `gh` had nothing to
+infer from.
+
+This is an architect error, not an implementation one. The template was
+specified without a checkout, implemented verbatim, and the absent checkout was
+explicitly considered and dismissed at review.
+
+### Fix
+
+`GH_REPO: ${{ github.repository }}` added to the step's existing `env:` block
+in all three workflows, alongside `GH_TOKEN`. No checkout is added — the job
+queries the API and needs no working tree, only a repository slug. The guard's
+pass/fail semantics are unchanged.
+
+### The verification method was the real defect
+
+Both implementation and review verified the guard by running its shell body
+**from inside a clone**, where `gh` trivially infers the repo from the local
+remote. That method structurally could not surface this bug: the precondition it
+silently assumed — a git repo in the working directory — is exactly the one a
+fresh runner does not provide.
+
+**Standing lesson for any future workflow-logic RFC:** verification must run in
+an environment resembling the target, not merely execute the same commands.
+Concretely, for `gh`-based workflow logic: run the body from a directory outside
+any git repository. With `GH_REPO` unset it must fail; with it set it must
+succeed.
+
+### What the failure proved
+
+Two things went right, both worth recording:
+
+- **Fail-closed held.** All nine downstream jobs across the three workflows show
+  `skipped`. Nothing was published to GitHub releases, npm, PyPI, or crates.io
+  from an unverified commit. Had the guard been written to fail open, this bug
+  would have published unverified artifacts on its first run.
+- **F-02 is resolved — the assumption was correct.** The run log shows
+  `github.sha` resolved to `e9129e6eda33122f796c9346f9c0bd74ffbc844a`, the
+  commit, not the annotated tag object. The "untested assumption" recorded above
+  is now confirmed by real evidence and is no longer open.
+
+### Known remaining gap — crates.io is not guarded
+
+Identified while preparing the `2.1.7` release handoff. `verify-ci` protects the
+three GitHub workflows. **crates.io publishing is not among them** — it runs
+manually via `cargo-publish.sh`, outside CI entirely, and is therefore
+unguarded. crates.io is the path where versions can be yanked but never
+replaced.
+
+This RFC was framed as closing "the release-path exposure" and closes three of
+four paths. Deferred to a follow-up RFC, together with automating GitHub release
+creation (currently also manual, via `gh` locally).
