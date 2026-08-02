@@ -161,6 +161,8 @@ https://nabbisen.github.io/mdka-rs/
 | Performance Characteristics | [/design/performance-characteristics](https://nabbisen.github.io/mdka-rs/design/performance-characteristics) |
 | Architecture | [/design/architecture](https://nabbisen.github.io/mdka-rs/design/architecture) |
 | Features | [/design/features](https://nabbisen.github.io/mdka-rs/design/features) |
+| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
+| Roadmap | [ROADMAP.md](./ROADMAP.md) |
 
 ---
 
