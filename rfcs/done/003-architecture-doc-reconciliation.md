@@ -1,6 +1,6 @@
 # RFC 003 — Architecture documentation reconciliation
 
-**Status.** Proposed
+**Status.** Implemented (2.1.7)
 **Tracks.** M1 · Trustworthy baseline. Corrects documentation statements that
 are factually wrong about the current engine.
 **Touches.** `docs/src/design/architecture.md`, `docs/src/api/elements.md`,

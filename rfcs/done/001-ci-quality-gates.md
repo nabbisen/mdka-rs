@@ -1,6 +1,6 @@
 # RFC 001 — CI quality gates
 
-**Status.** Proposed
+**Status.** Implemented (2.1.7)
 **Tracks.** M1 · Trustworthy baseline. Establishes the automated gate that all
 subsequent RFCs land through.
 **Touches.** A new `.github/workflows/ci.yaml`; pre-existing lint and format

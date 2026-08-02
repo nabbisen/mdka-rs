@@ -1,6 +1,6 @@
 # RFC 014 — Release-time CI verification
 
-**Status.** Proposed
+**Status.** Implemented (2.1.7)
 **Tracks.** M1 · Trustworthy baseline. Closes the release-path exposure left
 open by the project's push-to-`main` merge policy.
 **Touches.** `.github/workflows/release-executable.yaml`,

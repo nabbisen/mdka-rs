@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 003 · Architecture documentation reconciliation
 
-**Governing RFC.** [RFC 003](../../proposed/003-architecture-doc-reconciliation.md) — Proposed
+**Governing RFC.** [RFC 003](../../done/003-architecture-doc-reconciliation.md) — Implemented (2.1.7)
 **Milestone.** M1 · Trustworthy baseline → `2.1.7`
 **Position in M1.** Last. RFC 004 has landed (`0eadf0a`), which unblocks this.
 **Prepared.** 2026-08-02

@@ -1,6 +1,6 @@
 {
   "name": "@mdka/lib-linux-x64-gnu",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "os": [
     "linux"
   ],

@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 001 · CI quality gates
 
-**Governing RFC.** [RFC 001](../../proposed/001-ci-quality-gates.md) — Proposed
+**Governing RFC.** [RFC 001](../../done/001-ci-quality-gates.md) — Implemented (2.1.7)
 **Milestone.** M1 · Trustworthy baseline → `2.1.7`
 **Position in M1.** First. Nothing else in M1 lands until this is green.
 **Prepared.** 2026-08-02

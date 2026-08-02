@@ -1,6 +1,6 @@
 # RFC 002 — Governance artifacts
 
-**Status.** Proposed
+**Status.** Implemented (2.1.7)
 **Tracks.** M1 · Trustworthy baseline. Makes release history and design history
 auditable.
 **Touches.** New `CHANGELOG.md` and `NOTICE` at the repository root; the

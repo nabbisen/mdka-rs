@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 014 · Release-time CI verification
 
-**Governing RFC.** [RFC 014](../../proposed/014-release-time-ci-verification.md) — Proposed
+**Governing RFC.** [RFC 014](../../done/014-release-time-ci-verification.md) — Implemented (2.1.7)
 **Milestone.** M1 · Trustworthy baseline → `2.1.7`
 **Position in M1.** After RFC 001 (which provides the `ci.yaml` this queries). Independent of 002/003/004 — can run in parallel with any of them.
 **Prepared.** 2026-08-02

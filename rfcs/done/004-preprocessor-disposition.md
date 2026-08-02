@@ -1,6 +1,6 @@
 # RFC 004 — Orphaned preprocessor disposition
 
-**Status.** Proposed
+**Status.** Implemented (2.1.7)
 **Tracks.** M1 · Trustworthy baseline. Resolves inherited technical debt before
 RFC 005 builds on the same ground.
 **Touches.** `tests/utils/preprocessor.rs`, `tests/utils/preprocessor/tests.rs`,

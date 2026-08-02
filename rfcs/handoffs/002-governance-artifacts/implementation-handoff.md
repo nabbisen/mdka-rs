@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 002 · Governance artifacts
 
-**Governing RFC.** [RFC 002](../../proposed/002-governance-artifacts.md) — Proposed
+**Governing RFC.** [RFC 002](../../done/002-governance-artifacts.md) — Implemented (2.1.7)
 **Milestone.** M1 · Trustworthy baseline → `2.1.7`
 **Position in M1.** Second, after RFC 001.
 **Prepared.** 2026-08-02

@@ -11,7 +11,13 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
-Becomes the `2.1.7` entry at release. M1 · Trustworthy baseline.
+## [2.1.7] - 2026-08-02
+
+M1 · Trustworthy baseline. No executable code changed in this release beyond
+comments and lint-suppression attributes — see `Removed` and `Fixed` below for
+the two internal-truth items with no user-visible behavior change, included
+for the same reason the MSRV correction is: an honest record beats a silent
+gap, even when nothing a consumer does differently as a result.
 
 ### Changed
 
@@ -39,6 +45,24 @@ Becomes the `2.1.7` entry at release. M1 · Trustworthy baseline.
 - Pre-existing formatting and lint failures in `examples/quick_bench.rs`,
   `examples/quick_compare.rs`, and `benches/parallel.rs` that predated CI and
   had gone unnoticed.
+- Corrected several documentation statements that no longer matched observed
+  engine behavior: the architecture page described a five-step pipeline with
+  an intermediate HTML serialization and a second parse, neither of which
+  exists (the engine parses once and traverses once); HTML comments were
+  documented as retained in `Preserve` mode, but are dropped in every mode;
+  the always-removed element list omitted `<svg>` and `<head>`; and
+  `drop_interactive_shell`'s prose contradicted its own options table and
+  `src/options.rs`. No behavior changed — only the documentation was wrong.
+
+### Removed
+
+- A standalone, mode-aware DOM preprocessor (`tests/utils/preprocessor.rs`
+  and its 115-line test file) that had never been compiled or reachable from
+  any published artifact since 2.0.0 shipped — dead code the compiler could
+  never warn about, because nothing ever built it. Its test assertions were
+  transcribed into RFC 004's design record before removal, to inform future
+  attribute-handling work. No behavior changed; nothing using `mdka` could
+  ever have exercised this code.
 
 ## [2.1.6] - 2026-06-05
 

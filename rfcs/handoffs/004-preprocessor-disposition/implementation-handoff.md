@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 004 · Orphaned preprocessor disposition
 
-**Governing RFC.** [RFC 004](../../proposed/004-preprocessor-disposition.md) — Proposed
+**Governing RFC.** [RFC 004](../../done/004-preprocessor-disposition.md) — Implemented (2.1.7)
 **Milestone.** M1 · Trustworthy baseline → `2.1.7`
 **Position in M1.** Third, after RFC 001 and RFC 002. **RFC 003 is blocked on this landing.**
 **Prepared.** 2026-08-02
