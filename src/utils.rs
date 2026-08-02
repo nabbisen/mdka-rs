@@ -6,7 +6,7 @@
 #[cfg(test)]
 mod tests;
 
-// ─── タグ分類（traversal / preprocessor 共通） ────────────────────────────
+// ─── タグ分類（traversal 用） ──────────────────────────────────────────────
 
 /// コンテンツごと常にスキップするタグ。
 #[inline]
@@ -74,29 +74,6 @@ pub(crate) fn is_structural_tag(tag: &str) -> bool {
             | "figcaption"
     )
 }
-
-// moved to /tests/utils/preprocessor.rs
-// /// Void 要素（自己閉じ・子なし）。
-// #[inline]
-// pub(crate) fn is_void_element(tag: &str) -> bool {
-//     matches!(
-//         tag,
-//         "area"
-//             | "base"
-//             | "br"
-//             | "col"
-//             | "embed"
-//             | "hr"
-//             | "img"
-//             | "input"
-//             | "link"
-//             | "meta"
-//             | "param"
-//             | "source"
-//             | "track"
-//             | "wbr"
-//     )
-// }
 
 // ─── テキスト正規化 ───────────────────────────────────────────────────────
 

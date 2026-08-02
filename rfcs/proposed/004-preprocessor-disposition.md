@@ -153,3 +153,75 @@ that would otherwise be a candidate for future reuse without review.
 |---|---|---|
 | Test intent lost on deletion | RFC 005 reimplements attribute rules from scratch and diverges from original intent | Harvest inventory is a blocking acceptance criterion, verified at review |
 | Deleted code turns out to be wanted later | Rework | Recoverable from git history; this RFC records why it went |
+
+## Harvested test inventory
+
+Transcribed 2026-08-02, before deletion, from `tests/utils/preprocessor/tests.rs`
+(115 lines, 10 `#[test]` functions — all ten are recorded below; this is not a
+sample). "Currently implemented?" is checked directly against `src/traversal.rs`
+and `src/renderer.rs` as they stand today, not against the deleted preprocessor.
+
+| # | Test name | Input HTML | Mode / options exercised | Asserted behaviour | Currently implemented? |
+|---|---|---|---|---|---|
+| 1 | `test_script_always_dropped` | `<p>Text</p><script>alert(1)</script>` | Strict | `<script>` content never appears in output, regardless of mode; surrounding text survives | **Yes.** `utils::is_skip_tag` (shared with the live `traversal.rs`) already includes `"script"`; the live engine drops script content unconditionally today. |
+| 2 | `test_balanced_drops_class_style` | `<p class="foo" style="color:red">Hi</p>` | Balanced | Neither `class=` nor `style=` appears in output; `"Hi"` survives | **No, only vacuously.** The live renderer has no code path that emits any raw HTML attribute into Markdown output, in any mode. The assertion happens to hold today, but not because `drop_presentation_attrs` / `preserve_classes` gate anything — there is nothing to gate. |
+| 3 | `test_strict_keeps_class_data` | `<p class="foo" data-x="1">Hi</p>` | Strict | `class="foo"` and `data-x="1"` literally appear in output | **No.** Same reason as #2, in the other direction: the live renderer never emits `class=` or `data-*=` regardless of mode, so this assertion would fail against the live engine. `preserve_classes` and `preserve_data_attrs` are read nowhere in `src/`. |
+| 4 | `test_minimal_drops_shell` | `<nav><a href='/'>Home</a></nav><main><p>Content</p></main>` | Minimal | `<nav>` and its content are dropped; `"Content"` survives | **Yes.** `opts.drop_interactive_shell` (set by the `Minimal` preset) combined with `utils::is_shell_tag` is live in `traversal.rs`, functionally identical to the deleted preprocessor's check. |
+| 5 | `test_semantic_keeps_aria` | `<button aria-label="close" class="btn">X</button>` | Semantic | `aria-label=` present; `class=` absent | **Split.** The "`class=` absent" half holds vacuously (see #2). The "`aria-label=` present" half does **not** hold — the live renderer has no path that emits `aria-*` attributes; `preserve_aria_attrs` is read nowhere in `src/`. |
+| 6 | `test_preserve_keeps_comments` | `<!-- note --><p>Text</p>` | Preserve | The literal string `<!-- note -->` appears in output | **No.** `traversal.rs` has no `Node::Comment` arm; comments fall into the catch-all branch (which only walks children) and are silently, unconditionally dropped in every mode today. This directly contradicts the assertion for `Preserve` mode. |
+| 7 | `test_balanced_drops_comment` | `<!-- note --><p>Text</p>` | Balanced | Comment absent from output | **Yes, only vacuously.** Comments are unconditionally dropped today (see #6), in every mode — not specifically because `Balanced` chose to drop them. |
+| 8 | `test_href_always_preserved` | `<a href="https://example.com">Link</a>`, checked across all five modes | Balanced, Minimal, Strict, Semantic, Preserve | `href=` (i.e. the Markdown link target) present regardless of mode | **Yes.** `renderer.rs`'s `a`-tag handling reads `href` unconditionally, with no option check, for every mode — matches the live engine exactly. |
+| 9 | `test_code_lang_class_always_kept` | `<pre><code class="language-rust">fn main(){}</code></pre>` | Balanced | `language-rust` present in the output (as a fenced code-block language tag) | **Yes.** `renderer.rs`'s `code`-in-`pre` handling calls `utils::extract_code_lang` on the `class` attribute and emits the language in the fence header — live today, unconditional on mode. |
+| 10 | `test_deep_nest_no_stack_overflow` | 10,000 nested `<div>` wrapping `<p>deep</p>` | default (Balanced) | No stack overflow; `"deep"` content survives | **Yes, equivalently.** The live `traversal.rs` is likewise a non-recursive `Vec`-stack DFS (NFR-02). `tests/robustness.rs::deep_nest_no_stack_overflow` already exercises the identical property against the live `html_to_markdown` engine, not against the deleted module. |
+
+### Design elements captured beyond the ten tests
+
+The deleted file's implementation (`preprocess()` / `emit_attrs()`) encodes design
+intent that no `#[test]` directly exercises, but which is real signal for RFC 005:
+
+- **A "semantic attributes, always preserved regardless of mode" allowlist:**
+  `href`, `src`, `alt`, `title`, `lang`, `dir`, `type`, `start`, `colspan`,
+  `rowspan`. In the dead code, these bypassed every option flag. In the live
+  engine, `href`/`src`/`alt`/`title`/`start` are each already hard-coded into
+  the specific tag handling that needs them (`a`, `img`, `ol`); `lang`, `dir`,
+  `colspan`, `rowspan` are not read anywhere live today.
+- **A void-element list** (`area base br col embed hr img input link meta
+  param source track wbr`), used by the dead preprocessor to decide whether to
+  self-close a tag. The live engine has no equivalent concept — `is_void_element`
+  exists only as the commented-out block this RFC also removes (`src/utils.rs`
+  lines 78–99). No live code currently classifies void elements at all.
+- **Attribute-branch logic for the two fields no test exercises directly:**
+  `preserve_ids` (`emit_attrs` had a dedicated `id` branch, but zero `#[test]`
+  ever set an `id` attribute in its input HTML) and `preserve_unknown_attrs`
+  (the dead code's fallback branch for attributes matching none of the named
+  categories, likewise never exercised by name in any test).
+
+### Coverage gaps in the harvested file itself
+
+Two of the eight `ConversionOptions` fields, and one of the two currently-live
+behavioral flags, have **no surviving test at all** — not merely "currently
+failing," but never asserted in the first place, even by the dead code's own
+suite:
+
+- `preserve_ids` — implementation existed in `emit_attrs`; no test ever set an
+  `id` attribute.
+- `preserve_unknown_attrs` — implementation existed; no test ever used an
+  attribute name that would hit that branch.
+- `unwrap_unknown_wrappers` — this flag **is** live in `traversal.rs` today
+  (wrapper-tag unwrapping works), but none of the ten harvested tests exercises
+  it; there is no surviving specification of intended wrapper-unwrap behavior
+  beyond the implementation itself.
+
+RFC 005 starts these three from zero test coverage, not from an adapted case.
+
+### Summary for RFC 005
+
+Of the eight `ConversionOptions` fields: **`drop_interactive_shell` and
+`unwrap_unknown_wrappers` are live and tested** (the latter only by the live
+suite, not by the harvested file — see above). The other six
+(`preserve_ids`, `preserve_classes`, `preserve_data_attrs`,
+`preserve_aria_attrs`, `preserve_unknown_attrs`, `drop_presentation_attrs`) are
+inert: not because any mode-specific logic suppresses them, but because the
+live renderer has no mechanism at all for emitting arbitrary HTML attributes
+into Markdown output. Comment handling (`Preserve` mode's intent to keep HTML
+comments) is likewise entirely unimplemented, in every mode, today.
