@@ -96,6 +96,21 @@ option fields are currently inert.
 test per field per surface; Rust, CLI, Node, and Python expose the same option
 set; no Japanese text in any artifact published to crates.io, npm, or PyPI.
 
+#### Carried-forward finding for RFC 006
+
+Found during RFC 003 implementation and deliberately not fixed there, since
+RFC 003's scope was a fixed list of eight enumerated corrections.
+
+| Finding | Evidence |
+|---|---|
+| `docs/src/api/elements.md`'s Block Elements table groups `<div>`, `<article>`, `<section>`, `<main>`, `<figure>`, `<figcaption>` into one row claiming all six are "unwrapped in Minimal/Semantic". **False for `<figure>` and `<figcaption>`** — they are never unwrapped in any mode. | `src/utils.rs::is_wrapper_tag` is `span\|div\|section\|article\|main` and excludes both; `is_structural_tag` explicitly *includes* both, which blocks unwrapping even if they were wrapper-eligible. Two disjoint source-level lists, verified at RFC 003 review. |
+
+RFC 006 owns `unwrap_unknown_wrappers` documentation, so this row belongs to it
+rather than to a standalone RFC. Note that black-box confirmation is
+inconclusive here — `figcaption` triggers its own block spacing regardless of
+unwrap status, so output alone cannot distinguish the two cases. The source-level
+evidence is what settles it.
+
 ### M3 · Conversion fidelity → `2.3.0` (minor)
 
 Purely additive element coverage. Tables are the largest known gap against the

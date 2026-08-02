@@ -183,9 +183,20 @@ grep -rn "preprocessor" docs/src/          # expect: none
 grep -rniE "re-parse|reparse|pre-processing pass|pre-processed DOM" docs/src/
 ```
 
-The second grep will still return `options.md:73` and `options.md:97` — that is
-**expected and correct**, per §4. Anything else it returns is either something
-you missed or a new finding: report it, do not silently fix it.
+The second grep will still return `options.md:73` — that is **expected and
+correct**, per §4. Anything else it returns is either something you missed or a
+new finding: report it, do not silently fix it.
+
+> **CORRECTION 2026-08-02, at review.** This originally predicted the grep would
+> return `options.md:73` **and** `options.md:97`. That was wrong. `:97` reads
+> "…during pre-processing", which matches none of the four literal patterns
+> (`re-parse`, `reparse`, `pre-processing pass`, `pre-processed DOM`). Only `:73`
+> matches. `:97` is still correctly left untouched — it is RFC 006 territory
+> either way — but it was never going to appear in this grep's output.
+>
+> Raised by the implementer, confirmed at review by re-running the grep.
+> A verification step that predicts the wrong result is worse than one that
+> predicts nothing, because a correct outcome then looks like a discrepancy.
 
 ## 7. If you find further drift
 
