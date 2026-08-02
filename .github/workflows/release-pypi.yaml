@@ -12,7 +12,34 @@ defaults:
     shell: bash
 
 jobs:
+  verify-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      # Releases are cut from commits pushed straight to main, where CI is
+      # advisory. This is the enforcement point: nothing publishes unless
+      # ci.yaml concluded success on this exact commit. Coupled by name to
+      # ci.yaml — if that file is renamed, this fails closed (blocks), which
+      # is the safe direction.
+      - name: Require green CI on the released commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --commit "${{ github.sha }}" \
+                     --workflow ci.yaml --limit 1 --json databaseId \
+                     --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::No CI run found for ${{ github.sha }}. Refusing to publish."
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
+
   linux:
+    needs: [verify-ci]
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -60,6 +87,7 @@ jobs:
           path: python/dist
 
   musllinux:
+    needs: [verify-ci]
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -107,6 +135,7 @@ jobs:
           path: python/dist
 
   windows:
+    needs: [verify-ci]
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -152,6 +181,7 @@ jobs:
           path: python/dist
 
   macos:
+    needs: [verify-ci]
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -196,6 +226,7 @@ jobs:
           path: python/dist
 
   sdist:
+    needs: [verify-ci]
     runs-on: ubuntu-latest
 
     steps:
@@ -222,7 +253,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
-    needs: [linux, musllinux, windows, macos, sdist]
+    needs: [linux, musllinux, windows, macos, sdist, verify-ci]
     environment:
       name: pypi
     permissions:

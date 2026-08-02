@@ -17,7 +17,34 @@ env:
   JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
 
 jobs:
+  verify-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      # Releases are cut from commits pushed straight to main, where CI is
+      # advisory. This is the enforcement point: nothing publishes unless
+      # ci.yaml concluded success on this exact commit. Coupled by name to
+      # ci.yaml — if that file is renamed, this fails closed (blocks), which
+      # is the safe direction.
+      - name: Require green CI on the released commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --commit "${{ github.sha }}" \
+                     --workflow ci.yaml --limit 1 --json databaseId \
+                     --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::No CI run found for ${{ github.sha }}. Refusing to publish."
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
+
   build:
+    needs: [verify-ci]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
