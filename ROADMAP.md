@@ -1,7 +1,8 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.1.6
+**Current version.** 2.1.7 (released 2026-08-02)
+**Milestone progress.** M1 complete. M1b next, then M2.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -53,7 +54,12 @@ implied by completion of any milestone below.
 
 ## Milestones
 
-### M1 · Trustworthy baseline → `2.1.7` (patch)
+### M1 · Trustworthy baseline → `2.1.7` (patch) — ✅ COMPLETE
+
+**Released 2026-08-02.** All five RFCs implemented, reviewed, and approved; all
+four exit criteria met. Post-release evaluation and root-cause analysis of the
+`verify-ci` failure are in
+`.git-exclude/reviewed/release-2.1.7-complete/README.md`.
 
 No behaviour change. Establishes the quality gate that every later milestone
 lands through, and closes the documentation claims that are wrong regardless of
@@ -79,6 +85,32 @@ independently of 002/003/004.
 can publish from a commit whose CI did not pass; CHANGELOG covers every
 published version; no documentation statement contradicts observed engine
 behaviour except those explicitly owned by RFC 005/006.
+
+### M1b · Release tooling completion → no release of its own
+
+**Added 2026-08-02 by owner decision, after the `2.1.7` release.** Not part of
+the originally agreed roadmap.
+
+Four defects in release tooling surfaced during `2.1.7`: crates.io publishes
+outside RFC 014's guard, GitHub release creation is manual, `version.sh` silently
+misses `[workspace.dependencies]` (drifted across three releases), and the
+binding crates reach crates.io by accident of scripting rather than by decision.
+
+| RFC | Title | Priority | Size |
+|---|---|---|---|
+| 015 | Release tooling completion | P1 | M |
+
+**No release is cut for this milestone.** Workflow changes take effect at the
+next release; `version.sh` takes effect immediately. Its work is exercised when
+`2.2.0` ships at the end of M2.
+
+Placed before M2 because the context is current and because every release made
+without it repeats the manual sequence and the `version.sh` trap.
+
+**Exit criteria.** No registry — crates.io included — can be published from a
+commit whose CI did not pass; cutting a release is "push an annotated tag, then
+watch"; a version bump that half-applies fails loudly instead of succeeding
+quietly.
 
 ### M2 · Truth in the API surface → `2.2.0` (minor)
 
@@ -177,6 +209,7 @@ Japanese text remains in `src/`, `cli/`, `node/`, or `python/`.
 | 012 | Benchmark hardening | M4 | P2 | M | 008 |
 | 013 | Internal comment migration to English | M4 | P2 | L | 007 |
 | 014 | Release-time CI verification | M1 | P1 | S | 001 |
+| 015 | Release tooling completion | M1b | P1 | M | 014 |
 
 Numbers are permanent and never reused, per RFC 000. Numbers 005–013 are
 reserved; those RFCs are drafted at the start of their milestone rather than up

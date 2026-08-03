@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None.
+| ID | Title | Milestone | Priority |
+|----|-------|-----------|----------|
+| 015 | [Release tooling completion](./proposed/015-release-tooling-completion.md) — [handoff](./handoffs/015-release-tooling-completion/implementation-handoff.md) | M1b | P1 |
 
 ## Implemented
 
