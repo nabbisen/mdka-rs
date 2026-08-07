@@ -12,6 +12,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
+| 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [handoff (Slice A)](./handoffs/005-conversion-options-semantics/implementation-handoff.md) | M2 | P0 |
 | 015 | [Release tooling completion](./proposed/015-release-tooling-completion.md) — [handoff](./handoffs/015-release-tooling-completion/implementation-handoff.md) | M1b | P1 |
 
 ## Implemented
@@ -37,7 +38,6 @@ milestone actually shipped. Numbers are permanent and are never reused.
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 005 | `ConversionOptions` semantics | M2 |
 | 006 | Option docs + binding parity | M2 |
 | 007 | English-only public surface | M2 |
 | 008 | GFM table support | M3 |
