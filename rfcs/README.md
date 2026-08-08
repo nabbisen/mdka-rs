@@ -14,6 +14,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 |----|-------|-----------|----------|
 | 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [handoff (Slice A)](./handoffs/005-conversion-options-semantics/implementation-handoff.md) | M2 | P0 |
 | 016 | [`<hr>` newline reset](./proposed/016-hr-newline-reset.md) — [handoff](./handoffs/016-hr-newline-reset/implementation-handoff.md) | patch `2.1.8` | P0 |
+| 017 | [`<pre>` fence newline reset](./proposed/017-pre-fence-newline-reset.md) — [handoff](./handoffs/017-pre-fence-newline-reset/implementation-handoff.md) | patch `2.1.8` | P0 |
 | 015 | [Release tooling completion](./proposed/015-release-tooling-completion.md) — [handoff](./handoffs/015-release-tooling-completion/implementation-handoff.md) | M1b | P1 |
 
 ## Implemented
