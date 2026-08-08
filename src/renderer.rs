@@ -291,7 +291,7 @@ impl MarkdownRenderer {
             "hr" => {
                 self.begin_block();
                 self.emit_pending_prefix();
-                self.output.push_str("---");
+                self.push_raw("---");
                 self.end_block();
             }
             "br" => {

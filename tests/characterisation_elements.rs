@@ -99,16 +99,14 @@ fn void_element_br() {
 
 #[test]
 fn void_element_hr() {
-    // SUSPECTED BUG, reported and not fixed under RFC 005 Slice A (src/ is out
-    // of scope for this slice): "---" is followed directly by "B" with no
-    // separating newline, unlike every other block element. Root cause
-    // (traced, not modified): renderer.rs's "hr" arm pushes "---" via
-    // `output.push_str`, which does not reset `newlines_emitted` the way
-    // `push_raw`/other tag handlers do, so the following `end_block()` sees a
-    // stale newline count and emits nothing. Reproduces whenever <hr> is not
-    // the very first element in the document; see the review request for the
-    // isolated repro.
-    assert_matrix("void <hr>", "<p>A</p><hr><p>B</p>", ["A\n\n---B\n"; 5]);
+    // This test previously asserted the buggy output "A\n\n---B\n": renderer.rs's
+    // "hr" arm pushed "---" via `output.push_str`, which did not reset
+    // `newlines_emitted` the way `push_raw`/other tag handlers do, so the
+    // following `end_block()` saw a stale newline count and emitted nothing.
+    // Reproduced whenever <hr> was not the very first element in the document.
+    // Fixed by RFC 016: the arm now uses `push_raw`, which resets the state
+    // correctly.
+    assert_matrix("void <hr>", "<p>A</p><hr><p>B</p>", ["A\n\n---\n\nB\n"; 5]);
 }
 
 #[test]
