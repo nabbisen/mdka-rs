@@ -54,6 +54,28 @@ You should still verify it yourself rather than trusting that table.
   `<hr>` → `---` correctly. It simply did not do that.
 - Japanese comments — RFC 007 and RFC 013.
 
+### ⚠ `.github/workflows/create-release.yaml` — do not commit it
+
+An untracked file is sitting in the working tree:
+
+```
+?? .github/workflows/create-release.yaml
+```
+
+It is RFC 015 Slice 2, **deliberately parked** — the project owner deferred that
+work indefinitely on 2026-08-08, because it relies on `GITHUB_TOKEN` creating a
+release, which does not trigger the publishing workflows.
+
+**It is not gitignored**, so `git add -A` or `git add .github/` would sweep it
+into your commit. Stage explicitly by path instead:
+
+```
+git add src/renderer.rs tests/
+git status            # confirm create-release.yaml is still untracked
+```
+
+If it lands, a workflow that is known not to work becomes live on `main`.
+
 ## 5. `void_element_hr` — update, do not delete
 
 It currently reads:
