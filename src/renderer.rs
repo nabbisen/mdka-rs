@@ -328,7 +328,7 @@ impl MarkdownRenderer {
                 if !self.output.ends_with('\n') {
                     self.output.push('\n');
                 }
-                self.output.push_str("```");
+                self.push_raw("```");
                 self.in_pre = false;
                 self.pre_lang = None;
                 self.end_block();
