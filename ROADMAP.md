@@ -107,10 +107,29 @@ next release; `version.sh` takes effect immediately. Its work is exercised when
 Placed before M2 because the context is current and because every release made
 without it repeats the manual sequence and the `version.sh` trap.
 
-**Exit criteria.** No registry — crates.io included — can be published from a
-commit whose CI did not pass; cutting a release is "push an annotated tag, then
-watch"; a version bump that half-applies fails loudly instead of succeeding
-quietly.
+**Exit criteria — revised 2026-08-08 after owner decisions.** Two of the four
+original criteria were deliberately abandoned; see RFC 015's post-decision
+revision for the reasoning.
+
+| Criterion | State |
+|---|---|
+| A version bump that half-applies fails loudly | ✅ Met |
+| Binding-crate presence on crates.io is a recorded decision | ✅ Met |
+| No registry publishes from a commit whose CI did not pass | **crates.io excluded by decision.** Met for GitHub releases, npm, PyPI. |
+| Cutting a release is "push a tag, then watch" | **Abandoned by decision** — Slice 2 withdrawn |
+
+### Future candidates arising from M1b
+
+Recorded as candidates, not plan. Neither is scheduled; both would need a fresh
+RFC and owner agreement.
+
+| Candidate | Why it was not done | What it would need |
+|---|---|---|
+| **Automate crates.io publishing** | Requires a one-time Trusted Publisher registration per crate that only the account owner can perform; owner chose to keep publishing locally rather than leave a workflow in place that could not authenticate. Still considered attractive. | Four registrations, a restored publishing workflow, and a decision on whether a human approval gate is wanted |
+| **Automate GitHub release creation** | `GITHUB_TOKEN`-created releases do not trigger other workflows, so the design would have published nothing. Escaping that needs a PAT (expires annually) or a GitHub App. Buys one saved command per release. | Either a non-`GITHUB_TOKEN` identity, **or** the tag-push restructure noted in RFC 015 — triggering the publishing workflows on tag push instead of release creation, which needs no credential but must resolve asset-upload ordering |
+
+The two interact: both concern how a release is triggered, so if either is
+revisited, consider them together.
 
 ### M2 · Truth in the API surface → `2.2.0` (minor)
 

@@ -260,3 +260,110 @@ Concretely for this RFC:
 | **Publish crates.io from an existing workflow** | Conflates concerns; the pypi and npm workflows are already long. A separate workflow matches the existing one-registry-per-file structure. |
 | **Fix only `version.sh`** | Considered and rejected by the project owner: it leaves the guard gap and the manual release creation open, and both would be exercised at the next release. |
 | **Restructure to `[workspace.package] version`** | Would remove one drift source, but is a larger manifest change touching every crate, for a problem the Slice 3 assertion already catches generally. |
+
+---
+
+## Post-decision revision — 2026-08-08
+
+Slices 1 and 2 are **reversed** by project-owner decision. Slices 3 and 4 stand
+as implemented. The RFC body above is retained as written; this section states
+what changed and why.
+
+### Slice 2 — automated GitHub release creation: withdrawn
+
+The design specified `create-release.yaml` creating the release with
+`secrets.GITHUB_TOKEN`. That cannot work: GitHub suppresses workflow-triggered
+events, so the release would be created and the four publishing workflows would
+never fire — a release that appears to succeed and publishes nothing.
+
+Escaping that needs a non-`GITHUB_TOKEN` identity (a PAT, which expires within a
+year, or a GitHub App) or a restructure of four working publishing workflows.
+Weighed against what the slice buys — one saved command per release — the owner
+deferred it indefinitely.
+
+`.github/workflows/create-release.yaml` was written and is **held unpushed**,
+untracked in the working tree. It is not gitignored, so any handoff touching this
+repository must warn against sweeping it into a commit.
+
+**A fourth option was identified too late to pursue** and is recorded for
+whenever this is revisited: trigger the publishing workflows on **tag push**
+rather than on release creation. That sidesteps the event-suppression rule
+entirely and needs no new credential. The asset-upload ordering would need
+working through first, since `release-executable` uploads into a release that
+must already exist.
+
+### Slice 1 — crates.io as a guarded workflow: reversed
+
+`release-crates.yaml` was implemented, reviewed, and landed. It is now to be
+**deleted**, and crates.io publishing returns to being manual and local.
+
+The reasoning: OIDC trusted publishing requires a one-time Trusted Publisher
+registration per crate on crates.io, which only the account owner can perform.
+Weighing that against the alternative, the owner chose to keep publishing from
+the desktop.
+
+The decisive point was not the setup cost but the **middle state**: keeping
+`release-crates.yaml` while not registering the publishers would leave a workflow
+in the repository that cannot authenticate — something that reads as protection
+and is not. That is the exact defect class this milestone exists to eliminate
+(the stale MSRV claim, the six inert options, the never-compiled preprocessor).
+So the choice was framed as two coherent states, not three:
+
+- register and use the workflow, or
+- publish manually and **delete** the workflow.
+
+The owner chose the second.
+
+Consequences:
+
+| Item | Action |
+|---|---|
+| `.github/workflows/release-crates.yaml` | Delete |
+| `crates-io` GitHub Environment | Delete — it exists only to scope the OIDC claim, which is no longer used |
+| `cargo-publish.sh` | Restore as the documented **primary** path; remove the break-glass banner |
+| Slice 1's approval-gate requirement | Moot |
+
+D-2's decision to remove the required reviewer from `crates-io` is superseded —
+the environment goes entirely.
+
+### Adopted from the owner: `cargo publish --workspace`
+
+Verified available on cargo 1.97.1. It handles publish ordering and index
+propagation across all four crates automatically, replacing `cargo-publish.sh`'s
+hand-rolled four-step loop. Folded into the script's revision.
+
+### Revised state of the release path
+
+| Registry | Publisher | CI-guarded? |
+|---|---|---|
+| GitHub release assets | `release-executable.yaml` | ✅ |
+| npm | `release-npm.yaml` | ✅ |
+| PyPI | `release-pypi.yaml` | ✅ |
+| crates.io | `cargo-publish.sh`, run locally | ❌ **by decision** |
+
+Three of four registries are guarded. crates.io is a deliberate, recorded manual
+step — not an oversight, and documented as such so nobody later "fixes" it by
+accident or assumes it is covered.
+
+### Recorded as a future candidate
+
+Automating crates.io publishing remains attractive and is recorded on the
+roadmap as a candidate, not a plan. If revisited, it needs: the four Trusted
+Publisher registrations, a restored publishing workflow, and a decision on
+whether a human approval gate is wanted. The tag-push option noted under Slice 2
+should be considered at the same time, since both concern how releases trigger.
+
+### What this means for RFC 015's exit criteria
+
+M1b's stated criteria are **partially met, and the shortfall is deliberate**:
+
+| Criterion | State |
+|---|---|
+| No registry publishes from a commit whose CI did not pass | **Not met for crates.io**, by decision. Met for the other three. |
+| Cutting a release is "push a tag, then watch" | **Not met**, by decision — Slice 2 withdrawn |
+| A half-applied version bump fails loudly | ✅ Met — Slice 3 |
+| Binding-crate presence on crates.io is a recorded decision | ✅ Met — Slice 4 |
+
+Recording the two shortfalls as decisions rather than leaving the criteria
+looking unmet-by-accident is the point. An RFC whose exit criteria are quietly
+abandoned is worse than one that says which it abandoned and why.
