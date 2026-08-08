@@ -128,8 +128,53 @@ RFC and owner agreement.
 | **Automate crates.io publishing** | Requires a one-time Trusted Publisher registration per crate that only the account owner can perform; owner chose to keep publishing locally rather than leave a workflow in place that could not authenticate. Still considered attractive. | Four registrations, a restored publishing workflow, and a decision on whether a human approval gate is wanted |
 | **Automate GitHub release creation** | `GITHUB_TOKEN`-created releases do not trigger other workflows, so the design would have published nothing. Escaping that needs a PAT (expires annually) or a GitHub App. Buys one saved command per release. | Either a non-`GITHUB_TOKEN` identity, **or** the tag-push restructure noted in RFC 015 — triggering the publishing workflows on tag push instead of release creation, which needs no credential but must resolve asset-upload ordering |
 
-The two interact: both concern how a release is triggered, so if either is
+| **Release precondition checker** | Not previously considered. Automates *checking* rather than *acting* — see below. | A script or workflow asserting CI green on the commit, versions consistent across all manifests, a `CHANGELOG.md` entry for this version, and tag matching the manifest version |
+
+The first two interact: both concern how a release is triggered, so if either is
 revisited, consider them together.
+
+#### When to revisit — and why frequency is the wrong trigger
+
+Discussed with the project owner 2026-08-08. Recorded because this reasoning is
+easy to lose and easy to get backwards.
+
+**Low release frequency cuts both ways.** It is usually cited against
+automation — too few repetitions to amortise setup. But it is equally an
+argument *for* it: a process run twice a year is one you have forgotten by the
+next time, whereas frequent releases build muscle memory.
+
+The sharper consideration points the other way: **rarely-used automation is
+untrustworthy automation.** A workflow exercised twice a year has every run as
+effectively a first run. M1b produced two consecutive data points — `verify-ci`
+broke on first real use, and `create-release` would have published nothing on
+its first real use. Neither was caught by review; both were written carefully.
+
+So low frequency makes manual steps less reliable *and* automated steps less
+reliable. It does not cleanly favour either, and should not be the trigger.
+
+**Better triggers, roughly in order of strength:**
+
+1. **A second person needs to be able to release.** Automation's real value is
+   encoding a process that currently lives in one person's head.
+2. **A release goes wrong because of a forgotten manual step.** One occurrence
+   of the empirical signal outweighs any amount of speculation.
+3. **The manual checklist outgrows what fits comfortably in your head.**
+   Currently: check CI, bump, tag, create release, run publish script. If later
+   milestones add steps, reassess.
+4. **Releases become frequent enough that the automation would be exercised
+   enough to trust.** Frequency matters here — but for this reason, not because
+   manual effort becomes intolerable.
+
+**The candidate most likely to be worth doing is the third one in the table
+above.** A precondition checker automates verification while leaving the
+irreversible `cargo publish` manual. It captures most of the safety benefit with
+none of the irreversibility risk, and it fails in the honest direction: a broken
+checker is visibly broken, rather than silently approving something.
+
+The project already has one instance of that pattern working well —
+`version.sh`'s post-update assertion, which does not perform the release but
+refuses to let a half-applied bump pass quietly (RFC 015 Slice 3). Extending
+that shape is lower-risk than extending the publish-automation shape.
 
 ### M2 · Truth in the API surface → `2.2.0` (minor)
 
