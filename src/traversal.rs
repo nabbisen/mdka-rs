@@ -67,7 +67,7 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
                     }
 
                     // ── 通常処理: 要素を出力 ──────────────────────────
-                    renderer.enter_element(elem);
+                    renderer.enter_element(elem, opts.preserve_ids);
 
                     // Leave イベントを先にスタックへ（子より後に処理される）
                     stack.push(Event::Leave(node));

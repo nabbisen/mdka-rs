@@ -1,4 +1,4 @@
-//! RFC 005 Slice A — attribute-field characterisation.
+//! RFC 005 Slice A/B/C — attribute-field characterisation.
 //!
 //! For each of the six attribute-related `ConversionOptions` fields
 //! (`preserve_ids`, `preserve_classes`, `preserve_data_attrs`,
@@ -8,11 +8,16 @@
 //! could plausibly act on. Every comparison below was captured by actually
 //! running `html_to_markdown_with` with the field flipped, not inferred.
 //!
-//! Finding, confirmed here rather than assumed from `src/`: flipping any of
-//! these six fields, in any mode, changes nothing. All 30 (6 fields x 5
-//! modes) toggle comparisons are identical to their mode's baseline. See the
-//! review request for the full count reconciliation against
-//! `characterisation_elements.rs`'s independent confirmation of the same fact.
+//! Slice A finding: flipping any of the six fields, in any mode, changed
+//! nothing. **Slice B1 changed that for one field**: `preserve_ids` now
+//! emits an anchor for a non-empty `id`, so toggling it changes output in
+//! every mode (see `preserve_ids_toggle_changes_output_in_every_mode` below).
+//! The other five remain no-ops and are now `#[deprecated]` (RFC 005 Slice
+//! B2) rather than removed — this file deliberately keeps reading and
+//! writing them to prove the no-op still holds, hence the file-level
+//! `#![allow(deprecated)]`.
+
+#![allow(deprecated)]
 
 mod common;
 use common::conv_with;
@@ -72,8 +77,24 @@ fn field_name_default(field_name: &str, opts: &ConversionOptions) -> bool {
 }
 
 #[test]
-fn preserve_ids_toggle_changes_nothing_in_any_mode() {
-    assert_toggle_identical("preserve_ids", |o, v| o.preserve_ids = v);
+fn preserve_ids_toggle_changes_output_in_every_mode() {
+    // Previously named preserve_ids_toggle_changes_nothing_in_any_mode and
+    // asserted via assert_toggle_identical, like the five deprecated fields
+    // below -- true under Slice A, before RFC 005 Slice B1 gave preserve_ids
+    // a real effect: it now emits an anchor for a non-empty `id`, so
+    // toggling it changes output in every mode. This is the one field
+    // Option 3 makes real; the other five remain no-ops, proven below.
+    for mode in MODES {
+        let base = baseline(mode);
+        let mut opts = ConversionOptions::for_mode(mode);
+        let default_value = opts.preserve_ids;
+        opts.preserve_ids = !default_value;
+        let flipped = conv_with(ATTR_HTML, &opts);
+        assert_ne!(
+            flipped, base,
+            "preserve_ids in {mode}: expected flipping to change output (RFC 005 Slice B1), but it matched the baseline"
+        );
+    }
 }
 
 #[test]

@@ -147,9 +147,37 @@ impl MarkdownRenderer {
         }
     }
 
+    // ─── アンカー（id 属性） ──────────────────────────────────────────────
+
+    /// `preserve_ids` が有効かつ非空の `id` を持つ要素の直前にアンカーを出力する。
+    /// リンクキャプチャ中（`capture_depth > 0`）とコードブロック内（`in_pre`）は
+    /// 出力先が異なる／内容を改変してはならないため対象外とする。
+    fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
+        if !preserve_ids || self.capture_depth > 0 || self.in_pre {
+            return;
+        }
+        let Some(id) = elem.attr("id") else { return };
+        if id.is_empty() {
+            return;
+        }
+        self.flush_space();
+        let mut anchor = String::with_capacity(id.len() + 10);
+        anchor.push_str("<a id=\"");
+        for c in id.chars() {
+            match c {
+                '&' => anchor.push_str("&amp;"),
+                '"' => anchor.push_str("&quot;"),
+                other => anchor.push(other),
+            }
+        }
+        anchor.push_str("\"></a>");
+        self.push_raw(&anchor);
+    }
+
     // ─── 要素 Enter ────────────────────────────────────────────────────────
 
-    pub fn enter_element(&mut self, elem: &scraper::node::Element) {
+    pub fn enter_element(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
+        self.emit_id_anchor(elem, preserve_ids);
         let tag = elem.name();
         match tag {
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {

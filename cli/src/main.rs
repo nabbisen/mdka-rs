@@ -114,14 +114,20 @@ fn main() {
     if preserve_ids {
         opts.preserve_ids = true;
     }
-    if preserve_classes {
-        opts.preserve_classes = true;
-    }
-    if preserve_data {
-        opts.preserve_data_attrs = true;
-    }
-    if let Some(v) = preserve_aria_override {
-        opts.preserve_aria_attrs = v;
+    // preserve_classes/preserve_data_attrs/preserve_aria_attrs are deprecated
+    // no-ops (RFC 005 Slice B2); the flags are kept as no-op passthroughs for
+    // command-line compatibility rather than removed.
+    #[allow(deprecated)]
+    {
+        if preserve_classes {
+            opts.preserve_classes = true;
+        }
+        if preserve_data {
+            opts.preserve_data_attrs = true;
+        }
+        if let Some(v) = preserve_aria_override {
+            opts.preserve_aria_attrs = v;
+        }
     }
     if drop_shell {
         opts.drop_interactive_shell = true;

@@ -52,14 +52,20 @@ fn build_opts(
     if let Some(v) = preserve_ids {
         opts.preserve_ids = v;
     }
-    if let Some(v) = preserve_classes {
-        opts.preserve_classes = v;
-    }
-    if let Some(v) = preserve_data_attrs {
-        opts.preserve_data_attrs = v;
-    }
-    if let Some(v) = preserve_aria_attrs {
-        opts.preserve_aria_attrs = v;
+    // preserve_classes/preserve_data_attrs/preserve_aria_attrs are deprecated
+    // no-ops (RFC 005 Slice B2); the Python-facing params are kept as no-op
+    // passthroughs for API compatibility rather than removed.
+    #[allow(deprecated)]
+    {
+        if let Some(v) = preserve_classes {
+            opts.preserve_classes = v;
+        }
+        if let Some(v) = preserve_data_attrs {
+            opts.preserve_data_attrs = v;
+        }
+        if let Some(v) = preserve_aria_attrs {
+            opts.preserve_aria_attrs = v;
+        }
     }
     if let Some(v) = drop_interactive_shell {
         opts.drop_interactive_shell = v;

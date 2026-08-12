@@ -193,13 +193,27 @@ fn figure_and_figcaption_never_unwrapped() {
 
 #[test]
 fn attribute_rich_element_is_identical_across_all_modes() {
-    // The central finding of RFC 004/005: an element carrying every
+    // The central finding of RFC 004/005 Slice A: an element carrying every
     // attribute the six preserve_*/drop_presentation_attrs fields could act
-    // on produces byte-identical Markdown in all five modes. Flipping any of
-    // those flags (see characterisation_attributes.rs) changes nothing.
+    // on produced byte-identical Markdown in all five modes, since none of
+    // the six had any effect. Previously asserted ["Hi\n"; 5].
+    //
+    // RFC 005 Slice B1 changed this for `preserve_ids` specifically: it now
+    // emits an anchor for a non-empty `id`, and this fixture's `id="pid"` is
+    // non-empty, so modes where `preserve_ids` defaults true (all but
+    // Minimal) now include the anchor. The other five fields are still
+    // no-ops (now `#[deprecated]`, see characterisation_attributes.rs), so
+    // this is no longer "identical across all modes" but "identical except
+    // where preserve_ids's own default differs" -- name kept for history.
     assert_matrix(
         "attribute-rich <p>",
         r#"<p id="pid" class="pclass" data-k="v" aria-label="lbl" style="color:red" foo="bar">Hi</p>"#,
-        ["Hi\n"; 5],
+        [
+            "<a id=\"pid\"></a>\n\nHi\n", // Balanced (preserve_ids: true)
+            "<a id=\"pid\"></a>\n\nHi\n", // Strict   (preserve_ids: true)
+            "Hi\n",                       // Minimal  (preserve_ids: false)
+            "<a id=\"pid\"></a>\n\nHi\n", // Semantic (preserve_ids: true)
+            "<a id=\"pid\"></a>\n\nHi\n", // Preserve (preserve_ids: true)
+        ],
     );
 }

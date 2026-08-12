@@ -81,19 +81,40 @@ pub struct ConversionOptions {
     pub mode: ConversionMode,
 
     // ── 属性保持フラグ ──────────────────────────────────────────────────
-    /// `id` 属性を保持するか（アンカーリンク用）。
+    /// `id` 属性を保持するか。有効な場合、非空の `id` を持つ要素の直前に
+    /// `<a id="...">...</a>` アンカーを出力する（RFC 005 Slice B1）。
     pub preserve_ids: bool,
-    /// `class` 属性を保持するか。
+    /// 無効。Markdown に class 属性を表現する構文はなく、効果を持たない。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
     pub preserve_classes: bool,
-    /// `data-*` カスタム属性を保持するか。
+    /// 無効。Markdown に data-* 属性を表現する構文はなく、効果を持たない。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
     pub preserve_data_attrs: bool,
-    /// `aria-*` アクセシビリティ属性を保持するか。
+    /// 無効。Markdown に aria-* 属性を表現する構文はなく、効果を持たない。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
     pub preserve_aria_attrs: bool,
-    /// 未知の属性を保持するか。
+    /// 無効。Markdown に未知の属性を表現する構文はなく、効果を持たない。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
     pub preserve_unknown_attrs: bool,
 
     // ── 前処理フラグ ────────────────────────────────────────────────────
-    /// `style`, `class` などの装飾属性を削除するか。
+    /// 無効。装飾属性を出力する経路自体が存在しないため、効果を持たない。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
     pub drop_presentation_attrs: bool,
     /// `nav`, `header`, `footer`, `aside` などのシェル要素を除外するか。
     pub drop_interactive_shell: bool,
@@ -109,6 +130,7 @@ impl Default for ConversionOptions {
 
 impl ConversionOptions {
     /// 指定したモードの推奨設定でオプションを生成する。
+    #[allow(deprecated)]
     pub fn for_mode(mode: ConversionMode) -> Self {
         match mode {
             ConversionMode::Balanced => Self {
@@ -182,6 +204,11 @@ impl ConversionOptions {
     }
 
     /// ビルダー: `aria-*` 属性の保持を設定する。
+    #[deprecated(
+        since = "2.2.0",
+        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+    )]
+    #[allow(deprecated)]
     pub fn preserve_aria_attrs(mut self, v: bool) -> Self {
         self.preserve_aria_attrs = v;
         self
