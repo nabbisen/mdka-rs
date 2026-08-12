@@ -182,3 +182,70 @@ those tests passed while the feature did not exist.
 | **Port the harvested assertions directly** | Rejected — they assert on a representation that no longer exists. Doing so would silently choose interpretation 1 without deciding it. |
 | **Remove the six fields outright** | A breaking change requiring a major version, which the roadmap explicitly does not plan. Interpretation 3's deprecation is the softer form of this. |
 | **Leave them inert and document them as such** | Rejected. The whole milestone exists because documented behaviour that does not exist is the project's most persistent defect class. |
+
+---
+
+## Decision recorded — Option 3, 2026-08-08
+
+**Project owner decision: Option 3.** Implement `preserve_ids` as emitted
+anchors; deprecate the other five as documented no-ops.
+
+Slice A's evidence removed the main objection. Balanced, Strict and Preserve are
+already byte-identical across the matrix, so Option 3 does not collapse three
+modes into one — they are already collapsed. It documents reality rather than
+changing behaviour.
+
+Attribute preservation remains a legitimate feature. Some Markdown flavours
+(Pandoc, kramdown) do have attribute syntax. If it is ever wanted it should be
+**its own feature RFC**, designed deliberately, not folded into repairing a
+defect.
+
+## Two consequences the RFC did not anticipate
+
+Found while preparing the Slices B/C handoff.
+
+### 1. Deprecation breaks the workspace build — scope amendment
+
+`#[deprecated]` on the five fields fires wherever they are *set*, and they are
+set in four crates:
+
+| Crate | Sites |
+|---|---|
+| `src/options.rs` | the five `for_mode` presets |
+| `cli/src/main.rs` | flag handling |
+| `node/src/lib.rs` | `to_rust_opts` |
+| `python/src/lib.rs` | keyword-argument plumbing |
+
+Under `clippy -D warnings`, that fails CI across the workspace.
+
+**Scope amendment:** Slice B must add `#[allow(deprecated)]` at those call sites,
+which means touching `cli/`, `node/` and `python/` — files this RFC originally
+assigned wholly to RFC 006.
+
+The touch is deliberately minimal: attributes only, no signature or behaviour
+change. RFC 006 still owns binding **parity** and documentation. Without this,
+Slice B cannot land green.
+
+### 2. Anchor emission is a new HTML injection surface — security
+
+`preserve_ids` introduces the engine's first emission of an **attribute value
+into raw HTML**. Today the engine emits input-derived values only into Markdown
+link and image syntax, never into HTML attribute context.
+
+An `id` such as `x" onload="alert(1)` would, unescaped, produce:
+
+```html
+<a id="x" onload="alert(1)"></a>
+```
+
+— an injected attribute in output that downstream renderers may render. mdka
+documents that it does not sanitise HTML (SEC-005), but that non-goal covers
+*passing through* what was already there; it does not license **constructing**
+new HTML from untrusted values.
+
+**Requirement:** the emitted `id` value must be escaped for attribute context —
+at minimum `&` → `&amp;` and `"` → `&quot;`. Required test cases in the Slice B/C
+handoff.
+
+This is a genuine new attack surface and the reason anchor emission needs more
+care than its one-line appearance suggests.
