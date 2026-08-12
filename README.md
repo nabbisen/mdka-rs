@@ -48,7 +48,32 @@ Python (PyO3).
 
 ### Try it from the command line
 
-`cargo` (Rust language) installed is required.
+**Download a prebuilt binary** (no Rust toolchain needed) from the
+[latest release](https://github.com/nabbisen/mdka-rs/releases/latest):
+
+| Platform | Asset |
+|---|---|
+| Linux x64 (glibc) | `mdka@Linux-x64-gnu-<version>.tar.gz` |
+| Linux x64 (musl) | `mdka@Linux-x64-musl-<version>.tar.gz` |
+| Linux aarch64 (musl) | `mdka@Linux-aarch64-musl-<version>.tar.gz` |
+| macOS Apple Silicon | `mdka@macOS-aarch64-<version>.zip` |
+| Windows x64 | `mdka@Windows-x64-<version>.zip` |
+
+Other platforms (macOS Intel, Windows ARM, Linux aarch64 glibc) aren't built
+as binaries — use `cargo install mdka-cli` below instead.
+
+Extract the archive; it contains one folder holding the `mdka` binary:
+
+```bash
+cd mdka@Linux-x64-gnu-<version>  # the folder the archive extracted to
+
+echo '<h1>Hello</h1><p><strong>world</strong></p>' | ./mdka
+# # Hello
+#
+# **world**
+```
+
+**Or install via cargo** — requires `cargo` (Rust language) installed:
 
 ```bash
 cargo install mdka-cli
