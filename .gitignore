@@ -31,6 +31,9 @@ python/.venv/
 **/__pycache__/
 *.pyc
 *.pyo
+# generated: release-pypi.yaml copies the root README here at build time
+python/README.md
+python/mdka/*.so
 
 # mdBook build output
 docs/book/
