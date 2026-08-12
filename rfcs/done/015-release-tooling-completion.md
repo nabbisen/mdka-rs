@@ -281,6 +281,12 @@ year, or a GitHub App) or a restructure of four working publishing workflows.
 Weighed against what the slice buys — one saved command per release — the owner
 deferred it indefinitely.
 
+> **Superseded 2026-08-12 by [RFC 019](../proposed/019-release-creation-via-dispatch.md).**
+> The suppression rule above is correct, but the list of escape routes was not:
+> it omitted `workflow_dispatch`, which the same rule grants as an explicit
+> exception. Dispatching the four publishers directly needs no PAT, no App and no
+> restructure. The slice was deferred on a cost that was never required.
+
 `.github/workflows/create-release.yaml` was written and is **held unpushed**,
 untracked in the working tree. It is not gitignored, so any handoff touching this
 repository must warn against sweeping it into a commit.

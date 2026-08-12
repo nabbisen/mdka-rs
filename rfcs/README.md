@@ -13,7 +13,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
 | 018 | [README Quick Start: prebuilt binaries](./proposed/018-readme-prebuilt-binaries.md) — [handoff](./handoffs/018-readme-prebuilt-binaries/implementation-handoff.md) | docs | P2 |
-| 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [Slice A](./handoffs/005-conversion-options-semantics/implementation-handoff.md) · [Slices B/C](./handoffs/005-conversion-options-semantics/slices-bc-handoff.md) | M2 | P0 |
+| 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [Slice A](./handoffs/005-conversion-options-semantics/implementation-handoff.md) · [Slices B/C](./handoffs/005-conversion-options-semantics/slices-bc-handoff.md) · [B1 placement](./handoffs/005-conversion-options-semantics/slice-b1-placement-correction-handoff.md) | M2 | P0 |
+| 006 | [Option docs and binding parity](./proposed/006-option-docs-and-binding-parity.md) — [handoff](./handoffs/006-option-docs-and-binding-parity/implementation-handoff.md) · closes M2 | M2 | P0 |
+| 019 | [Release creation via dispatch](./proposed/019-release-creation-via-dispatch.md) — [handoff](./handoffs/019-release-creation-via-dispatch/implementation-handoff.md) · supersedes RFC 015 Slice 2 | M4 | P1 |
 
 ## Implemented
 
