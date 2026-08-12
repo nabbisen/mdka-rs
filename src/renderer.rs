@@ -149,7 +149,10 @@ impl MarkdownRenderer {
 
     // ─── アンカー（id 属性） ──────────────────────────────────────────────
 
-    /// `preserve_ids` が有効かつ非空の `id` を持つ要素の直前にアンカーを出力する。
+    /// `preserve_ids` が有効かつ非空の `id` を持つ要素の「先頭コンテンツ」として
+    /// アンカーを出力する。見出しの `# `、リスト項目の `- `、blockquote の `> `
+    /// など、要素自身のプレフィックス／マーカーの直後に置くため、この呼び出しは
+    /// 各タグの通常処理（`match tag` 内）の**後**に行うこと。
     /// リンクキャプチャ中（`capture_depth > 0`）とコードブロック内（`in_pre`）は
     /// 出力先が異なる／内容を改変してはならないため対象外とする。
     fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
@@ -160,6 +163,7 @@ impl MarkdownRenderer {
         if id.is_empty() {
             return;
         }
+        self.emit_pending_prefix();
         self.flush_space();
         let mut anchor = String::with_capacity(id.len() + 10);
         anchor.push_str("<a id=\"");
@@ -177,7 +181,6 @@ impl MarkdownRenderer {
     // ─── 要素 Enter ────────────────────────────────────────────────────────
 
     pub fn enter_element(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
-        self.emit_id_anchor(elem, preserve_ids);
         let tag = elem.name();
         match tag {
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
@@ -331,6 +334,7 @@ impl MarkdownRenderer {
             }
             _ => {}
         }
+        self.emit_id_anchor(elem, preserve_ids);
     }
 
     // ─── 要素 Leave ────────────────────────────────────────────────────────

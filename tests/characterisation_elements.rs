@@ -205,15 +205,21 @@ fn attribute_rich_element_is_identical_across_all_modes() {
     // no-ops (now `#[deprecated]`, see characterisation_attributes.rs), so
     // this is no longer "identical across all modes" but "identical except
     // where preserve_ids's own default differs" -- name kept for history.
+    //
+    // The anchor placement itself was also corrected after this test was
+    // first updated: Slice B1 originally emitted it before the element, as
+    // its own block ("<a id=\"pid\"></a>\n\nHi\n"); the placement-correction
+    // handoff moved it to leading content of the element instead, since the
+    // before-element placement broke in list and blockquote contexts.
     assert_matrix(
         "attribute-rich <p>",
         r#"<p id="pid" class="pclass" data-k="v" aria-label="lbl" style="color:red" foo="bar">Hi</p>"#,
         [
-            "<a id=\"pid\"></a>\n\nHi\n", // Balanced (preserve_ids: true)
-            "<a id=\"pid\"></a>\n\nHi\n", // Strict   (preserve_ids: true)
-            "Hi\n",                       // Minimal  (preserve_ids: false)
-            "<a id=\"pid\"></a>\n\nHi\n", // Semantic (preserve_ids: true)
-            "<a id=\"pid\"></a>\n\nHi\n", // Preserve (preserve_ids: true)
+            "<a id=\"pid\"></a>Hi\n", // Balanced (preserve_ids: true)
+            "<a id=\"pid\"></a>Hi\n", // Strict   (preserve_ids: true)
+            "Hi\n",                   // Minimal  (preserve_ids: false)
+            "<a id=\"pid\"></a>Hi\n", // Semantic (preserve_ids: true)
+            "<a id=\"pid\"></a>Hi\n", // Preserve (preserve_ids: true)
         ],
     );
 }
