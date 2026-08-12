@@ -10,7 +10,6 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-test.[0-9]+'   # TEMPORARY — RFC 019 dry run, remove after
 
 permissions:
   contents: read
@@ -67,8 +66,7 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
-            --draft \
-            --generate-notes          # --draft is TEMPORARY — RFC 019 dry run, remove after
+            --generate-notes
 
       - name: Start the publishing workflows
         env:
