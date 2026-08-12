@@ -1,12 +1,19 @@
 #!/bin/sh
 #
-# crates.io release path (RFC 015 amendment). Run locally by the maintainer.
+# BREAK-GLASS ONLY (RFC 015). Do not run this as the normal release path.
 #
-# crates.io publishing is deliberately manual and is not covered by the
-# verify-ci guard that gates release-executable.yaml, release-npm.yaml, and
-# release-pypi.yaml. This script enforces the one check that guard used to
-# perform: CI must have concluded `success` on the exact commit being
-# released.
+# crates.io publishing is normally automated and guarded by
+# .github/workflows/release-crates.yaml: it runs on `release: created`,
+# requires the released commit's CI to have concluded `success` (verify-ci),
+# and authenticates via OIDC trusted publishing through the crates-io
+# GitHub Environment.
+#
+# This script bypasses the guarded workflow but still enforces the one
+# check it performs: CI must have concluded `success` on the exact commit
+# being released. Use it only if release-crates.yaml itself is broken and a
+# release must ship regardless. If you find yourself reaching for this
+# under normal circumstances, that is a sign the guarded workflow needs
+# fixing, not a reason to route around it.
 
 sha=$(git rev-parse HEAD)
 conclusion=$(gh run list --commit "$sha" --workflow ci.yaml --limit 1 \
