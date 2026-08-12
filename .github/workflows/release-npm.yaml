@@ -120,13 +120,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      # This is the SECOND of two independent tag-pattern checks. The first is
+      # create-release.yaml's `on.push.tags` filter, which matches X.Y.Z only.
+      # Both must accept a tag for the automated path to publish it end to end.
+      #
+      # Deliberate asymmetry: this check also accepts X.Y.Z-rc.N, but
+      # create-release.yaml's filter does not. Release candidates are therefore
+      # cut by creating the GitHub release by hand, which still fans out via
+      # `release: created`. Tag-push automation is for final releases only.
       - name: Check if release tag
         run: |
           if [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
-             [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]-rc\.[0-9]+$ ]]; then
+             [[ "${TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
             echo "${TAG}: Semantic versioning tagged - OK"
           else
-            echo "Not a release tag. Skipped."
+            echo "::warning::${TAG} is not a release tag (expected X.Y.Z or X.Y.Z-rc.N)."
+            echo "SKIPPED DELIBERATELY - this is not an npm publishing failure."
+            echo "The red status below is a known limitation: this step exits non-zero"
+            echo "to stop the job, so an intentional skip and a real failure look alike."
             exit 1
           fi
       
