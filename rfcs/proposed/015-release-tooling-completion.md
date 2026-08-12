@@ -367,3 +367,104 @@ M1b's stated criteria are **partially met, and the shortfall is deliberate**:
 Recording the two shortfalls as decisions rather than leaving the criteria
 looking unmet-by-accident is the point. An RFC whose exit criteria are quietly
 abandoned is worse than one that says which it abandoned and why.
+
+---
+
+## Second revision — Slice 1 restored, 2026-08-08
+
+**Slice 1 is reinstated.** crates.io publishing returns to a guarded workflow.
+
+### Why this reverses the reversal
+
+The previous revision reversed Slice 1 because OIDC trusted publishing requires
+a per-crate Trusted Publisher registration that only the account owner can
+perform, and it was not clear how to do it. Faced with the choice between
+registering and deleting, the owner chose to delete — the middle state, a
+workflow in the repository unable to authenticate, being the one unacceptable
+option.
+
+The owner has since determined how to configure Trusted Publishers. **The only
+constraint driving the reversal is therefore gone.**
+
+Recorded plainly because this is the third position on one question: the goal
+never moved — all four registries guarded — only the estimated cost of reaching
+it. The estimate is now grounded rather than assumed, so this position should
+hold.
+
+### Sequence — register before restoring
+
+The first attempt failed because the workflow existed before the registration
+did. That ordering is inverted here:
+
+1. Register all four Trusted Publishers on crates.io.
+2. Recreate the `crates-io` GitHub Environment.
+3. Restore `.github/workflows/release-crates.yaml`.
+4. Return `cargo-publish.sh` to break-glass.
+
+At no point does a workflow that cannot authenticate sit in the repository.
+
+### The environment carries no approval gate
+
+D-2 decided against a required reviewer, and that stands. `crates-io` is
+recreated with `protection_rules: []`, matching `pypi`.
+
+Its purpose is to scope the OIDC claim, which is what `pypi` has always used its
+environment for. Restoring the environment is not restoring the approval gate;
+those were separate decisions and only the first is reversed.
+
+### What `cargo-publish.sh` keeps
+
+It returns to break-glass, but **retains both improvements gained while it was
+the primary path**:
+
+- `cargo publish --workspace`, replacing the hand-rolled four-step loop
+- The enforced, fail-closed CI-green check on the exact commit being released
+
+A break-glass path that still verifies CI is better than the one that existed
+before this RFC. Do not strip the check when re-adding the break-glass banner.
+
+### Optional de-risking step
+
+The OIDC exchange can be proven **without publishing anything**: a temporary
+`workflow_dispatch` job running only `crates-io-auth-action` and reporting
+whether a token was obtained.
+
+Recommended but not required. This project has produced two automations that
+broke on first real exercise, neither caught by review. If skipped, `2.1.8` is
+the proving run and the fallback on failure is `cargo-publish.sh`.
+
+### A release rule discovered along the way
+
+Being present on `origin/main` does **not** mean a commit has been CI-verified.
+GitHub runs push-triggered workflows only against the tip of a push, so
+intermediate commits in a multi-commit push never get their own run. Confirmed:
+`55914c8` is on `origin/main` with no CI run at all.
+
+**Therefore: tag the tip of a push, never an intermediate commit.** Otherwise
+every guard — the four workflows' `verify-ci` and `cargo-publish.sh`'s check
+alike — correctly refuses, since that commit was never independently built.
+
+### Revised state of the release path
+
+| Registry | Publisher | CI-guarded? |
+|---|---|---|
+| GitHub release assets | `release-executable.yaml` | ✅ |
+| npm | `release-npm.yaml` | ✅ |
+| PyPI | `release-pypi.yaml` | ✅ |
+| crates.io | `release-crates.yaml` | ✅ **restored** |
+
+All four guarded — RFC 015 Slice 1's original goal, reached.
+
+Slice 2 (automated GitHub release creation) remains withdrawn; nothing in this
+revision affects it.
+
+### M1b exit criteria, re-revised
+
+| Criterion | State |
+|---|---|
+| No registry publishes from a commit whose CI did not pass | ✅ **Met**, once the registrations are in place |
+| A half-applied version bump fails loudly | ✅ Met |
+| Binding-crate presence on crates.io is a recorded decision | ✅ Met |
+| Cutting a release is "push a tag, then watch" | **Abandoned by decision** — Slice 2 withdrawn |
+
+Three of four met. The remaining shortfall is a recorded decision, not a gap.

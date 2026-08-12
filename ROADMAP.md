@@ -125,7 +125,7 @@ RFC and owner agreement.
 
 | Candidate | Why it was not done | What it would need |
 |---|---|---|
-| **Automate crates.io publishing** | Requires a one-time Trusted Publisher registration per crate that only the account owner can perform; owner chose to keep publishing locally rather than leave a workflow in place that could not authenticate. Still considered attractive. | Four registrations, a restored publishing workflow, and a decision on whether a human approval gate is wanted |
+| ~~Automate crates.io publishing~~ | **No longer a candidate — being restored 2026-08-08.** The owner determined how to configure Trusted Publishers, removing the only constraint behind the reversal. See RFC 015's second revision. | — |
 | **Automate GitHub release creation** | `GITHUB_TOKEN`-created releases do not trigger other workflows, so the design would have published nothing. Escaping that needs a PAT (expires annually) or a GitHub App. Buys one saved command per release. | Either a non-`GITHUB_TOKEN` identity, **or** the tag-push restructure noted in RFC 015 — triggering the publishing workflows on tag push instead of release creation, which needs no credential but must resolve asset-upload ordering |
 
 | **Release precondition checker** | Not previously considered. Automates *checking* rather than *acting* — see below. | A script or workflow asserting CI green on the commit, versions consistent across all manifests, a `CHANGELOG.md` entry for this version, and tag matching the manifest version |
