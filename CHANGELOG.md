@@ -11,6 +11,45 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Added
+
+- **`preserve_ids` now emits anchors.** An element carrying a non-empty `id`
+  produces an escaped `<a id="…"></a>` anchor, making `#fragment` links usable
+  in the converted Markdown. Enabled by default in every mode except `Minimal`.
+  The anchor is emitted as the element's leading content — `<h2 id="install">`
+  becomes `## <a id="install"></a>Install`, a list item becomes
+  `- <a id="b"></a>two`, and a paragraph inside a blockquote becomes
+  `> <a id="p"></a>Q`. On `<a>` and `<pre>` the anchor precedes the element
+  instead, so neither link text nor code content is disturbed. An `id` on a
+  descendant of a link or a code block is deliberately not emitted.
+
+  The `id` value is escaped for HTML attribute context (`&` → `&amp;`,
+  `"` → `&quot;`). This is the engine's first construction of raw HTML from an
+  input-derived value; previously input reached output only through Markdown
+  link and image syntax.
+
+### Changed
+
+- **Heading text may now contain inline HTML.** A consequence of the above: with
+  `preserve_ids` on and an `id` present, a heading renders as
+  `# <a id="t"></a>Title`. Tools that read raw Markdown heading text — table of
+  contents generators, for instance — will see the anchor markup. Tools that
+  read rendered output are unaffected. Set `preserve_ids = false`, or use
+  `Minimal` mode, to restore the previous output.
+
+### Deprecated
+
+- **`preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`,
+  `preserve_unknown_attrs` and `drop_presentation_attrs` have no effect and are
+  deprecated.** They never had an effect in any 2.x release. Markdown has no
+  attribute syntax, so the behaviour they described was not expressible; the
+  options were documented but never implemented. Nothing is removed and no
+  output changes — this records what was already true. See RFC 005.
+
+  Attribute preservation remains a legitimate feature. Some Markdown flavours
+  (Pandoc, kramdown) do have attribute syntax. If it is wanted it will be
+  designed deliberately rather than folded into repairing this.
+
 ## [2.1.8] - 2026-08-12
 
 ### Fixed
