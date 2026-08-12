@@ -49,6 +49,7 @@ export interface JsConversionOptions {
   preserveDataAttrs?: boolean
   preserveAriaAttrs?: boolean
   dropInteractiveShell?: boolean
+  unwrapUnknownWrappers?: boolean
 }
 
 export declare function version(): string
