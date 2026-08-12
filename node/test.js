@@ -231,12 +231,17 @@ async function run(name, fn) {
     })
 
     await run('htmlToMarkdownWith: semantic keeps aria-label text', () => {
+      // Previously asserted md.includes('# Title'). RFC 005 Slice B1 gave
+      // preserve_ids (default true in semantic mode) a real effect: it now
+      // emits an anchor as the heading's own leading content, so the
+      // substring '# Title' no longer appears -- '# <a id="t"></a>Title'
+      // does instead. Asserting the exact string, not a weakened substring,
+      // so this test keeps proving what it actually converts to.
       const md = htmlToMarkdownWith(
         '<article aria-labelledby="t"><h1 id="t">Title</h1><p>Body</p></article>',
         { mode: 'semantic', preserveAriaAttrs: true }
       )
-      assert.ok(md.includes('# Title'), `heading missing: ${md}`)
-      assert.ok(md.includes('Body'), `body missing: ${md}`)
+      assert.strictEqual(md, '# <a id="t"></a>Title\n\nBody\n', `unexpected output: ${md}`)
     })
 
     await run('htmlToMarkdownWithAsync: mode option respected', async () => {

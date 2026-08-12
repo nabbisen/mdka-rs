@@ -152,7 +152,15 @@ impl MarkdownRenderer {
     /// `preserve_ids` が有効かつ非空の `id` を持つ要素の「先頭コンテンツ」として
     /// アンカーを出力する。見出しの `# `、リスト項目の `- `、blockquote の `> `
     /// など、要素自身のプレフィックス／マーカーの直後に置くため、この呼び出しは
-    /// 各タグの通常処理（`match tag` 内）の**後**に行うこと。
+    /// 通常、各タグの処理（`match tag` 内）の**後**に行う。
+    ///
+    /// 例外は `a` と `pre`：この2つは自身の処理で `capture_depth` /
+    /// `in_pre` を立てるため、後に呼ぶと自分自身の `id` まで「キャプチャ中」
+    /// と誤認して抑制してしまう。そのため呼び出し側（`enter_element`）は
+    /// この2タグに限り `match tag` の**前**に呼ぶ。祖先から継承した
+    /// `capture_depth` / `in_pre`（子孫要素の `id`）は、その時点ですでに
+    /// 立っているため、以下のガードで引き続き正しく抑制される。
+    ///
     /// リンクキャプチャ中（`capture_depth > 0`）とコードブロック内（`in_pre`）は
     /// 出力先が異なる／内容を改変してはならないため対象外とする。
     fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
@@ -182,6 +190,13 @@ impl MarkdownRenderer {
 
     pub fn enter_element(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
         let tag = elem.name();
+        // "a"/"pre" は自身の match アームで capture_depth/in_pre を立てる
+        // ため、アンカーは先に出す（要素の前に置く旧配置）。他のタグは通常
+        // 通り後に出す（要素内の先頭コンテンツとして置く）。
+        let anchor_before = matches!(tag, "a" | "pre");
+        if anchor_before {
+            self.emit_id_anchor(elem, preserve_ids);
+        }
         match tag {
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
                 self.begin_block();
@@ -334,7 +349,9 @@ impl MarkdownRenderer {
             }
             _ => {}
         }
-        self.emit_id_anchor(elem, preserve_ids);
+        if !anchor_before {
+            self.emit_id_anchor(elem, preserve_ids);
+        }
     }
 
     // ─── 要素 Leave ────────────────────────────────────────────────────────

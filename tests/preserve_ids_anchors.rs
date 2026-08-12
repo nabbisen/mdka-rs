@@ -185,3 +185,48 @@ fn id_inside_pre_is_guarded() {
         "```\nx\n```\n"
     );
 }
+
+// ─── Placement correction round 2: elements that open their own capture ────
+//
+// `a` and `pre` set capture_depth/in_pre themselves as part of entering the
+// element. When emit_id_anchor ran only after the match, this meant an <a>
+// or <pre> with its OWN id tripped its own guard and silently lost its
+// anchor -- a real regression, caught by testing beyond the required table.
+// The fix: for these two tags only, the anchor is emitted before the match
+// (the exception to the "leading content" placement rule), so it uses the
+// pre-match (inherited-only) guard state. A descendant's id, nested inside
+// an already-open capture/pre, is still correctly suppressed -- see
+// id_inside_link_capture_is_guarded / id_inside_pre_is_guarded above.
+
+#[test]
+fn link_with_own_id_gets_anchor_before_the_link() {
+    assert_eq!(
+        conv_with(
+            r#"<a id="link" href="/">text</a>"#,
+            &with_preserve_ids(true)
+        ),
+        "<a id=\"link\"></a>[text](/)\n"
+    );
+}
+
+#[test]
+fn pre_with_own_id_gets_anchor_before_the_block() {
+    assert_eq!(
+        conv_with(
+            r#"<pre id="x"><code>y</code></pre>"#,
+            &with_preserve_ids(true)
+        ),
+        "<a id=\"x\"></a>\n\n```\ny\n```\n"
+    );
+}
+
+#[test]
+fn link_with_own_id_inline_in_a_paragraph() {
+    assert_eq!(
+        conv_with(
+            r#"<p>see <a id="l" href="/">here</a> now</p>"#,
+            &with_preserve_ids(true)
+        ),
+        "see <a id=\"l\"></a>[here](/) now\n"
+    );
+}
