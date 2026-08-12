@@ -12,10 +12,8 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 018 | [README Quick Start: prebuilt binaries](./proposed/018-readme-prebuilt-binaries.md) — [handoff](./handoffs/018-readme-prebuilt-binaries/implementation-handoff.md) | docs | P2 |
-| 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [Slice A](./handoffs/005-conversion-options-semantics/implementation-handoff.md) · [Slices B/C](./handoffs/005-conversion-options-semantics/slices-bc-handoff.md) · [B1 placement](./handoffs/005-conversion-options-semantics/slice-b1-placement-correction-handoff.md) | M2 | P0 |
-| 006 | [Option docs and binding parity](./proposed/006-option-docs-and-binding-parity.md) — [handoff](./handoffs/006-option-docs-and-binding-parity/implementation-handoff.md) · closes M2 | M2 | P0 |
-| 019 | [Release creation via dispatch](./proposed/019-release-creation-via-dispatch.md) — [handoff](./handoffs/019-release-creation-via-dispatch/implementation-handoff.md) · supersedes RFC 015 Slice 2 | M4 | P1 |
+
+None. All proposed RFCs shipped in 2.2.0; M3's are not yet drafted.
 
 ## Implemented
 
@@ -30,6 +28,10 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | 015 | [Release tooling completion](./done/015-release-tooling-completion.md) — [handoff](./handoffs/015-release-tooling-completion/implementation-handoff.md) | 2.1.8 |
 | 016 | [`<hr>` newline reset](./done/016-hr-newline-reset.md) — [handoff](./handoffs/016-hr-newline-reset/implementation-handoff.md) | 2.1.8 |
 | 017 | [`<pre>` fence newline reset](./done/017-pre-fence-newline-reset.md) — [handoff](./handoffs/017-pre-fence-newline-reset/implementation-handoff.md) | 2.1.8 |
+| 005 | [`ConversionOptions` semantics](./done/005-conversion-options-semantics.md) — [Slice A](./handoffs/005-conversion-options-semantics/implementation-handoff.md) · [Slices B/C](./handoffs/005-conversion-options-semantics/slices-bc-handoff.md) · [B1 placement](./handoffs/005-conversion-options-semantics/slice-b1-placement-correction-handoff.md) | 2.2.0 |
+| 006 | [Option docs and binding parity](./done/006-option-docs-and-binding-parity.md) — [handoff](./handoffs/006-option-docs-and-binding-parity/implementation-handoff.md) · closed M2 | 2.2.0 |
+| 018 | [README Quick Start: prebuilt binaries](./done/018-readme-prebuilt-binaries.md) — [handoff](./handoffs/018-readme-prebuilt-binaries/implementation-handoff.md) | 2.2.0 |
+| 019 | [Release creation via dispatch](./done/019-release-creation-via-dispatch.md) — [handoff](./handoffs/019-release-creation-via-dispatch/implementation-handoff.md) · superseded RFC 015 Slice 2 | 2.2.0 |
 
 ## Archive
 
@@ -43,7 +45,6 @@ milestone actually shipped. Numbers are permanent and are never reused.
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 006 | Option docs + binding parity | M2 |
 | 007 | English-only public surface | M2 |
 | 008 | GFM table support | M3 |
 | 009 | Element coverage extension | M3 |

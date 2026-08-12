@@ -11,6 +11,8 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-12
+
 ### Added
 
 - **`preserve_ids` now emits anchors.** An element carrying a non-empty `id`
@@ -27,6 +29,28 @@ confidence, that is stated explicitly rather than guessed.
   `"` → `&quot;`). This is the engine's first construction of raw HTML from an
   input-derived value; previously input reached output only through Markdown
   link and image syntax.
+
+- **`unwrap_unknown_wrappers` is now reachable from every binding** — CLI
+  `--unwrap-wrappers`, Node `unwrapUnknownWrappers`, Python
+  `unwrap_unknown_wrappers`. It is one of only two options that has ever
+  affected output, and it was exposed by no binding for the whole 2.x line,
+  while three options that do nothing were exposed by all of them.
+
+- **Node and Python emit a deprecation warning** when one of the no-op options
+  is explicitly passed. Passing nothing stays silent. Known gap: the
+  asynchronous Node entry points cannot emit the warning — `Env` is unavailable
+  inside a `#[napi] async fn` — so check with the synchronous API; silence there
+  is not proof that no deprecated option is in use.
+
+### Fixed
+
+- **`mdka-node`'s generated binding loader no longer carries a stale version.**
+  `node/index.js` hardcoded `2.0.2` in its native-binding version checks while
+  the package was at `2.1.8` — six releases out of step, shipped to npm that
+  way. Any consumer setting `NAPI_RS_ENFORCE_VERSION_CHECK` got
+  *"Native binding package version mismatch, expected 2.0.2"* on load, with a
+  reinstall suggestion that could not help. `version.sh` now updates and
+  asserts this file, so it cannot drift again.
 
 ### Changed
 
