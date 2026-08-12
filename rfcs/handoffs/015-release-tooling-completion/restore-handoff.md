@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 015 · Restore Slice 1 (crates.io CI publishing)
 
-**Governing RFC.** [RFC 015](../../proposed/015-release-tooling-completion.md), second revision (2026-08-08)
+**Governing RFC.** [RFC 015](../../done/015-release-tooling-completion.md), second revision (2026-08-08)
 **Supersedes.** [`amendment-handoff.md`](./amendment-handoff.md) — that reverted Slice 1; this restores it.
 **Prepared.** 2026-08-08
 **Blocked on** the owner completing the Trusted Publisher registrations. Do not start until confirmed.

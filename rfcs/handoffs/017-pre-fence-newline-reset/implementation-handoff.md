@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 017 · `<pre>` fence newline reset
 
-**Governing RFC.** [RFC 017](../../proposed/017-pre-fence-newline-reset.md) — Proposed
+**Governing RFC.** [RFC 017](../../done/017-pre-fence-newline-reset.md) — Proposed
 **Release.** Patch `2.1.8`, alongside RFC 016
 **Prepared.** 2026-08-08
 

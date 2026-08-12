@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 015 amendment · Revert Slice 1, restore manual crates.io publishing
 
-**Governing RFC.** [RFC 015](../../proposed/015-release-tooling-completion.md), post-decision revision (2026-08-08)
+**Governing RFC.** [RFC 015](../../done/015-release-tooling-completion.md), post-decision revision (2026-08-08)
 **Supersedes.** Parts of [`implementation-handoff.md`](./implementation-handoff.md) — Slices 1 and 2 only. Slices 3 and 4 stand.
 **Prepared.** 2026-08-08
 **Do this before the `2.1.8` release**, so `cargo-publish.sh` is correct when it is used.

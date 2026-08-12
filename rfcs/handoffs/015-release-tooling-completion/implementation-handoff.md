@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 015 · Release tooling completion
 
-**Governing RFC.** [RFC 015](../../proposed/015-release-tooling-completion.md) — Proposed
+**Governing RFC.** [RFC 015](../../done/015-release-tooling-completion.md) — Proposed
 **Milestone.** M1b · Release tooling. No release of its own.
 **Prepared.** 2026-08-02
 
@@ -38,7 +38,7 @@ You lived through all four of these. Briefly, for the record:
 | `version.sh` | Slice 3 |
 | `cargo-publish.sh` | Removed or reduced to break-glass — Slice 1 |
 | `node/Cargo.toml`, `python/Cargo.toml` | Only if Slice 4 decides to stop publishing |
-| `rfcs/proposed/015-release-tooling-completion.md` | Record the Slice 4 decision |
+| `rfcs/done/015-release-tooling-completion.md` | Record the Slice 4 decision |
 
 ## 4. Non-change scope — do not touch
 

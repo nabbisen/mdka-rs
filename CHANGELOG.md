@@ -11,6 +11,34 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+## [2.1.8] - 2026-08-12
+
+### Fixed
+
+- **`<hr>` no longer swallows the newline before following content.**
+  `<p>A</p><hr><p>B</p>` produced `"A\n\n---B\n"` instead of
+  `"A\n\n---\n\nB\n"` whenever `<hr>` was not the first element in the
+  document — `---B` is not a thematic break in CommonMark, so the rule was
+  destroyed and the following text corrupted into it. Present in every 2.x
+  release since `2.0.0`.
+- **A `<pre>` code block's closing fence no longer swallows the newline
+  before following content.** When the block's content ended in two or more
+  trailing newlines, e.g. `<pre><code>x\n\n</code></pre><p>B</p>`, the
+  output was `` "```\nx\n\n```B\n" `` — `` ```B `` is not a valid closing
+  fence, so the code block never closed and the rest of the document was
+  rendered as code. Present in every 2.x release since `2.0.0`.
+
+### Changed
+
+- crates.io publishing now runs in a CI workflow
+  (`.github/workflows/release-crates.yaml`), gated on the released commit's
+  CI having concluded `success` and authenticated via OIDC trusted
+  publishing, matching how GitHub releases, npm, and PyPI already publish.
+- `version.sh` now updates `[workspace.dependencies]` self-references
+  automatically and refuses to complete a version bump that leaves any
+  touched manifest carrying the previous version string, rather than
+  silently succeeding on a half-applied update.
+
 ## [2.1.7] - 2026-08-02
 
 M1 · Trustworthy baseline. No executable code changed in this release beyond

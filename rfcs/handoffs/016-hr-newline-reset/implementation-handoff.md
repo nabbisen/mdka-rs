@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 016 · `<hr>` newline reset
 
-**Governing RFC.** [RFC 016](../../proposed/016-hr-newline-reset.md) — Proposed
+**Governing RFC.** [RFC 016](../../done/016-hr-newline-reset.md) — Proposed
 **Release.** Patch `2.1.8`
 **Prepared.** 2026-08-08
 

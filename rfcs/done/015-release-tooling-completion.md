@@ -1,6 +1,6 @@
 # RFC 015 — Release tooling completion
 
-**Status.** Proposed
+**Status.** Implemented (2.1.8)
 **Tracks.** M1b · Release tooling. Closes the four gaps the `2.1.7` release exposed.
 **Touches.** A new crates.io publish workflow; a new tag-push workflow that
 creates the GitHub release; `version.sh`; `cargo-publish.sh`; possibly

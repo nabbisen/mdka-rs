@@ -1,6 +1,6 @@
 # RFC 017 — `<pre>` closing fence swallows following content
 
-**Status.** Proposed
+**Status.** Implemented (2.1.8)
 **Tracks.** Patch `2.1.8`, alongside RFC 016. Correctness defect in shipped output.
 **Touches.** `src/renderer.rs` (one line), new regression tests.
 **Depends on.** Nothing. RFC 016's implementer found it; the fix is independent

@@ -1,6 +1,6 @@
 # RFC 016 — `<hr>` swallows the newline before following content
 
-**Status.** Proposed
+**Status.** Implemented (2.1.8)
 **Tracks.** Patch `2.1.8`. Correctness defect in shipped output.
 **Touches.** `src/renderer.rs` (one line), `tests/characterisation_elements.rs`,
 new regression tests.
