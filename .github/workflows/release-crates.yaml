@@ -3,7 +3,6 @@ name: Crates
 on:
   release:
     types: [created]
-  workflow_dispatch:        # TEMPORARY — RFC 015 §6 dry-run, remove after
 
 permissions:
   contents: read
@@ -67,27 +66,23 @@ jobs:
       # propagation itself (observed working at 2.1.7's manual publish), so
       # no manual sleep is needed between steps.
       - name: Publish mdka
-        if: github.event_name == 'release'
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Publish mdka-cli
-        if: github.event_name == 'release'
         working-directory: cli
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Publish mdka-node
-        if: github.event_name == 'release'
         working-directory: node
         run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Publish mdka-python
-        if: github.event_name == 'release'
         working-directory: python
         run: cargo publish
         env:
