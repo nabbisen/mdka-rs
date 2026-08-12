@@ -31,16 +31,25 @@ estimated cost of getting there, and it is now grounded rather than assumed.
 
 Your work is recoverable rather than rewritten — see §5.1.
 
-## 3. Precondition — confirm before starting
+## 3. Precondition — ✅ SATISFIED 2026-08-08
 
-**The owner registers all four Trusted Publishers first.** Do not restore the
-workflow before that is confirmed.
+**The project owner has configured Trusted Publishers on all four crates:**
+`mdka`, `mdka-cli`, `mdka-node`, `mdka-python` — each naming workflow filename
+`release-crates.yaml`.
 
-The previous attempt failed precisely because the workflow existed before the
-registration did. That ordering is inverted deliberately: at no point should a
-workflow that cannot authenticate sit in the repository.
+You are clear to proceed.
 
-If you are handed this before confirmation, **stop and ask.**
+The ordering mattered: the previous attempt failed because the workflow existed
+before the registration did, leaving a workflow in the repository that could not
+authenticate. That is why this precondition came first.
+
+**One honest caveat.** Neither the owner nor the architect can verify from here
+that the *token exchange* works — only that the registrations were made. The
+configuration is not visible through any public API, so the first real proof is
+either §6's optional dry-run or the `2.1.8` release itself.
+
+That makes §6 more attractive than when it was written. It is now the only way
+to know before a release depends on it.
 
 ## 4. Change scope
 
