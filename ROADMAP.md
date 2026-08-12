@@ -107,16 +107,17 @@ next release; `version.sh` takes effect immediately. Its work is exercised when
 Placed before M2 because the context is current and because every release made
 without it repeats the manual sequence and the `version.sh` trap.
 
-**Exit criteria — revised 2026-08-08 after owner decisions.** Two of the four
-original criteria were deliberately abandoned; see RFC 015's post-decision
-revision for the reasoning.
+**Exit criteria — revised twice on 2026-08-08.** See RFC 015's two revisions
+for the reasoning behind each change.
 
 | Criterion | State |
 |---|---|
 | A version bump that half-applies fails loudly | ✅ Met |
 | Binding-crate presence on crates.io is a recorded decision | ✅ Met |
-| No registry publishes from a commit whose CI did not pass | **crates.io excluded by decision.** Met for GitHub releases, npm, PyPI. |
+| No registry publishes from a commit whose CI did not pass | ✅ **Met once the Trusted Publisher registrations are in place** — Slice 1 reversed, then restored |
 | Cutting a release is "push a tag, then watch" | **Abandoned by decision** — Slice 2 withdrawn |
+
+Three of four met. The remaining shortfall is a recorded decision, not a gap.
 
 ### Future candidates arising from M1b
 
@@ -125,13 +126,16 @@ RFC and owner agreement.
 
 | Candidate | Why it was not done | What it would need |
 |---|---|---|
-| ~~Automate crates.io publishing~~ | **No longer a candidate — being restored 2026-08-08.** The owner determined how to configure Trusted Publishers, removing the only constraint behind the reversal. See RFC 015's second revision. | — |
 | **Automate GitHub release creation** | `GITHUB_TOKEN`-created releases do not trigger other workflows, so the design would have published nothing. Escaping that needs a PAT (expires annually) or a GitHub App. Buys one saved command per release. | Either a non-`GITHUB_TOKEN` identity, **or** the tag-push restructure noted in RFC 015 — triggering the publishing workflows on tag push instead of release creation, which needs no credential but must resolve asset-upload ordering |
-
 | **Release precondition checker** | Not previously considered. Automates *checking* rather than *acting* — see below. | A script or workflow asserting CI green on the commit, versions consistent across all manifests, a `CHANGELOG.md` entry for this version, and tag matching the manifest version |
 
-The first two interact: both concern how a release is triggered, so if either is
-revisited, consider them together.
+**Automating crates.io publishing is no longer on this list.** It was here
+briefly after Slice 1 was reversed; the owner then determined how to configure
+Trusted Publishers, and RFC 015's second revision restores it. See that revision
+for the sequence.
+
+The two remaining candidates interact with each other only loosely; the
+precondition checker is independent and is the one most likely worth doing.
 
 #### When to revisit — and why frequency is the wrong trigger
 
