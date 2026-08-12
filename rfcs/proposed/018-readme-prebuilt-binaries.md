@@ -41,8 +41,15 @@ Confirmed from `release-executable.yaml` and the `2.1.7` release assets:
 | macOS Apple Silicon | `mdka@macOS-aarch64-<version>.zip` |
 | Windows x64 | `mdka@Windows-x64-<version>.zip` |
 
-Archives place the binary at the archive root with no wrapping directory, so
-extraction yields a runnable `mdka` directly.
+Archives wrap the binary in a directory named after the asset, so extraction
+yields `mdka@<platform>-<version>/mdka` rather than a bare `mdka`.
+
+**Corrected 2026-08-12.** This section previously claimed the binary sat at the
+archive root. That was written from the project's packaging rule rather than from
+`release-executable.yaml`, and was wrong — the same defect class as the MSRV
+claim and the phantom preprocessor pipeline. The README shipped correct only
+because the implementer downloaded and extracted a real asset instead of
+trusting this text.
 
 ## Goals
 

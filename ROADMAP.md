@@ -37,8 +37,16 @@ actually lives.
 ### Release mechanics
 
 - Tag format is `X.Y.Z` — no `v` prefix (Rust crate convention).
-- Release archives place files at the archive root, with no intermediate parent
-  directory, and carry the version in the filename (e.g. `mdka-2.1.7.tar`).
+- Release archives currently wrap their contents in a directory named after the
+  asset, and carry platform and version in both that name and the filename
+  (e.g. `mdka@Linux-x64-gnu-2.1.8.tar.gz` → `mdka@Linux-x64-gnu-2.1.8/mdka`).
+  This **contradicts** the packaging rule in
+  `.git-exclude/rules/project-instructions-rust-cli.md:57`, which forbids an
+  intermediate parent directory. Recorded, not resolved: `release-executable.yaml`
+  is stale and slated for replacement by the CI workflows, so the layout will be
+  decided deliberately then. Until that lands, this bullet describes what the
+  archives actually do. See
+  `.git-exclude/reviewed/archive-layout-decision/README.md`.
 - Scheduling is **sequence-based**, not date-bound. Releases are cut at logical
   breaking points — normally when a milestone's RFCs are all resolved.
 - One milestone maps to one release unless the owner directs otherwise.
