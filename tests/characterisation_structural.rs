@@ -129,3 +129,51 @@ fn unwrap_unknown_wrappers_naive_fixture_shows_no_difference() {
         assert_eq!(base, "Before\n\ninner\n\nAfter\n", "{mode} baseline value");
     }
 }
+
+// ─── RFC 006: the three-mode identity claim, proven directly ───────────────
+//
+// docs/src/api/modes.md states that Balanced, Strict and Preserve currently
+// produce identical output. That follows from the mode defaults table: the
+// three share preserve_ids/drop_interactive_shell/unwrap_unknown_wrappers
+// (the only fields with any effect) and differ only in the five deprecated
+// no-op fields. This test proves it directly, on the fixtures most likely to
+// discriminate a difference if one existed — the bare-sibling-text wrapper
+// fixture (the one shape that discriminates unwrap_unknown_wrappers at all,
+// per the module doc comment above) and an attribute-rich element (the one
+// shape that discriminates the five deprecated fields, per
+// characterisation_attributes.rs) — rather than leaving the claim to be
+// inferred from scattered assert_matrix arrays elsewhere in the suite.
+
+#[test]
+fn balanced_strict_preserve_are_identical_on_the_wrapper_fixture() {
+    let balanced = conv_with(
+        WRAPPER_HTML,
+        &ConversionOptions::for_mode(ConversionMode::Balanced),
+    );
+    let strict = conv_with(
+        WRAPPER_HTML,
+        &ConversionOptions::for_mode(ConversionMode::Strict),
+    );
+    let preserve = conv_with(
+        WRAPPER_HTML,
+        &ConversionOptions::for_mode(ConversionMode::Preserve),
+    );
+    assert_eq!(balanced, strict, "Balanced vs Strict on WRAPPER_HTML");
+    assert_eq!(balanced, preserve, "Balanced vs Preserve on WRAPPER_HTML");
+}
+
+#[test]
+fn balanced_strict_preserve_are_identical_on_an_attribute_rich_element() {
+    let html = r#"<p id="pid" class="pclass" data-k="v" aria-label="lbl" style="color:red" foo="bar">Hi</p>"#;
+    let balanced = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Balanced));
+    let strict = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Strict));
+    let preserve = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Preserve));
+    assert_eq!(
+        balanced, strict,
+        "Balanced vs Strict on an attribute-rich element"
+    );
+    assert_eq!(
+        balanced, preserve,
+        "Balanced vs Preserve on an attribute-rich element"
+    );
+}

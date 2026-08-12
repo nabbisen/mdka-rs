@@ -16,7 +16,8 @@ Markdown it produces. Elements not listed are either silently removed
 | `<ol>` | `1. ` list | Respects `start` attribute |
 | `<li>` | List item | |
 | `<hr>` | `---` | |
-| `<div>`, `<article>`, `<section>`, `<main>`, `<figure>`, `<figcaption>` | Block separator | Act as paragraph breaks; unwrapped in Minimal/Semantic |
+| `<div>`, `<span>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
+| `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
 
 ## Inline Elements
 
