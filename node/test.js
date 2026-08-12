@@ -244,6 +244,52 @@ async function run(name, fn) {
       assert.strictEqual(md, '# <a id="t"></a>Title\n\nBody\n', `unexpected output: ${md}`)
     })
 
+    await run('htmlToMarkdownWith: unwrapUnknownWrappers changes output', () => {
+      // Bare-sibling-text fixture, not a block-element fixture: RFC 005
+      // Slice A found block-element fixtures cannot discriminate this
+      // field at all, since neighbouring blocks' own spacing already
+      // dominates the output either way.
+      const html = 'Before<div class="wrap"><span>inner</span></div>After'
+      const without = htmlToMarkdownWith(html, { mode: 'balanced' })
+      const withUnwrap = htmlToMarkdownWith(html, { mode: 'balanced', unwrapUnknownWrappers: true })
+      assert.notStrictEqual(without, withUnwrap, `unwrapUnknownWrappers had no effect: ${withUnwrap}`)
+      assert.strictEqual(without, 'Before\n\ninner\n\nAfter\n')
+      assert.strictEqual(withUnwrap, 'BeforeinnerAfter\n')
+    })
+
+    // Both warning tests run in a fresh child process rather than sharing
+    // this file's process: process.emitWarning delivers the 'warning' event
+    // asynchronously (queued, not inline), and earlier tests in this same
+    // file also pass preserveAriaAttrs/preserveClasses -- their warnings can
+    // still be in flight when a later test's listener attaches, leaking a
+    // count that has nothing to do with the call under test. A clean
+    // subprocess has no such history.
+    function runWarningCheck(optionsLiteral) {
+      const { execFileSync } = require('child_process')
+      const indexPath = path.resolve(__dirname, 'index.js')
+      const script = `
+        const { htmlToMarkdownWith } = require(${JSON.stringify(indexPath)})
+        const warnings = []
+        process.on('warning', (w) => warnings.push({ name: w.name, message: w.message }))
+        htmlToMarkdownWith('<p class="x">Hi</p>', ${optionsLiteral})
+        setImmediate(() => { process.stdout.write(JSON.stringify(warnings)) })
+      `
+      const out = execFileSync(process.execPath, ['-e', script], { encoding: 'utf8' })
+      return JSON.parse(out)
+    }
+
+    await run('htmlToMarkdownWith: explicit deprecated field emits a warning', () => {
+      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true }")
+      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
+      assert.equal(warnings[0].name, 'DeprecationWarning')
+      assert.match(warnings[0].message, /preserveClasses/)
+    })
+
+    await run('htmlToMarkdownWith: omitting deprecated fields stays silent', () => {
+      const warnings = runWarningCheck("{ mode: 'balanced' }")
+      assert.equal(warnings.length, 0, `expected no warnings, got ${warnings.length}`)
+    })
+
     await run('htmlToMarkdownWithAsync: mode option respected', async () => {
       const md = await htmlToMarkdownWithAsync(
         '<nav>nav</nav><p>Main</p>',

@@ -432,6 +432,33 @@ def test_with_preserve_classes_flag():
     )
     assert "Hello" in md
 
+def test_with_unwrap_unknown_wrappers_flag():
+    # Bare-sibling-text fixture, not a block-element fixture: RFC 005 Slice A
+    # found block-element fixtures cannot discriminate this field at all,
+    # since neighbouring blocks' own spacing already dominates the output
+    # either way.
+    html = 'Before<div class="wrap"><span>inner</span></div>After'
+    without = html_to_markdown_with(html, mode=ConversionMode.Balanced)
+    with_unwrap = html_to_markdown_with(
+        html, mode=ConversionMode.Balanced, unwrap_unknown_wrappers=True
+    )
+    assert without != with_unwrap, f"unwrap_unknown_wrappers had no effect: {with_unwrap}"
+    assert without == "Before\n\ninner\n\nAfter\n"
+    assert with_unwrap == "BeforeinnerAfter\n"
+
+def test_explicit_deprecated_field_emits_warning():
+    with pytest.warns(DeprecationWarning, match="preserve_classes"):
+        html_to_markdown_with(
+            '<p class="x">Hi</p>', mode=ConversionMode.Balanced, preserve_classes=True
+        )
+
+def test_omitting_deprecated_fields_stays_silent():
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        # Raises if any warning (including DeprecationWarning) is emitted.
+        html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
+
 def test_html_files_with_mode(tmp_path):
     src = tmp_path / "page.html"
     src.write_text("<nav>nav</nav><h1>Title</h1><p>Content</p>")

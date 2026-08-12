@@ -11,10 +11,11 @@
 //!   -o, --output <DIR>   出力ディレクトリ（省略時は入力と同じディレクトリ）
 //!   -m, --mode <MODE>    balanced(既定)|strict|minimal|semantic|preserve
 //!       --preserve-ids   id 属性を保持する
-//!       --preserve-classes  class 属性を保持する
-//!       --preserve-data  data-* 属性を保持する
-//!       --preserve-aria  aria-* 属性を保持する
+//!       --preserve-classes  [非推奨・無効] class 属性を保持する
+//!       --preserve-data  [非推奨・無効] data-* 属性を保持する
+//!       --preserve-aria  [非推奨・無効] aria-* 属性を保持する
 //!       --drop-shell     nav/header/footer/aside を除外する
+//!       --unwrap-wrappers  意味を持たない div/span/section/article/main をアンラップする
 //!   -h, --help           このヘルプを表示
 //! ```
 
@@ -38,10 +39,11 @@ Options:
   -o, --output <DIR>      出力ディレクトリ（省略時は入力と同じディレクトリ）
   -m, --mode <MODE>       変換モード: balanced(既定) | strict | minimal | semantic | preserve
       --preserve-ids      id 属性を保持する
-      --preserve-classes  class 属性を保持する
-      --preserve-data     data-* 属性を保持する
-      --preserve-aria     aria-* 属性を保持する
+      --preserve-classes  [非推奨・無効] class 属性を保持する（Markdown に属性構文がないため効果なし）
+      --preserve-data     [非推奨・無効] data-* 属性を保持する（同上）
+      --preserve-aria     [非推奨・無効] aria-* 属性を保持する（同上）
       --drop-shell        nav/header/footer/aside を除外する
+      --unwrap-wrappers   意味を持たない div/span/section/article/main をアンラップする
   -h, --help              このヘルプを表示
 
 モード説明:
@@ -79,6 +81,7 @@ fn main() {
     let mut preserve_data = false;
     let mut preserve_aria_override: Option<bool> = None;
     let mut drop_shell = false;
+    let mut unwrap_wrappers = false;
     let mut file_args: Vec<String> = Vec::new();
 
     let mut iter = args.into_iter().peekable();
@@ -105,6 +108,7 @@ fn main() {
             "--preserve-data" => preserve_data = true,
             "--preserve-aria" => preserve_aria_override = Some(true),
             "--drop-shell" => drop_shell = true,
+            "--unwrap-wrappers" => unwrap_wrappers = true,
             _ => file_args.push(arg),
         }
     }
@@ -131,6 +135,9 @@ fn main() {
     }
     if drop_shell {
         opts.drop_interactive_shell = true;
+    }
+    if unwrap_wrappers {
+        opts.unwrap_unknown_wrappers = true;
     }
 
     // ── 実行分岐 ──────────────────────────────────────────────────────

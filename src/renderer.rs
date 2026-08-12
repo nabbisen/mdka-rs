@@ -264,6 +264,11 @@ impl MarkdownRenderer {
             "pre" => {
                 self.begin_block();
                 self.emit_pending_prefix();
+                // `anchor_before`（下記 §要素 Enter）が `"pre"` を判定基準に
+                // 使っている。ここでガード状態を立てる他のタグを追加する場合は
+                // `anchor_before` も更新すること — さもないと、その要素自身の
+                // `id` のアンカーが自分自身のガードに引っかかって消える
+                // （RFC 006 Slice D、過去に "a" と "pre" 自体で二度発生）。
                 self.in_pre = true;
                 self.pre_lang = None;
             }
@@ -312,6 +317,11 @@ impl MarkdownRenderer {
                         title,
                         buf: String::new(),
                     };
+                    // `anchor_before`（下記 §要素 Enter）が `"a"` を判定基準に
+                    // 使っている。ここでガード状態を立てる他のタグを追加する場合は
+                    // `anchor_before` も更新すること — さもないと、その要素自身の
+                    // `id` のアンカーが自分自身のガードに引っかかって消える
+                    // （RFC 006 Slice D、過去に "a" と "pre" 自体で二度発生）。
                     self.capture_depth += 1;
                 }
             }

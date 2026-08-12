@@ -16,9 +16,41 @@ pub struct JsConversionOptions {
     pub preserve_data_attrs: Option<bool>,
     pub preserve_aria_attrs: Option<bool>,
     pub drop_interactive_shell: Option<bool>,
+    pub unwrap_unknown_wrappers: Option<bool>,
 }
 
-fn to_rust_opts(js: Option<JsConversionOptions>) -> Result<mdka::ConversionOptions> {
+/// `process.emitWarning(message, 'DeprecationWarning')` for a field that is
+/// `#[deprecated]` on the Rust side. `#[deprecated]` does not cross FFI, so
+/// Node callers see nothing unless this is emitted explicitly. Only called
+/// when the field was **explicitly passed** (`Some(_)`), never for a default
+/// -- warning on every call regardless of intent would just get the warning
+/// suppressed wholesale.
+fn warn_deprecated_field(env: &Env, field: &str) -> Result<()> {
+    let global = env.get_global()?;
+    let process: Object = global.get_named_property("process")?;
+    let emit_warning: Function<FnArgs<(String, String)>, Unknown> =
+        process.get_named_property("emitWarning")?;
+    let message = format!(
+        "mdka: `{field}` has no effect and is deprecated (see RFC 005). \
+         Markdown has no attribute syntax, so this option was never expressible \
+         in the output."
+    );
+    emit_warning.apply(process, (message, "DeprecationWarning".to_string()).into())?;
+    Ok(())
+}
+
+/// `env: None` for the `_async` entry points: napi-rs requires an async
+/// `#[napi]` function's whole future to be `Send`, and `Env` is not `Send`
+/// (confirmed by trying it — `error: future cannot be sent between threads
+/// safely`, `Env` captured as a parameter). So deprecation warnings can only
+/// be emitted from the synchronous entry point, `html_to_markdown_with`,
+/// which is also the only one that receives an `Env`. The async paths still
+/// apply the (silently no-op) deprecated fields' values -- correctness is
+/// unaffected, only the warning is unavailable there.
+fn to_rust_opts(
+    env: Option<&Env>,
+    js: Option<JsConversionOptions>,
+) -> Result<mdka::ConversionOptions> {
     let js = match js {
         Some(j) => j,
         None => return Ok(mdka::ConversionOptions::default()),
@@ -43,17 +75,29 @@ fn to_rust_opts(js: Option<JsConversionOptions>) -> Result<mdka::ConversionOptio
     #[allow(deprecated)]
     {
         if let Some(v) = js.preserve_classes {
+            if let Some(env) = env {
+                warn_deprecated_field(env, "preserveClasses")?;
+            }
             opts.preserve_classes = v;
         }
         if let Some(v) = js.preserve_data_attrs {
+            if let Some(env) = env {
+                warn_deprecated_field(env, "preserveDataAttrs")?;
+            }
             opts.preserve_data_attrs = v;
         }
         if let Some(v) = js.preserve_aria_attrs {
+            if let Some(env) = env {
+                warn_deprecated_field(env, "preserveAriaAttrs")?;
+            }
             opts.preserve_aria_attrs = v;
         }
     }
     if let Some(v) = js.drop_interactive_shell {
         opts.drop_interactive_shell = v;
+    }
+    if let Some(v) = js.unwrap_unknown_wrappers {
+        opts.unwrap_unknown_wrappers = v;
     }
 
     Ok(opts)
@@ -80,8 +124,12 @@ pub fn html_to_markdown(html: String) -> String {
 }
 
 #[napi]
-pub fn html_to_markdown_with(html: String, options: Option<JsConversionOptions>) -> Result<String> {
-    match to_rust_opts(options) {
+pub fn html_to_markdown_with(
+    html: String,
+    options: Option<JsConversionOptions>,
+    env: Env,
+) -> Result<String> {
+    match to_rust_opts(Some(&env), options) {
         Ok(x) => Ok(mdka::html_to_markdown_with(&html, &x)),
         Err(err) => Err(err),
     }
@@ -99,7 +147,7 @@ pub async fn html_to_markdown_with_async(
     html: String,
     options: Option<JsConversionOptions>,
 ) -> Result<String> {
-    let opts = to_rust_opts(options)?;
+    let opts = to_rust_opts(None, options)?;
     tokio::task::spawn_blocking(move || mdka::html_to_markdown_with(&html, &opts))
         .await
         .map_err(|e| Error::from_reason(format!("task panicked: {e}")))
@@ -131,7 +179,7 @@ pub async fn html_file_to_markdown_with(
     out_dir: Option<String>,
     options: Option<JsConversionOptions>,
 ) -> Result<ConvertResult> {
-    let opts = to_rust_opts(options)?;
+    let opts = to_rust_opts(None, options)?;
     tokio::task::spawn_blocking(move || -> std::result::Result<ConvertResult, String> {
         let out_dir_ref = out_dir.as_deref();
         mdka::html_file_to_markdown_with(&path, out_dir_ref, &opts)
@@ -163,7 +211,7 @@ pub async fn html_files_to_markdown_with(
     out_dir: String,
     options: Option<JsConversionOptions>,
 ) -> Result<Vec<ConvertResult>> {
-    let opts = to_rust_opts(options)?;
+    let opts = to_rust_opts(None, options)?;
     tokio::task::spawn_blocking(move || -> std::result::Result<Vec<ConvertResult>, String> {
         use std::path::Path;
         let out = Path::new(&out_dir);

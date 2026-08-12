@@ -1,9 +1,28 @@
 //! Python バインディング for mdka (PyO3 0.28)
 
+use std::ffi::CString;
+
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
 pyo3::create_exception!(mdka, MdkaError, pyo3::exceptions::PyException);
+
+/// `warnings.warn(..., DeprecationWarning)` for a field that is
+/// `#[deprecated]` on the Rust side. `#[deprecated]` does not cross FFI, so
+/// Python callers see nothing unless this is emitted explicitly. Only called
+/// when the field was **explicitly passed** (`Some(_)`), never for a default
+/// -- warning on every call regardless of intent would just get the warning
+/// suppressed wholesale.
+fn warn_deprecated_field(py: Python<'_>, field: &str) -> PyResult<()> {
+    let message = CString::new(format!(
+        "mdka: `{field}` has no effect and is deprecated (see RFC 005). \
+         Markdown has no attribute syntax, so this option was never \
+         expressible in the output."
+    ))
+    .expect("warning message contains no NUL bytes");
+    let category = py.get_type::<pyo3::exceptions::PyDeprecationWarning>();
+    PyErr::warn(py, &category, &message, 1)
+}
 
 // ─── ConversionMode ────────────────────────────────────────────────────────
 
@@ -40,14 +59,17 @@ fn to_rust_mode(m: ConversionMode) -> ::mdka::ConversionMode {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_opts(
+    py: Python<'_>,
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     preserve_classes: Option<bool>,
     preserve_data_attrs: Option<bool>,
     preserve_aria_attrs: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> ::mdka::ConversionOptions {
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<::mdka::ConversionOptions> {
     let mut opts = ::mdka::ConversionOptions::for_mode(to_rust_mode(mode));
     if let Some(v) = preserve_ids {
         opts.preserve_ids = v;
@@ -58,19 +80,25 @@ fn build_opts(
     #[allow(deprecated)]
     {
         if let Some(v) = preserve_classes {
+            warn_deprecated_field(py, "preserve_classes")?;
             opts.preserve_classes = v;
         }
         if let Some(v) = preserve_data_attrs {
+            warn_deprecated_field(py, "preserve_data_attrs")?;
             opts.preserve_data_attrs = v;
         }
         if let Some(v) = preserve_aria_attrs {
+            warn_deprecated_field(py, "preserve_aria_attrs")?;
             opts.preserve_aria_attrs = v;
         }
     }
     if let Some(v) = drop_interactive_shell {
         opts.drop_interactive_shell = v;
     }
-    opts
+    if let Some(v) = unwrap_unknown_wrappers {
+        opts.unwrap_unknown_wrappers = v;
+    }
+    Ok(opts)
 }
 
 // ─── ConvertResult ────────────────────────────────────────────────────────
@@ -135,8 +163,10 @@ fn html_to_markdown(html: &str) -> String {
 #[pyfunction]
 #[pyo3(signature = (html, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
+#[allow(clippy::too_many_arguments)]
 fn html_to_markdown_with(
+    py: Python<'_>,
     html: &str,
     mode: ConversionMode,
     preserve_ids: Option<bool>,
@@ -144,16 +174,19 @@ fn html_to_markdown_with(
     preserve_data_attrs: Option<bool>,
     preserve_aria_attrs: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> String {
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<String> {
     let opts = build_opts(
+        py,
         mode,
         preserve_ids,
         preserve_classes,
         preserve_data_attrs,
         preserve_aria_attrs,
         drop_interactive_shell,
-    );
-    ::mdka::html_to_markdown_with(html, &opts)
+        unwrap_unknown_wrappers,
+    )?;
+    Ok(::mdka::html_to_markdown_with(html, &opts))
 }
 
 /// # The `html_to_markdown_many` function releases the Python GIL and utilizes `rayon`
@@ -190,7 +223,7 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
 // This argument list is the published Python keyword-argument API; restructuring
 // it to satisfy clippy would break the published surface.
 #[allow(clippy::too_many_arguments)]
@@ -204,15 +237,18 @@ fn html_file_to_markdown(
     preserve_data_attrs: Option<bool>,
     preserve_aria_attrs: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
 ) -> PyResult<ConvertResult> {
     let opts = build_opts(
+        py,
         mode,
         preserve_ids,
         preserve_classes,
         preserve_data_attrs,
         preserve_aria_attrs,
         drop_interactive_shell,
-    );
+        unwrap_unknown_wrappers,
+    )?;
     let out_dir_ref: Option<&str> = out_dir.as_deref();
 
     let result = py.detach(|| ::mdka::html_file_to_markdown_with(&path, out_dir_ref, &opts));
@@ -230,7 +266,7 @@ fn html_file_to_markdown(
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
 // This argument list is the published Python keyword-argument API; restructuring
 // it to satisfy clippy would break the published surface.
 #[allow(clippy::too_many_arguments)]
@@ -244,6 +280,7 @@ fn html_files_to_markdown(
     preserve_data_attrs: Option<bool>,
     preserve_aria_attrs: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
 ) -> PyResult<Vec<BulkConvertResult>> {
     use std::path::Path;
     let out = Path::new(&out_dir);
@@ -251,13 +288,15 @@ fn html_files_to_markdown(
         .map_err(|e| MdkaError::new_err(format!("cannot create out_dir: {e}")))?;
 
     let opts = build_opts(
+        py,
         mode,
         preserve_ids,
         preserve_classes,
         preserve_data_attrs,
         preserve_aria_attrs,
         drop_interactive_shell,
-    );
+        unwrap_unknown_wrappers,
+    )?;
     let path_bufs: Vec<std::path::PathBuf> = paths.iter().map(std::path::PathBuf::from).collect();
 
     let results = py.detach(|| ::mdka::html_files_to_markdown_with(&path_bufs, out, &opts));
