@@ -1,0 +1,78 @@
+name: Create Release
+
+# Triggers on pushing an annotated (or lightweight) release tag, e.g. 2.1.7.
+# Verified against this repository's real tag history: matches every clean
+# N.N.N release tag (0.1.0 .. 2.1.7) and excludes every pre-release tag
+# (1.5.0-rc.1..5, 2.0.0-rc.1..4) and every legacy v-prefixed tag
+# (v0.0.6, v0.0.8, v0.0.9, v0.0.10) — see the GitHub Actions filter pattern
+# cheat sheet's own semantic-version example ('v[12].[0-9]+.[0-9]+').
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      # Same guard as the four release: created workflows, run here first
+      # because this workflow is what creates the release that triggers them.
+      - name: Require green CI on the tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --commit "${{ github.sha }}" \
+                     --workflow ci.yaml --limit 1 --json databaseId \
+                     --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::No CI run found for ${{ github.sha }}. Refusing to create a release."
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
+
+  create-release:
+    needs: [verify-ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Creating the release does NOT start the four sibling workflows.
+      # GitHub suppresses release/push/etc. events fired by GITHUB_TOKEN to
+      # prevent recursive workflow triggering, so a release created here
+      # would otherwise start nothing. workflow_dispatch is the documented
+      # exception to that suppression, so the next step dispatches all four
+      # explicitly instead of relying on fan-out.
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
+
+      - name: Start the publishing workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for wf in release-crates release-npm release-pypi release-executable; do
+            echo "Dispatching ${wf}.yaml at ${{ github.ref_name }}"
+            gh workflow run "${wf}.yaml" --ref "${{ github.ref_name }}"
+          done
