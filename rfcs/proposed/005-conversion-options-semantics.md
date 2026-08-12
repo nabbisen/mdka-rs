@@ -249,3 +249,36 @@ handoff.
 
 This is a genuine new attack surface and the reason anchor emission needs more
 care than its one-line appearance suggests.
+
+### 3. Anchor placement — correction after Slice B1 landed
+
+Recorded 2026-08-12, after reviewing the Slices B/C submission.
+
+Slice B1 emitted the anchor **before** the element, as its own block. That
+satisfies a heading and a paragraph in isolation. It fails in two common
+structures:
+
+- **Lists.** An anchor line between two `<li>`s is a CommonMark *lazy
+  continuation* of the preceding item's paragraph, so the anchor renders inside
+  the **wrong item**.
+- **Blockquotes.** An anchor emitted for a `<p>` inside a `<blockquote>` lands
+  outside the quote, unprefixed, because `push_raw` bypasses
+  `emit_pending_prefix()`.
+
+**Corrected rule: the anchor is leading *content* of the element, emitted after
+any prefix or marker** — `## <a id="x"></a>Install`, `- <a id="b"></a>two`,
+`> <a id="p"></a>Q`. This supersedes the placement in the Slices B/C handoff §5,
+including its heading and paragraph expectations.
+
+The cause of the miss is worth recording, because it is not the implementer's:
+the handoff's required-cases table listed a heading, a paragraph, an inline span
+and two negative cases, and **no structural context at all** — no list, no
+blockquote, no nesting. The implementation met the contract exactly as written.
+
+**A required-cases table is a specification, and an incomplete one is a defect in
+the specification.** For any change to the renderer, the table must cover block
+elements, list items, blockquote descendants and nesting, or it is not a contract
+— it is a sample.
+
+Corrected in
+[`slice-b1-placement-correction-handoff.md`](../handoffs/005-conversion-options-semantics/slice-b1-placement-correction-handoff.md).
