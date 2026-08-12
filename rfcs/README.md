@@ -12,6 +12,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
+| 018 | [README Quick Start: prebuilt binaries](./proposed/018-readme-prebuilt-binaries.md) — [handoff](./handoffs/018-readme-prebuilt-binaries/implementation-handoff.md) | docs | P2 |
 | 005 | [`ConversionOptions` semantics](./proposed/005-conversion-options-semantics.md) — [handoff (Slice A)](./handoffs/005-conversion-options-semantics/implementation-handoff.md) | M2 | P0 |
 
 ## Implemented
