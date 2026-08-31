@@ -16,12 +16,21 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | 021 | [Bulk conversion output-collision safety](./proposed/021-bulk-output-collision-safety.md) | M2b → `2.2.1` | **P0** |
 | 022 | [CLI allocator removal; settle `jemalloc`](./proposed/022-cli-allocator-and-jemalloc.md) | M2b → `2.2.1` | P1 |
 | 023 | [Getting-started documentation reconciliation](./proposed/023-getting-started-doc-reconciliation.md) | M2b → `2.2.1` | P1 |
+| 026 | [Consumer-artifact verification gates](./proposed/026-consumer-artifact-gates.md) | M2b → `2.2.1` | **P0** |
+| 027 | [Verification discipline: the consumer pass](./proposed/027-verification-discipline.md) | M2b → `2.2.1` | P1 |
 | 025 | [Markdown output-validity harness](./proposed/025-output-validity-harness.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./proposed/024-inline-composition-output-sink.md) | M3 → `2.3.0` | **P0** |
 
-All six arise from the independent audit of 2026-08-31. Handoffs follow once the
-owner approves the set. **RFC 025 precedes 024**: the harness must be able to
-observe the defects before the fixes claim to have removed them.
+All eight arise from the independent audit of 2026-08-31.
+
+**026 and 027 are the controls; the rest are the symptoms.** 020-025 fix what the
+audit found. 026 and 027 exist so the next class of defect is found by us rather
+than by an auditor — 026 mechanically, by gating on the artifact a user installs,
+and 027 by putting a reviewer in the consumer's position before each release.
+
+Two sequencing rules: **025 precedes 024**, so the harness can observe the defects
+before the fixes claim to have removed them; and **each new gate in 020/026 must
+be seen failing before it is trusted**.
 
 ## Implemented
 

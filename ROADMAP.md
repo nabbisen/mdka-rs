@@ -268,7 +268,15 @@ who has installed the package.
 | 021 | Bulk conversion output-collision safety | **P0** | S |
 | 022 | Remove the counting allocator from the shipped CLI; settle `jemalloc` | P1 | S |
 | 023 | Getting-started documentation reconciliation | P1 | S |
+| 026 | Consumer-artifact verification gates | **P0** | M |
+| 027 | Verification discipline: the consumer pass | P1 | S |
 | 007 | English-only public surface (carried from M2) | P2 | M |
+
+**026 and 027 are the point of this milestone.** The other four repair what the
+audit found; these two change why we did not find it. Without them M2b buys one
+round of fixes and leaves the control gap that produced them — an audit is not a
+process. RFC 026 gates on the artifact a user installs; RFC 027 puts a reviewer in
+the consumer's position before each release.
 
 **Why a patch and not a minor.** Every change is a defect repair. RFC 020 and 021
 add no API. RFC 022 removes an allocator that was never a documented feature.
@@ -283,7 +291,13 @@ in M1b, now applied to the artifact rather than the pipeline.
 in a clean directory on every published platform; a CI job performs exactly that
 against the packed tarball and fails if it cannot; converting two files with
 colliding output stems reports an error for the loser instead of silently
-discarding it; no getting-started page documents a no-op as working.
+discarding it; no getting-started page documents a no-op as working; **every
+published artifact — npm tarball, PyPI wheel, packaged crate — is installed from
+outside the workspace and exercised by CI**; and **a consumer pass has been
+performed against the released 2.2.1 and recorded**.
+
+The last two are the ones that matter beyond this release. The first four would
+leave us exactly where we were on 2026-08-30: correct, and unable to tell.
 
 ### M3 · Conversion fidelity → `2.3.0` (minor)
 
