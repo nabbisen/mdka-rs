@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 021 · Bulk conversion output-collision safety
 
-**Governing RFC.** [RFC 021](../../proposed/021-bulk-output-collision-safety.md)
+**Governing RFC.** [RFC 021](../../accepted/021-bulk-output-collision-safety.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P0
 **Prepared.** 2026-08-31

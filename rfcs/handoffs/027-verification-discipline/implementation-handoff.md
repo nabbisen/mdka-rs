@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 027 · Verification discipline
 
-**Governing RFC.** [RFC 027](../../proposed/027-verification-discipline.md)
+**Governing RFC.** [RFC 027](../../accepted/027-verification-discipline.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P1
 **Prepared.** 2026-08-31

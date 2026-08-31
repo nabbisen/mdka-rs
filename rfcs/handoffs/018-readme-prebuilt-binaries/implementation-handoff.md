@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 018 · README Quick Start: prebuilt binaries
 
-**Governing RFC.** [RFC 018](../../proposed/018-readme-prebuilt-binaries.md) — Proposed
+**Governing RFC.** [RFC 018](../../done/018-readme-prebuilt-binaries.md) — Proposed
 **Prepared.** 2026-08-12
 **Sequencing.** **After `2.1.8` is fully published.** Do not touch `README.md` while the release is in flight.
 

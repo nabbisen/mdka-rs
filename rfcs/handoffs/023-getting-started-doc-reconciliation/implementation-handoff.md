@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 023 · Getting-started documentation reconciliation
 
-**Governing RFC.** [RFC 023](../../proposed/023-getting-started-doc-reconciliation.md)
+**Governing RFC.** [RFC 023](../../accepted/023-getting-started-doc-reconciliation.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P1
 **Prepared.** 2026-08-31

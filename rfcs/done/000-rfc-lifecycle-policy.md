@@ -615,3 +615,68 @@ None at time of acceptance. Future refinements (review SLAs,
 automated state-machine checks, integration with project
 management tools) will, if needed, land as follow-up RFCs
 referencing this one.
+
+---
+
+## Project adoption — the 5-folder variant, 2026-08-31
+
+**This project uses the 5-folder variant.** Recorded here because the policy text
+above is written for the 4-folder one, and the folder layout is the source of
+truth for state — a reader must not have to infer which variant is in force.
+
+```
+rfcs/
+  proposed/    ← under review by the architect and owner
+  accepted/    ← owner has accepted; the implementer may start
+  done/        ← shipped in a release
+  archive/     ← withdrawn or superseded
+```
+
+`draft/` is not used.
+
+### Why the anti-pattern above does not apply here
+
+§ Anti-patterns warns against formalising `accepted/` in small projects, because
+"maintainer approved" and "implementation complete" collapse when the same person
+does both.
+
+**They do not collapse here.** This project runs a three-tier model: the owner
+sets scope and accepts, the architect designs and writes handoffs, and a separate
+implementer builds. "Accepted" is a real, dated event performed by a different
+party than the one who ships. The variant is adopted for exactly the reason the
+policy names as its precondition.
+
+The empty-folder failure mode the anti-pattern predicts is also worth watching
+for the opposite reason: if RFCs accumulate in `accepted/` without shipping, that
+is a queue, and the queue depth is a signal. `accepted/` standing full is as
+much a finding as it standing empty.
+
+### The extra transition
+
+**Accept.** The owner accepts an RFC. Move it from `proposed/` to `accepted/`,
+set `**Status.** Accepted <date> — implementer may start`, sweep inbound
+references, and update `README.md` — all in the same commit, per the rules above.
+
+`Accept and ship` in § Review and transitions therefore splits in two here:
+accept (`proposed/` → `accepted/`) and ship (`accepted/` → `done/`).
+
+### Applies to handoffs unchanged
+
+Handoffs stay at `rfcs/handoffs/NNN-slug/` and inherit state from the RFC's
+folder. A handoff beside an RFC in `accepted/` is an accepted handoff. The
+prohibition on giving handoffs their own lifecycle folders is unchanged.
+
+### A note for whoever implements § Optional CI invariants
+
+That section proposes checking that "every relative link inside an RFC resolves
+to an existing file." **This document would fail that check**, because its
+examples reference illustrative RFCs — `010-revoke-tokens.md`,
+`042-feature-flags.md`, `023-multi-region.md` and others — that do not and will
+never exist here. They are samples of the convention, not references.
+
+Exclude this file from that invariant, or teach the check to skip fenced blocks
+and the § README integrity sample. Discovered by running the check by hand during
+the 5-folder migration, which also found **seven genuinely broken links** created
+at the 2.2.0 release, when RFCs 005, 006, 018 and 019 moved to `done/` without
+the reference sweep this policy requires. The rule was right and I did not follow
+it; a mechanical check would have caught it the same day.

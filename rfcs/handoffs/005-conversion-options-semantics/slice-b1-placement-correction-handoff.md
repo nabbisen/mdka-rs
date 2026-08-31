@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 005 Slice B1, anchor placement correction
 
-**Governing RFC.** [RFC 005](../../proposed/005-conversion-options-semantics.md), Option 3
+**Governing RFC.** [RFC 005](../../done/005-conversion-options-semantics.md), Option 3
 **Corrects.** [`slices-bc-handoff.md`](./slices-bc-handoff.md) §5 — its required-cases table was incomplete
 **Milestone.** M2 · Truth in the API surface
 **Prepared.** 2026-08-12

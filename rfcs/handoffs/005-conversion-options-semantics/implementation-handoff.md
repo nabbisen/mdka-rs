@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 005 · Slice A only (characterisation tests)
 
-**Governing RFC.** [RFC 005](../../proposed/005-conversion-options-semantics.md) — Proposed
+**Governing RFC.** [RFC 005](../../done/005-conversion-options-semantics.md) — Proposed
 **Milestone.** M2 · Truth in the API surface
 **Scope of this Handoff.** **Slice A only.** Slices B and C are blocked on a
 project-owner decision and are not covered here.

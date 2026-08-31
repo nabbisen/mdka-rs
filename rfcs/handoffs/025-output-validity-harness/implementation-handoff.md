@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 025 · Markdown output-validity harness
 
-**Governing RFC.** [RFC 025](../../proposed/025-output-validity-harness.md)
+**Governing RFC.** [RFC 025](../../accepted/025-output-validity-harness.md)
 **Milestone.** M3 → `2.3.0`
 **Priority.** P0 — **first work in M3, before RFC 024 and RFC 010**
 **Do not start until M2b has shipped.**

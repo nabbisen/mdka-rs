@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 019 · Release creation via explicit dispatch
 
-**Governing RFC.** [RFC 019](../../proposed/019-release-creation-via-dispatch.md)
+**Governing RFC.** [RFC 019](../../done/019-release-creation-via-dispatch.md)
 **Supersedes.** [RFC 015](../../done/015-release-tooling-completion.md) Slice 2, withdrawn
 **Milestone.** M4 · Release automation
 **Prepared.** 2026-08-12

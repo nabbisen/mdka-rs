@@ -1,6 +1,6 @@
 # RFC 024 — Inline composition: route every writer through the output sink
 
-**Status.** Proposed
+**Status.** Accepted 2026-08-31 — implementer may start
 **Tracks.** M3 · Conversion fidelity → `2.3.0`
 **Priority.** P0
 **Blocked on.** [RFC 025](./025-output-validity-harness.md) — the harness lands first

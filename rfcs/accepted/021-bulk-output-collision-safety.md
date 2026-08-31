@@ -1,6 +1,6 @@
 # RFC 021 — Bulk conversion output-collision safety
 
-**Status.** Proposed
+**Status.** Accepted 2026-08-31 — implementer may start
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P0
 **Touches.** `src/lib.rs` (bulk path), `cli/src/main.rs` reporting, tests.

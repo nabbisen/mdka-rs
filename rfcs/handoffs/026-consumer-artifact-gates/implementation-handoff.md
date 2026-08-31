@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 026 · Consumer-artifact verification gates
 
-**Governing RFC.** [RFC 026](../../proposed/026-consumer-artifact-gates.md)
+**Governing RFC.** [RFC 026](../../accepted/026-consumer-artifact-gates.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P0
 **Depends on.** [RFC 020](../020-npm-distribution-repair/implementation-handoff.md) — it builds the npm gate; this handoff builds the other three

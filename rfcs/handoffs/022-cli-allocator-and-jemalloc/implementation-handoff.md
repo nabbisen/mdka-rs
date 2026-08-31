@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 022 · CLI allocator removal; settle `jemalloc`
 
-**Governing RFC.** [RFC 022](../../proposed/022-cli-allocator-and-jemalloc.md)
+**Governing RFC.** [RFC 022](../../accepted/022-cli-allocator-and-jemalloc.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P1
 **Prepared.** 2026-08-31

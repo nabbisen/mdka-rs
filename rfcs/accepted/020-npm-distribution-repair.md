@@ -1,6 +1,6 @@
 # RFC 020 — npm distribution repair and a published-artifact install gate
 
-**Status.** Proposed
+**Status.** Accepted 2026-08-31 — implementer may start
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P0 — the highest-impact item on the roadmap
 **Touches.** `.github/workflows/release-npm.yaml`, `node/package.json`, a new CI job.

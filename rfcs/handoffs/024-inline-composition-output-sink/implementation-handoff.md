@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 024 · Inline composition: the output sink
 
-**Governing RFC.** [RFC 024](../../proposed/024-inline-composition-output-sink.md)
+**Governing RFC.** [RFC 024](../../accepted/024-inline-composition-output-sink.md)
 **Milestone.** M3 → `2.3.0`
 **Priority.** P0
 **Blocked on.** [RFC 025](../025-output-validity-harness/implementation-handoff.md) — the harness must land and record failures first

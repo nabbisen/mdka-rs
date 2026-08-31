@@ -1,6 +1,6 @@
 # RFC 027 — Verification discipline: the consumer pass and scope completeness
 
-**Status.** Proposed
+**Status.** Accepted 2026-08-31 — implementer may start
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P1
 **Touches.** `.git-exclude/` governance artifacts (handoff template, review-request format, release checklist), `ROADMAP.md`.

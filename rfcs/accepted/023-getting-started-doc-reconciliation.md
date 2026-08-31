@@ -1,6 +1,6 @@
 # RFC 023 — Getting-started documentation reconciliation
 
-**Status.** Proposed
+**Status.** Accepted 2026-08-31 — implementer may start
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P1
 **Touches.** `docs/src/getting-started/*`, `docs/src/api/core.md`, `docs/src/api/elements.md`, `python/` packaging.

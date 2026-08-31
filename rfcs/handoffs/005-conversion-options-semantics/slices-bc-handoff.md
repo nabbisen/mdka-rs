@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 005 Slices B and C
 
-**Governing RFC.** [RFC 005](../../proposed/005-conversion-options-semantics.md), Option 3 recorded 2026-08-08
+**Governing RFC.** [RFC 005](../../done/005-conversion-options-semantics.md), Option 3 recorded 2026-08-08
 **Supersedes.** Nothing. [`implementation-handoff.md`](./implementation-handoff.md) covered Slice A, which is complete and approved.
 **Milestone.** M2 · Truth in the API surface
 **Prepared.** 2026-08-12

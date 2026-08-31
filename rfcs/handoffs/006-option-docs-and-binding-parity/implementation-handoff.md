@@ -1,7 +1,7 @@
 # Developer Handoff — RFC 006 · Option docs and binding parity
 
-**Governing RFC.** [RFC 006](../../proposed/006-option-docs-and-binding-parity.md)
-**Depends on.** [RFC 005](../../proposed/005-conversion-options-semantics.md) — complete, approved
+**Governing RFC.** [RFC 006](../../done/006-option-docs-and-binding-parity.md)
+**Depends on.** [RFC 005](../../done/005-conversion-options-semantics.md) — complete, approved
 **Milestone.** M2 · closes it
 **Prepared.** 2026-08-12
 **Baseline.** 132 tests on `main` (`8978ed4`), green.
