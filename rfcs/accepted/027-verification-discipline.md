@@ -104,6 +104,67 @@ it caught the `<hr>` and `<pre>` newline bugs, the `verify-ci` failure, the
 release, or at least annually.** This is a resourcing decision and is recorded as
 a recommendation, not a rule.
 
+### Owner decision, 2026-08-31 — declined
+
+**Declined on cost.** A full audit is expensive enough that it cannot be
+commissioned on a cadence.
+
+That is a legitimate call, and it is not a reason to leave the rule as an
+unactioned recommendation. **Rules 1-3 and RFC 026 were designed as complements
+to a periodic audit; they are now the whole of it.** Two consequences follow, and
+they amend the rules above.
+
+**1 · The consumer pass must not be performed by the implementer.**
+
+Rule 1 previously said "someone acting as a new user" and left who open. With no
+external pass to fall back on, that ambiguity is load-bearing. The pass must be
+performed by **someone who did not implement the release** — the owner, or a
+session with no context from the implementation work. Someone who has just spent
+a week inside the code cannot un-know it, and the whole value of the position is
+not knowing.
+
+Where that is impossible, the pass must say so explicitly, and its findings
+should be treated as weaker evidence rather than as equivalent.
+
+**2 · The pass is adversarial, not confirmatory.**
+
+The instruction is *try to prove the documentation wrong*, not *check the
+documentation*. A reviewer looking for confirmation finds it. The audit found 56
+issues because it was looking for them.
+
+### The residual risk, stated plainly
+
+The gates in RFC 026 permanently close the *artifact* class — a broken package
+cannot ship again unnoticed. Nothing in this RFC closes the class where **the
+whole team believes the same wrong thing**. That is what an outside reviewer buys
+and what the consumer pass only approximates.
+
+Four milestones of intensive internal process preceded an audit that found 56
+issues. We should expect blind spots to accumulate again, more slowly. This is
+accepted risk, recorded so it is a decision rather than a surprise.
+
+### A cheaper form, offered rather than pressed
+
+If cost is the constraint, **scope is the lever, not frequency.** A narrow
+external pass — one axis per release (distribution for one, output correctness
+for the next), or only the diff since the last release — costs a fraction of a
+full 56-finding audit and preserves the position, which is the part that cannot
+be manufactured internally.
+
+Recorded as available, not scheduled. The owner has declined the standing
+cadence; this needs no further decision unless they want one.
+
+### A cheap internal proxy worth trying
+
+Convert the same real-world page with a peer converter (`htmd`, Turndown) and
+**read the two outputs side by side**. Differences are not defects — peer output
+is not a specification, and RFC 025 is explicit that differential assertions are
+out of scope. But as a *finding generator* run by a human occasionally, a diff
+against an independent implementation surfaces exactly the "our output is odd in
+a way we stopped noticing" class, at near-zero cost.
+
+This is a suggestion for the consumer pass, not a required step.
+
 ## What this RFC deliberately does not add
 
 No new approval stages, no sign-off matrix, no checklist for its own sake. Each
@@ -131,6 +192,6 @@ Governance only. No product change, no CI change (that is RFC 026).
    verification (Rule 3).
 3. A release checklist exists containing the consumer pass (Rule 1), and it is
    performed for `2.2.1` with its output recorded.
-4. The owner has recorded a decision on Rule 4.
+4. Rule 4's decision is recorded, and Rule 1's not-the-implementer and adversarial-framing amendments are reflected in the release checklist.
 5. Each rule in the governance artifacts names the defect it prevents, so a
    future reader can judge whether it still earns its place.

@@ -15,7 +15,7 @@ RFC 027 changes governance artifacts. Those split by owner:
 |---|---|---|
 | 2 · justified scope boundary | Handoff template | **Architect** — I write handoffs |
 | 3 · tree-vs-artifact evidence | Review-request format | **Architect** |
-| 4 · periodic external audit | — | **Owner decision** |
+| 4 · periodic external audit | — | **Owner decided 2026-08-31: declined on cost.** Nothing to do — but see §3.0, because declining it changes your slice |
 | 1 · the consumer pass | Release checklist + its first execution | **You** |
 
 **Your slice is Rule 1**, and it is the substantive one. I have already begun
@@ -46,6 +46,27 @@ consumer pass, and make it a document a future release follows.
 
 ## 3. Perform the consumer pass against 2.2.1
 
+### 3.0 ⚠ Rule 4 was declined, and that changes this section
+
+The owner declined the periodic external audit on cost. Rules 1-3 and RFC 026
+were designed as *complements* to that audit. They are now the whole of it, so
+two amendments to RFC 027 apply directly to you:
+
+**Do not perform this pass if you implemented 2.2.1.** It must be done by someone
+who did not — the owner, or a session carrying no context from the
+implementation. Someone who spent a week inside the code cannot un-know it, and
+not knowing is the entire value of the position.
+
+If that is genuinely impossible, **say so at the top of your report** and treat
+the findings as weaker evidence. Do not quietly do it anyway.
+
+**The framing is adversarial.** Your instruction is *try to prove the
+documentation wrong* — not *check that it is right*. A reviewer looking for
+confirmation will find it. The external audit found 56 issues because it was
+hunting for them.
+
+### 3.1 The pass
+
 **Entirely from outside the repository.** Ideally on a machine, container or
 fresh user account that has never built this project. If that is not available,
 say exactly what environment you used and what contamination might remain — an
@@ -70,6 +91,15 @@ product is wrong in ways no assertion was written to catch. Budget real attentio
 for it.
 
 Record what you converted, so the pass is reproducible.
+
+### Optional, and cheap: diff against a peer converter
+
+Convert the same page with `htmd` or Turndown and read the two side by side.
+
+**Differences are not defects** — peer output is not a specification, and
+RFC 025 rules differential assertions out of scope. But as a way of *noticing*,
+an independent implementation surfaces the "our output is odd in a way we stopped
+seeing" class for almost nothing. Suggestion, not a required step.
 
 ## 4. What the output looks like
 
@@ -102,8 +132,9 @@ installs from registries. Everything else here can be written before.
 - Do not skim step 4.
 - Do not omit a discrepancy because it seems minor or because a fix is already
   scheduled — note it and reference the RFC.
-- Do not perform the pass on the machine where you implemented 2.2.1 if you can
-  avoid it. If you cannot, say so.
+- **Do not perform the pass at all if you implemented 2.2.1** (§3.0). This is
+  now a rule, not a preference.
+- Do not set out to confirm the docs. Set out to break them.
 
 ## 7. Known risks
 
@@ -117,9 +148,10 @@ installs from registries. Everything else here can be written before.
 ## 8. Acceptance checklist
 
 - [ ] Release checklist exists, includes the consumer pass and existing mechanics
-- [ ] Consumer pass performed against published 2.2.1, from outside the repo
+- [ ] Consumer pass performed against published 2.2.1, from outside the repo, **by someone who did not implement it** — or the exception stated at the top of the report
 - [ ] All four steps done, including the real-page conversion
 - [ ] Environment stated, with any contamination caveat
+- [ ] Adversarial framing applied — the report says what you tried to break
 - [ ] Every discrepancy recorded, however small
 - [ ] What was not done, and why, stated explicitly
 - [ ] Feedback given on Rules 2 and 3 as they appear in the M2b handoffs
