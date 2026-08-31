@@ -1,8 +1,9 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.1.7 (released 2026-08-02)
-**Milestone progress.** M1 complete. M1b next, then M2.
+**Current version.** 2.2.0 (released 2026-08-12)
+**Milestone progress.** M1, M1b and M2 complete. **M2b in progress** — remediation
+of the independent audit of 2026-08-31 — then M3.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -57,6 +58,30 @@ No major version transition is planned on this roadmap. RFC 005 resolves the
 `ConversionOptions` defect additively, within the 2.x compatibility line. Any
 future major-version decision is reserved to the project owner and is not
 implied by completion of any milestone below.
+
+### Work that is blocked on a major version — recorded, not scheduled
+
+Raised by the audit of 2026-08-31 and deliberately **not** scheduled, because
+each requires a compatibility break this roadmap does not plan.
+
+| Item | Why it is breaking |
+|---|---|
+| `C-06` — give `MdkaError` path context (`Read`/`Write`/`CreateDir` variants) | Removes the `Io(#[from])` variant; downstream `match` stops compiling |
+| `C-10(a)` — mark `MdkaError` `#[non_exhaustive]` | **Also breaking.** Rust classifies adding the marker to an existing enum as major (`cargo-semver-checks: enum_marked_non_exhaustive`) — an exhaustive downstream match loses its exhaustiveness |
+
+The audit recommends the marker as free future-proofing that "costs nothing and
+unblocks all future error work". That is its one substantive error: the marker
+carries the same compatibility cost as the variants it was meant to enable, so
+it cannot be the escape hatch from the constraint.
+
+**The consequence matters more than the error.** The audit bundles `S-02`'s
+collision reporting into this cluster as a single medium-term change, which would
+park a live silent-data-loss defect behind a major version. RFC 021 therefore
+fixes `S-02` **within** the existing error type, using
+`io::ErrorKind::AlreadyExists`. No new variant, no marker, ships in `2.2.1`.
+
+If a 3.0 is ever opened, these are its first candidates. Until then the error
+type stays as it is, and the limitation is documented rather than worked around.
 
 ---
 
@@ -188,7 +213,7 @@ The project already has one instance of that pattern working well —
 refuses to let a half-applied bump pass quietly (RFC 015 Slice 3). Extending
 that shape is lower-risk than extending the publish-automation shape.
 
-### M2 · Truth in the API surface → `2.2.0` (minor)
+### M2 · Truth in the API surface → `2.2.0` (minor) — ✅ COMPLETE
 
 Closes the gap between what `ConversionOptions`, the CLI, the bindings, and the
 documentation promise, and what the engine actually does. Six of the eight
@@ -196,9 +221,18 @@ option fields are currently inert.
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
-| 005 | `ConversionOptions` semantics — implement attribute handling | P0 | L |
-| 006 | Option documentation + binding parity realignment | P1 | M |
-| 007 | English-only public surface | P1 | M |
+| 005 | `ConversionOptions` semantics — implement attribute handling | P0 | L | ✅ 2.2.0 |
+| 006 | Option documentation + binding parity realignment | P1 | M | ✅ 2.2.0 |
+| 007 | English-only public surface | P1 | M | → M2b |
+
+**Shipped 2026-08-12.** RFC 007 did not make 2.2.0 and moves to M2b.
+
+**One exit criterion was met only inside `docs/src/api/`.** The external audit of
+2026-08-31 found `docs/src/getting-started/usage-cli.md:49-51` still documenting
+the three deprecated no-op flags as working, and never mentioning
+`--unwrap-wrappers`. RFC 006's scope, which I wrote, named `docs/src/api/` and
+never swept `getting-started/`. The defect class M2 existed to eliminate survived
+one directory away. Repaired in RFC 023.
 
 **Exit criteria.** Every public option field demonstrably changes output, with a
 test per field per surface; Rust, CLI, Node, and Python expose the same option
@@ -219,6 +253,38 @@ inconclusive here — `figcaption` triggers its own block spacing regardless of
 unwrap status, so output alone cannot distinguish the two cases. The source-level
 evidence is what settles it.
 
+
+### M2b · Audit remediation → `2.2.1` (patch) — ⏳ IN PROGRESS
+
+Arising from the independent audit of 2026-08-31
+(`.git-exclude/reviewed/audit-2026-08-31/`, architect response in
+`ARCHITECT-RESPONSE.md`). **This milestone is live user harm only.** Nothing here
+is an improvement; every item is something that is currently wrong for someone
+who has installed the package.
+
+| RFC | Title | Priority | Size |
+|---|---|---|---|
+| 020 | npm distribution repair + published-artifact install gate | **P0** | S |
+| 021 | Bulk conversion output-collision safety | **P0** | S |
+| 022 | Remove the counting allocator from the shipped CLI; settle `jemalloc` | P1 | S |
+| 023 | Getting-started documentation reconciliation | P1 | S |
+| 007 | English-only public surface (carried from M2) | P2 | M |
+
+**Why a patch and not a minor.** Every change is a defect repair. RFC 020 and 021
+add no API. RFC 022 removes an allocator that was never a documented feature.
+RFC 023 is documentation. Nothing here is additive, so `2.2.1` is correct.
+
+**Sequencing constraint.** RFC 020's install gate lands **before** its fix, so
+the gate is observed failing against the broken package and passing after. A gate
+that has only ever been seen green proves nothing — the lesson from `verify-ci`
+in M1b, now applied to the artifact rather than the pipeline.
+
+**Exit criteria.** `npm install mdka@2.2.1 && node -e "require('mdka')"` succeeds
+in a clean directory on every published platform; a CI job performs exactly that
+against the packed tarball and fails if it cannot; converting two files with
+colliding output stems reports an error for the loser instead of silently
+discarding it; no getting-started page documents a no-op as working.
+
 ### M3 · Conversion fidelity → `2.3.0` (minor)
 
 Purely additive element coverage. Tables are the largest known gap against the
@@ -227,13 +293,33 @@ text run.
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
-| 008 | GFM table support | P0 | L |
-| 010 | Escaping & text-processing correctness audit | P1 | M |
+| 025 | Markdown output-validity harness | **P0** | M |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M |
+| 010 | Escaping & text-processing correctness audit | P0 | M |
+| 008 | GFM table support | P1 | L |
 | 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`) | P2 | M |
 
-**Exit criteria.** Tables round-trip to GFM pipe syntax including alignment and
-header rows; the escaping audit has either confirmed or corrected each rule in
-`docs/src/api/text-processing.md` against a test.
+**Reordered by the 2026-08-31 audit.** Tables were the largest *known* gap; the
+audit found the larger *unknown* one. `mdka` produces invalid Markdown for
+several everyday constructs — a linked image, bold inside a link, a bare `<pre>`,
+a code span containing `_`. Emitting a correct table matters less than emitting
+correct output for HTML that is already in scope, so 024/025/010 precede 008.
+
+**RFC 025 lands first, and is the reason the rest are findable.** 136 tests were
+green while all of this shipped, because no test parses mdka's output as
+Markdown — every renderer assertion compares against a string we wrote ourselves.
+A suite authored by the same hand as the renderer cannot discover that the
+renderer's output is not Markdown.
+
+**RFC 010 is now populated** by the audit: `A-03` (escaping inside code spans),
+`A-04` (unescaped destinations and titles), `A-05` (fixed-width fences), `A-09`
+(line-leading digits), `A-10`, `A-11`, and `D-05`. It no longer needs to start
+from a blank survey.
+
+**Exit criteria.** Every construct in the composition matrix round-trips through
+a CommonMark parser to the structure mdka intended; tables round-trip to GFM pipe
+syntax including alignment and header rows; each rule in
+`docs/src/api/text-processing.md` is confirmed or corrected against a test.
 
 ### M4 · Durability → `2.4.0` (minor)
 
