@@ -12,14 +12,14 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 020 | [npm distribution repair + install gate](./proposed/020-npm-distribution-repair.md) | M2b → `2.2.1` | **P0** |
-| 021 | [Bulk conversion output-collision safety](./proposed/021-bulk-output-collision-safety.md) | M2b → `2.2.1` | **P0** |
-| 022 | [CLI allocator removal; settle `jemalloc`](./proposed/022-cli-allocator-and-jemalloc.md) | M2b → `2.2.1` | P1 |
-| 023 | [Getting-started documentation reconciliation](./proposed/023-getting-started-doc-reconciliation.md) | M2b → `2.2.1` | P1 |
-| 026 | [Consumer-artifact verification gates](./proposed/026-consumer-artifact-gates.md) | M2b → `2.2.1` | **P0** |
-| 027 | [Verification discipline: the consumer pass](./proposed/027-verification-discipline.md) | M2b → `2.2.1` | P1 |
-| 025 | [Markdown output-validity harness](./proposed/025-output-validity-harness.md) | M3 → `2.3.0` | **P0** |
-| 024 | [Inline composition: the output sink](./proposed/024-inline-composition-output-sink.md) | M3 → `2.3.0` | **P0** |
+| 020 | [npm distribution repair + install gate](./proposed/020-npm-distribution-repair.md) — [handoff](./handoffs/020-npm-distribution-repair/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
+| 021 | [Bulk conversion output-collision safety](./proposed/021-bulk-output-collision-safety.md) — [handoff](./handoffs/021-bulk-output-collision-safety/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
+| 022 | [CLI allocator removal; settle `jemalloc`](./proposed/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) | M2b → `2.2.1` | P1 |
+| 023 | [Getting-started documentation reconciliation](./proposed/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | M2b → `2.2.1` | P1 |
+| 026 | [Consumer-artifact verification gates](./proposed/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
+| 027 | [Verification discipline: the consumer pass](./proposed/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | M2b → `2.2.1` | P1 |
+| 025 | [Markdown output-validity harness](./proposed/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
+| 024 | [Inline composition: the output sink](./proposed/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
 All eight arise from the independent audit of 2026-08-31.
 
