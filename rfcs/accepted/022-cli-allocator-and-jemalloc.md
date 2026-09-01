@@ -105,3 +105,47 @@ runtime.
    public.
 6. Conversion output is byte-identical; the test suite is unchanged in count
    except for anything added here.
+
+---
+
+## Correction — two errors in this RFC, found at review, 2026-09-01
+
+### 1 · "Reduce its visibility" described an option that does not exist
+
+§ `C-07` proposed `pub(crate)` plus a benchmark-local shim. That does not
+compile under `-D warnings`: with the CLI no longer installing it, nothing
+inside the crate calls anything in `alloc_counter`, so every item in a
+`pub(crate)` module is dead code and CI fails.
+
+There is no "reduce visibility" that both compiles and keeps the module in the
+library. The real options are **remove it** or **deprecate it**, and the RFC
+should have said so.
+
+### 2 · The compatibility break was mis-classified as a documentation matter
+
+The risk table said *"Reducing `alloc_counter`'s visibility breaks a downstream
+user — improbable but real, since it is public today. Note it in the
+CHANGELOG."*
+
+Removing `pub mod alloc_counter;` is a **major** change by Rust's rules, and
+`ROADMAP.md` reserves compatibility breaks to the project owner while defining a
+patch as having no API change. A CHANGELOG note is not the mitigation for that;
+an owner decision is.
+
+Six real downstream crates depend on `mdka` (`htm_md`, `bigquery-functions`,
+`elvish-core`, `threadcat`, `htmlmd-core`, `zapmyco-tools`), so the exposure is
+small but not nil.
+
+Raised as `.git-exclude/reviewed/022-alloc-counter-removal-decision/README.md`.
+
+### 3 · The scope grep was written from the Touches list, not from a search
+
+§ Change scope named `cli/src/main.rs`, `Cargo.toml`, `src/alloc_counter.rs` and
+the CI step. Two further consumers existed — `examples/quick_mem.rs` and
+`examples/measure_mem.rs` — both installing `CountingAllocator`. The
+implementer found them; the RFC would not have.
+
+**A scope written from a Touches list is not a search.** Same shape as RFC 006
+scoping documentation to `docs/src/api/` and leaving the getting-started layer
+to nobody. When an RFC names paths, one grep for the *symbol* across the whole
+repository is the check that makes the list trustworthy.
