@@ -185,6 +185,14 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx napi pre-publish --no-gh-release
 
+      # No `npm ci` here. The `napi pre-publish` step above rewrites
+      # package.json to add optionalDependencies for the per-platform
+      # packages, which puts it out of sync with package-lock.json --
+      # `npm ci` refuses to run in that state and fails the publish. It was
+      # also redundant: the "Install dependencies" step above already ran
+      # `npm install`, and `npm publish` does not need node_modules.
+      # Removed 2026-09-01 after it blocked the 2.2.1 npm publish, which is
+      # the first release in which pre-publish ever ran.
       - name: Publish
         working-directory: node
         env:
@@ -192,5 +200,4 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cp -f ../README.md .
-          npm ci
           npm publish
