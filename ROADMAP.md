@@ -1,9 +1,10 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.2.0 (released 2026-08-12)
+**Current version.** 2.2.1 (released 2026-09-01)
 **Milestone progress.** M1, M1b and M2 complete. **M2b in progress** — remediation
-of the independent audit of 2026-08-31 — then M3.
+of the independent audit of 2026-08-31. `2.2.1` shipped RFC 020; `2.2.2` carries
+the rest. Then M3.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
