@@ -89,6 +89,21 @@ This is lower priority than 1–3 and may land with RFC 023, which is correcting
 those examples anyway. **The correction without the gate is a one-time fix; they
 will drift again.**
 
+## ⚠ Each gate lives in its own workflow file — not in `ci.yaml`
+
+Added 2026-09-01, after RFC 020's gate deadlocked the release it was built to
+verify. See [RFC 020](../done/020-npm-distribution-repair.md) § Correction.
+
+`ci.yaml` is the workflow `verify-ci` keys on. A failing job in it makes the
+whole run conclude `failure`, which blocks release creation and every publisher.
+An artifact gate placed there can therefore block the very release that would
+make it pass.
+
+**Every gate in this RFC gets its own workflow file.** They still run on every
+push and still go red when broken; only their file differs. Making a gate
+release-blocking is a separate decision, taken only after it has been observed
+green against a real release.
+
 ## Where each gate runs
 
 | Gate | Trigger | Why |

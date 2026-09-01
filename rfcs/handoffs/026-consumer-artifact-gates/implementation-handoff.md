@@ -33,6 +33,17 @@ gate, the crates.io package gate, and the docs-example gate**. The npm gate
 belongs to RFC 020, which is landing first because npm is actively broken. No
 part of this handoff changes product code — only CI.
 
+## 3.5 ⚠ Each gate goes in its own workflow file
+
+**Not in `ci.yaml`.** RFC 020's gate landed there, per my instruction, and
+deadlocked the 2.2.1 release: `ci.yaml` is what `verify-ci` inspects, so a red
+gate blocked release creation and every publisher — including the release that
+would have made the gate pass.
+
+One file per gate. Same triggers, same behaviour, same red-when-broken. Only the
+file differs. Making any of them release-blocking is a separate decision, taken
+only after it has been seen green against a real release.
+
 ## 4. The gates
 
 ### 4.1 PyPI — build a wheel, install it, import it

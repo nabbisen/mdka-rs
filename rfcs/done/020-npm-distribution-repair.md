@@ -186,3 +186,47 @@ admin. Not merely unproven: active evidence against depending on it. Scoped
 
 `2.2.1` carries this RFC alone. The fix is unprovable except by releasing, so it
 ships without other changes travelling with it. The rest of M2b moves to `2.2.2`.
+
+---
+
+## Correction — where an artifact gate may live, 2026-09-01
+
+Found at the `2.2.1` tag checkpoint, before any damage.
+
+The gate landed in `.github/workflows/ci.yaml`, as this RFC's handoff §5 said
+("runs on every push"). **`ci.yaml` is the workflow `verify-ci` keys on**, in
+`create-release.yaml` and in all four publishers:
+
+```sh
+run_id=$(gh run list --commit "$SHA" --workflow ci.yaml --limit 1 ...)
+gh run watch "$run_id" --exit-status
+```
+
+A failing gate makes the whole `ci.yaml` run conclude `failure`, so `verify-ci`
+fails, so no release is created and nothing is dispatched. That produces a
+circular dependency:
+
+```
+the gate cannot pass     until the platform packages are published
+publishing requires      ci.yaml green
+ci.yaml cannot be green  while the gate lives inside it
+```
+
+**The rule:**
+
+> An artifact gate must not live in the workflow that `verify-ci` keys on.
+
+Artifact gates verify what a release *produced*. `verify-ci` decides whether a
+release may *proceed*. Nesting the first inside the second means a broken
+artifact can never be repaired by a release — the gate blocks its own fix.
+
+Each artifact gate gets its own workflow file. It still runs on every push and
+still goes red when broken; only its file changes.
+
+**Promotion is a separate, later decision.** Once a gate has been observed green
+against a real release, it may deliberately be made release-blocking. That can
+only happen after the observation, never before — a gate that has never passed
+cannot be a precondition for the release that would first make it pass.
+
+This was an architect error: the handoff specified the placement and the review
+approved it. It would have recurred three more times through RFC 026.
