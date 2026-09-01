@@ -130,3 +130,59 @@ there are none.
 5. `index.js`, the generated dirs, and the registry all use the same naming.
 6. The broken range is deprecated on npm.
 7. Ownership of the chosen name is verified and recorded.
+
+---
+
+## Correction record — the root cause, 2026-09-01
+
+Implementation traced the cause into `@napi-rs/cli`'s source rather than
+reasoning from the config's shape, and found it narrower than § Root cause
+above describes. **That section's fault 2 is superseded by this one.**
+
+### What § Root cause got wrong
+
+It said `index.js` (unscoped) and `create-npm-dirs` (scoped) were two mechanisms
+disagreeing, and that the fix was to reconcile them.
+
+**They were not disagreeing.** `napi-rs` 3.x reads a **flat** `napi.packageName`
+string; `node/package.json` carried it nested as `napi.package.name`, a shape
+`readNapiConfig` never reads. It therefore fell back to the root `name` field —
+`"mdka"`, unscoped — and **both** mechanisms produced unscoped names, in
+agreement. The scoped `@mdka/lib-*` packages on the registry were residue from an
+older, correct configuration, which is what made it look like a disagreement.
+
+One silently-ignored config key, plus a registry preserving evidence of a
+configuration that no longer existed.
+
+The fix is the flat key:
+
+```json
+"napi": { "binaryName": "mdka", "packageName": "@mdka/lib", ... }
+```
+
+After which `napi build` and `napi create-npm-dirs` both emit `@mdka/lib-*` with
+no CLI override.
+
+**Why the distinction matters:** the original framing points an implementer at
+reconciling two mechanisms — a fix for a problem that was not there, which would
+have left the ignored key in place to resurface on the next regeneration.
+
+### `napi pre-publish --no-gh-release` is required, not cosmetic
+
+`napi pre-publish` defaults `--gh-release` to **true** and will try to create a
+second GitHub release for a tag `create-release.yaml` has already released. It is
+non-fatal — caught and logged — but there is no reason to invite it, and a future
+maintainer seeing an unexplained flag will remove it. Confirmed against the CLI's
+source that the flag suppresses the code path, not just the symptom.
+
+### The unscoped name — resolved
+
+§ 6.3 flagged `mdka-linux-x64-gnu` resolving with zero versions as unexplained.
+It was **unpublished by someone on 2026-02-06**, and `npm owner ls` finds no
+admin. Not merely unproven: active evidence against depending on it. Scoped
+`@mdka/lib-*` was adopted on that evidence rather than on the default.
+
+### Release scope
+
+`2.2.1` carries this RFC alone. The fix is unprovable except by releasing, so it
+ships without other changes travelling with it. The rest of M2b moves to `2.2.2`.

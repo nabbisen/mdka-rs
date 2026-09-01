@@ -78,7 +78,7 @@ it cannot be the escape hatch from the constraint.
 collision reporting into this cluster as a single medium-term change, which would
 park a live silent-data-loss defect behind a major version. RFC 021 therefore
 fixes `S-02` **within** the existing error type, using
-`io::ErrorKind::AlreadyExists`. No new variant, no marker, ships in `2.2.1`.
+`io::ErrorKind::AlreadyExists`. No new variant, no marker, ships in `2.2.2`.
 
 If a 3.0 is ever opened, these are its first candidates. Until then the error
 type stays as it is, and the limitation is documented rather than worked around.
@@ -254,7 +254,7 @@ unwrap status, so output alone cannot distinguish the two cases. The source-leve
 evidence is what settles it.
 
 
-### M2b · Audit remediation → `2.2.1` (patch) — ⏳ IN PROGRESS
+### M2b · Audit remediation → `2.2.1` + `2.2.2` (patches) — ⏳ IN PROGRESS
 
 Arising from the independent audit of 2026-08-31
 (`.git-exclude/reviewed/audit-2026-08-31/`, architect response in
@@ -262,15 +262,24 @@ Arising from the independent audit of 2026-08-31
 is an improvement; every item is something that is currently wrong for someone
 who has installed the package.
 
-| RFC | Title | Priority | Size |
-|---|---|---|---|
-| 020 | npm distribution repair + published-artifact install gate | **P0** | S |
-| 021 | Bulk conversion output-collision safety | **P0** | S |
-| 022 | Remove the counting allocator from the shipped CLI; settle `jemalloc` | P1 | S |
-| 023 | Getting-started documentation reconciliation | P1 | S |
-| 026 | Consumer-artifact verification gates | **P0** | M |
-| 027 | Verification discipline: the consumer pass | P1 | S |
-| 007 | English-only public surface (carried from M2) | P2 | M |
+| RFC | Title | Priority | Size | Release |
+|---|---|---|---|---|
+| 020 | npm distribution repair + published-artifact install gate | **P0** | S | **`2.2.1`** |
+| 021 | Bulk conversion output-collision safety | **P0** | S | `2.2.2` |
+| 022 | Remove the counting allocator from the shipped CLI; settle `jemalloc` | P1 | S | `2.2.2` |
+| 023 | Getting-started documentation reconciliation | P1 | S | `2.2.2` |
+| 026 | Consumer-artifact verification gates | **P0** | M | `2.2.2` |
+| 027 | Verification discipline: the consumer pass | P1 | S | `2.2.2` |
+| 007 | English-only public surface (carried from M2) | P2 | M | `2.2.2` |
+
+**Split into two releases, 2026-09-01.** M2b originally targeted a single
+`2.2.1`. RFC 020's implementation established that the npm fix **cannot be
+verified except by releasing** — no local or CI check can exercise a registry
+round-trip. Shipping it alongside four unrelated changes would spend that one
+observation on a noisy sample, and would keep 100% of npm users broken while
+unrelated fixes travelled with it.
+
+`2.2.1` is RFC 020 alone. `2.2.2` carries the rest.
 
 **026 and 027 are the point of this milestone.** The other four repair what the
 audit found; these two change why we did not find it. Without them M2b buys one
@@ -280,7 +289,7 @@ the consumer's position before each release.
 
 **Why a patch and not a minor.** Every change is a defect repair. RFC 020 and 021
 add no API. RFC 022 removes an allocator that was never a documented feature.
-RFC 023 is documentation. Nothing here is additive, so `2.2.1` is correct.
+RFC 023 is documentation. Nothing here is additive, so patch releases are correct.
 
 **Sequencing constraint.** RFC 020's install gate lands **before** its fix, so
 the gate is observed failing against the broken package and passing after. A gate
@@ -288,13 +297,14 @@ that has only ever been seen green proves nothing — the lesson from `verify-ci
 in M1b, now applied to the artifact rather than the pipeline.
 
 **Exit criteria.** `npm install mdka@2.2.1 && node -e "require('mdka')"` succeeds
-in a clean directory on every published platform; a CI job performs exactly that
+in a clean directory on every published platform — this one closes with `2.2.1`;
+the rest close with `2.2.2`: a CI job performs exactly that
 against the packed tarball and fails if it cannot; converting two files with
 colliding output stems reports an error for the loser instead of silently
 discarding it; no getting-started page documents a no-op as working; **every
 published artifact — npm tarball, PyPI wheel, packaged crate — is installed from
 outside the workspace and exercised by CI**; and **a consumer pass has been
-performed against the released 2.2.1 and recorded**.
+performed against the released `2.2.2` and recorded**.
 
 The last two are the ones that matter beyond this release. The first four would
 leave us exactly where we were on 2026-08-30: correct, and unable to tell.
