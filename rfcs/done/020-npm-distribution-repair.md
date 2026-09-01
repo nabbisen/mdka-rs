@@ -230,3 +230,33 @@ cannot be a precondition for the release that would first make it pass.
 
 This was an architect error: the handoff specified the placement and the review
 approved it. It would have recurred three more times through RFC 026.
+
+## Correction — the gate was testing the wrong artifact, 2026-09-01
+
+Found after `2.2.1` published successfully: the gate stayed **red** while
+`npm install mdka@2.2.1` in a clean directory installed and converted
+correctly.
+
+**The gate could never pass.** It packed the local tarball and installed that,
+per this RFC's handoff §5, which I wrote. But `optionalDependencies` are
+injected by `napi pre-publish` **at release time** — a locally packed tarball
+carries none, resolves no per-platform package, and always fails with
+`Cannot find native binding`. It reported on an artifact that is not the one
+published.
+
+The instruction to install **outside the workspace** was right. The artifact
+chosen was wrong, and the two are easy to conflate: installing a local tarball
+outside the workspace *looks* like consuming a published package and is not.
+
+**Corrected:** the gate installs the published package from the registry and
+requires it. No build needed, so it is also far faster.
+
+**The lag this introduces, stated rather than hidden:** the gate now reports on
+the *last published* release, not the working tree. That is inherent — a
+published artifact cannot be verified before it is published. What it buys is an
+alarm that would have been red for all twelve broken 2.x releases, plus a weekly
+schedule so a registry-side regression surfaces without waiting for a push.
+
+**Pre-publication verification of the artifact is therefore still absent**, and
+no gate can close it. The control that covers that gap is RFC 027's consumer
+pass, performed after a release.

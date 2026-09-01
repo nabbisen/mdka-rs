@@ -41,6 +41,22 @@ audit found it by checking the published sdist. We could not have.
 > **A gate must consume the artifact the way a consumer does: built, packaged,
 > installed from outside the workspace, then exercised.**
 
+**Sharpened 2026-09-01, after RFC 020's gate failed this test while appearing to
+pass it.** "Installed from outside the workspace" is not sufficient. RFC 020's
+gate packed the *local* tarball and installed that outside the workspace — which
+looks like consuming a published package and is not. `optionalDependencies` are
+injected at publish time, so the local tarball resolved nothing and the gate
+could never pass, even after the published package worked.
+
+> **The artifact must be the published one, fetched from the registry** — not a
+> locally produced stand-in for it.
+
+The consequence is a lag: such a gate reports on the last published release, not
+the working tree. That is inherent and cannot be engineered away — a published
+artifact cannot be verified before publication. Each gate below must say which
+side of that line it is on, and the residual pre-publication gap belongs to
+RFC 027's consumer pass.
+
 Anything short of that tests our intent rather than our output. This is the same
 lesson as `verify-ci` in M1b — a control validated in an environment that does
 not resemble the one it protects — generalised from the pipeline to the product.
