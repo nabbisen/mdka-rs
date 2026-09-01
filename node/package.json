@@ -32,9 +32,7 @@
   "types": "index.d.ts",
   "napi": {
     "binaryName": "mdka",
-    "package": {
-      "name": "@mdka/lib"
-    },
+    "packageName": "@mdka/lib",
     "targets": [
       "x86_64-unknown-linux-gnu",
       "arm64-apple-darwin",

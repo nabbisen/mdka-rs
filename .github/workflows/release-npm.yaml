@@ -167,7 +167,24 @@ jobs:
         run: |
           npx napi create-npm-dirs
           npx napi artifacts
-      
+
+      # RFC 020: this step was missing entirely, which is why `npm install
+      # mdka` produced an unusable package for the whole 2.x line -- the
+      # per-platform packages were never published past 1.6.9, and the main
+      # package's manifest never carried optionalDependencies at all.
+      #
+      # --no-gh-release is required, not optional: `napi pre-publish`
+      # defaults --gh-release to true and would otherwise attempt to create
+      # a second GitHub release for a tag create-release.yaml already
+      # released, which fails (non-fatally -- it's caught and logged -- but
+      # there is no reason to invite the noise).
+      - name: napi pre-publish (publish per-platform packages, inject optionalDependencies)
+        working-directory: node
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx napi pre-publish --no-gh-release
+
       - name: Publish
         working-directory: node
         env:
