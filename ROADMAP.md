@@ -272,6 +272,14 @@ who has installed the package.
 | 027 | Verification discipline: the consumer pass | P1 | S | `2.2.2` |
 | 007 | English-only public surface (carried from M2) | P2 | M | `2.2.2` |
 
+**Carried into `2.2.2`, added 2026-09-01 during review** — small items with no
+RFC number of their own:
+
+| Item | Source |
+|---|---|
+| Delete the orphaned `node/<platform>/` directories. `napi create-npm-dirs` has written to `node/npm/<platform>/` since commit `e231e1a` (2026-04-16), which dropped `--cwd .`; `version.sh`'s generic scan has been version-bumping dead files ever since. Deleting them is the fix — the scan exists for a live reason and should not be narrowed. | RFC 020 review |
+| Duplicate inputs to bulk conversion are reported as a collision: `mdka -o out/ a.html a.html` errors with a message naming the same path twice, and exits 1. No data is lost and the behaviour follows RFC 021's rule exactly, but a benign idempotent input should not fail a script. Needs the source paths canonicalized to tell a duplicate from a true collision — the one place canonicalization *is* required, which RFC 021's review correctly found unnecessary for comparing destinations. Whether it should warn-and-continue rather than error is a behaviour question to settle in that slice. | RFC 021 review |
+
 **Split into two releases, 2026-09-01.** M2b originally targeted a single
 `2.2.1`. RFC 020's implementation established that the npm fix **cannot be
 verified except by releasing** — no local or CI check can exercise a registry
