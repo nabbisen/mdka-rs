@@ -15,7 +15,15 @@ defaults:
 
 env:
   PRODUCT_BASENAME: mdka
-  TAG: ${{ github.ref_name }}            # tag or branch name
+  # TEMPORARY (RFC 020, 2.2.1 npm recovery) -- revert to
+  #   TAG: ${{ github.ref_name }}
+  # immediately after the recovery dispatch completes.
+  # Tag 2.2.1 carries the pre-fix workflow file (with the npm ci that broke
+  # the publish), and workflow_dispatch runs the definition at the ref it is
+  # given -- so this one run is dispatched from main instead. TAG is used
+  # only by the release-tag check below, so pinning it here lets that check
+  # run its real logic against the real release version rather than "main".
+  TAG: 2.2.1
   JOB_WORKDIR: tmp-${{ github.run_id }}  # unique number
 
 jobs:
@@ -183,7 +191,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx napi pre-publish --no-gh-release
+        # TEMPORARY (RFC 020, 2.2.1 npm recovery): --skip-optional-publish.
+        # The three @mdka/lib-* platform packages already published at 2.2.1
+        # in the first attempt; republishing them would 403. The flag skips
+        # only the publish -- optionalDependencies injection still happens,
+        # verified locally. Remove immediately after the recovery dispatch.
+        run: npx napi pre-publish --no-gh-release --skip-optional-publish
 
       # No `npm ci` here. The `napi pre-publish` step above rewrites
       # package.json to add optionalDependencies for the per-platform
