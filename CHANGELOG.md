@@ -11,6 +11,30 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-09-01
+
+### Fixed
+
+- **`npm install mdka` now installs a working package.** Every 2.x release
+  (`2.0.2` through `2.2.0`) published a main package whose manifest never
+  carried `optionalDependencies`, and whose bundled `index.js` required
+  unscoped per-platform packages (`mdka-<platform>`) that were never
+  published past `1.6.9` — only the scoped `@mdka/lib-<platform>` packages
+  were current. The result: `require('mdka')` threw `Cannot find module` for
+  every npm consumer, on every platform, for the whole 2.x line. Root cause:
+  `node/package.json` declared the scoped name under a nested
+  `napi.package.name` key that `@napi-rs/cli` never reads, silently falling
+  back to the unscoped root `name`. Fixed by using the flat `napi.packageName`
+  key napi-rs actually reads, and by adding the missing `napi pre-publish`
+  step to the npm release workflow, which publishes the per-platform packages
+  and injects `optionalDependencies` into the main package's manifest.
+- CI now packs and installs the actual npm tarball outside the checked-out
+  workspace on every push, asserting the installed package converts HTML
+  correctly. The previous `node` CI job tested the source tree directly,
+  which cannot detect this class of defect: the compiled native binding is
+  never in the published tarball's `files` list, so it passes regardless of
+  whether the published package is installable.
+
 ## [2.2.0] - 2026-08-12
 
 ### Added
