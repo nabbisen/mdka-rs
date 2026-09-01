@@ -23,6 +23,8 @@ node_modules/
 *.node
 bun.lock
 bun.lockb
+# generated: napi create-npm-dirs writes per-platform package dirs here at publish time
+node/npm/
 .env
 .env.*
 !.env.example
