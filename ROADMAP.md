@@ -84,6 +84,31 @@ fixes `S-02` **within** the existing error type, using
 If a 3.0 is ever opened, these are its first candidates. Until then the error
 type stays as it is, and the limitation is documented rather than worked around.
 
+### Scheduled surface removal inside v2 — owner decision, 2026-09-01
+
+**`mdka::alloc_counter` is deprecated in `2.2.2` and removed in `2.4.0`.**
+
+Removing public API in a 2.x release is formally a major change. The owner owns
+the version contract and ruled deliberately: deferring to a 3.0 that is not
+planned risks meaning "never", and a dated removal is better governance than an
+open-ended deferral. Recorded here as a scheduled break, not an oversight.
+
+What makes it responsible rather than merely decided:
+
+- **Two releases and one full milestone of deprecation notice**, with a
+  CHANGELOG entry at both ends.
+- **Zero known consumers, measured not estimated.** All six crates.io dependents
+  (`htm_md`, `bigquery-functions`, `elvish-core`, `threadcat`, `htmlmd-core`,
+  `zapmyco-tools`) were downloaded and grepped: none references
+  `alloc_counter`, `CountingAllocator` or `AllocSnapshot`. Every use of `mdka`
+  across all six is `from_html`, `html_to_markdown`, `html_to_markdown_with` or
+  `options`.
+- **A required gate at removal time** — see M4.
+
+This is the only scheduled break in the 2.x line. It is not a precedent for
+removing documented API; `alloc_counter` was never in the API reference and
+exists only to serve this repository's own benchmarks.
+
 ---
 
 ## Milestones
@@ -365,6 +390,23 @@ syntax including alignment and header rows; each rule in
 
 RFC 013 is a large, purely mechanical diff. It is scheduled into a quiet release
 deliberately, so it does not bury substantive changes in `git blame`.
+
+#### Scheduled: remove `mdka::alloc_counter` — with a required gate
+
+Deprecated in `2.2.2`, removed here, per the owner decision recorded above. No
+RFC number; it is the second half of RFC 022.
+
+> **Gate — before the removal lands, re-run the crates.io reverse-dependency
+> check** and confirm no dependent references `alloc_counter`,
+> `CountingAllocator` or `AllocSnapshot`.
+
+At the 2026-09-01 ruling all six dependents referenced none of them. **That
+check must be re-run, not cited.** New dependents appear between releases, and a
+two-release-old check is exactly the stale claim this project keeps finding. If
+a dependent then uses it, the removal waits and becomes 3.0 work.
+
+Also remove the `#[allow(deprecated)]` at the three benchmark and example use
+sites in the same change.
 
 #### Carried-forward review findings
 
