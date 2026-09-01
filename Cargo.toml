@@ -3,11 +3,11 @@ members  = [".", "node", "python", "cli"]
 resolver = "2"
 
 [workspace.dependencies]
-mdka = { version = "2.2.0", path = "." }
+mdka = { version = "2.2.1", path = "." }
 
 [package]
 name    = "mdka"
-version = "2.2.0"
+version = "2.2.1"
 edition = "2024"
 rust-version = "1.88"
 

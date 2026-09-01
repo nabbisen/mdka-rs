@@ -19,17 +19,18 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 020 | [npm distribution repair + install gate](./accepted/020-npm-distribution-repair.md) — [handoff](./handoffs/020-npm-distribution-repair/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
-| 021 | [Bulk conversion output-collision safety](./accepted/021-bulk-output-collision-safety.md) — [handoff](./handoffs/021-bulk-output-collision-safety/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
-| 022 | [CLI allocator removal; settle `jemalloc`](./accepted/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) | M2b → `2.2.1` | P1 |
-| 023 | [Getting-started documentation reconciliation](./accepted/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | M2b → `2.2.1` | P1 |
-| 026 | [Consumer-artifact verification gates](./accepted/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | M2b → `2.2.1` | **P0** |
-| 027 | [Verification discipline: the consumer pass](./accepted/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | M2b → `2.2.1` | P1 |
+| 021 | [Bulk conversion output-collision safety](./accepted/021-bulk-output-collision-safety.md) — [handoff](./handoffs/021-bulk-output-collision-safety/implementation-handoff.md) | M2b → `2.2.2` | **P0** |
+| 022 | [CLI allocator removal; settle `jemalloc`](./accepted/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) | M2b → `2.2.2` | P1 |
+| 023 | [Getting-started documentation reconciliation](./accepted/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | M2b → `2.2.2` | P1 |
+| 026 | [Consumer-artifact verification gates](./accepted/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | M2b → `2.2.2` | **P0** |
+| 027 | [Verification discipline: the consumer pass](./accepted/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | M2b → `2.2.2` | P1 |
 | 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
 **All eight accepted by the project owner, 2026-08-31.** They arise from the
-independent audit of that date.
+independent audit of that date. RFC 020 shipped in `2.2.1`, below; M2b split
+into `2.2.1` + `2.2.2` on 2026-09-01 once RFC 020's implementation established
+that the npm fix cannot be verified except by releasing it — see `ROADMAP.md`.
 
 **026 and 027 are the controls; the rest are the symptoms.** 020-025 fix what the
 audit found. 026 and 027 exist so the next class of defect is found by us rather
@@ -57,6 +58,7 @@ be seen failing before it is trusted**.
 | 006 | [Option docs and binding parity](./done/006-option-docs-and-binding-parity.md) — [handoff](./handoffs/006-option-docs-and-binding-parity/implementation-handoff.md) · closed M2 | 2.2.0 |
 | 018 | [README Quick Start: prebuilt binaries](./done/018-readme-prebuilt-binaries.md) — [handoff](./handoffs/018-readme-prebuilt-binaries/implementation-handoff.md) | 2.2.0 |
 | 019 | [Release creation via dispatch](./done/019-release-creation-via-dispatch.md) — [handoff](./handoffs/019-release-creation-via-dispatch/implementation-handoff.md) · superseded RFC 015 Slice 2 | 2.2.0 |
+| 020 | [npm distribution repair + install gate](./done/020-npm-distribution-repair.md) — [handoff](./handoffs/020-npm-distribution-repair/implementation-handoff.md) | 2.2.1 |
 
 ## Archive
 

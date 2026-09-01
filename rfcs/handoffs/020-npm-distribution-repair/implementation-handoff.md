@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 020 · npm distribution repair
 
-**Governing RFC.** [RFC 020](../../accepted/020-npm-distribution-repair.md)
+**Governing RFC.** [RFC 020](../../done/020-npm-distribution-repair.md)
 **Milestone.** M2b → `2.2.1`
 **Priority.** P0 — start here, ahead of everything else in M2b
 **Prepared.** 2026-08-31
