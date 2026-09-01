@@ -2,7 +2,9 @@ use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_m
 use std::hint::black_box;
 use std::time::Instant;
 
-use mdka::alloc_counter::{AllocSnapshot, CountingAllocator};
+#[path = "alloc_counter.rs"]
+mod alloc_counter;
+use alloc_counter::{AllocSnapshot, CountingAllocator};
 
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;

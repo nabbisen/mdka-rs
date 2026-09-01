@@ -19,11 +19,6 @@
 //!   -h, --help           このヘルプを表示
 //! ```
 
-// alloc_counter は CLI バイナリのみで登録する。
-// ライブラリ利用者のアロケータには一切干渉しない。
-#[global_allocator]
-static ALLOCATOR: mdka::alloc_counter::CountingAllocator = mdka::alloc_counter::CountingAllocator;
-
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process;

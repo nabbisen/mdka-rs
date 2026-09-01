@@ -2,10 +2,12 @@
 //!
 //! 実行: cargo run --example measure_mem
 
-#[global_allocator]
-static ALLOCATOR: mdka::alloc_counter::CountingAllocator = mdka::alloc_counter::CountingAllocator;
+#[path = "../benches/alloc_counter.rs"]
+mod alloc_counter;
+use alloc_counter::{AllocSnapshot, CountingAllocator};
 
-use mdka::alloc_counter::AllocSnapshot;
+#[global_allocator]
+static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 fn measure_allocs<F: Fn(&str)>(html: &str, f: F) -> usize {
     let mut allocs: Vec<usize> = (0..3)

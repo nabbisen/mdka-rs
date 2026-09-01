@@ -5,7 +5,9 @@
 //! CountingAllocator でアロケーションバイト数と回数を計測する。
 //! 各セルの値は n=5 回の計測の中央値。
 
-use mdka::alloc_counter::{AllocSnapshot, CountingAllocator};
+#[path = "../benches/alloc_counter.rs"]
+mod alloc_counter;
+use alloc_counter::{AllocSnapshot, CountingAllocator};
 
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;

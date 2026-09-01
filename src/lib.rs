@@ -26,9 +26,6 @@ mod renderer;
 mod traversal;
 mod utils;
 
-#[doc(hidden)]
-pub mod alloc_counter;
-
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};

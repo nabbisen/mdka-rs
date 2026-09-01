@@ -44,15 +44,12 @@ harness = false
 [features]
 default  = ["parallel"]
 parallel = ["dep:rayon"]
-jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
 
 [dependencies]
 scraper = "0.27"
 thiserror = "2"
 ego-tree = "0.11"
 rayon = { version = "1", optional = true }
-tikv-jemallocator = { version = "0.7", optional = true }
-tikv-jemalloc-ctl = { version = "0.7", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }

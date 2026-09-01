@@ -1,8 +1,16 @@
-//! ベンチマーク用スレッドローカル・アロケーションカウンタ。
+//! ベンチマーク・計測用スレッドローカル・アロケーションカウンタ。
 //!
 //! グローバルアロケータをラップし、alloc/dealloc バイト数を
-//! スレッドローカルに記録する。ベンチマークコードから
+//! スレッドローカルに記録する。計測コードから
 //! `reset()` / `snapshot()` で前後の差分を取る。
+//!
+//! ライブラリ本体には含まれない（RFC 022: CLI 利用者に計測用アロケータの
+//! コストを払わせないため撤去した）。`#[path]` で `benches/memory.rs` と
+//! `examples/{quick_mem,measure_mem}.rs` の三箇所からそれぞれ private module
+//! として取り込まれる。取り込み元ごとに使うフィールド／メソッドが異なるため
+//! dead_code を一括で抑制する。
+
+#![allow(dead_code)]
 
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};

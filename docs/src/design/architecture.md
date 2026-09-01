@@ -9,14 +9,14 @@ mdka/
 │   ├── options.rs         ConversionMode, ConversionOptions
 │   ├── traversal.rs       Markdown conversion traversal
 │   ├── renderer.rs        MarkdownRenderer state machine
-│   ├── utils.rs           Whitespace normalisation + escaping
-│   └── alloc_counter.rs   Custom allocator (for benchmarks)
+│   └── utils.rs           Whitespace normalisation + escaping
 ├── tests/             integration test modules
 ├── cli/               mdka-cli binary crate
 │   └── src/main.rs        Argument parsing + dispatch
 ├── node/              Node.js bindings (napi-rs v3)
 ├── python/            Python bindings (PyO3 v0)
 ├── benches/           criterion benchmarks
+│   └── alloc_counter.rs   Custom allocator (dev-only; benches + examples, not shipped in the library)
 └── examples/          Allocation measurement tool
 ```
 

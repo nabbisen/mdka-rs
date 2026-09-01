@@ -11,6 +11,31 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Changed
+
+- **The CLI no longer installs a counting allocator as its global allocator.**
+  It existed to measure heap allocation for benchmarking, but every allocation
+  on the hottest path — including the flagship parallel bulk-conversion path
+  — paid for a counter nothing read at runtime. Removing it measured roughly
+  8% faster on a 400-file, 1 MB-each bulk conversion (400 MB total, 32 cores,
+  release build): ~356ms before, ~327ms after (medians of 5 runs). Output is
+  byte-identical.
+- **`mdka::alloc_counter` is no longer public API.** It moved out of the
+  library entirely, into a dev-only module shared by the `benches/memory`
+  benchmark and the `examples/quick_mem`/`examples/measure_mem` tools. A
+  downstream crate that depended on `mdka::alloc_counter::CountingAllocator`
+  or `AllocSnapshot` — unlikely, since it existed only to support this
+  project's own benchmarks — needs to vendor the small counting-allocator
+  implementation itself; it is not going to reappear as public surface.
+
+### Removed
+
+- **The `jemalloc` Cargo feature.** It gated `tikv-jemallocator` and
+  `tikv-jemalloc-ctl`, but no code in the crate ever referenced either
+  dependency — enabling it changed nothing except build time and the
+  dependency graph. A consumer building with `--features jemalloc` was
+  already getting the system allocator; nothing they observe changes.
+
 ## [2.2.1] - 2026-09-01
 
 ### Fixed

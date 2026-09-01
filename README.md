@@ -199,6 +199,6 @@ Please understand that the project has its own direction — while we welcome fe
 
 ## Acknowledgements
 
-Depends on [scraper](https://crates.io/crates/scraper) (+ [html5ever](https://github.com/servo/html5ever)), [ego-tree](https://crates.io/crates/ego-tree), [rayon](https://crates.io/crates/rayon), [tikv-jemallocator](https://crates.io/crates/tikv-jemallocator) / [tikv-jemalloc-ctl](https://crates.io/crates/tikv-jemalloc-ctl), [thiserror](https://crates.io/crates/thiserror).
+Depends on [scraper](https://crates.io/crates/scraper) (+ [html5ever](https://github.com/servo/html5ever)), [ego-tree](https://crates.io/crates/ego-tree), [rayon](https://crates.io/crates/rayon), [thiserror](https://crates.io/crates/thiserror).
 
 Also, [napi-rs](https://github.com/napi-rs/napi-rs) on binding for Node.js and PyO3's [pyo3](https://github.com/PyO3/pyo3) / [maturin](https://github.com/PyO3/maturin) on bindings for Python.
