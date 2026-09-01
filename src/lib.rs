@@ -30,6 +30,7 @@ mod utils;
 pub mod alloc_counter;
 
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -162,6 +163,10 @@ where
 /// Important: Unlike single-file conversion,
 /// `out_dir` is **required** for bulk processing
 /// to ensure a consistent and predictable output location for all generated files.
+///
+/// 出力先が衝突する入力は、入力順で最初のものだけが変換される。以降の衝突は
+/// 変換を行わずエラーを返す（RFC 021: 衝突を検知せず最後に書いた者が勝つ挙動は、
+/// 他の入力のデータを無言で失わせる競合状態だった）。
 #[cfg(feature = "parallel")]
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],
@@ -172,13 +177,67 @@ where
     P: AsRef<Path> + Sync,
 {
     use rayon::prelude::*;
+    use std::collections::HashMap;
+    use std::collections::hash_map::Entry;
+
+    // 変換を始める前に、入力順で出力先の衝突を検知する。最初の出現が勝ち、
+    // 以降の同一出力先はここでエラー確定し、ファイル読み込みも書き込みも行わない。
+    // rayon のワーカーがどちらを先に書き終えるかに結果が左右される競合状態を、
+    // 検知を並列変換より前に置くことで断つ。
+    let mut claimed_by: HashMap<PathBuf, usize> = HashMap::with_capacity(paths.len());
+    let rejections: Vec<Option<MdkaError>> = paths
+        .iter()
+        .enumerate()
+        .map(|(i, path)| {
+            let dest = dest_path(path.as_ref(), out_dir);
+            match claimed_by.entry(dest.clone()) {
+                Entry::Vacant(e) => {
+                    e.insert(i);
+                    None
+                }
+                Entry::Occupied(e) => {
+                    let first = paths[*e.get()].as_ref();
+                    Some(
+                        io::Error::new(
+                            io::ErrorKind::AlreadyExists,
+                            format!(
+                                "output path collision: '{}' and '{}' both resolve to '{}'; \
+                                 the first occurrence in input order wins",
+                                first.display(),
+                                path.as_ref().display(),
+                                dest.display(),
+                            ),
+                        )
+                        .into(),
+                    )
+                }
+            }
+        })
+        .collect();
+
     paths
         .par_iter()
-        .map(|path| (path, do_convert_file(path.as_ref(), out_dir, opts)))
+        .zip(rejections.into_par_iter())
+        .map(|(path, rejection)| {
+            let result = match rejection {
+                Some(err) => Err(err),
+                None => do_convert_file(path.as_ref(), out_dir, opts),
+            };
+            (path, result)
+        })
         .collect()
 }
 
 // ── 共通コア ───────────────────────────────────────────────────────────────
+
+/// 入力パスと出力先ディレクトリから、書き出し先パスを一意に決定する。
+/// 衝突検知（バルク変換）と実際の書き出し（`do_convert_file`）の両方から
+/// 呼ばれる共通ロジック。ここが二箇所に分かれると、検知と書き込みが食い違い
+/// うる（RFC 021）。
+fn dest_path(src: &Path, out_dir: &Path) -> PathBuf {
+    let stem = src.file_stem().unwrap_or_default();
+    out_dir.join(stem).with_extension("md")
+}
 
 /// HTML ファイルを読み込み → 変換 → 書き出しする共通処理。
 /// 単体変換・バルク変換の両方から呼ばれる。
@@ -191,8 +250,7 @@ fn do_convert_file(
     fs::create_dir_all(out_dir)?;
     let html = fs::read_to_string(src)?;
     let md = html_to_markdown_with(&html, opts);
-    let stem = src.file_stem().unwrap_or_default();
-    let dest = out_dir.join(stem).with_extension("md");
+    let dest = dest_path(src, out_dir);
     fs::write(&dest, md)?;
     Ok(dest)
 }

@@ -94,6 +94,91 @@ fn file_to_markdown_same_dir_vs_bulk_consistency() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+#[test]
+fn html_files_to_markdown_stem_collision_first_wins() {
+    // RFC 021 (S-02): two inputs whose output stems collide used to let
+    // whichever rayon worker wrote last silently discard the other's
+    // content while both reported success. First occurrence in input order
+    // must now win deterministically; the later collider must error without
+    // writing anything, naming both sources and the destination.
+    let dir = std::env::temp_dir().join("mdka_test_collision");
+    let dir_a = dir.join("a");
+    let dir_b = dir.join("b");
+    let out = dir.join("out");
+    std::fs::create_dir_all(&dir_a).unwrap();
+    std::fs::create_dir_all(&dir_b).unwrap();
+    std::fs::create_dir_all(&out).unwrap();
+
+    let src_a = dir_a.join("index.html");
+    let src_b = dir_b.join("index.html");
+    std::fs::write(&src_a, "<h1>FROM A</h1>").unwrap();
+    std::fs::write(&src_b, "<h1>FROM B</h1>").unwrap();
+
+    let paths = vec![src_a.clone(), src_b.clone()];
+    let results = mdka::html_files_to_markdown(&paths, &out);
+
+    assert_eq!(results.len(), 2);
+    let (first_src, first_res) = &results[0];
+    let (second_src, second_res) = &results[1];
+    assert_eq!(*first_src, &src_a);
+    assert_eq!(*second_src, &src_b);
+
+    let dest = first_res
+        .as_ref()
+        .unwrap_or_else(|e| panic!("first occurrence must win, got: {e}"));
+    assert_eq!(dest, &out.join("index.md"));
+
+    let err = second_res
+        .as_ref()
+        .expect_err("later collider must return an error, not overwrite");
+    let msg = err.to_string();
+    assert!(msg.contains(&src_a.display().to_string()), "got: {msg}");
+    assert!(msg.contains(&src_b.display().to_string()), "got: {msg}");
+    assert!(msg.contains(&dest.display().to_string()), "got: {msg}");
+
+    let content = std::fs::read_to_string(dest).unwrap();
+    assert_eq!(
+        content.trim(),
+        "# FROM A",
+        "surviving file must hold the first input's content, got: {content}"
+    );
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn html_files_to_markdown_stem_collision_deterministic_over_many_runs() {
+    // The defect was a race: the winner depended on which rayon worker
+    // finished last. Run the collision case repeatedly and confirm the
+    // first input wins every time.
+    let dir = std::env::temp_dir().join("mdka_test_collision_repeated");
+    let dir_a = dir.join("a");
+    let dir_b = dir.join("b");
+    std::fs::create_dir_all(&dir_a).unwrap();
+    std::fs::create_dir_all(&dir_b).unwrap();
+
+    let src_a = dir_a.join("index.html");
+    let src_b = dir_b.join("index.html");
+    std::fs::write(&src_a, "<h1>FROM A</h1>").unwrap();
+    std::fs::write(&src_b, "<h1>FROM B</h1>").unwrap();
+    let paths = vec![src_a, src_b];
+
+    for i in 0..20 {
+        let out = dir.join(format!("out{i}"));
+        std::fs::create_dir_all(&out).unwrap();
+        let results = mdka::html_files_to_markdown(&paths, &out);
+        assert!(results[0].1.is_ok(), "run {i}: first input must win");
+        assert!(
+            results[1].1.is_err(),
+            "run {i}: second input must be rejected"
+        );
+        let content = std::fs::read_to_string(results[0].1.as_ref().unwrap()).unwrap();
+        assert_eq!(content.trim(), "# FROM A", "run {i}: got {content}");
+    }
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
 // ─── html_files_to_markdown (parallel bulk) ───────────────────────────────
 
 #[test]
