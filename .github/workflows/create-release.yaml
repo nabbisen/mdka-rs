@@ -64,8 +64,23 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
+          tag="${{ github.ref_name }}"
+          link="https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md"
+
+          # Point at this version's CHANGELOG section. GitHub's heading anchor
+          # includes the release date ("## [2.2.1] - 2026-09-01" -> #221---2026-09-01),
+          # so it has to be derived from the heading rather than the version alone.
+          # If the heading is not found, the link degrades to the file itself --
+          # never to a broken anchor.
+          heading=$(grep -m1 "^## \[${tag}\]" CHANGELOG.md || true)
+          if [ -n "$heading" ]; then
+            anchor=$(printf '%s' "$heading" | sed 's/^## //' | tr -d '[].' | tr ' ' '-' | tr 'A-Z' 'a-z')
+            link="${link}#${anchor}"
+          fi
+
+          gh release create "${tag}" \
+            --title "${tag}" \
+            --notes "📖 [Changelog for ${tag}](${link})" \
             --generate-notes
 
       - name: Start the publishing workflows

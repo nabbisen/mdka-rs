@@ -279,6 +279,7 @@ RFC number of their own:
 | Item | Source |
 |---|---|
 | Delete the orphaned `node/<platform>/` directories. `napi create-npm-dirs` has written to `node/npm/<platform>/` since commit `e231e1a` (2026-04-16), which dropped `--cwd .`; `version.sh`'s generic scan has been version-bumping dead files ever since. Deleting them is the fix — the scan exists for a live reason and should not be narrowed. | RFC 020 review |
+| GitHub Release notes link to the release's `CHANGELOG.md` section. They previously carried only `Full Changelog: 2.2.0...2.2.1`. The anchor is derived from the heading, since GitHub's anchor includes the release date (`## [2.2.1] - 2026-09-01` → `#221---2026-09-01`) and no version-only anchor exists; a missing heading degrades to a plain file link. Landed 2026-09-01; **first exercised at `2.2.2`**, since `create-release.yaml` only runs at a release. | Owner request |
 | Duplicate inputs to bulk conversion are reported as a collision: `mdka -o out/ a.html a.html` errors with a message naming the same path twice, and exits 1. No data is lost and the behaviour follows RFC 021's rule exactly, but a benign idempotent input should not fail a script. Needs the source paths canonicalized to tell a duplicate from a true collision — the one place canonicalization *is* required, which RFC 021's review correctly found unnecessary for comparing destinations. Whether it should warn-and-continue rather than error is a behaviour question to settle in that slice. | RFC 021 review |
 
 **Split into two releases, 2026-09-01.** M2b originally targeted a single
