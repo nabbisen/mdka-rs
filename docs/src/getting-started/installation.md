@@ -15,19 +15,25 @@ That is the only step. mdka has no system dependencies.
 
 ## As a CLI Binary
 
-Build from source using the `mdka-cli` crate in the workspace:
+**Download a prebuilt binary** — no Rust toolchain needed — from the
+[latest release](https://github.com/nabbisen/mdka-rs/releases/latest). Which
+platforms have one, and the exact archive name for each, is listed in the
+[README's Quick Start](https://github.com/nabbisen/mdka-rs#try-it-from-the-command-line);
+that table is the single source, so it is linked here rather than repeated.
+
+Or install directly with cargo, which builds for whatever platform you are on:
+
+```bash
+cargo install mdka-cli
+```
+
+Or build from source using the `mdka-cli` crate in the workspace:
 
 ```bash
 git clone https://github.com/nabbisen/mdka-rs
 cd mdka-rs
 cargo build --release -p mdka-cli
 # Binary: ./target/release/mdka
-```
-
-Or install directly with cargo:
-
-```bash
-cargo install mdka-cli
 ```
 
 ## As a Node.js Package

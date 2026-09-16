@@ -30,10 +30,20 @@ Node.js event loop free:
 ```js
 const { htmlToMarkdownAsync } = require('mdka')
 
-const md = await htmlToMarkdownAsync(html)
+const html = '<h1>Hello</h1>'
+const pages = [
+  { html: '<h1>A</h1>' },
+  { html: '<p>B</p>' },
+]
 
-// Concurrent conversion of many pages
-const results = await Promise.all(pages.map(p => htmlToMarkdownAsync(p.html)))
+async function main() {
+  const md = await htmlToMarkdownAsync(html)
+
+  // Concurrent conversion of many pages
+  const results = await Promise.all(pages.map(p => htmlToMarkdownAsync(p.html)))
+  console.log(md, results)
+}
+main()
 ```
 
 ## Conversion with Options
@@ -113,6 +123,30 @@ overwriting.
 **Three** of the deprecated attribute options are accepted here and have **no
 effect**: `preserveClasses`, `preserveDataAttrs` and `preserveAriaAttrs`.
 Markdown has no attribute syntax to carry them into.
+
+Passing any of the three to a **synchronous** function emits a
+`DeprecationWarning`. By default the call still succeeds — but **under
+`node --throw-deprecation` it throws**. Remove the option; it changes nothing.
+The `Async` functions cannot emit the warning at all, so silence from them is
+not evidence that no deprecated option is in use. While migrating, suppress
+mdka's notices narrowly:
+
+```js
+const { htmlToMarkdownWith } = require('mdka')
+
+// Drop only mdka's own deprecation notices; everything else passes through.
+const emitWarning = process.emitWarning
+process.emitWarning = function (warning, ...rest) {
+  const message = typeof warning === 'string' ? warning : warning?.message
+  if (message?.startsWith('mdka: `')) return
+  return emitWarning.call(process, warning, ...rest)
+}
+
+const md = htmlToMarkdownWith('<p>x</p>', { preserveClasses: true })
+```
+
+This still works under `--throw-deprecation`, and other deprecation warnings
+throw as before.
 
 The other two — `preserveUnknownAttrs` and `dropPresentationAttrs` — exist on
 the Rust `ConversionOptions` but are **not fields of `JsConversionOptions`**,

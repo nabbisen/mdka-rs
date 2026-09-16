@@ -37,8 +37,11 @@ match html_file_to_markdown("page.html", None::<&str>) {
 
 Because there is only one variant today, you can also use `?` directly:
 
-```rust
+```rust,no_run
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 let result = mdka::html_file_to_markdown("page.html", None::<&str>)?;
+# Ok(())
+# }
 ```
 
 ## Bulk Conversion Errors

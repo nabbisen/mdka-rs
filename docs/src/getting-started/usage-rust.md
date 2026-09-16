@@ -65,7 +65,8 @@ assert!(!md.contains("Copyright"));  // footer removed
 
 ## Converting a Single File
 
-```rust
+```rust,no_run
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use mdka::html_file_to_markdown;
 
 // Output goes to the same directory as the input: page.html → page.md
@@ -74,11 +75,14 @@ println!("{} → {}", result.src.display(), result.dest.display());
 
 // Output goes to a specific directory
 let result = html_file_to_markdown("page.html", Some("out/"))?;
+# Ok(())
+# }
 ```
 
 ## Bulk Parallel Conversion
 
-```rust
+```rust,no_run
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use mdka::html_files_to_markdown;
 use std::path::Path;
 
@@ -92,6 +96,8 @@ for (src, result) in html_files_to_markdown(&files, out_dir) {
         Err(e)   => eprintln!("Error: {src}: {e}"),
     }
 }
+# Ok(())
+# }
 ```
 
 Conversion runs in parallel using [rayon](https://crates.io/crates/rayon).

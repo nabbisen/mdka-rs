@@ -61,13 +61,16 @@ Reads one HTML file, converts it, and writes a `.md` file.
 **Returns:** [`ConvertResult`](#convertresult) with the resolved `src` and `dest` paths.  
 **Errors:** `MdkaError::Io` if the file cannot be read or the output cannot be written.
 
-```rust
+```rust,no_run
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 // page.html → page.md in the same folder
 let r = mdka::html_file_to_markdown("page.html", None::<&str>)?;
 
 // page.html → out/page.md
 let r = mdka::html_file_to_markdown("page.html", Some("out/"))?;
 println!("{} → {}", r.src.display(), r.dest.display());
+# Ok(())
+# }
 ```
 
 ---
@@ -103,7 +106,8 @@ Converts multiple HTML files in parallel using [rayon](https://crates.io/crates/
 **`out_dir`:** Directory for all output `.md` files. Created automatically if it does not exist, as with the single-file variants.  
 **Returns:** A `Vec` of `(input_path, Result<output_path, error>)` pairs in the **same order** as `paths`. Each element represents the outcome for one file independently.
 
-```rust
+```rust,no_run
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
 
 let files = vec!["a.html", "b.html", "c.html"];
@@ -115,6 +119,8 @@ for (src, result) in mdka::html_files_to_markdown(&files, Path::new("out/")) {
         Err(e)   => eprintln!("{src}: {e}"),
     }
 }
+# Ok(())
+# }
 ```
 
 ---

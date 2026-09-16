@@ -44,8 +44,29 @@ md = mdka.html_to_markdown_with(
 
 **Three** of the deprecated attribute options are accepted here and have **no
 effect**: `preserve_classes`, `preserve_data_attrs` and `preserve_aria_attrs`.
-Markdown has no attribute syntax to carry them into. They are kept so existing
-calls keep working.
+Markdown has no attribute syntax to carry them into.
+
+Passing any of the three emits a `DeprecationWarning`. By default that is only a
+warning and the call succeeds — but **under warnings-as-errors it fails**:
+`python -W error`, or pytest with `filterwarnings = error`, turns the call into
+a raised `DeprecationWarning`. Remove the argument; it changes nothing. While
+migrating, suppress it narrowly — for mdka's notices only, for one block:
+
+```python
+import warnings
+import mdka
+
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        message=r"mdka: `preserve_",
+    )
+    md = mdka.html_to_markdown_with("<p>x</p>", preserve_classes=True)
+```
+
+This still works under `python -W error`, and leaves every other library's
+deprecation warnings raising as before.
 
 The other two — `preserve_unknown_attrs` and `drop_presentation_attrs` — exist
 on the Rust `ConversionOptions` but are **not exposed by this binding at all**.

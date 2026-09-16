@@ -130,9 +130,26 @@ expressible in the output — these fields described behaviour the format
 could not represent, and never changed a single byte of Markdown in any
 released version. See
 [RFC 005](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/005-conversion-options-semantics.md)
-for the analysis. If you are currently setting any of these, nothing
-changes: they remain present on the struct and accept any value, they
-simply do nothing.
+for the analysis. They remain present on the struct and accept any value, and
+they change nothing about the output.
+
+Setting one is **not** silent, though: each field is `#[deprecated]`, so it is a
+compile-time warning. **Under `-D warnings` it is a build failure** —
+`RUSTFLAGS="-D warnings"`, or `#![deny(warnings)]` in your crate. Remove the
+assignment; it changes nothing. While migrating, allow it narrowly, around the
+assignment only rather than for the whole crate:
+
+```rust
+use mdka::options::{ConversionMode, ConversionOptions};
+
+let mut opts = ConversionOptions::for_mode(ConversionMode::Balanced);
+#[allow(deprecated)]
+{
+    opts.preserve_classes = true;
+}
+```
+
+This builds under `-D warnings`.
 
 Attribute preservation is a legitimate feature some Markdown flavours
 (Pandoc, kramdown) support. If mdka adds it, it will be a new,
