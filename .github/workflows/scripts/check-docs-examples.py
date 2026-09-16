@@ -214,12 +214,30 @@ def check_rust(blocks, workdir):
         # for. If mdBook's wrapping is inconvenient for an example, fix the
         # example (a hidden fallible main) -- do not teach the gate to forgive.
         #
+        # Since 031b the site has no Run button (docs/book.toml sets
+        # playground.runnable = false: mdka is not in the playground's crate
+        # set). The wrapping rule still holds -- it is what `mdbook test` and a
+        # reader pasting the visible code under a plain `fn main` both get, and
+        # the hidden `# fn main` lines added for D1 only make sense against it.
+        #
         # The body is not indented: mdBook does not, and indenting would inject
         # spaces into a multi-line raw string literal.
         if "fn main" not in code:
             code = "fn main() {\n%s\n}" % code
         name = f"ex{n}"
         names[name] = b
+        # mdBook prepends `#![allow(unused)]`; this adds `deprecated`, because
+        # examples set deprecated fields on purpose. It never changes pass/fail
+        # -- warnings do not fail a normal build -- but it is a SUBSTITUTION
+        # (RFC 031 §6) with a consequence: THIS GATE CANNOT VERIFY ANY CLAIM
+        # ABOUT DEPRECATION WARNINGS. api/options.md says its snippet "builds
+        # under -D warnings"; delete that snippet's narrow #[allow] and this
+        # gate stays green. Such claims are verified by executing them under
+        # -D warnings instead -- for now the D7 captures kept with the RFC 031
+        # and 031b review requests. Do not cite a green gate for them.
+        #
+        # Removing `deprecated` here would not fix that (the gate still would
+        # not build with -D warnings); the comment is the fix.
         (proj / "src" / "bin" / f"{name}.rs").write_text(
             "#![allow(unused, deprecated)]\n" + code, encoding="utf-8"
         )
@@ -363,9 +381,26 @@ def check_js(blocks, workdir, binding_dir):
     (`require()` plus top-level `await`) and would then have hit undefined
     variables. Neither is a syntax error, so the check could not see either.
 
-    Execution runs against the real built binding, installed as
+    Execution runs against the locally built binding, installed as
     `node_modules/mdka` in a fresh sandbox per example, so one example's output
     files cannot affect another's result.
+
+    SUBSTITUTION (RFC 031 §6). A consumer does not get this: they get the
+    published `index.js`, which resolves a platform package (`@mdka/lib-*`)
+    through `optionalDependencies`. Copying a local `.node` beside `index.js`
+    skips that resolution entirely, so a resolution defect -- RFC 020's class,
+    where `npm install mdka` was unusable for twelve releases -- passes here.
+    That class is covered by the `npm install gate`, which installs the
+    published package from the registry. Do not cite this gate for it.
+
+    What this still lets through, that a consumer would hit:
+      - an example that exits 0 but prints output other than the page claims;
+      - a failure only on macOS or Windows, or only on real-sized input rather
+        than the one-line fixtures;
+      - a deprecated option in an example: a DeprecationWarning does not change
+        the exit code, and the Async functions never warn at all;
+      - a package-resolution defect, per the substitution above.
+    An example reading a file outside JS_FIXTURES fails loudly, never passes.
     """
     binding = Path(binding_dir)
     have_binding = (binding / "index.js").exists() and any(binding.glob("*.node"))
