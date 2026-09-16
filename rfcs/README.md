@@ -15,8 +15,9 @@ Awaiting the owner's decision.
 - [034 — PyPI: a declared wheel matrix, built on purpose and checked where it is published](./proposed/034-pypi-declared-wheel-matrix.md)
   — 2.2.3's wheel coverage is whatever each runner image had: no Python 3.8 wheel
   on glibc x86_64 despite `>=3.8`, nothing below 3.10 on Windows or 3.11 on macOS.
-  Nothing checks the set before or after the irreversible upload. **Three owner
-  decisions inside** (Python floor, free-threaded, PyPy).
+  Nothing checks the set before or after the irreversible upload. Free-threaded
+  and PyPy wheels: **not declared** (owner, 2026-09-16). Python floor:
+  **recommended 3.10, raised only on a trigger** — awaiting confirmation.
 
 ## Accepted
 
