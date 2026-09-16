@@ -432,14 +432,15 @@ Purely additive element coverage. Tables are the largest known gap against the
 project's GFM positioning; today `<table>` content is emitted as an unstructured
 text run.
 
-| RFC | Title | Priority | Size |
-|---|---|---|---|
-| 025 | Markdown output-validity harness | **P0** | M |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M |
+| RFC | Title | Priority | Size | Order |
+|---|---|---|---|---|
+| 030 | Crates package gate: verify the workspace, not the registry | P1 | S | **first** — independent of the rest |
+| 025 | Markdown output-validity harness | **P0** | M | before 024 |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
-| 010 | Escaping & text-processing correctness audit | P0 | M |
-| 008 | GFM table support | P1 | L |
-| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M |
+| 010 | Escaping & text-processing correctness audit | P0 | M | after 024 |
+| 008 | GFM table support | P1 | L | — |
+| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M | after 008 |
 
 **Reordered by the 2026-08-31 audit.** Tables were the largest *known* gap; the
 audit found the larger *unknown* one. `mdka` produces invalid Markdown for
@@ -447,7 +448,18 @@ several everyday constructs — a linked image, bold inside a link, a bare `<pre
 a code span containing `_`. Emitting a correct table matters less than emitting
 correct output for HTML that is already in scope, so 024/025/010 precede 008.
 
-**RFC 025 lands first, and is the reason the rest are findable.** 136 tests were
+**RFC 030 goes first, ahead of the engine work, though it is not the most
+important item here.** It is CI-only and small, and it repairs the instrument
+that will be watching everything else in M3. The crates package gate has been
+red at every release since RFC 026 created it, and its red *skips* `mdka-node`
+and `mdka-python` — so for two releases nothing has verified that those two
+crates package standalone. Worse, now that `2.2.3` is published the gate will
+read **green on `main` with no code change at all**, and flip red again at the
+next version bump: its colour tracks the release calendar rather than the tree.
+Fix the instrument before taking the measurements.
+
+**RFC 025 lands first among the engine work, and is the reason the rest are
+findable.** 136 tests were
 green while all of this shipped, because no test parses mdka's output as
 Markdown — every renderer assertion compares against a string we wrote ourselves.
 A suite authored by the same hand as the renderer cannot discover that the

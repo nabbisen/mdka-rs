@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-Awaiting the owner's decision.
-
-- [030 — Crates package gate: verify the workspace, not the registry](./proposed/030-crates-package-gate-workspace-resolution.md)
-  — the gate has been red at every release since RFC 026 introduced it, and its
-  red skips `mdka-node` and `mdka-python` entirely. Fix verified against an
-  unpublished version.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -27,10 +22,16 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
+| 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** |
 
-All three are M3. **Sequencing: 025 precedes 024, and 028 follows both** — the
-harness must be able to observe the defects before the fixes claim to have
-removed them, and RFC 028's mechanism choice depends on RFC 024's shape.
+All four are M3. **Sequencing: 030 first, then 025, then 024, then 028.**
+
+- **030 goes first** and is independent of the other three. It is small, it is
+  CI-only, and it repairs the gate that will be watching all the engine work
+  that follows. Fixing the instrument before taking the measurements.
+- **025 precedes 024**, and **028 follows both** — the harness must be able to
+  observe the defects before the fixes claim to have removed them, and RFC 028's
+  mechanism choice depends on RFC 024's shape.
 
 **RFC 028's handoff is queued, not dispatched** — its own §0 states the
 preconditions, which are not yet met.
