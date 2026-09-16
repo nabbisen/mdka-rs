@@ -106,11 +106,12 @@ fn pre_code_keeps_its_language() {
 }
 
 #[test]
-fn whitespace_before_code_in_pre_stays_where_it_was() {
-    // Byte-identical to 2.2.3 for pretty-printed <pre>\n  <code>.
+fn whitespace_before_code_in_pre_is_content_after_the_fence() {
+    // Rule 6: the fence starts its line and keeps the language; the whitespace
+    // is the code block's text, as a browser shows it.
     assert_eq!(
         conv("<pre>\n  <code class=\"language-js\">x()</code>\n</pre>"),
-        "  ```js\nx()\n```\n"
+        "```js\n  x()\n```\n"
     );
 }
 

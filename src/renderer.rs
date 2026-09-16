@@ -21,13 +21,13 @@ pub struct ListContext {
 ///
 /// The fence belongs to `<pre>`, not to `<code>`, so a `<pre>` without a
 /// `<code>` child still opens and closes one. It is held until the first
-/// content so that `<pre><code class="language-x">` can still name the
-/// language, which keeps `<pre><code>` output byte-identical.
+/// content so that a `<code>` preceded only by whitespace can still name the
+/// language (`<pre>\n  <code class="language-x">`).
 enum Fence {
     /// Not inside `<pre>`.
     None,
     /// Inside `<pre>`, fence not written yet. Whitespace-only text seen so far
-    /// is held and written just before the fence, where it was before.
+    /// is held; it is code block content, written after the fence line.
     Pending {
         held: String,
     },
@@ -88,13 +88,20 @@ impl MarkdownRenderer {
     }
 
     /// Writes the pending opening fence of the current `<pre>`, if any.
+    ///
+    /// The fence starts its line; whitespace held before it is part of the
+    /// code block's text and follows the fence line (RFC 024 rule 6). Written
+    /// in front of the fence, four or more spaces would turn the fence into an
+    /// indented code block's text, and the closing fence would then open a
+    /// block that swallows the rest of the document.
     fn open_fence(&mut self, lang: &str) {
         if let Fence::Pending { held } = std::mem::replace(&mut self.fence, Fence::Open) {
-            let mut line = held;
+            let mut line = String::with_capacity(lang.len() + 4);
             line.push_str("```");
             line.push_str(lang);
             line.push('\n');
             self.sink.fence_line(&line);
+            self.sink.code_block_content(&held);
         }
     }
 

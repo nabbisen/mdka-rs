@@ -24,14 +24,11 @@ cells! {
     text_after_code_in_pre: "<pre><code>x</code> tail</pre>"
         => tree(r#"codeblock("x tail")"#);
     four_spaces_before_code_in_pre: r#"<pre>    <code class="language-js">x</code></pre>"#
-        => tree(r#"codeblock[js]("    x")"#),
-        defect(Rfc024, "held whitespace is written in front of the fence: an indented code block holding the literal fence, `x` as a paragraph, and an open fence");
+        => tree(r#"codeblock[js]("    x")"#);
     two_spaces_before_code_in_pre: r#"<pre>  <code class="language-js">x</code></pre>"#
-        => tree(r#"codeblock[js]("  x")"#),
-        defect(Rfc024, "held whitespace is written in front of the fence: the block is right but its two spaces are lost from the content");
+        => tree(r#"codeblock[js]("  x")"#);
     pretty_printed_pre_code_then_content: "<pre>\n    <code class=\"language-js\">x</code>\n</pre><p>after</p><h2>later</h2>"
-        => tree(r#"codeblock[js]("    x"), para("after"), h2("later")"#),
-        defect(Rfc024, "held whitespace is written in front of the fence: the closing fence opens a code block that swallows `after` and `## later`");
+        => tree(r#"codeblock[js]("    x"), para("after"), h2("later")"#);
     newline_before_code_in_pre: "<pre>\n<code>x</code></pre>"
         => tree(r#"codeblock("x")"#);
     newline_after_code_in_pre: "<pre><code>x</code>\n</pre>"
