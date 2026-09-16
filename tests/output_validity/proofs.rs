@@ -1,8 +1,12 @@
 //! §5.1 and §9.5 — the helper and every property, each shown failing.
+//!
+//! Every red path here uses a stub converter with frozen broken output, never
+//! a live mdka defect: a proof built on a real defect breaks the moment that
+//! defect is fixed (RFC 024 fixed the three these proofs first used).
 
 use mdka::options::{ConversionMode, ConversionOptions};
 
-use crate::corpus::{harness_dir, run_dir};
+use crate::corpus::{harness_dir, run_dir, run_dir_with};
 use crate::harness::{
     ModeResult, Owner, Reading, evaluate, known_defect_with, mdka_convert, properties, structure,
     tree,
@@ -15,11 +19,16 @@ fn correct_strong_in_a(_: &str, _: &ConversionOptions) -> String {
     "[**b**](/out)\n".to_string()
 }
 
+/// mdka 2.2.3's output for `STRONG_IN_A`, frozen.
+fn broken_strong_in_a(_: &str, _: &ConversionOptions) -> String {
+    "****[b](/out)\n".to_string()
+}
+
 fn correct_in_minimal_only(html: &str, opts: &ConversionOptions) -> String {
     if opts.mode == ConversionMode::Minimal {
         correct_strong_in_a(html, opts)
     } else {
-        mdka_convert(html, opts)
+        broken_strong_in_a(html, opts)
     }
 }
 
@@ -32,7 +41,7 @@ fn panicking(_: &str, _: &ConversionOptions) -> String {
 #[test]
 fn marked_defect_passes_while_the_defect_is_present() {
     let r = known_defect_with(
-        mdka_convert,
+        broken_strong_in_a,
         Owner::Rfc024,
         "proof",
         STRONG_IN_A,
@@ -272,9 +281,23 @@ fn only_minimal_drops_shell_content() {
 
 // ── §7.2 the directory runner ──────────────────────────────────────────────
 
+/// mdka 2.2.3's output for the two violating proof files, frozen; the valid
+/// file goes through mdka.
+fn frozen_2_2_3_for_proof_files(html: &str, opts: &ConversionOptions) -> String {
+    if html.contains("<pre>plain</pre>") {
+        "plain\n```\n\nAfter\n".to_string()
+    } else if html.contains(r#"href="/logo""#) {
+        "![Logo](logo.png)[](/logo)\n\n****[Readmore](/more)\n".to_string()
+    } else {
+        mdka_convert(html, opts)
+    }
+}
+
 #[test]
 fn runner_reports_the_violating_files_and_only_them() {
-    let (files, violations) = run_dir(&harness_dir("corpus_proof")).expect("proof directory");
+    let (files, violations) =
+        run_dir_with(&harness_dir("corpus_proof"), frozen_2_2_3_for_proof_files)
+            .expect("proof directory");
     assert_eq!(
         files,
         ["linked_inline.html", "valid.html", "violating.html"]

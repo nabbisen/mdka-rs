@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use mdka::options::ConversionOptions;
 
-use crate::harness::{MODES, READINGS, mdka_convert, properties};
+use crate::harness::{Convert, MODES, READINGS, mdka_convert, properties};
 
 pub fn harness_dir(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -25,6 +25,11 @@ pub fn harness_dir(name: &str) -> PathBuf {
 /// A directory with no `.html` files is an error: a runner that checked
 /// nothing must not report success.
 pub fn run_dir(dir: &Path) -> Result<(Vec<String>, Vec<String>), String> {
+    run_dir_with(dir, mdka_convert)
+}
+
+/// [`run_dir`] with a given converter; the runner proof substitutes a stub.
+pub fn run_dir_with(dir: &Path, convert: Convert) -> Result<(Vec<String>, Vec<String>), String> {
     let mut files: Vec<PathBuf> = std::fs::read_dir(dir)
         .map_err(|e| format!("{}: {e}", dir.display()))?
         .filter_map(|entry| entry.ok().map(|e| e.path()))
@@ -48,7 +53,7 @@ pub fn run_dir(dir: &Path) -> Result<(Vec<String>, Vec<String>), String> {
         let html = std::fs::read_to_string(path).map_err(|e| format!("{name}: {e}"))?;
         for mode in MODES {
             let opts = ConversionOptions::for_mode(mode);
-            let md = match catch_unwind(AssertUnwindSafe(|| mdka_convert(&html, &opts))) {
+            let md = match catch_unwind(AssertUnwindSafe(|| convert(&html, &opts))) {
                 Ok(md) => md,
                 Err(_) => {
                     violations.push(format!("{name} ({mode}): [error] conversion panicked"));
