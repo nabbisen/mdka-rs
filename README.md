@@ -36,9 +36,9 @@ CMS output, and SPA-rendered DOM without special-casing.
     Conversion uses non-recursive DFS throughout. There is no stack overflow,
 no matter the nesting depth.
 - **Configurable pre-processing.**
-    Five [conversion modes](#conversion-modes) let you tune what gets kept or
+    Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html) let you tune what gets kept or
 stripped, from noise-free LLM input to maximum retention. Three of the five
-currently produce identical output — see [Conversion Modes](#conversion-modes).
+currently produce identical output — see [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html).
 - **Multi-language.**
     The same Rust implementation is accessible from Node.js (napi-rs) and
 Python (PyO3).

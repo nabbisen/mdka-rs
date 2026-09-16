@@ -66,38 +66,38 @@ assert!(!md.contains("Copyright"));  // footer removed
 ## Converting a Single File
 
 ```rust,no_run
-# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use mdka::html_file_to_markdown;
 
-// Output goes to the same directory as the input: page.html → page.md
-let result = html_file_to_markdown("page.html", None::<&str>)?;
-println!("{} → {}", result.src.display(), result.dest.display());
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Output goes to the same directory as the input: page.html → page.md
+    let result = html_file_to_markdown("page.html", None::<&str>)?;
+    println!("{} → {}", result.src.display(), result.dest.display());
 
-// Output goes to a specific directory
-let result = html_file_to_markdown("page.html", Some("out/"))?;
-# Ok(())
-# }
+    // Output goes to a specific directory
+    let result = html_file_to_markdown("page.html", Some("out/"))?;
+    Ok(())
+}
 ```
 
 ## Bulk Parallel Conversion
 
 ```rust,no_run
-# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use mdka::html_files_to_markdown;
 use std::path::Path;
 
-let files = vec!["a.html", "b.html", "c.html"];
-let out_dir = Path::new("out/");
-std::fs::create_dir_all(out_dir)?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let files = vec!["a.html", "b.html", "c.html"];
+    let out_dir = Path::new("out/");
+    std::fs::create_dir_all(out_dir)?;
 
-for (src, result) in html_files_to_markdown(&files, out_dir) {
-    match result {
-        Ok(dest) => println!("{} → {}", src, dest.display()),
-        Err(e)   => eprintln!("Error: {src}: {e}"),
+    for (src, result) in html_files_to_markdown(&files, out_dir) {
+        match result {
+            Ok(dest) => println!("{} → {}", src, dest.display()),
+            Err(e)   => eprintln!("Error: {src}: {e}"),
+        }
     }
+    Ok(())
 }
-# Ok(())
-# }
 ```
 
 Conversion runs in parallel using [rayon](https://crates.io/crates/rayon).

@@ -42,8 +42,14 @@ from `main`; they are listed here so the release records them.
 
 - **Five Rust examples in the guide did not compile** — two on *Usage — Rust*,
   two on *Core Functions*, one on *Error Handling*. Each used `?` without a
-  fallible `main`, which fails when the example is compiled as shown. They now
-  compile.
+  fallible `main`. They now show a complete program, including
+  `fn main() -> Result<…>`, so the code on the page and the code the **Copy**
+  button gives you are the same, and both compile. (An intermediate fix hid
+  that `main` with mdBook's hidden lines, which the Copy button leaves out.)
+- **The README's conversion-modes links no longer depend on the site showing
+  the README.** They pointed at an in-page `#conversion-modes` anchor, and
+  GitHub, crates.io, npm and PyPI each generate heading ids their own way. They
+  now link to the Conversion Modes page of the user guide.
 - **Rust examples no longer show a Run button.** The Rust Playground does not
   provide `mdka`, so Run could only fail with an unresolved import, including
   on correct examples.
