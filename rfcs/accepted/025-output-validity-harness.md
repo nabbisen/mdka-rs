@@ -99,6 +99,14 @@ far more often than a fixture author imagines.
 
 ### Real-world corpus
 
+> **Corrected 2026-09-16.** bekoedit wrote that **the corpus does not exist yet** —
+> their first letter implied it did. It will be captured by hand from documents
+> they wrote themselves, under Apache-2.0, with **no date**
+> (`.git-exclude/upstream/bekoedit/receive/2026-09-16-re-corpus-request.md`). The
+> nine reproductions in their first letter were written by hand, not captured.
+> This RFC's harness does not wait for it; corpus integration is slice `025b`,
+> unscheduled until captures exist.
+
 bekoedit has offered a corpus of real clipboard HTML from browsers, Google Docs,
 Word and LibreOffice.
 

@@ -22,6 +22,7 @@ The original said *"Do not start until M2b has shipped."* M2b (2.2.2) and M2c
 | 4 | Owners named precisely: **RFC 024, 028 (accepted); RFC 010 (planned — ROADMAP row, no file yet)** | an owner must be something a reader can find |
 | 5 | bekoedit's reproductions become cells now; the **corpus** is a later slice | §7 — requested 2026-09-16, not yet received |
 | 6 | Verification commands match CI as it now runs | RFC 032 |
+| 7 | **Revised again, 2026-09-16 (later):** §7 retitled — bekoedit's reproductions are **hand-written**, the corpus **does not exist yet**; two public Google Docs clipboard shapes added as cells (§7.1) | bekoedit's correction letter; `.git-exclude/reviewed/upstream-bekoedit-2026-09-16-re-corpus/README.md` |
 
 ## 1. Purpose
 
@@ -93,7 +94,7 @@ RFC 025's 2026-09-16 amendment:
 | heading | | | | |
 
 Most of these are invalid HTML. **That is why they are here** — real clipboard HTML
-is full of invalid markup (bekoedit's item 3 is a Google Docs paste).
+is full of invalid markup (bekoedit's item 3 reproduces Google Docs' clipboard wrapper — a shape confirmed independently by public captures, §7.1).
 
 ### 4.3 Each cell
 
@@ -171,9 +172,9 @@ backslash survives into the text.
 These properties are what make the harness **corpus-ready** (§7): they need no
 hand-written expectation per input.
 
-## 7. Real-world input
+## 7. External input
 
-### 7.1 Now — bekoedit's reproductions
+### 7.1 Now — bekoedit's reproductions, and Google Docs' documented wrapper
 
 `.git-exclude/upstream/bekoedit/receive/2026-09-16-html-to-markdown-conversion-gaps.md`.
 Item **2** (digit-period escape) and item **3** (emphasis around blocks) are
@@ -184,13 +185,34 @@ Items 1, 5, 6 (tables, strikethrough, task lists) are **coverage**, not validity
 the output is valid Markdown that loses structure. Not this harness. Items 4, 7, 8,
 9 are options and style. Not this harness.
 
+These are **hand-written by bekoedit**, not clipboard captures — they said so in a
+later letter. They are still external to our model. bekoedit has given permission
+to vendor them; credit bekoedit in a comment at the cells.
+
 **Do not copy the letter into the repository.** Take the minimal HTML only.
+
+**Two Google Docs shapes, as cells.** Public issue reports quoting real clipboard
+captures ([ProseMirror #459](https://github.com/ProseMirror/prosemirror/issues/459),
+2016; [MarkText #4688](https://github.com/marktext/marktext/issues/4688), 2026) show
+Google Docs wraps copied content in `<b style="font-weight:normal" id="docs-internal-guid-…">`,
+with real emphasis only in inner `<span style>`. **Write your own fixtures in both
+shapes; do not paste their HTML:**
+
+| Shape | Minimal form | Today (architect, 2026-09-16) |
+|---|---|---|
+| single paragraph — wrapper around **inline** content | `<b style="font-weight:normal;" id="docs-internal-guid-x"><span style="font-weight:400">Hello world</span></b>` | `**Hello world**` in minimal; `**<a id="docs-internal-guid-x"></a>Hello world**` in balanced |
+| multi paragraph — wrapper around **blocks** | `<b style="font-weight:normal" id="docs-internal-guid-x"><p>one</p><p>two</p></b>` | `**\n\none\n\ntwo\n\n**` |
+
+Owner of the multi-paragraph cell: **RFC 028**. Owner of the single-paragraph cell:
+**RFC 028 if the owner accepts its proposed amendment, otherwise UNOWNED** — mark it
+UNOWNED for now and say so; the review will re-label it.
 
 ### 7.2 Later — the corpus: slice `025b`
 
-RFC 025 says to use bekoedit's clipboard corpus. **Requested 2026-09-16** — the
-owner sent the request early so the corpus can reach this work during M3. **It
-has not been received.** Do not wait for it.
+RFC 025 says to use bekoedit's clipboard corpus. **It does not exist yet.** The
+request went out 2026-09-16; bekoedit replied that captures have not been made,
+will be taken by hand, and have no date. **`025b` is unscheduled.** Do not wait for
+it.
 
 **Build the runner so a directory of `.html` files can be run through §6's
 properties with no per-file expectations.** Prove it with two or three

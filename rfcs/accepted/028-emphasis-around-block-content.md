@@ -162,8 +162,44 @@ Every such change is from invalid Markdown to valid Markdown. Minor version,
 
 ## Verification input
 
+> **Corrected 2026-09-16.** This section said the corpus *"is the input that
+> exposed the defect"* and to *"sequence this after the corpus arrives if that is
+> not a long wait"*. Both are wrong. bekoedit has since written that **the corpus
+> does not exist yet** and has **no date**; the defect was exposed by a
+> **hand-written** reproduction. **Do not wait for the corpus.**
+>
+> The Google Docs premise this RFC's design turns on was therefore checked
+> independently, against public issue reports quoting real clipboard captures —
+> ProseMirror #459 (2016), MarkText #4688 (2026), CKEditor #13877 and others. **It
+> holds.** Details: `.git-exclude/reviewed/upstream-bekoedit-2026-09-16-re-corpus/README.md` §3.
+> Verification input for this RFC: bekoedit's reproduction, the two Google Docs
+> shapes in RFC 025's harness, and the corpus if it ever arrives in time.
+
 bekoedit has offered a corpus of real clipboard HTML from browsers, Google Docs,
-Word and LibreOffice. **That corpus is the right verification for this RFC** — it
-is the input that exposed the defect, and the input we demonstrably cannot
-generate for ourselves. Sequence this after the corpus arrives if that is not a
-long wait.
+Word and LibreOffice.
+
+---
+
+## ⚠ Proposed amendment — awaiting owner decision (2026-09-16)
+
+**Not accepted. Do not implement until decided.** Full reasoning:
+`.git-exclude/reviewed/upstream-bekoedit-2026-09-16-re-corpus/README.md` §4–§5.
+
+**The gap.** A single-paragraph Google Docs copy wraps **inline** content:
+`<b style="font-weight:normal;" id="docs-internal-guid-…"><span …>Hello world</span></b>`.
+This RFC only drops delimiters around **block** children, so that paste stays
+`**Hello world**` — entirely bold, silently, in every mode. That is the harm this RFC
+cites to reject option B, and criterion 6 would lock it in.
+
+**Proposed.** An emphasis element emits no delimiters if its children are blocks
+**or its own inline `style` negates the emphasis**:
+
+- `<b>`/`<strong>`: `font-weight` is `normal` or a number ≤ 500. Relative values
+  (`lighter`, `bolder`) leave delimiters unchanged.
+- `<i>`/`<em>`: `font-style` is `normal`.
+- Only the element's own `style`; declarations split on `;`, names and values
+  trimmed and case-folded, `!important` stripped, last declaration wins; no other
+  property read. Never **adds** emphasis — that remains the separate item-4
+  candidate.
+- Criterion 6 becomes: *byte-identical to 2.2.1 unless the element's own style
+  negates the emphasis.*

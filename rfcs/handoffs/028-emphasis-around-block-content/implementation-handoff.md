@@ -15,7 +15,7 @@ repository. That was a dispatch error on my part, not a reason for you to start.
 | Precondition | Required |
 |---|---|
 | `2.2.2` is cut and M2b has shipped | This changes conversion output; it must not land in a patch release not scoped for it |
-| **RFC 025** has landed | §6.5 requires un-`#[ignore]`ing its block-inside-inline cells — unsatisfiable until the matrix exists |
+| **RFC 025** has landed | §6.5 requires removing the `known_defect` markers on its block-inside-inline cells — unsatisfiable until the matrix exists |
 | **RFC 028's mechanism choice is settled against RFC 024** | Added 2026-09-16 — see §4a |
 
 A handoff sitting in `rfcs/handoffs/` reads as an instruction to start. This one
@@ -83,8 +83,9 @@ make *every Google Docs paste entirely bold*. Today's stray `**` at least looks
 like a bug; fully bold output looks intentional and nobody reports it.
 
 **If you conclude distribution is right after all, stop and report** rather than
-choosing. The decision turns on which real-world producer dominates, and the
-corpus (§7) is the evidence that would change it.
+choosing. The decision turns on which real-world producer dominates. The corpus
+(§7) will not arrive in time; the Google Docs premise was verified independently
+against public captures on 2026-09-16 (RFC 028, "Verification input").
 
 ## 4a. Mechanism — two routes, choose after RFC 024
 
@@ -157,23 +158,22 @@ an installed artifact.
 3. Nested emphasis around blocks.
 4. **Emphasis around inline content byte-identical to `2.2.1`**, over the whole
    existing corpus. Show it, do not assert it.
-5. The RFC 025 block-inside-inline cells un-`#[ignore]`d and passing.
+5. The RFC 025 block-inside-inline cells' `known_defect` markers removed, and the cells passing (RFC 025 uses strict expected failures, not `#[ignore]`, since 2026-09-16).
 6. `cargo test --workspace --all-features --locked`, fmt, clippy `-D warnings`.
 7. Count reconciled.
 
-## 7. Verification input — the corpus, if it has arrived
+## 7. Verification input
 
-bekoedit offered a corpus of real clipboard HTML (browsers, Google Docs, Word,
-LibreOffice). **If it has arrived by the time you start, use it** — it is the
-input that exposed this defect and the input we cannot generate for ourselves.
-
-If it has not arrived, say so in your review request rather than waiting; the §2
-cases are sufficient to implement against.
+**Corrected 2026-09-16.** bekoedit's corpus **does not exist yet** and has no date;
+the defect was exposed by a **hand-written** reproduction, not a capture. **Do not
+wait.** Implement against the §2 cases, bekoedit's reproduction, and RFC 025's two
+Google Docs shape cells. If the corpus has somehow arrived when you start, use it
+too.
 
 ## 8. Prohibited shortcuts
 
 - Do not distribute the emphasis over block children without reporting first.
-- Do not read the `style` attribute — out of scope.
+- Do not read the `style` attribute — out of scope. **⚠ Under review:** RFC 028 carries a proposed amendment that would read two `style` properties to drop negated emphasis. Until the owner decides and this handoff is revised, this line stands.
 - Do not write a second block-tag list.
 - Do not let the inline-only case move.
 
