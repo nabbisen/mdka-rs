@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | Milestone | Priority |
-|----|-------|-----------|----------|
-| 028 | [Emphasis wrapping block content](./proposed/028-emphasis-around-block-content.md) | M3 → `2.3.0` | **P0** |
-
-RFC 028 arises from the bekoedit field report of 2026-09-16. Awaiting owner
-acceptance.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -31,8 +26,10 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 027 | [Verification discipline: the consumer pass](./accepted/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | M2b → `2.2.2` | P1 |
 | 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
+| 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
-**All eight accepted by the project owner, 2026-08-31.** They arise from the
+**RFC 028 accepted 2026-09-16**, from the bekoedit field report. The other eight
+were **accepted by the project owner, 2026-08-31.** They arise from the
 independent audit of that date. RFC 020 shipped in `2.2.1`, below; M2b split
 into `2.2.1` + `2.2.2` on 2026-09-01 once RFC 020's implementation established
 that the npm fix cannot be verified except by releasing it — see `ROADMAP.md`.

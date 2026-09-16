@@ -44,6 +44,12 @@ directly rather than trusting workflow status.
 Do not invent new steps beyond RFC 027. Capture what we already do, add the
 consumer pass, and make it a document a future release follows.
 
+**Add one step:** *"send any correspondence held for this release."* A reply to
+the bekoedit field report is drafted and held pending the `2.2.2` cut, at
+`.git-exclude/upstream/bekoedit/send/draft/`. Check that directory as part of the
+checklist — a held draft with a trigger and no owner is a draft that never goes
+out.
+
 ## 3. Perform the consumer pass against 2.2.1
 
 ### 3.0 ⚠ Rule 4 was declined, and that changes this section

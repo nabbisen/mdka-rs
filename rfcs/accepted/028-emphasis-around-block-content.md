@@ -1,6 +1,6 @@
 # RFC 028 — Emphasis wrapping block content emits stray delimiters
 
-**Status.** Proposed
+**Status.** Accepted 2026-09-16 — implementer may start
 **Tracks.** M3 · Conversion fidelity → `2.3.0`
 **Priority.** P0
 **Touches.** `src/renderer.rs`.
@@ -84,12 +84,12 @@ makes the Google Docs case correct without reading `style` at all.
 
 ## Relationship to the other M3 renderer work
 
-**Not fixed by [RFC 024](../accepted/024-inline-composition-output-sink.md).** That routes
+**Not fixed by [RFC 024](./024-inline-composition-output-sink.md).** That routes
 writers through the output sink so inline elements inside `<a>` reach the link
 capture buffer. It adds no block-awareness, and these arms would still push
 delimiters unconditionally. Adjacent code, different defect.
 
-**Not caught by [RFC 025](../accepted/025-output-validity-harness.md) as specified.** Its
+**Not caught by [RFC 025](./025-output-validity-harness.md) as specified.** Its
 composition matrix is inline-construct × container — every cell puts an inline
 thing inside a container. This defect is a *block inside an inline*, the other
 direction. RFC 025 is amended to cover both.

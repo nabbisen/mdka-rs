@@ -411,6 +411,20 @@ for itself: our fixtures are composed from our model of what HTML looks like, an
 RFC 028 is the proof that the model has gaps. Recorded as a required input to
 RFC 025.
 
+**Reply held until after the release cut** — owner decision, 2026-09-16. The
+draft is written and complete at
+`.git-exclude/upstream/bekoedit/send/draft/2026-09-16-reply-conversion-gaps.md`,
+marked HELD with its trigger.
+
+Taken as the **next** cut, `2.2.2`. Noted there and here because `2.2.2` carries
+none of bekoedit's items — they land in `2.3.0` — so the reply will still be
+promising rather than reporting. If the owner would rather it carry shipped
+fixes, the trigger moves to the `2.3.0` cut.
+
+**Sending it is a release-checklist item**, not something to remember. RFC 027's
+checklist gains: *"send any correspondence held for this release."* A draft with
+a trigger and no owner is a draft that never goes out.
+
 **Noted, not acted on:** bekoedit ranks tables the highest-impact item, as the
 audit did. That is now two independent voices. M3 still sequences correctness
 ahead of tables — wrong output for HTML we already claim to handle is worse than

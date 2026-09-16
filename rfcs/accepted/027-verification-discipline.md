@@ -61,6 +61,18 @@ real page.
 The first consumer pass runs against `2.2.1`. Its output is a review-request
 package like any other.
 
+### Also on the checklist — held correspondence, added 2026-09-16
+
+The release checklist this rule creates must include: **"send any correspondence
+held for this release."**
+
+This project now has outbound correspondence as well as inbound. A reply to the
+bekoedit field report of 2026-09-16 is drafted and held pending a release cut,
+at `.git-exclude/upstream/bekoedit/send/draft/`.
+
+**A held draft with a trigger and no owner is a draft that never goes out.** The
+checklist is the owner.
+
 ## Rule 2 — A scope boundary must be justified
 
 `D-06` exists because RFC 006's scope named `docs/src/api/` and stopped there.
