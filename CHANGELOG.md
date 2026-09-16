@@ -22,6 +22,27 @@ confidence, that is stated explicitly rather than guessed.
 
 ### Changed
 
+- **The Python package now requires CPython 3.10 or later, and ships one wheel
+  per platform.** Until now, which Python versions got a wheel depended on the
+  interpreters each build machine happened to have: 2.2.3 promised Python 3.8
+  but had no 3.8 wheel for x86_64 Linux, and nothing below 3.11 for macOS. Each
+  platform now gets a single wheel built on Python's stable ABI, which works on
+  every CPython from 3.10 upward. That covers glibc and musl Linux on x86_64
+  and aarch64, Windows x64 and macOS on Apple silicon. New CPython releases get
+  a wheel from day one, instead of waiting for a release built on a machine
+  that has them.
+
+  - **On CPython 3.8 or 3.9**, pip does not offer this release and keeps
+    installing 2.2.x. Nothing already installed stops working; those
+    interpreters no longer receive new releases.
+  - **Free-threaded CPython and PyPy wheels are no longer published.** On
+    those interpreters `pip install mdka` builds from the source distribution,
+    which needs a Rust toolchain.
+
+  The supported set is declared in `python/wheel-matrix.toml`. The release
+  checks the built files against it before uploading, and a scheduled check
+  compares it with what PyPI serves.
+
 - **Deprecation messages now point to the documentation instead of an
   internal design record.** Setting one of the no-op attribute options
   (`preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`, and in

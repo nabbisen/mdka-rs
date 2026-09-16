@@ -78,6 +78,25 @@ What does work on those platforms:
 pip install mdka
 ```
 
-Requires Python 3.8 or later.
-Pre-built wheels are provided for CPython on major platforms.
-To build from source: `pip install mdka --no-binary mdka` with Rust installed.
+Requires CPython 3.10 or later.
+
+Pre-built wheels are published for CPython on these platforms. Each wheel uses
+Python's stable ABI, so one wheel serves every CPython from 3.10 upward,
+including versions released after it:
+
+| Platform | Wheel tag |
+|---|---|
+| Linux x86_64, glibc 2.17 or later | `manylinux_2_17_x86_64` |
+| Linux aarch64, glibc 2.17 or later | `manylinux_2_17_aarch64` |
+| Linux x86_64, musl 1.2 or later (e.g. Alpine) | `musllinux_1_2_x86_64` |
+| Linux aarch64, musl 1.2 or later | `musllinux_1_2_aarch64` |
+| Windows x64 | `win_amd64` |
+| macOS on Apple silicon, 11.0 or later | `macosx_11_0_arm64` |
+
+Other interpreters — PyPy, free-threaded CPython — and other platforms have no
+wheel. `pip install mdka` there falls back to the source distribution, which
+needs a Rust toolchain to build. To build from source on purpose:
+`pip install mdka --no-binary mdka` with Rust installed.
+
+These apply from mdka 2.3.0. On CPython 3.8 or 3.9, pip does not offer 2.3.0
+or later and installs the latest 2.2.x release instead.
