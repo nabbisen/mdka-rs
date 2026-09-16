@@ -326,7 +326,13 @@ fn version() -> &'static str {
 
 // ─── Module registration ─────────────────────────────────────────────────
 
-#[pymodule]
+// Free-threaded CPython is not supported (RFC 034, owner 2026-09-16), and this
+// module has not been reviewed for running without the GIL. PyO3 0.28 treats
+// an unannotated module as GIL-free, so the requirement is stated here rather
+// than left to a default that can change between PyO3 versions. On a
+// free-threaded interpreter Python re-enables the GIL when this is imported.
+// Changing it to `false` requires a thread-safety review in its own RFC.
+#[pymodule(gil_used = true)]
 fn mdka_python(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("MdkaError", py.get_type::<MdkaError>())?;
     m.add_class::<ConversionMode>()?;

@@ -95,7 +95,10 @@ including versions released after it:
 
 Other interpreters — PyPy, free-threaded CPython — and other platforms have no
 wheel. `pip install mdka` there falls back to the source distribution, which
-needs a Rust toolchain to build. To build from source on purpose:
+needs a Rust toolchain to build. On free-threaded CPython that build works, but
+mdka requires the GIL: Python re-enables it when mdka is imported, with a
+`RuntimeWarning` that the GIL "has been enabled to load module
+'mdka.mdka_python'". To build from source on purpose:
 `pip install mdka --no-binary mdka` with Rust installed.
 
 These apply from mdka 2.3.0. On CPython 3.8 or 3.9, pip does not offer 2.3.0

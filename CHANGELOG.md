@@ -38,6 +38,10 @@ confidence, that is stated explicitly rather than guessed.
   - **Free-threaded CPython and PyPy wheels are no longer published.** On
     those interpreters `pip install mdka` builds from the source distribution,
     which needs a Rust toolchain.
+  - **Source builds on free-threaded CPython now declare that they need the
+    GIL**, so Python re-enables it on import, with a warning. The 2.2.3
+    free-threaded wheels ran without the GIL, although the module had never
+    been reviewed for that.
 
   The supported set is declared in `python/wheel-matrix.toml`. The release
   checks the built files against it before uploading, and a scheduled check

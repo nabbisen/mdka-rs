@@ -13,7 +13,7 @@
 # release only, with a CHANGELOG entry. Upstream end-of-life is not a trigger.
 # Keep python/Cargo.toml's `abi3-pyXY` feature, pyproject.toml's
 # requires-python, ci.yaml's matrix floor and installation.md in step; the
-# gates check the last three against this file.
+# gates check all four against this file.
 
 applies-from = "2.3.0"          # published versions before this predate the policy
 python-floor = "3.10"
