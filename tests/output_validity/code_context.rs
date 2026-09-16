@@ -1,7 +1,8 @@
 //! Code holds text only (RFC 024 amendment of 2026-09-17, slice 024b):
 //! inline markup inside `<pre><code>`, several `<code>` children in one
-//! `<pre>`, and text beside them. Expectations were written by the architect
-//! from the rules in the 024b addendum, not from output.
+//! `<pre>`, and text beside them, and whitespace around `<code>` (024c, rule 6).
+//! Expectations were written by the architect from the rules in the 024b and
+//! 024c addenda, not from output.
 
 use crate::harness::tree;
 
@@ -22,4 +23,19 @@ cells! {
         => tree(r#"codeblock("textx")"#);
     text_after_code_in_pre: "<pre><code>x</code> tail</pre>"
         => tree(r#"codeblock("x tail")"#);
+    four_spaces_before_code_in_pre: r#"<pre>    <code class="language-js">x</code></pre>"#
+        => tree(r#"codeblock[js]("    x")"#),
+        defect(Rfc024, "held whitespace is written in front of the fence: an indented code block holding the literal fence, `x` as a paragraph, and an open fence");
+    two_spaces_before_code_in_pre: r#"<pre>  <code class="language-js">x</code></pre>"#
+        => tree(r#"codeblock[js]("  x")"#),
+        defect(Rfc024, "held whitespace is written in front of the fence: the block is right but its two spaces are lost from the content");
+    pretty_printed_pre_code_then_content: "<pre>\n    <code class=\"language-js\">x</code>\n</pre><p>after</p><h2>later</h2>"
+        => tree(r#"codeblock[js]("    x"), para("after"), h2("later")"#),
+        defect(Rfc024, "held whitespace is written in front of the fence: the closing fence opens a code block that swallows `after` and `## later`");
+    newline_before_code_in_pre: "<pre>\n<code>x</code></pre>"
+        => tree(r#"codeblock("x")"#);
+    newline_after_code_in_pre: "<pre><code>x</code>\n</pre>"
+        => tree(r#"codeblock("x")"#);
+    language_not_taken_after_text: r#"<pre>text<code class="language-js">x</code></pre>"#
+        => tree(r#"codeblock("textx")"#);
 }
