@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+Awaiting the owner's decision.
+
+- [031 — Docs example gate must compile what mdBook publishes](./proposed/031-docs-gate-must-model-mdbook.md)
+  — the gate wraps `?`-using Rust in a `Result`-returning main; mdBook wraps in a
+  plain one. Found by the 2.2.3 consumer pass: two examples behind a Run button
+  that do not compile, and a green gate.
 
 ## Accepted
 
