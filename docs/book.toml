@@ -21,3 +21,10 @@ additional-css      = []
 [output.html.search]
 enable        = true
 limit-results = 20
+
+# No Run button. The Rust playground offers a fixed crate set and mdka is not in
+# it, so every example that imports mdka -- 20 of the 32 rust fences, including
+# every correct one -- could only produce `unresolved import`. The docs example
+# gate compiles each block against the real crate and does not depend on this.
+[output.html.playground]
+runnable = false
