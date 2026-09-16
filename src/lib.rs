@@ -26,6 +26,13 @@ mod renderer;
 mod traversal;
 mod utils;
 
+#[deprecated(
+    since = "2.2.2",
+    note = "benchmark-only utility, never part of the conversion API; \
+            scheduled for removal in 2.4.0. See RFC 022."
+)]
+pub mod alloc_counter;
+
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};

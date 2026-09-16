@@ -20,13 +20,15 @@ confidence, that is stated explicitly rather than guessed.
   8% faster on a 400-file, 1 MB-each bulk conversion (400 MB total, 32 cores,
   release build): ~356ms before, ~327ms after (medians of 5 runs). Output is
   byte-identical.
-- **`mdka::alloc_counter` is no longer public API.** It moved out of the
-  library entirely, into a dev-only module shared by the `benches/memory`
-  benchmark and the `examples/quick_mem`/`examples/measure_mem` tools. A
-  downstream crate that depended on `mdka::alloc_counter::CountingAllocator`
-  or `AllocSnapshot` — unlikely, since it existed only to support this
-  project's own benchmarks — needs to vendor the small counting-allocator
-  implementation itself; it is not going to reappear as public surface.
+### Deprecated
+
+- **`mdka::alloc_counter` is deprecated and will be removed in `2.4.0`.** It
+  was never part of the conversion API: it exists only to let this project's
+  own benchmarks (`benches/memory`) and measurement examples
+  (`examples/quick_mem`, `examples/measure_mem`) count heap allocations, so
+  there is no reason for a downstream crate to depend on it. The module
+  remains public and functional in `2.2.2` — nothing breaks now — and the
+  removal in `2.4.0` gives two releases and a full milestone of notice.
 
 ### Removed
 

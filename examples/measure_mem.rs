@@ -2,13 +2,17 @@
 //!
 //! 実行: cargo run --example measure_mem
 
-#[path = "../benches/alloc_counter.rs"]
-mod alloc_counter;
-use alloc_counter::{AllocSnapshot, CountingAllocator};
+// alloc_counter is deprecated as public API (RFC 022), removal in 2.4.0.
+// Measuring allocation is this example's whole purpose; allow at the use
+// site only.
+#[allow(deprecated)]
+use mdka::alloc_counter::{AllocSnapshot, CountingAllocator};
 
+#[allow(deprecated)]
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
+#[allow(deprecated)]
 fn measure_allocs<F: Fn(&str)>(html: &str, f: F) -> usize {
     let mut allocs: Vec<usize> = (0..3)
         .map(|_| {

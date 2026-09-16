@@ -2,10 +2,14 @@ use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_m
 use std::hint::black_box;
 use std::time::Instant;
 
-#[path = "alloc_counter.rs"]
-mod alloc_counter;
-use alloc_counter::{AllocSnapshot, CountingAllocator};
+// alloc_counter is deprecated as public API (RFC 022) and scheduled for
+// removal in 2.4.0. It stays in use here because measuring allocation is
+// exactly what this benchmark is for; the allow is at the use site rather
+// than crate-level so nothing else silently inherits it.
+#[allow(deprecated)]
+use mdka::alloc_counter::{AllocSnapshot, CountingAllocator};
 
+#[allow(deprecated)]
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
@@ -22,6 +26,7 @@ struct MemSample {
     time_ns: u64,
 }
 
+#[allow(deprecated)]
 fn sample_target(run_fn: fn(&str) -> String, html: &str) -> MemSample {
     let mut v: Vec<_> = (0..5)
         .map(|_| {
