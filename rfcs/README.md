@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-Awaiting the owner's decision.
-
-- [032 — Gates report every failure, and execute Python and TypeScript examples](./proposed/032-gates-report-everything-and-execute-examples.md)
-  — from the RFC 031 review. `cargo test` in `ci.yaml` stops at the first failing
-  test binary, which matters most for RFC 025's harness; the Python and TS doc
-  paths never run their examples. Recommended before RFC 025.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -28,13 +23,16 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — slice 031 ✅ approved; **031b next**; D6 open (owner) |
+| 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved (031, 031b); D6 open (owner); moves to `done/` at `2.3.0` prep |
+| 032 | [Gates report every failure, and execute Python and TypeScript examples](./accepted/032-gates-report-everything-and-execute-examples.md) — [handoff](./handoffs/032-gates-report-everything-and-execute-examples/implementation-handoff.md) | M3 → `2.3.0` | **P2**, sequenced before 025 |
 
-All five are M3. **Sequencing: 030 ✅, then 031, then 025, then 024, then 028.**
+All six are M3. **Sequencing: 030 ✅, 031 ✅, then 032, then 025, then 024, then 028.**
 
 - **030 and 031 go first** and are independent of the engine work. Both are
   control repairs: each fixes a gate that was passing something the consumer's
   artifact fails. Fixing the instruments before taking the measurements.
+- **032 precedes 025** because `cargo test` without `--no-fail-fast` would show
+  only the first failing binary of a harness built to show many failures.
 - **025 precedes 024**, and **028 follows both** — the harness must be able to
   observe the defects before the fixes claim to have removed them, and RFC 028's
   mechanism choice depends on RFC 024's shape.

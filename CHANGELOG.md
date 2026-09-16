@@ -11,6 +11,15 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Added
+
+- **Project links on PyPI and crates.io.** The PyPI project page had no
+  sidebar links at all. The Python package now declares Homepage,
+  Documentation, Source and Changelog URLs. The `mdka` and `mdka-cli` crates
+  now set `homepage` to the user guide at
+  <https://nabbisen.github.io/mdka-rs/>; previously crates.io linked only the
+  API reference on docs.rs.
+
 ### Changed
 
 - **Deprecation messages now point to the documentation instead of an
@@ -25,6 +34,34 @@ confidence, that is stated explicitly rather than guessed.
   `` mdka: `<option>` `` — so a filter written against that prefix, including
   the narrow suppressions shown in the Python and Node guides, keeps working.
   The prefix is now covered by a test in each binding.
+
+### Fixed
+
+These documentation fixes are already live on the user guide, which publishes
+from `main`; they are listed here so the release records them.
+
+- **Five Rust examples in the guide did not compile** — two on *Usage — Rust*,
+  two on *Core Functions*, one on *Error Handling*. Each used `?` without a
+  fallible `main`, which fails when the example is compiled as shown. They now
+  compile.
+- **Rust examples no longer show a Run button.** The Rust Playground does not
+  provide `mdka`, so Run could only fail with an unresolved import, including
+  on correct examples.
+- **The Node.js "Async Conversion" example did not run.** It mixed `require()`
+  with top-level `await` and used undefined variables. It now runs as written.
+- **The deprecation warning is now documented.** The options pages said the
+  no-op options "simply do nothing" and that existing calls "keep working". In
+  fact each emits a deprecation warning, which fails the build or the call
+  under `-D warnings`, `python -W error`, pytest `filterwarnings = error`, or
+  Node `--throw-deprecation`. The Rust, Python and Node guides now say so and
+  show a narrow suppression for use while migrating.
+- **The HTML-table example stated the wrong output.** The markup as printed
+  converts to `H1H2 ab`, not `H1H2ab`.
+- **The "Not Yet Supported" table cited trackers a reader could not follow** —
+  an internal finding ID and two RFC numbers with no corresponding document.
+  It now links the roadmap.
+- **The Installation page omitted the prebuilt binaries** that the README
+  leads with. It now links them.
 
 ## [2.2.3] - 2026-09-16
 

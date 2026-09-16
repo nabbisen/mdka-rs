@@ -1,6 +1,6 @@
 # RFC 032 — Gates report every failure, and execute Python and TypeScript examples
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-16, owner)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — recommended **before RFC 025** (§5)
