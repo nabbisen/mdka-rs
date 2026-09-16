@@ -131,6 +131,28 @@ anyone diffing generated Markdown will see movement.
 | Line-state bookkeeping desyncs inside a capture | RFC 016/017 are the precedent. Cover blank-line and fence-adjacent cases explicitly. |
 | `<pre><code>` regresses | Byte-identical assertion on the existing fixtures, plus the bare-`<pre>` case. |
 
+## ⚠ Added 2026-09-16 — the symptom nobody knew about
+
+The `2.2.2` consumer pass found a second symptom of this RFC's root cause, and
+it is **worse than the one this RFC was written for**:
+
+```
+<a href="/x">Read <strong>more</strong> now</a>  →  ****[Readmore now](/x)
+<p>Read <strong>more</strong> now</p>            →  Read **more** now      ← correct
+```
+
+**The space before the inline element is lost — but only inside a link.** Same
+cause: a writer reaching `self.output` while the surrounding text goes to the
+capture buffer, so the pending space is flushed to the wrong place.
+
+**Why it matters more than the stray delimiters.** `****[b](/x)` is visibly
+wrong. `[Readmore now]` reads as ordinary prose with a word silently gone. On a
+real Wikipedia page this produced "Internet mediatype" and a table of contents
+reading "1History", "2Rise and divergence".
+
+The sink work will probably fix this as a side-effect. **That is exactly why it
+is an explicit criterion**: fixed by accident is fixed until someone refactors.
+
 ## Acceptance criteria
 
 1. `<a href="/page"><img src="i.png" alt="pic"></a>` parses as a link containing
@@ -144,3 +166,8 @@ anyone diffing generated Markdown will see movement.
    reported in the review request.
 6. The RFC 025 composition cells for inline-in-link are un-`#[ignore]`d and pass.
 7. Nested-link behaviour is defined and tested.
+8. **`<a href="/x">Read <strong>more</strong> now</a>` preserves both spaces** —
+   the text inside a link must be byte-identical to the same markup outside one.
+   Assert the paragraph control case alongside it: *"delimiters in the right
+   place"* and *"the text is intact"* are different claims and need separate
+   assertions.

@@ -165,3 +165,46 @@ CI only. No product change.
    input, and that observation is recorded in the review request.
 5. No gate reads from the workspace tree for the artifact it is verifying.
 6. The residual platform gap is documented in `ROADMAP.md`.
+
+---
+
+## Correction — two blind spots found by the first consumer pass, 2026-09-16
+
+The `2.2.2` consumer pass found defects these gates are **structurally unable to
+see**. Both are cheap to close and are recorded so the gates are not trusted
+beyond their reach.
+
+### 1 · The docs-example gate cannot see `README.md`
+
+`check-docs-examples.py` takes `--root`, defaulting to `docs/src`. The README is
+outside it.
+
+The README's Node Quick Start has four defects and does not parse — a duplicate
+`const`, a function used but never imported, an undefined variable, and
+top-level `await` in CommonJS. **It is the most-read code in the project**,
+rendered on GitHub, crates.io, npm and PyPI, and the gate built in this same
+milestone to catch exactly that class was pointed at a directory that excludes
+it.
+
+**Fix: the gate's root must include `README.md`.**
+
+### 2 · The gate checks symbol resolution, not keyword arguments
+
+`usage-python.md` documents `preserve_unknown_attrs` and
+`drop_presentation_attrs` as *"accepted but have no effect"*. Neither exists in
+`python/src/lib.rs`; passing either raises `TypeError`. The Node page makes the
+same claim and TypeScript rejects it with `TS2353`.
+
+The gate resolves `html_to_markdown_with` and stops. It never learns the
+argument is rejected.
+
+**Fix: for Python, bind the documented call's keyword arguments against the
+installed signature. For TypeScript, `tsc` already catches it if the example is
+type-checked as written.**
+
+### The general point
+
+These gates verify **that the artifact loads and its symbols resolve**. They do
+not verify **that the documented call is valid** or that documentation outside
+one directory exists at all. That ceiling is now in `ROADMAP.md` alongside the
+platform gap — and it is why RFC 027's consumer pass is not redundant with them.

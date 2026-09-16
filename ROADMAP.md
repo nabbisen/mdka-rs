@@ -2,8 +2,9 @@
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
 **Current version.** 2.2.2 (released 2026-09-16)
-**Milestone progress.** M1, M1b, M2 and **M2b complete**. `2.2.1` shipped RFC 020;
-`2.2.2` shipped RFC 007, 021, 022, 023, 026 and 027. **M3 is next.**
+**Milestone progress.** M1, M1b, M2 and M2b complete. `2.2.1` shipped RFC 020;
+`2.2.2` shipped RFC 007, 021, 022, 023, 026 and 027. **M2c proposed** — repair of
+what the first consumer pass found. Then M3.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -381,6 +382,49 @@ These gates narrow what the consumer pass has to catch; they do not replace it.
 
 **Do not describe this set as complete coverage.** Four green checkmarks mean
 the Linux artifacts install and the documented examples resolve — nothing more.
+
+### M2c · Published-surface repair → `2.2.3` (patch) — ⏳ PROPOSED
+
+From the **first consumer pass** (RFC 027 Rule 1), run against published `2.2.2`
+by a session with no history of this project. Disposition:
+`.git-exclude/reviewed/2.2.2-consumer-pass/README.md`.
+
+| RFC | Title | Priority | Size |
+|---|---|---|---|
+| 029 | Published-surface documentation repair | **P0** | S |
+
+**Why a patch of its own.** The README's Node Quick Start does not parse, and it
+renders on GitHub, crates.io, npm and PyPI. `usage-python.md` documents a keyword
+argument that raises `TypeError`. Both are live; neither should wait behind M3's
+renderer work.
+
+#### What the consumer pass exposed about our controls
+
+**`README.md` has never been in scope for any documentation RFC.** RFC 023's
+boundary was `docs/src/getting-started/`; RFC 007's was six source files. The
+most-read file in the project sat outside every one — **the third scope-boundary
+miss this milestone**, after RFC 022's `examples/` consumers and RFC 007's count
+table.
+
+RFC 027 Rule 2 now requires boundaries be derived from a search. **That is
+necessary and was not sufficient**: a search only covers what you think to
+search for.
+
+**The docs-example gate could not see it either** — `--root` defaults to
+`docs/src`. And it checks symbol resolution, not keyword arguments, so the
+Python defect was invisible twice over. Both recorded as corrections on RFC 026;
+both fixed by RFC 029.
+
+**One finding went to M3, not here.** F-04 — link text silently losing spaces
+inside `<a>` — shares RFC 024's root cause but has a worse symptom: `****[b](/x)`
+is visibly wrong, `[Readmore now]` reads as prose with a word gone. Added to
+RFC 024 as an explicit acceptance criterion so it cannot be fixed by accident.
+
+**Recorded, not scheduled:** F-24, deep nesting is quadratic — 25k depth 0.72s,
+100k 10.5s, 300k 255s. The README's "no stack overflow at any depth" claim holds;
+the failure mode moved from crash to hang. M4. And F-23, default `Balanced`
+emitting 1,190 `<a id>` anchors on a real Wikipedia page — a design question
+shared with bekoedit's item 8, not a defect.
 
 ### M3 · Conversion fidelity → `2.3.0` (minor)
 

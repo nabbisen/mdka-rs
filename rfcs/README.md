@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | Milestone | Priority |
+|----|-------|-----------|----------|
+| 029 | [Published-surface documentation repair](./proposed/029-published-surface-documentation-repair.md) | M2c → `2.2.3` | **P0** |
+
+From the `2.2.2` consumer pass — RFC 027 Rule 1's first run. Awaiting
+acceptance.
 
 ## Accepted
 
