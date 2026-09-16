@@ -438,13 +438,18 @@ text run.
 | 031 | Docs example gate must compile what mdBook publishes | P1 | M | ✅ implemented & approved; D6 → RFC 033 |
 | 032 | Gates report every failure; execute Python/TS examples | P2 | S | ✅ implemented & approved |
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
-| 034 | PyPI: declared wheel matrix, checked where published | P1 | M | slice 034 ✅; **034b next** (explicit `gil_used = true`); before the cut |
-| 025 | Markdown output-validity harness | **P0** | M | before 024 |
+| 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
+| 025 | Markdown output-validity harness | **P0** | M | **next** — handoff revised 2026-09-16 (both matrix directions, strict expected failures); corpus slice `025b` pending owner decision |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
 | 010 | Escaping & text-processing correctness audit | P0 | M | after 024 |
 | 008 | GFM table support | P1 | L | — |
 | 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M | after 008 |
+
+**Handoff hygiene rule, recorded 2026-09-16.** An amendment to an RFC that has an
+outstanding handoff **updates that handoff in the same commit**. RFC 025 was
+amended to require both matrix directions, and its handoff still specified one —
+found only because the handoff was re-derived before dispatch.
 
 **Before `2.3.0` is cut** — prep items recorded during M3 so they are not
 rediscovered at the checkpoint:
@@ -456,7 +461,7 @@ rediscovered at the checkpoint:
 - Review the `[Unreleased]` CHANGELOG entries for RFC 031, written by the
   architect during review rather than by the implementer.
 - Move RFC 030, 031, 032, 033 and 034 to `done/`.
-- **RFC 034 must be implemented before the cut** — the upload is irreversible.
+- ~~RFC 034 must be implemented before the cut~~ — done.
 - Docs gate: give `##` escape lines their own rejection message, and tell authors of multi-line strings containing `# ` lines to use a single-line string with `\n` (RFC 033 review §3).
 - ~~D6 and the hidden-lines browser check (owner)~~ — superseded by RFC 033, which removes both dependencies instead of verifying them once.
 

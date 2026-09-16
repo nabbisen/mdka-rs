@@ -166,3 +166,23 @@ Tests only. No API change, no runtime dependency.
    the primary output of this RFC.
 6. CI is green: passing tests pass, known-broken cells are `#[ignore]`d, none
    deleted.
+
+---
+
+## Amendment — at handoff refresh, 2026-09-16: strict expected failures instead of `#[ignore]`
+
+This RFC specifies that known-broken cells get `#[ignore]` with the owning RFC
+named. **Replaced by strict expected failures** — a helper under which a marked
+cell passes while its defect persists, **fails when the defect is fixed** (so the
+marker must be removed), and fails on any panic or evaluation error.
+
+**Why.** An ignored test never runs. When RFC 024 or RFC 028 fixes a defect, an
+ignored cell cannot say so: the inventory goes stale, and "the fix removed the
+defect" — this RFC's stated purpose for going first — is unverified. A strict
+expected failure keeps the inventory executing on every CI run.
+
+**Stricter, never looser:** CI stays green on known defects, as before, but now
+also turns red when the recorded inventory stops being true.
+
+The risk-table row and acceptance criteria 2 and 6 above read `#[ignore]`; read
+them as "marked as a strict expected failure with the owner named".
