@@ -15,7 +15,7 @@ pyo3::create_exception!(mdka, MdkaError, pyo3::exceptions::PyException);
 /// suppressed wholesale.
 fn warn_deprecated_field(py: Python<'_>, field: &str) -> PyResult<()> {
     let message = CString::new(format!(
-        "mdka: `{field}` has no effect and is deprecated (see RFC 005). \
+        "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
          Markdown has no attribute syntax, so this option was never \
          expressible in the output."
     ))

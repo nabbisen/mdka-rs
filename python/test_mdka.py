@@ -452,6 +452,20 @@ def test_explicit_deprecated_field_emits_warning():
             '<p class="x">Hi</p>', mode=ConversionMode.Balanced, preserve_classes=True
         )
 
+def test_deprecation_message_keeps_the_documented_prefix():
+    # The published narrow suppression in usage-python.md filters on this exact
+    # prefix (message=r"mdka: `preserve_"). Rewording the start of the message
+    # would silently break that workaround, so the prefix is a contract.
+    import re
+    with pytest.warns(DeprecationWarning) as record:
+        html_to_markdown_with(
+            '<p class="x">Hi</p>', mode=ConversionMode.Balanced, preserve_classes=True
+        )
+    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
+    assert len(messages) == 1, messages
+    assert messages[0].startswith("mdka: `preserve_classes`"), messages[0]
+    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
+
 def test_omitting_deprecated_fields_stays_silent():
     import warnings
     with warnings.catch_warnings():

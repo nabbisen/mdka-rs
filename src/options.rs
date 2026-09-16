@@ -89,25 +89,25 @@ pub struct ConversionOptions {
     /// Inert. Markdown has no syntax for class attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     pub preserve_classes: bool,
     /// Inert. Markdown has no syntax for data-* attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     pub preserve_data_attrs: bool,
     /// Inert. Markdown has no syntax for aria-* attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     pub preserve_aria_attrs: bool,
     /// Inert. Markdown has no syntax for unknown attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     pub preserve_unknown_attrs: bool,
 
@@ -116,7 +116,7 @@ pub struct ConversionOptions {
     /// no effect.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     pub drop_presentation_attrs: bool,
     /// Whether to drop shell elements such as `nav`, `header`, `footer` and
@@ -210,7 +210,7 @@ impl ConversionOptions {
     /// Builder: sets whether `aria-*` attributes are kept.
     #[deprecated(
         since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See RFC 005."
+        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
     )]
     #[allow(deprecated)]
     pub fn preserve_aria_attrs(mut self, v: bool) -> Self {

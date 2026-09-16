@@ -31,7 +31,7 @@ fn warn_deprecated_field(env: &Env, field: &str) -> Result<()> {
     let emit_warning: Function<FnArgs<(String, String)>, Unknown> =
         process.get_named_property("emitWarning")?;
     let message = format!(
-        "mdka: `{field}` has no effect and is deprecated (see RFC 005). \
+        "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
          Markdown has no attribute syntax, so this option was never expressible \
          in the output."
     );

@@ -11,6 +11,21 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Changed
+
+- **Deprecation messages now point to the documentation instead of an
+  internal design record.** Setting one of the no-op attribute options
+  (`preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`, and in
+  Rust also `preserve_unknown_attrs` and `drop_presentation_attrs`) produced a
+  warning ending *"see RFC 005"* — a reference a user could not follow. The
+  Rust `#[deprecated]` note and the Node and Python `DeprecationWarning` text
+  now link to <https://nabbisen.github.io/mdka-rs/api/options.html>.
+
+  The start of the Node and Python message is unchanged — it still begins
+  `` mdka: `<option>` `` — so a filter written against that prefix, including
+  the narrow suppressions shown in the Python and Node guides, keeps working.
+  The prefix is now covered by a test in each binding.
+
 ## [2.2.3] - 2026-09-16
 
 ### Added

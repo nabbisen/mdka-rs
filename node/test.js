@@ -285,6 +285,20 @@ async function run(name, fn) {
       assert.match(warnings[0].message, /preserveClasses/)
     })
 
+    // The published narrow suppression in usage-nodejs.md filters on this exact
+    // prefix (`message?.startsWith('mdka: `')`). Rewording the start of the
+    // message would silently break that workaround for every user relying on
+    // it, so the prefix is a contract, not wording.
+    await run('htmlToMarkdownWith: deprecation message keeps the documented prefix', () => {
+      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true }")
+      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
+      assert.ok(
+        warnings[0].message.startsWith('mdka: `preserveClasses`'),
+        `message must start with the documented prefix, got: ${warnings[0].message}`
+      )
+      assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
+    })
+
     await run('htmlToMarkdownWith: omitting deprecated fields stays silent', () => {
       const warnings = runWarningCheck("{ mode: 'balanced' }")
       assert.equal(warnings.length, 0, `expected no warnings, got ${warnings.length}`)
