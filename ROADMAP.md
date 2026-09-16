@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; 028 (in progress), 035, 010 remain.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `028b`, 035, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -425,6 +425,9 @@ RFC 024 as an explicit acceptance criterion so it cannot be fixed by accident.
 the failure mode moved from crash to hang. M4. And F-23, default `Balanced`
 emitting 1,190 `<a id>` anchors on a real Wikipedia page — a design question
 shared with bekoedit's item 8, not a defect.
+**Further evidence, RFC 028 review, 2026-09-17:** 2,000-deep nested `<b>` around a fixed payload is about 5× slower than
+no wrapper, in 2.2.3's renderer and RFC 028's alike — pre-existing, likely html5ever's formatting-element handling. Not
+investigated.
 
 ### M3 · Output validity → `2.3.0` (minor)
 
@@ -446,7 +449,7 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`) — sink, code holds text only, fence at line start |
-| 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | **in progress** (handed over 2026-09-17) — scope extended 2026-09-16 (`<a>`, `<code>` around blocks; negated `font-weight`/`font-style`) |
+| 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ approved (`b91aafb`) — tree-query pre-pass, style negation, links distributed over blocks; **`028b` next** (tests only) |
 | 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | accepted 2026-09-17 — corrects the M3 reshape, which had left these validity defects in RFC 009 / `2.4.0`; after 028 |
 | 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after 035 |
 
@@ -474,7 +477,7 @@ rediscovered at the checkpoint:
 - Move RFC 030, 031, 032, 033 and 034 to `done/`.
 - **bekoedit reply:** rewrite its corpus section before sending — the corpus was requested separately on 2026-09-16, and bekoedit replied that it **does not exist yet**. Confirm the nine vendored reproductions are Apache-2.0.
 - ~~RFC 034 must be implemented before the cut~~ — done.
-- **Release gate: do not cut `2.3.0` with RFC 024 and without RFC 028.** RFC 024's sink turned `<a><p>x</p><p>y</p></a>` from a link with joined words into no link at all — both known defects, fixed by RFC 028, but the interim state must not reach users.
+- ~~**Release gate: do not cut `2.3.0` with RFC 024 and without RFC 028.**~~ **Satisfied 2026-09-17** — RFC 028 landed (`b91aafb`). RFC 024's sink turned `<a><p>x</p><p>y</p></a>` from a link with joined words into no link at all — both known defects, fixed by RFC 028, but the interim state must not reach users.
 - Docs gate: give `##` escape lines their own rejection message, and tell authors of multi-line strings containing `# ` lines to use a single-line string with `\n` (RFC 033 review §3).
 - ~~D6 and the hidden-lines browser check (owner)~~ — superseded by RFC 033, which removes both dependencies instead of verifying them once.
 

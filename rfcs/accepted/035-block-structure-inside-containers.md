@@ -94,6 +94,7 @@ the current tree, mark every failure `known_defect(Rfc035, …)`, then implement
 | `multiline_pre_in_li_in_blockquote` | `<blockquote><ul><li><pre><code>x\ny</code></pre></li></ul></blockquote>` | `quote(ul(li(codeblock("x\ny"))))` |
 | `tight_list_control` | `<ul><li>a</li><li>b</li></ul>` | `ul(li("a"), li("b"))` |
 | `indented_code_in_pre_in_blockquote` | `<blockquote><pre>    <code>x</code></pre></blockquote><p>after</p>` | `quote(codeblock("    x")), para("after")` — *added 2026-09-17, RFC 024c review* |
+| `link_around_p_in_li` | `<ul><li><a href="/x"><p>x</p></a></li></ul>` | `ul(li(link[/x]("x")))` — *added 2026-09-17, RFC 028 review* |
 
 In the harness's raw-string notation the `\n` inside `codeblock("…")` is the two characters `\` `n`, as the
 tree renders code text with `{:?}`.
@@ -121,7 +122,7 @@ Minor release, CHANGELOG with before/after.
 
 ## 8. Acceptance criteria
 
-1. The 17 §4 cells added first; every one that fails at the base commit marked, and every marker removed by
+1. The 18 §4 cells added first; every one that fails at the base commit marked, and every marker removed by
    this RFC — passing under CommonMark and GFM, all five modes.
 2. No other harness cell changes state.
 3. Tight lists of plain items byte-identical to 2.2.3.

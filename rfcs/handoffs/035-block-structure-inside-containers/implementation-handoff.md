@@ -7,14 +7,15 @@
 
 ---
 
-## 0. 🛑 QUEUED — do not start until RFC 028 is approved
+## 0. 🛑 QUEUED — do not start until slice `028b` is approved
 
-| Precondition | Why |
+| Precondition | Status and why |
 |---|---|
-| `024b` approved | fence and code-context changes in the same files |
-| **RFC 028 approved** | it changes the renderer's inline-around-block handling and chooses the look-ahead mechanism (tree query or buffering) that §3.1's tight/loose decision should **reuse**, not duplicate |
+| RFC 024 complete (024, 024b, 024c) | ✅ met 2026-09-17 |
+| RFC 028 approved | ✅ met 2026-09-17 (`b91aafb`) — it chose the look-ahead mechanism (a tree query, §4) that §3.1's tight/loose decision must **reuse**, not duplicate |
+| **Slice `028b` approved** | **pending** — it edits the same harness files |
 
-**Start when** `.git-exclude/reviewed/028-inline-around-blocks/README.md` exists with an approved verdict.
+**Start when** `.git-exclude/reviewed/028b-harness-guards/README.md` exists with an approved verdict.
 **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
@@ -45,12 +46,13 @@ RFC 024 and 028 change the renderer before you start; **re-derive these** and st
 | `multiline_pre_in_li_in_blockquote` | ``> - \n\n> ```\nx\ny\n``` `` |
 | `tight_list_control` | `- a\n- b` — correct |
 | `indented_code_in_pre_in_blockquote` | ```` > ```\n    x\n```\n\nafter ```` — the content line loses `> `, and the orphaned fence swallows `after` (added 2026-09-17, after RFC 024c's whitespace rule) |
+| `link_around_p_in_li` | `- \n\n[x](/x)` — empty bullet; the link, correct since RFC 028, lands outside the list (added 2026-09-17) |
 
-**Expect 15 of 17 to fail today.** Confirm with the harness, not by reading this table.
+**Expect 16 of 18 to fail today.** Confirm with the harness, not by reading this table.
 
 ## 3. Order of work
 
-1. **Harness first.** Add a `Rfc035` owner. Add the 17 cells from RFC 035 §4 — in a new
+1. **Harness first.** Add a `Rfc035` owner. Add the 18 cells from RFC 035 §4 — in a new
    `tests/output_validity/block_in_container.rs` — **with the expectations exactly as written in the RFC**.
    Run against the base commit; mark every failing cell `known_defect(Rfc035, <harness reason>)`. Commit.
    If an expectation looks wrong to you, **stop and report** — do not adjust it to match output.
@@ -67,8 +69,10 @@ RFC 024 and 028 change the renderer before you start; **re-derive these** and st
   lines (a quote's blank line is `>` alone), and **code-block content lines**. This deliberately reverses RFC
   024's "no prefix in `code_block_content`", which deferred exactly this to A-08.
 - **Loose/tight per RFC 035 §3.1**: loose iff some item has two or more blocks, a maximal inline run counting
-  as one block, nested lists not counted. Decide it **with the mechanism RFC 028 chose**; do not add a second
-  look-ahead.
+  as one block, nested lists not counted. **RFC 028 chose a tree query**: `traversal.rs::inline_wrappers_of_blocks`,
+  one O(n) non-recursive pre-pass, result in a `HashSet<NodeId>`, block classification from `utils::block_kind`, and
+  `traversal::disposition()` so a block the mode drops or unwraps is not counted. **Extend that pre-pass** to compute
+  per-list looseness; do not add a second look-ahead, and keep it mode-faithful the same way.
 - **Tight plain lists stay byte-identical to 2.2.3** — `tight_list_control` plus every existing list test.
 
 ## 5. Scope boundary, per RFC 027 Rule 2
@@ -84,7 +88,7 @@ RFC 024 and 028 change the renderer before you start; **re-derive these** and st
 Per RFC 027 Rule 3, label what each ran against.
 
 1. §2 table re-derived before; after, for every cell.
-2. All 17 cells passing under CommonMark and GFM, all five modes; list which were marked and which passed from the start.
+2. All 18 cells passing under CommonMark and GFM, all five modes; list which were marked and which passed from the start.
 3. **No other harness cell changes state.**
 4. **Tight-list byte identity**: every existing test and runner fixture with a list — outputs before and after; any change listed and justified by §3.1.
 5. Prefix-stack balance assertion present, and shown to fire on a deliberately unbalanced push (in a test, not left in).
@@ -109,10 +113,10 @@ fix changes another RFC's cells.
 
 - [ ] §0 honoured
 - [ ] §2 re-derived; what moved stated
-- [ ] 17 cells added first, exactly as written; failing ones marked at the base commit
+- [ ] 18 cells added first, exactly as written; failing ones marked at the base commit
 - [ ] Container prefix stack in the sink; every line prefixed, incl. blank and code lines
 - [ ] §3.1 tight/loose rule via RFC 028's mechanism
-- [ ] All 17 cells passing, both readings, five modes
+- [ ] All 18 cells passing, both readings, five modes
 - [ ] No other cell changed state; tight lists byte-identical
 - [ ] Balance assertion shown to fire
 - [ ] elements.md rule; docs gate green; CHANGELOG
