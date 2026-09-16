@@ -10,7 +10,13 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+Awaiting the owner's decision.
+
+- [033 — Published docs: the source is what the reader gets](./proposed/033-published-docs-source-is-what-the-reader-gets.md)
+  — replaces the two manual browser checks. The copy button on the deployed site
+  drops mdBook hidden lines, so RFC 031's five fixed examples still fail when
+  copied. Make the code visible and forbid hidden lines; replace README
+  fragment links with guide URLs and forbid fragments; pin mdBook.
 
 ## Accepted
 
