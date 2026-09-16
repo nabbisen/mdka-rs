@@ -124,6 +124,36 @@ pub fn emphasis_negated_by_own_style(name: &str, style: Option<&str>) -> bool {
     }
 }
 
+/// Elements that start a Markdown block inside a link (RFC 028 criterion 7:
+/// "paragraphs, headings, list items, blockquotes, and `<pre>`", and the
+/// other elements rendered as blocks). `div`, `article`, `section` and `main`
+/// are not blocks when the documented `unwrap_unknown_wrappers` option removes
+/// them.
+fn starts_markdown_block(name: &str, opts: &ConversionOptions) -> bool {
+    match name {
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "ul" | "ol" | "li" | "blockquote"
+        | "pre" | "hr" | "header" | "footer" | "nav" | "aside" | "figure" | "figcaption" => true,
+        "div" | "article" | "section" | "main" => !opts.unwrap_unknown_wrappers,
+        _ => false,
+    }
+}
+
+/// An `<a href>` being read.
+struct OpenAnchor {
+    depth: usize,
+    dest: String,
+    /// Offset in the text where the link's content starts.
+    from: usize,
+    inline: Vec<String>,
+    /// A block starts inside it: its content is expected as one link per run
+    /// of inline content (RFC 028 criterion 7).
+    wraps_blocks: bool,
+    /// Text ranges inside a `<pre>`: a code block holds text only, so they are
+    /// not link content.
+    unlinked: Vec<(usize, usize)>,
+    pre_from: Option<usize>,
+}
+
 /// What one link holds: its destination, its words, and the inline elements
 /// inside it in order (`strong`, `em`, `code`, `image[src]`).
 #[derive(Debug, PartialEq, Eq)]
@@ -150,6 +180,9 @@ pub struct HtmlFacts {
     pub links: Vec<String>,
     /// The content of each of those links.
     pub link_contents: Vec<LinkContent>,
+    /// Parallel to `link_contents`: whether that link wraps block content, so
+    /// that the Markdown may split it into consecutive links, one per run.
+    pub link_wraps_blocks: Vec<bool>,
     /// `src` of every `<img>` outside `<pre>`/`<code>`.
     pub images: Vec<String>,
     /// Text content of every outermost `<pre>`.
@@ -164,12 +197,12 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
         text: String::new(),
         links: Vec::new(),
         link_contents: Vec::new(),
+        link_wraps_blocks: Vec::new(),
         images: Vec::new(),
         pres: Vec::new(),
         skeleton: Vec::new(),
     };
-    // (depth, href, text offset, inline elements) for each open link.
-    let mut anchors: Vec<(usize, String, usize, Vec<String>)> = Vec::new();
+    let mut anchors: Vec<OpenAnchor> = Vec::new();
     let mut hidden = 0usize;
     let mut code = 0usize;
     let mut pre: Option<(usize, String)> = None;
@@ -215,19 +248,30 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                         if let (Some(kind), Some(anchor), false) =
                             (inline_kind, anchors.last_mut(), in_code)
                         {
-                            anchor.3.push(kind);
+                            anchor.inline.push(kind);
+                        }
+                        if !in_code && starts_markdown_block(name, opts) {
+                            for anchor in anchors.iter_mut() {
+                                anchor.wraps_blocks = true;
+                                if name == "pre" {
+                                    anchor.pre_from = Some(facts.text.len());
+                                }
+                            }
                         }
                         match name {
                             "pre" if pre.is_none() => pre = Some((depth, String::new())),
                             "code" | "pre" => code += 1,
                             "a" if !in_code => {
                                 if let Some(h) = e.attr("href").filter(|h| !h.is_empty()) {
-                                    anchors.push((
+                                    anchors.push(OpenAnchor {
                                         depth,
-                                        h.to_string(),
-                                        facts.text.len(),
-                                        Vec::new(),
-                                    ));
+                                        dest: h.to_string(),
+                                        from: facts.text.len(),
+                                        inline: Vec::new(),
+                                        wraps_blocks: false,
+                                        unlinked: Vec::new(),
+                                        pre_from: None,
+                                    });
                                 }
                             }
                             // Alt text stands in for the image only where an
@@ -265,12 +309,33 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                             let (_, i, from) = open.pop().expect("open skeleton element");
                             facts.skeleton[i].1 = words(&facts.text[from..]);
                         }
-                        if name == "a" && anchors.last().is_some_and(|(d, ..)| *d == depth) {
-                            let (_, dest, from, inline) = anchors.pop().expect("open link");
-                            let text = words(&facts.text[from..]);
-                            if !text.is_empty() || inline.iter().any(|k| k.starts_with("image[")) {
-                                facts.links.push(dest.clone());
-                                facts.link_contents.push(LinkContent { dest, text, inline });
+                        if name == "pre" && pre.as_ref().is_some_and(|(d, _)| *d == depth) {
+                            for anchor in anchors.iter_mut() {
+                                if let Some(start) = anchor.pre_from.take() {
+                                    anchor.unlinked.push((start, facts.text.len()));
+                                }
+                            }
+                        }
+                        if name == "a" && anchors.last().is_some_and(|a| a.depth == depth) {
+                            let a = anchors.pop().expect("open link");
+                            let mut content = String::new();
+                            let mut at = a.from;
+                            for (start, end) in &a.unlinked {
+                                content.push_str(&facts.text[at..*start]);
+                                content.push(' ');
+                                at = *end;
+                            }
+                            content.push_str(&facts.text[at..]);
+                            let text = words(&content);
+                            if !text.is_empty() || a.inline.iter().any(|k| k.starts_with("image["))
+                            {
+                                facts.links.push(a.dest.clone());
+                                facts.link_contents.push(LinkContent {
+                                    dest: a.dest,
+                                    text,
+                                    inline: a.inline,
+                                });
+                                facts.link_wraps_blocks.push(a.wraps_blocks);
                             }
                         }
                         match name {
@@ -400,6 +465,28 @@ pub fn markdown_facts(md: &str, reading: Reading) -> MarkdownFacts {
     facts
 }
 
+/// Indices into `have` of a run of consecutive links to `want.dest` (in
+/// document order, ignoring links to other destinations) whose words and
+/// inline elements, joined, equal `want`'s.
+fn joined_run(have: &[&LinkContent], want: &LinkContent) -> Option<Vec<usize>> {
+    let same: Vec<usize> = (0..have.len())
+        .filter(|&i| have[i].dest == want.dest)
+        .collect();
+    for start in 0..same.len() {
+        let mut text: Vec<&str> = Vec::new();
+        let mut inline: Vec<String> = Vec::new();
+        for end in start..same.len() {
+            let link = have[same[end]];
+            text.extend(link.text.split_whitespace());
+            inline.extend(link.inline.iter().cloned());
+            if text.join(" ") == want.text && inline == want.inline {
+                return Some(same[start..=end].to_vec());
+            }
+        }
+    }
+    None
+}
+
 fn missing(want: &[String], have: &[String]) -> Vec<String> {
     let mut have: Vec<&String> = have.iter().collect();
     let mut lost = Vec::new();
@@ -501,10 +588,19 @@ pub fn properties(html: &str, md: &str, opts: &ConversionOptions, reading: Readi
     // 025c (review Q10): each link still holds what the HTML put inside it --
     // its words and its inline elements, images included. Only links whose
     // destination was found; a lost destination is reported above.
+    //
+    // RFC 028 criterion 7: a link wrapping blocks is written as one link per
+    // run of inline content, so it matches a run of consecutive parsed links
+    // with its destination whose contents, joined in order, equal its content.
+    // Any other link must match a single parsed link.
     let mut have: Vec<&LinkContent> = m.link_contents.iter().collect();
-    for want in &h.link_contents {
+    for (want, wraps_blocks) in h.link_contents.iter().zip(&h.link_wraps_blocks) {
         if let Some(i) = have.iter().position(|c| *c == want) {
             have.remove(i);
+        } else if *wraps_blocks && let Some(run) = joined_run(&have, want) {
+            for i in run.into_iter().rev() {
+                have.remove(i);
+            }
         } else if let Some(got) = have.iter().find(|c| c.dest == want.dest) {
             out.push(format!(
                 "[link-content] link {:?}: HTML holds {} vs parsed {}",

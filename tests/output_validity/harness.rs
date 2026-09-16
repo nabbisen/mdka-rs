@@ -52,8 +52,10 @@ pub const fn undecided(question: &'static str) -> Expect {
     Expect::Undecided(question)
 }
 
-/// Who fixes a known defect.
+/// Who fixes a known defect. An owner stays listed after its cells pass, so a
+/// regression can be marked against it again.
 #[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub enum Owner {
     /// Inline composition: inline elements inside links and code spans,
     /// inline writers bypassing the blockquote prefix, bare `<pre>`.

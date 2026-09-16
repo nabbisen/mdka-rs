@@ -255,6 +255,52 @@ fn harness_style_rule_edge_cases() {
     assert!(!negated("b", None));
 }
 
+#[test]
+fn link_wrapping_blocks_is_expected_as_one_link_per_run() {
+    // RFC 028 criterion 7 in the harness model: an <a> around blocks may be
+    // written as consecutive links whose contents, joined, equal its content.
+    assert_property(
+        "[link-content]",
+        r#"<a href="/o"><p>x</p><p>y</p></a>"#,
+        "[x](/o)\n\ny\n",
+        "[x](/o)\n\n[y](/o)\n",
+    );
+    assert_property(
+        "[link-content]",
+        r#"<a href="/o"><ul><li>x <b>b</b></li><li>y</li></ul></a>"#,
+        "- [x](/o) **b**\n- [y](/o)\n",
+        "- [x **b**](/o)\n- [y](/o)\n",
+    );
+}
+
+#[test]
+fn inline_link_split_in_two_is_still_a_violation() {
+    // Only a link that wraps blocks may be split: an inline link written as
+    // two adjacent links is a defect.
+    assert_property(
+        "[link-content]",
+        r#"<p><a href="/o">Read more</a></p>"#,
+        "[Read](/o) [more](/o)\n",
+        "[Read more](/o)\n",
+    );
+}
+
+#[test]
+fn pre_inside_a_link_is_not_link_content() {
+    // A code block holds text only (RFC 024 criterion 3), so a <pre> inside an
+    // <a> is not linked; a link holding only a <pre> is an empty link.
+    let only_pre = r#"<a href="/o"><pre>x</pre></a>"#;
+    for reading in crate::harness::READINGS {
+        assert!(properties(only_pre, "```\nx\n```\n", &balanced(), reading).is_empty());
+    }
+    assert_property(
+        "[link-content]",
+        r#"<a href="/o"><p>t</p><pre>x</pre></a>"#,
+        "[t x](/o)\n\n```\nx\n```\n",
+        "[t](/o)\n\n```\nx\n```\n",
+    );
+}
+
 // ── both readings ──────────────────────────────────────────────────────────
 
 fn strikethrough_unescaped(_: &str, _: &ConversionOptions) -> String {
