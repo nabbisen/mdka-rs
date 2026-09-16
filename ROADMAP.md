@@ -331,6 +331,16 @@ the gate is observed failing against the broken package and passing after. A gat
 that has only ever been seen green proves nothing — the lesson from `verify-ci`
 in M1b, now applied to the artifact rather than the pipeline.
 
+**M2b status, 2026-09-16.** RFC 007, 020, 021, 022, 023 and 026 are all
+approved. RFC 027's release checklist is built; **its consumer pass is the only
+outstanding item, and it runs after the release by construction.** `2.2.2` is
+ready to cut, against the checklist RFC 027 just produced — its first use.
+
+The consumer pass runs against **`2.2.2`**, not `2.2.1`: by the time it could
+run, `2.2.2` had replaced `usage-cli.md`, the CLI `--help` and the
+type-annotation claim, so a pass against `2.2.1` would review text that no
+longer exists.
+
 **Exit criteria.** `npm install mdka@2.2.1 && node -e "require('mdka')"` succeeds
 in a clean directory on every published platform — this one closes with `2.2.1`;
 the rest close with `2.2.2`: a CI job performs exactly that

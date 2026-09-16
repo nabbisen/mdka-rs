@@ -58,8 +58,14 @@ Step 4 is deliberately unstructured. `A-01`'s linked-image defect survives every
 mechanical check we have and is obvious the moment a person reads output from a
 real page.
 
-The first consumer pass runs against `2.2.1`. Its output is a review-request
+The first consumer pass runs against **`2.2.2`**. Its output is a review-request
 package like any other.
+
+**Corrected 2026-09-16.** This first said `2.2.1`. By the time the pass could
+run, `2.2.2` had replaced `usage-cli.md`, the CLI `--help` and the
+type-annotation claim — so a pass against `2.2.1` would have generated findings
+against text that no longer exists and missed the text that ships. The
+implementer raised it rather than following the wording or deviating silently.
 
 ### Also on the checklist — held correspondence, added 2026-09-16
 
@@ -91,6 +97,15 @@ The architect writes handoffs, so this is a constraint on me. The corresponding
 reviewer obligation is to challenge a boundary that has no stated reason, rather
 than to check the stated scope faithfully — which is what happened.
 
+**Amended 2026-09-16, from the implementer's feedback.** Rule 2 makes a boundary
+**visible**, which is most of its value — but it cannot make it **correct**.
+RFC 022's boundary and RFC 007's were both written from a *Touches* list rather
+than from a search, and both missed consumers the implementer then found.
+
+**A scope boundary must be derived from a search over the symbol, not from a
+file list.** One `grep` for the thing itself across the whole repository is what
+makes a path list trustworthy.
+
 ## Rule 3 — Evidence must state what was consumed
 
 Review requests already require executed verification. They do not require saying
@@ -102,6 +117,11 @@ plainly rather than letting "npm test passed" imply more than it proves.
 
 This is a one-line addition that would have made `S-01` visible as an
 unanswered question at every release since 2.0.2.
+
+**Convention, added 2026-09-16.** For a gate the label is ambiguous — its code
+is in the tree, the thing it inspects is an artifact, and its evidence is a CI
+run. **Label what the check *consumed*.** Without this written down reviewers
+pick their own reading and the column stops meaning anything.
 
 ## Rule 4 — Recommend a periodic external audit
 
@@ -176,6 +196,27 @@ against an independent implementation surfaces exactly the "our output is odd in
 a way we stopped noticing" class, at near-zero cost.
 
 This is a suggestion for the consumer pass, not a required step.
+
+## Rule 5 — a handoff's numbers are inputs, not facts
+
+Added 2026-09-16, proposed by the implementer.
+
+**Re-derive a handoff's stated measurements before working to them.** Counts,
+file lists, greps and preconditions in a handoff are the architect's working,
+not established fact.
+
+Rules 1–4 all address *reporting*. The defect that actually recurred across this
+milestone is different: **a claim in a handoff that nobody re-derived.** Three
+instances, all architect errors, all caught by the implementer re-measuring:
+
+| Defect | The unchecked claim |
+|---|---|
+| RFC 007 | the count table said 128 Japanese lines; the real figure was 153 |
+| RFC 022 | the scope grep covered `src/` and `cli/src/`, missing two `examples/` consumers |
+| RFC 028 | the handoff carried a sequencing gate its own dispatch violated |
+
+**A discrepancy found this way is a finding, not insubordination** — that is how
+all three were received, and the rule is void if it is ever received otherwise.
 
 ## What this RFC deliberately does not add
 
