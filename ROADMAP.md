@@ -354,7 +354,7 @@ text run.
 |---|---|---|---|
 | 025 | Markdown output-validity harness | **P0** | M |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M |
-| 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S |
+| 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
 | 010 | Escaping & text-processing correctness audit | P0 | M |
 | 008 | GFM table support | P1 | L |
 | 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M |
@@ -430,6 +430,24 @@ audit did. That is now two independent voices. M3 still sequences correctness
 ahead of tables — wrong output for HTML we already claim to handle is worse than
 missing support for HTML we do not — but the owner should see the ranking rather
 than have it buried in a sequencing decision the architect made alone.
+
+#### Dispatch discipline — added 2026-09-16
+
+RFC 028's handoff was written into `rfcs/handoffs/` while both its preconditions
+were unmet, carrying its gate in a header metadata line. The implementer stopped
+and escalated correctly
+(`.git-exclude/reviewed/028-sequencing-conflict/README.md`).
+
+**A handoff present in `rfcs/handoffs/` is an instruction to start.** A
+sequencing clause inside it is not a substitute for not dispatching it — it
+depends on the reader noticing a line that contradicts the document's existence.
+
+**Rule: a handoff whose preconditions are unmet is not written into
+`rfcs/handoffs/` until they are near.** Where one already exists in that state,
+its gate goes at the very top as a stop block, not in the header table. RFC 028's
+handoff has been rewritten that way.
+
+This is the architect's discipline, not the implementer's.
 
 #### Candidate — conversion options for real-world HTML
 

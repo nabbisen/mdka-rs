@@ -3,7 +3,8 @@
 **Status.** Accepted 2026-09-16 — implementer may start
 **Tracks.** M3 · Conversion fidelity → `2.3.0`
 **Priority.** P0
-**Touches.** `src/renderer.rs`.
+**Sequencing.** After **RFC 025 and RFC 024**. Amended 2026-09-16 — see below.
+**Touches.** `src/renderer.rs`, `src/traversal.rs`, `src/utils.rs`.
 **Source.** bekoedit field report, 2026-09-16, item 3. Reproduced independently.
 **Prepared.** 2026-09-16
 
@@ -25,6 +26,22 @@ blocks, producing stray `**` lines that are not emphasis in any Markdown dialect
 Identical in every mode. The second case shows it is **not** specific to Google
 Docs or to the `font-weight:normal` attribute — plain `<strong>` around blocks is
 enough.
+
+**Amended 2026-09-16: any block child does it, not only `<p>`.** Confirmed during
+the sequencing escalation:
+
+| Input | Output |
+|---|---|
+| `<em><p>x</p><p>y</p></em>` | `"*\n\nx\n\ny\n\n*\n"` |
+| `<b>text<p>para</p></b>` (mixed) | `"**text\n\npara\n\n**\n"` |
+| `<b><em><p>x</p></em></b>` (nested) | `"***\n\nx\n\n***\n"` |
+| `<b><div>x</div></b>` | `"**\n\nx\n\n**\n"` |
+| `<b><ul><li>a</li></ul></b>` | `"**\n\n- a\n\n**\n"` |
+| `<b><h2>head</h2></b>` | `"**\n\n## head\n\n**\n"` |
+
+This matters for the fix: **key on the block classification, not on `p`.** A fix
+written against the `<p>`-only examples above would have passed its own
+acceptance criteria while leaving `div`, `ul` and headings broken.
 
 ## Mechanism
 
@@ -89,6 +106,20 @@ writers through the output sink so inline elements inside `<a>` reach the link
 capture buffer. It adds no block-awareness, and these arms would still push
 delimiters unconditionally. Adjacent code, different defect.
 
+### Sequencing amended 2026-09-16 — after RFC 024 as well
+
+A second mechanism exists: **buffer the emphasis content and decide on leave**,
+reusing the `InlineCapture` pattern the link path already uses. It needs no tree
+query at all.
+
+RFC 024 generalises exactly that machinery. If RFC 024 lands first the buffer
+route may be nearly free; if RFC 028 lands first it builds a parallel mechanism
+RFC 024 then has to absorb. The choice between the tree-query and buffer routes
+should be made when RFC 024's shape is known.
+
+The cost is that a P0 defect waits longer. That is the correct trade: a P0 defect
+fixed twice is worse than a P0 defect fixed once, later.
+
 **Not caught by [RFC 025](./025-output-validity-harness.md) as specified.** Its
 composition matrix is inline-construct × container — every cell puts an inline
 thing inside a container. This defect is a *block inside an inline*, the other
@@ -113,6 +144,8 @@ Every such change is from invalid Markdown to valid Markdown. Minor version,
 | The block predicate disagrees with the arms that actually emit blocks | Derive it from the same classification those arms use, not a second list. Two disjoint lists is the `figure`/`figcaption` defect from RFC 003. |
 | Emphasis with *mixed* inline and block children | Define and test it. `<b>text<p>para</p></b>` is real in clipboard HTML. |
 | Deeply nested emphasis around blocks | `<b><em><p>x</p></em></b>` must not emit either delimiter. Test it. |
+| ~~html5ever restructures the tree before the renderer sees it~~ | **Closed 2026-09-16.** It does not: `<strong><p>` reaches the renderer with the `<p>` as a child, demonstrated by the nested and mixed outputs above. |
+| A descendant scan per emphasis element is O(subtree), so nested emphasis is O(n²) | **Requirement: O(n) total over the document, not O(n) per emphasis element.** A single bottom-up pass in `traversal.rs` satisfies it. The Google Docs shape — one `<b>` wrapping an entire payload — is exactly the bad input. |
 | A is wrong and B was right | The reasoning above turns on Google Docs' wrapper being the dominant real-world producer. If the corpus (below) shows otherwise, **report before implementing.** |
 
 ## Acceptance criteria

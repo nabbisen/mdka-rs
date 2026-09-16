@@ -3,10 +3,25 @@
 **Governing RFC.** [RFC 028](../../accepted/028-emphasis-around-block-content.md)
 **Milestone.** M3 → `2.3.0`
 **Priority.** P0
-**Sequencing.** After [RFC 025](../025-output-validity-harness/implementation-handoff.md) lands. **Do not start before M2b ships.**
-**Prepared.** 2026-09-16
+**Prepared.** 2026-09-16 · **gate revised 2026-09-16**
 
 ---
+
+## 0. 🛑 QUEUED, NOT DISPATCHED — do not start
+
+**Three preconditions, none of which held when this was first written into the
+repository. That was a dispatch error on my part, not a reason for you to start.**
+
+| Precondition | Required |
+|---|---|
+| `2.2.2` is cut and M2b has shipped | This changes conversion output; it must not land in a patch release not scoped for it |
+| **RFC 025** has landed | §6.5 requires un-`#[ignore]`ing its block-inside-inline cells — unsatisfiable until the matrix exists |
+| **RFC 028's mechanism choice is settled against RFC 024** | Added 2026-09-16 — see §4a |
+
+A handoff sitting in `rfcs/handoffs/` reads as an instruction to start. This one
+is not, until all three hold. **If you are reading this and they do not, stop and
+say so** — that is what the previous implementer did, correctly, and it is
+recorded at `.git-exclude/reviewed/028-sequencing-conflict/README.md`.
 
 ## 1. Purpose
 
@@ -22,8 +37,22 @@ blocks, producing stray `**` lines that are not emphasis in any Markdown dialect
 ```
 
 Identical in every mode. **Note the first case**: plain `<strong>`, no style
-attribute, no Google Docs. The defect is structural, not a vendor quirk — the
-reporter framed it partly around Google Docs and the sharper framing is ours.
+attribute, no Google Docs. The defect is structural, not a vendor quirk.
+
+**Any block child does it, not only `<p>`** — confirmed 2026-09-16:
+
+| Input | Output |
+|---|---|
+| `<em><p>x</p><p>y</p></em>` | `"*\n\nx\n\ny\n\n*\n"` |
+| `<b>text<p>para</p></b>` | `"**text\n\npara\n\n**\n"` |
+| `<b><em><p>x</p></em></b>` | `"***\n\nx\n\n***\n"` |
+| `<b><div>x</div></b>` | `"**\n\nx\n\n**\n"` |
+| `<b><ul><li>a</li></ul></b>` | `"**\n\n- a\n\n**\n"` |
+| `<b><h2>head</h2></b>` | `"**\n\n## head\n\n**\n"` |
+
+**Key on the block classification, not on `p`.** A fix written against `<p>`
+alone passes the original acceptance criteria while leaving `div`, `ul` and
+headings broken.
 
 ## 3. Mechanism — read, not inferred
 
@@ -56,6 +85,37 @@ like a bug; fully bold output looks intentional and nobody reports it.
 **If you conclude distribution is right after all, stop and report** rather than
 choosing. The decision turns on which real-world producer dominates, and the
 corpus (§7) is the evidence that would change it.
+
+## 4a. Mechanism — two routes, choose after RFC 024
+
+**Route 1 — tree query.** `traversal.rs` computes a "has block descendant" flag
+and the renderer consumes it. `enter_element` takes `&scraper::node::Element`,
+which carries no children, so the query cannot live in the renderer.
+
+**Route 2 — buffer and decide on leave.** Capture the emphasis content the way
+the link path already does, then emit with or without delimiters based on what
+was captured. No tree query at all. **RFC 024 generalises exactly this
+machinery**, so after it lands this route may be nearly free.
+
+**Do not choose before RFC 024's shape is known.** Building Route 1 first means
+RFC 024 later has to absorb a parallel mechanism.
+
+### Requirements that bind whichever route is chosen
+
+- **O(n) total over the document, not O(n) per emphasis element.** A descendant
+  scan per emphasis element is O(subtree), and nested emphasis makes it
+  quadratic. The Google Docs shape — one `<b>` wrapping an entire clipboard
+  payload — is exactly the input that produces the bad case. A single bottom-up
+  pass satisfies this: each node's flag is *(any child is a block tag) OR (any
+  child has a block descendant)*, computed once as the walk unwinds.
+- **Descendant, not child.** `<b><em><p>x</p></em></b>` has only an inline direct
+  child. A direct-children predicate fails it silently.
+- **One block-tag list, two consumers.** Extract the set into `const`s in
+  `utils.rs` — which already houses `is_skip_tag`, `is_shell_tag`,
+  `is_wrapper_tag`, `is_structural_tag` — and have both the renderer's arms and
+  the new predicate read from it. Not a second list.
+
+State which route you chose and why in the review request.
 
 ## 5. Scope
 
