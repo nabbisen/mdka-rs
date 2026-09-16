@@ -26,6 +26,7 @@ mod renderer;
 mod traversal;
 mod utils;
 
+#[doc(hidden)]
 #[deprecated(
     since = "2.2.2",
     note = "benchmark-only utility, never part of the conversion API; \
