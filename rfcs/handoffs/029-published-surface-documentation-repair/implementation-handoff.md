@@ -79,9 +79,23 @@ example is type-checked as written.
 §3's path fixes cannot be verified by looking at GitHub — that is the one
 renderer where root-absolute paths work.
 
-**Check the actual tarballs**: `npm pack mdka` and the PyPI sdist, and confirm
-what the README references either exists inside them or is an absolute URL.
-Anything relative must resolve in the package, not in the repository.
+**Check the actual tarballs**: `npm pack mdka` and the PyPI sdist.
+
+### ⚠ Corrected 2026-09-16 — "is the target in the package" is the wrong test
+
+This first read *"confirm what the README references either exists inside them
+or is an absolute URL."* **That produces a false pass on PyPI.** Verified: the
+sdist **does** contain `CHANGELOG.md`, `ROADMAP.md` and `docs/` — so the targets
+are present, and the links are still broken.
+
+PyPI renders the README on its **project page**, where a relative path resolves
+against `pypi.org`, not the tarball. npm does the same on the package page.
+
+**The test is whether the path resolves where the README is rendered**, which
+differs per registry — not whether the target is in the package. In practice:
+`README.md` should carry no relative or root-absolute links at all.
+
+Found by the implementer while following the instruction as written.
 
 This is the same lesson as RFC 020's install gate and RFC 026's wheel gate:
 check what the consumer receives.
@@ -159,6 +173,8 @@ an installed artifact.
 - [ ] README carries the modes-identical and table caveats, or links pointedly
 - [ ] `--help` still matches `usage-cli.md`
 - [ ] Output byte-identical; count unchanged; fmt, clippy, `mdbook build` clean
+- [ ] **`CHANGELOG.md` entry** covering the argument-handling change — added
+      2026-09-16; this checklist omitted it
 
 ## 11. Escalate rather than decide
 

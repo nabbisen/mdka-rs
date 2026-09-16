@@ -109,8 +109,10 @@ a defect. F-24 (quadratic deep-nesting) is recorded for M4.
    two do.
 4. `installation.md` describes a fallback that works, or says plainly there is
    none.
-5. README image and link paths resolve **in the published npm and PyPI
-   renderings**, verified against a built artifact, not on GitHub.
+5. README image and link paths resolve **where the README is rendered** — the
+   npm and PyPI project pages — verified against a built artifact, not on
+   GitHub. **Not** "the target exists in the tarball": the PyPI sdist contains
+   `docs/` and `CHANGELOG.md`, and the relative links break anyway.
 6. `mdka --version` prints the version; an unknown `-`-prefixed argument is
    rejected with a usable message.
 7. The README carries the modes-identical and table caveats, or a pointed link
@@ -118,3 +120,7 @@ a defect. F-24 (quadratic deep-nesting) is recorded for M4.
 8. The docs gate covers `README.md` and checks keyword arguments — **and is
    observed failing against the pre-fix README** before the fix lands.
 9. No engine change: conversion output byte-identical, test count unchanged.
+10. **A `CHANGELOG.md` entry covering the argument-handling change.** `--version`
+    is additive, but `mdka -weird.html` previously converted that file and now
+    errors; the escape is `mdka -- -weird.html`. Anyone with that in a script
+    needs to find out why. Added 2026-09-16 — the original criteria omitted it.
