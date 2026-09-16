@@ -1,0 +1,27 @@
+# The supported PyPI wheel matrix (RFC 034). Change it deliberately.
+#
+# Read by .github/workflows/scripts/check-wheel-matrix.py, which is used by
+# release-pypi.yaml (before the irreversible upload), by the pypi published
+# gate (after it), and by ci.yaml (floor test).
+#
+# python-floor -- the ONLY reasons to raise it (RFC 034 §6.1), never the calendar:
+#   1. CI can no longer install the floor Python (ci.yaml's `python` job
+#      tests the floor, so this shows up as a red job).
+#   2. A PyO3 version the project needs drops support for the floor.
+#   3. The floor's limited API (abi3) blocks a change the project needs.
+# When one fires, raise to the LOWEST version that clears it, in a MINOR
+# release only, with a CHANGELOG entry. Upstream end-of-life is not a trigger.
+# Keep python/Cargo.toml's `abi3-pyXY` feature, pyproject.toml's
+# requires-python, ci.yaml's matrix floor and installation.md in step; the
+# gates check the last three against this file.
+
+applies-from = "2.3.0"          # published versions before this predate the policy
+python-floor = "3.10"
+abi3         = true             # one cp310-abi3 wheel per platform
+platforms    = [
+  "manylinux_2_17_x86_64", "manylinux_2_17_aarch64",
+  "musllinux_1_2_x86_64",  "musllinux_1_2_aarch64",
+  "win_amd64",             "macosx_11_0_arm64",
+]
+extra        = []               # no free-threaded, no PyPy wheels (owner, 2026-09-16)
+sdist        = true

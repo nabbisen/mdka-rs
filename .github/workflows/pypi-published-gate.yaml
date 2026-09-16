@@ -1,0 +1,114 @@
+name: pypi published gate
+
+# RFC 034 §4.4. Checks what PyPI actually serves for the latest release, the
+# way the npm install gate checks npm:
+#
+#   1. the published file set equals python/wheel-matrix.toml -- the same
+#      script release-pypi.yaml runs before upload, so the two cannot disagree;
+#   2. the release installs FROM PyPI, wheel only, at the declared floor and
+#      at the newest stable CPython, and converts;
+#   3. installation.md states the declared floor.
+#
+# Its own workflow file, not ci.yaml: the release workflows gate on ci.yaml's
+# conclusion, so a gate there can block the release that would make it pass
+# (RFC 020's correction record).
+#
+# `pypi wheel gate` is a different check: it installs a wheel BUILT FROM THE
+# TREE. This one reports on the LAST PUBLISHED release, so it lags the tree --
+# a published artifact cannot be verified before it is published.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Catch a registry-side change even when nobody pushes.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  file-set:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.pypi.outputs.version }}
+      floor: ${{ steps.floor.outputs.floor }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Install packaging
+        run: python -m pip install packaging
+
+      - name: Read the latest release from PyPI
+        id: pypi
+        run: |
+          set -euo pipefail
+          curl -fsSL https://pypi.org/pypi/mdka/json -o "$RUNNER_TEMP/pypi.json"
+          version=$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['info']['version'])" "$RUNNER_TEMP/pypi.json")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Read the declared floor
+        id: floor
+        run: echo "floor=$(python .github/workflows/scripts/check-wheel-matrix.py floor)" >> "$GITHUB_OUTPUT"
+
+      # Before applies-from this prints a ::notice:: and passes: the policy
+      # never governed that release. It is not silent, and it ends by itself
+      # when the first release under the policy publishes.
+      - name: Published file set equals the declared matrix
+        run: python .github/workflows/scripts/check-wheel-matrix.py published "$RUNNER_TEMP/pypi.json"
+
+      - name: installation.md states the declared floor
+        run: python .github/workflows/scripts/check-wheel-matrix.py floor-doc docs/src/getting-started/installation.md
+
+  install:
+    needs: [file-set]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # The declared floor comes from wheel-matrix.toml via file-set; "3.x"
+        # is the newest stable CPython.
+        python: [floor, "3.x"]
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python == 'floor' && needs.file-set.outputs.floor || matrix.python }}
+
+      # --only-binary :all: is the point of this step. The runner has a Rust
+      # toolchain: without the flag a missing wheel falls back to building
+      # the sdist, the install succeeds, and the gate passes on exactly the
+      # defect it exists to catch.
+      - name: Install the published wheel from PyPI and convert
+        env:
+          VERSION: ${{ needs.file-set.outputs.version }}
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/venv"
+          source "$RUNNER_TEMP/venv/bin/activate"
+          python --version
+          cd "$RUNNER_TEMP"
+          python -m pip install --only-binary :all: --no-cache-dir "mdka==${VERSION}"
+          python -c "
+          import mdka
+          out = mdka.html_to_markdown('<h1>x</h1>')
+          assert '# x' in out, repr(out)
+          print('OK: mdka', mdka.version(), 'installs from a wheel and converts:', repr(out))
+          "

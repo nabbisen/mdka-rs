@@ -12,5 +12,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 mdka  = { workspace = true }
-pyo3  = { version = "0.28", features = ["extension-module"] }
+pyo3  = { version = "0.28", features = ["extension-module", "abi3-py310"] }
 rayon = "1"

@@ -78,9 +78,23 @@ jobs:
         with:
           working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # RFC 034: no --find-interpreter. PyO3's abi3-py310 feature makes one
+          # cp310-abi3 wheel valid on every CPython >= 3.10, so each job builds
+          # exactly one wheel instead of one per interpreter the runner happens
+          # to carry. The declared set is python/wheel-matrix.toml.
+          args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
+
+      - name: Require exactly one wheel
+        run: |
+          set -euo pipefail
+          ls -la python/dist
+          count=$(find python/dist -maxdepth 1 -name '*.whl' | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly 1 wheel in python/dist, found $count"
+            exit 1
+          fi
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -126,9 +140,23 @@ jobs:
         with:
           working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # RFC 034: no --find-interpreter. PyO3's abi3-py310 feature makes one
+          # cp310-abi3 wheel valid on every CPython >= 3.10, so each job builds
+          # exactly one wheel instead of one per interpreter the runner happens
+          # to carry. The declared set is python/wheel-matrix.toml.
+          args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
+
+      - name: Require exactly one wheel
+        run: |
+          set -euo pipefail
+          ls -la python/dist
+          count=$(find python/dist -maxdepth 1 -name '*.whl' | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly 1 wheel in python/dist, found $count"
+            exit 1
+          fi
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -173,8 +201,22 @@ jobs:
         with:
           working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # RFC 034: no --find-interpreter. PyO3's abi3-py310 feature makes one
+          # cp310-abi3 wheel valid on every CPython >= 3.10, so each job builds
+          # exactly one wheel instead of one per interpreter the runner happens
+          # to carry. The declared set is python/wheel-matrix.toml.
+          args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+      - name: Require exactly one wheel
+        run: |
+          set -euo pipefail
+          ls -la python/dist
+          count=$(find python/dist -maxdepth 1 -name '*.whl' | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly 1 wheel in python/dist, found $count"
+            exit 1
+          fi
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -218,8 +260,22 @@ jobs:
         with:
           working-directory: python
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # RFC 034: no --find-interpreter. PyO3's abi3-py310 feature makes one
+          # cp310-abi3 wheel valid on every CPython >= 3.10, so each job builds
+          # exactly one wheel instead of one per interpreter the runner happens
+          # to carry. The declared set is python/wheel-matrix.toml.
+          args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+      - name: Require exactly one wheel
+        run: |
+          set -euo pipefail
+          ls -la python/dist
+          count=$(find python/dist -maxdepth 1 -name '*.whl' | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly 1 wheel in python/dist, found $count"
+            exit 1
+          fi
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -263,6 +319,10 @@ jobs:
       contents: read
 
     steps:
+      # For python/wheel-matrix.toml, pyproject.toml and the check script.
+      # Checked out before the download, so it cannot clean the artifacts away.
+      - uses: actions/checkout@v6
+
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
@@ -278,6 +338,22 @@ jobs:
           mkdir -p dist
           find artifacts -type f \( -name '*.whl' -o -name '*.tar.gz' \) -exec cp -f {} dist/ \;
           ls -la dist
+
+      # RFC 034 §4.3. The last point where a wrong file set can be prevented:
+      # a PyPI filename can never be re-uploaded. Runs on tags AND on
+      # workflow_dispatch, so a dry run exercises it. `cp -f` above would let a
+      # same-named file from one job overwrite another's; with one wheel per
+      # job that cannot happen, and if it ever does it shows up here as a
+      # missing file. The published gate runs the same script after upload.
+      - name: Check distributables against the declared wheel matrix
+        env:
+          TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: |
+          set -euo pipefail
+          tag_args=()
+          if [ -n "$TAG" ]; then tag_args=(--tag "$TAG"); fi
+          uv run --no-project --python 3.13 --with packaging -- \
+            python .github/workflows/scripts/check-wheel-matrix.py files --dir dist "${tag_args[@]}"
 
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
