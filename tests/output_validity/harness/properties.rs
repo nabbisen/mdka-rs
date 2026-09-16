@@ -129,7 +129,7 @@ pub fn emphasis_negated_by_own_style(name: &str, style: Option<&str>) -> bool {
 /// other elements rendered as blocks). `div`, `article`, `section` and `main`
 /// are not blocks when the documented `unwrap_unknown_wrappers` option removes
 /// them.
-fn starts_markdown_block(name: &str, opts: &ConversionOptions) -> bool {
+pub fn starts_markdown_block(name: &str, opts: &ConversionOptions) -> bool {
     match name {
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "ul" | "ol" | "li" | "blockquote"
         | "pre" | "hr" | "header" | "footer" | "nav" | "aside" | "figure" | "figcaption" => true,

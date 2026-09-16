@@ -301,6 +301,145 @@ fn pre_inside_a_link_is_not_link_content() {
     );
 }
 
+// ── 028b: guards on the link-around-blocks model ───────────────────────────
+
+fn two_blocks_collapsed_into_one_link(_: &str, _: &ConversionOptions) -> String {
+    "[x y](/o)\n".to_string()
+}
+
+#[test]
+fn collapsed_link_around_blocks_is_caught_by_the_tree_not_the_properties() {
+    // `joined_run` accepts one link for several blocks, so the link properties
+    // pass `[x y](/o)` -- the collapse RFC 024's review rejected. The cell's
+    // tree assertion (p_in_a's, written by the architect) is what catches it.
+    let html = r#"<a href="/o"><p>x</p><p>y</p></a>"#;
+    let expect = tree(r#"para(link[/o]("x")), para(link[/o]("y"))"#);
+    for reading in crate::harness::READINGS {
+        let found = properties(html, "[x y](/o)\n", &balanced(), reading);
+        assert!(
+            found.is_empty(),
+            "{reading}: properties should pass: {found:?}"
+        );
+    }
+    for mode in crate::harness::MODES {
+        let e = evaluate(two_blocks_collapsed_into_one_link, html, expect, mode);
+        let ModeResult::Mismatch(problems) = e.result else {
+            panic!("{mode}: expected a mismatch, got {:?}", e.result);
+        };
+        assert!(
+            problems.iter().all(|p| p.contains("[structure]")),
+            "{mode}: only the tree should fire: {problems:#?}"
+        );
+        for reading in ["commonmark", "gfm"] {
+            let prefix = format!("({reading}) [structure]");
+            assert!(
+                problems.iter().any(|p| p.starts_with(&prefix)),
+                "{mode}: {prefix} missing"
+            );
+        }
+    }
+}
+
+/// The number of top-level blocks in `md` (CommonMark).
+fn top_level_blocks(md: &str) -> usize {
+    let tree = structure(md, Reading::CommonMark, false);
+    let mut depth = 0usize;
+    let mut blocks = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    for ch in tree.chars() {
+        if in_string {
+            match (escaped, ch) {
+                (true, _) => escaped = false,
+                (false, '\\') => escaped = true,
+                (false, '"') => in_string = false,
+                _ => {}
+            }
+            continue;
+        }
+        match ch {
+            '"' => in_string = true,
+            '(' => {
+                if depth == 0 {
+                    blocks += 1;
+                }
+                depth += 1;
+            }
+            ')' => depth -= 1,
+            _ => {}
+        }
+    }
+    blocks
+}
+
+/// Tags the harness's `starts_markdown_block` names, each with a probe of the
+/// form `a<TAG>b</TAG>` at body level. A list item needs its list; `hr` is
+/// empty, so it separates `a` from `b` on its own.
+const HARNESS_BLOCK_PROBES: &[(&str, &str)] = &[
+    ("h1", "a<h1>b</h1>"),
+    ("h2", "a<h2>b</h2>"),
+    ("h3", "a<h3>b</h3>"),
+    ("h4", "a<h4>b</h4>"),
+    ("h5", "a<h5>b</h5>"),
+    ("h6", "a<h6>b</h6>"),
+    ("p", "a<p>b</p>"),
+    ("ul", "a<ul><li>b</li></ul>"),
+    ("ol", "a<ol><li>b</li></ol>"),
+    ("li", "a<ul><li>b</li></ul>"),
+    ("blockquote", "a<blockquote>b</blockquote>"),
+    ("pre", "a<pre>b</pre>"),
+    ("hr", "a<hr>b"),
+    ("header", "a<header>b</header>"),
+    ("footer", "a<footer>b</footer>"),
+    ("nav", "a<nav>b</nav>"),
+    ("aside", "a<aside>b</aside>"),
+    ("figure", "a<figure>b</figure>"),
+    ("figcaption", "a<figcaption>b</figcaption>"),
+    ("div", "a<div>b</div>"),
+    ("article", "a<article>b</article>"),
+    ("section", "a<section>b</section>"),
+    ("main", "a<main>b</main>"),
+];
+
+const INLINE_PROBE_TAGS: &[&str] = &[
+    "span", "b", "i", "em", "strong", "code", "a", "abbr", "small", "sub", "sup", "mark",
+];
+
+#[test]
+fn harness_block_list_agrees_with_what_mdka_renders() {
+    // Behavioural agreement: mdka is only converted, never imported. For each
+    // tag and each mode where the tag is not dropped, the harness says "starts
+    // a block" exactly when mdka's output has more than one top-level block.
+    // The five modes cover both settings of unwrap_unknown_wrappers
+    // (Balanced/Strict/Preserve off; Minimal/Semantic on).
+    let mut checked = Vec::new();
+    for mode in crate::harness::MODES {
+        let opts = ConversionOptions::for_mode(mode);
+        for (tag, html) in HARNESS_BLOCK_PROBES {
+            if opts.drop_interactive_shell && matches!(*tag, "nav" | "header" | "footer" | "aside")
+            {
+                continue;
+            }
+            let md = mdka_convert(html, &opts);
+            let harness = crate::harness::starts_markdown_block(tag, &opts);
+            let mdka = top_level_blocks(&md) > 1;
+            assert_eq!(
+                harness, mdka,
+                "{mode} <{tag}>: harness {harness}, mdka {mdka}, output {md:?}"
+            );
+            checked.push(format!("{mode}:{tag}={harness}"));
+        }
+        for tag in INLINE_PROBE_TAGS {
+            let html = format!("<p>a<{tag}>b</{tag}></p>");
+            let md = mdka_convert(&html, &opts);
+            assert!(!crate::harness::starts_markdown_block(tag, &opts), "{tag}");
+            assert_eq!(top_level_blocks(&md), 1, "{mode} <{tag}>: {md:?}");
+            checked.push(format!("{mode}:{tag}=inline"));
+        }
+    }
+    println!("checked: {}", checked.join(" "));
+}
+
 // ── both readings ──────────────────────────────────────────────────────────
 
 fn strikethrough_unescaped(_: &str, _: &ConversionOptions) -> String {
