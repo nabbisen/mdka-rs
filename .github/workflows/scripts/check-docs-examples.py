@@ -24,7 +24,12 @@ import tempfile
 from pathlib import Path
 
 RUNNABLE = {"rust", "python", "js", "ts"}
-SKIP_MARKERS = {"fragment", "ignore", "no_run", "text", "compile_fail"}
+# `no_run` is deliberately NOT here. It means "compile, but do not run" -- and
+# this gate only ever compiles, so a `no_run` block must still be built. RFC
+# 031: it used to be listed, which silently removed any `no_run` block from
+# the gate entirely. A block with a type error marked `no_run` passed as
+# "0 runnable of 1". Only markers meaning "do not compile" belong here.
+SKIP_MARKERS = {"fragment", "ignore", "text", "compile_fail"}
 FENCE = re.compile(r"^(?P<indent>\s*)```(?P<info>[A-Za-z0-9,_+-]*)\s*$")
 
 
@@ -134,6 +139,42 @@ def runnable(blocks):
     return out
 
 
+def mdbook_rust_source(code):
+    """Return the Rust source mdBook actually compiles for a block.
+
+    mdBook hides lines from the rendered page but still compiles them. The rule
+    is line-based and applies after leading whitespace:
+
+      `# ` + rest   -> hidden; compile `rest`
+      exactly `#`   -> hidden; compile an empty line
+      `##` + rest   -> escape; compile with ONE `#` removed
+      `#!` or `#[`  -> an attribute; compile untouched
+
+    The last row is the trap. A naive `startswith("#")` would strip
+    `#[derive(Debug)]` and `#![allow(...)]` from every example -- failing in
+    confusing ways, or worse, passing because an attribute that mattered
+    vanished.
+
+    It is deliberately not string-literal aware, because mdBook is not: a
+    `## heading` line inside a raw string compiles as `# heading`.
+    """
+    out = []
+    for line in code.split("\n"):
+        body = line.lstrip()
+        indent = line[: len(line) - len(body)]
+        if body.startswith("#!") or body.startswith("#["):
+            out.append(line)
+        elif body.startswith("##"):
+            out.append(indent + body[1:])
+        elif body == "#":
+            out.append("")
+        elif body.startswith("# "):
+            out.append(indent + body[2:])
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 def check_rust(blocks, workdir):
     """Type-check each Rust example against the real crate.
 
@@ -156,19 +197,26 @@ def check_rust(blocks, workdir):
     (proj / "src" / "lib.rs").write_text("", encoding="utf-8")
     names = {}
     for n, b in enumerate(blocks):
-        code = b.code
+        # Hidden lines first, so `fn main` detection sees what mdBook compiles.
+        # Otherwise a hidden `# fn main() -> Result<...>` would be seen as
+        # "has fn main", skip wrapping, and hand `# fn main` to rustc.
+        code = mdbook_rust_source(b.code)
+        # Model mdBook, not rustdoc. mdBook is what publishes these pages, and
+        # it wraps a block with no `fn main` in a plain `fn main() {` -- no
+        # Result, whatever the block contains. RFC 031: this used to wrap a
+        # `?`-using block in `fn main() -> Result<...>`, "mirroring rustdoc",
+        # which made the gate compile a MORE forgiving program than the one
+        # behind the published page's Run button. Two usage-rust.md examples
+        # failed with E0277 on the live site while this gate was green.
+        #
+        # The gate must never be more permissive than the renderer it vouches
+        # for. If mdBook's wrapping is inconvenient for an example, fix the
+        # example (a hidden fallible main) -- do not teach the gate to forgive.
+        #
+        # The body is not indented: mdBook does not, and indenting would inject
+        # spaces into a multi-line raw string literal.
         if "fn main" not in code:
-            body = "\n".join("    " + ln for ln in code.splitlines())
-            # Mirror rustdoc: an example using `?` is written as if inside a
-            # fallible function, so wrap it in one rather than reporting the
-            # absence of a Result-returning main as the example's defect.
-            if "?" in code:
-                code = (
-                    "fn main() -> Result<(), Box<dyn std::error::Error>> {\n"
-                    "%s\n    Ok(())\n}" % body
-                )
-            else:
-                code = "fn main() {\n%s\n}" % body
+            code = "fn main() {\n%s\n}" % code
         name = f"ex{n}"
         names[name] = b
         (proj / "src" / "bin" / f"{name}.rs").write_text(
