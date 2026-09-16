@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | Milestone | Priority |
-|----|-------|-----------|----------|
-| 029 | [Published-surface documentation repair](./proposed/029-published-surface-documentation-repair.md) | M2c → `2.2.3` | **P0** |
-
-From the `2.2.2` consumer pass — RFC 027 Rule 1's first run. Awaiting
-acceptance.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -24,11 +19,15 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
+| 029 | [Published-surface documentation repair](./accepted/029-published-surface-documentation-repair.md) — [handoff](./handoffs/029-published-surface-documentation-repair/implementation-handoff.md) | M2c → `2.2.3` | **P0** |
 | 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
-All three are M3. **Sequencing: 025 precedes 024, and 028 follows both** — the
+**RFC 029 is M2c and comes first** — the README's Node Quick Start does not
+parse on four registries. The other three are M3.
+
+**Sequencing within M3: 025 precedes 024, and 028 follows both** — the
 harness must be able to observe the defects before the fixes claim to have
 removed them, and RFC 028's mechanism choice depends on RFC 024's shape.
 

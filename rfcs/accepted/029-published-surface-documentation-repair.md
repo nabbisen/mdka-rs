@@ -1,6 +1,6 @@
 # RFC 029 — Published-surface documentation repair
 
-**Status.** Proposed
+**Status.** Accepted 2026-09-16 — implementer may start
 **Tracks.** M2c → `2.2.3` (patch)
 **Priority.** P0 for the README items; P1 for the rest
 **Touches.** `README.md`, `docs/src/getting-started/{usage-python,usage-nodejs,installation}.md`, `cli/src/main.rs`, `.github/workflows/scripts/check-docs-examples.py`.
