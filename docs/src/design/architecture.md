@@ -81,6 +81,17 @@ and produces exactly one code block, holding the text of everything inside it
 in order; a `<pre>` without a `<code>` child still produces a balanced block,
 and the language comes from a `<code>` that opens the block.
 
+**Inline elements around block content.** Before rendering, the traversal makes
+one bottom-up pass over the document and marks each `<strong>`/`<b>`,
+`<em>`/`<i>`, `<code>` and `<a>` that has a rendered block among its
+descendants. What counts as a block comes from the same classification the
+renderer's block arms use, and elements the mode skips or unwraps are left out
+as the traversal itself would. A marked emphasis or code element writes no
+delimiters. A marked link is written once per run of inline content between
+block boundaries: `## [Title](/x)`. Separately, a `<b>`/`<strong>` or
+`<i>`/`<em>` whose own `style` negates its emphasis (`font-weight` `normal` or
+≤ 500, `font-style: normal`) writes no delimiters.
+
 ## Language Bindings
 
 Both the Node.js and Python bindings are thin wrappers:

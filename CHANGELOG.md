@@ -123,6 +123,39 @@ that did not say what the HTML said to Markdown that does.
   `**b** rest`, with no quote at all; it now gives `> **b** rest`.
 - With `preserve_ids`, the anchor for an inline `<code id="…">` is now placed
   before the code span rather than inside it, where it was literal text.
+- **Bold, italic and code around block content no longer write stray
+  delimiters.** When `<strong>`/`<b>`, `<em>`/`<i>` or `<code>` contains a
+  paragraph, heading, list, quote or code block, the delimiters were written
+  around the blocks, on lines of their own. A lone `*` line even reads as an
+  empty list item. The delimiters are now left out and the blocks kept:
+
+  | HTML | Before | Now |
+  |---|---|---|
+  | `<strong><p>x</p><p>y</p></strong>` | `**\n\nx\n\ny\n\n**` | `x\n\ny` |
+  | `<em><p>x</p><p>y</p></em>` | `*\n\nx\n\ny\n\n*` — two empty list items | `x\n\ny` |
+  | `<b>text<p>para</p></b>` | `**text\n\npara\n\n**` | `text\n\npara` |
+  | `<code><p>x</p><p>y</p></code>` | `` `\n\nx\n\ny\n\n` `` | `x\n\ny` |
+
+  This is what every Google Docs paste of more than one paragraph produces:
+  Google Docs wraps the copied content in `<b style="font-weight:normal">`.
+- **A link around block content links each block.** `<a href="/x"><h2>Title</h2></a>`
+  gave `## \n\n[Title](/x)` — an empty heading, then the text as a link after
+  it. It now gives `## [Title](/x)`. Paragraphs, list
+  items and quotes inside a link are each linked the same way; a code block
+  inside a link is not linked, since code holds text only.
+- **Bold or italic whose own style says it is not bold or italic is no longer
+  emphasised.** Google Docs wraps a single-paragraph copy in a `<b>` whose own
+  `style` is `font-weight:normal`, so the whole paste came out bold:
+  `<b style="font-weight:normal"><span>Hello world</span></b>` gave
+  `**Hello world**` and now gives `Hello world`.
+  - This applies to `<b>`/`<strong>` whose own `style` sets `font-weight` to
+    `normal` or a number up to 500, and `<i>`/`<em>` whose own `style` sets
+    `font-style: normal`.
+  - Only the element's own `style` attribute is read, and only those two
+    properties. `lighter`, `bolder`, stylesheets and inherited styles do not
+    count, and a `style` never adds emphasis: `<span style="font-weight:700">`
+    stays plain.
+  - Bold and italic without such a style are unchanged.
 
 These documentation fixes are already live on the user guide, which publishes
 from `main`; they are listed here so the release records them.
