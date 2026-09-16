@@ -28,6 +28,8 @@ print(md)
 ```python
 import mdka
 
+html = "<nav>menu</nav><h1>Title</h1><p>Body</p>"
+
 # Strip nav/header/footer — useful for LLM pre-processing
 md = mdka.html_to_markdown_with(
     html,

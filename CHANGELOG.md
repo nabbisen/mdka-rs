@@ -49,6 +49,13 @@ from `main`; they are listed here so the release records them.
   on correct examples.
 - **The Node.js "Async Conversion" example did not run.** It mixed `require()`
   with top-level `await` and used undefined variables. It now runs as written.
+- **The Python "Conversion with Options" example did not run.** It used an
+  undefined `html` and raised `NameError`. It now runs as written.
+- **The TypeScript example did not compile in a project created with
+  `tsc --init`.** It imported `JsConversionOptions` and `ConvertResult` as
+  values, which `verbatimModuleSyntax` (on by default there) rejects with
+  error TS1484. They are now type-only imports, which also compile under
+  CommonJS and older ESM settings.
 - **The deprecation warning is now documented.** The options pages said the
   no-op options "simply do nothing" and that existing calls "keep working". In
   fact each emits a deprecation warning, which fails the build or the call

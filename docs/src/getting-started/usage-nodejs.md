@@ -170,8 +170,8 @@ import {
   htmlToMarkdownAsync,
   htmlFileToMarkdown,
   htmlFilesToMarkdown,
-  JsConversionOptions,
-  ConvertResult,
+  type JsConversionOptions,
+  type ConvertResult,
 } from 'mdka'
 
 const html: string = '<h1>Title</h1>'
