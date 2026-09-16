@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | Milestone | Priority |
+|----|-------|-----------|----------|
+| 007 | [English-only public surface](./proposed/007-english-only-public-surface.md) | M2b → `2.2.2` | P1 |
+
+Drafted 2026-09-16 after the owner updated the language rule. Awaiting
+acceptance.
 
 ## Accepted
 
@@ -74,7 +79,6 @@ milestone actually shipped. Numbers are permanent and are never reused.
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 007 | English-only public surface | M2 |
 | 008 | GFM table support | M3 |
 | 009 | Element coverage extension | M3 |
 | 010 | Escaping & text-processing audit | M3 |
