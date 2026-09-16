@@ -1,4 +1,4 @@
-//! Python バインディング for mdka (PyO3 0.28)
+//! Python bindings for mdka (PyO3 0.28)
 
 use std::ffi::CString;
 
@@ -103,11 +103,11 @@ fn build_opts(
 
 // ─── ConvertResult ────────────────────────────────────────────────────────
 
-/// ファイル変換の結果。
+/// Result of a file conversion.
 ///
 /// Attributes:
-///     src (str): 変換した入力ファイルのパス
-///     dest (str): 書き出した出力ファイルのパス
+///     src (str): path of the input file that was converted
+///     dest (str): path of the output file that was written
 #[pyclass(get_all)]
 pub struct ConvertResult {
     pub src: String,
@@ -121,13 +121,13 @@ impl ConvertResult {
     }
 }
 
-/// バルク変換の個別結果（成功・失敗を含む）。
+/// Result for one file in a bulk conversion, successful or not.
 ///
 /// Attributes:
-///     src (str): 入力ファイルパス
-///     dest (str | None): 出力ファイルパス（成功時）
-///     error (str | None): エラーメッセージ（失敗時）
-///     ok (bool): 変換成功か否か
+///     src (str): input file path
+///     dest (str | None): output file path, on success
+///     error (str | None): error message, on failure
+///     ok (bool): whether the conversion succeeded
 #[pyclass(get_all)]
 pub struct BulkConvertResult {
     pub src: String,
@@ -153,7 +153,7 @@ impl BulkConvertResult {
     }
 }
 
-// ─── 文字列変換 API ───────────────────────────────────────────────────────
+// ─── String conversion API ───────────────────────────────────────────────
 
 #[pyfunction]
 fn html_to_markdown(html: &str) -> String {
@@ -201,24 +201,25 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
     })
 }
 
-// ─── 単体ファイル変換 API ─────────────────────────────────────────────────
+// ─── Single-file conversion API ──────────────────────────────────────────
 
-/// 単一の HTML ファイルを Markdown に変換する（既定モード: balanced）。
+/// Converts a single HTML file to Markdown (default mode: balanced).
 ///
 /// Args:
-///     path (str): 入力 HTML ファイルのパス
-///     out_dir (str | None): 出力ディレクトリ。None の場合は入力と同じディレクトリに出力
+///     path (str): path of the input HTML file
+///     out_dir (str | None): output directory; when None, the output is
+///         written next to the input file
 ///
 /// Returns:
-///     ConvertResult: 変換結果（src, dest）
+///     ConvertResult: the conversion result (src, dest)
 ///
 /// Raises:
-///     MdkaError: 読み込み・書き出しに失敗した場合
+///     MdkaError: if reading or writing fails
 ///
 /// Example:
 ///     >>> import mdka
-///     >>> r = mdka.html_file_to_markdown("index.html")          # 同じディレクトリに出力
-///     >>> r = mdka.html_file_to_markdown("index.html", "out/")  # 別ディレクトリに出力
+///     >>> r = mdka.html_file_to_markdown("index.html")          # same directory
+///     >>> r = mdka.html_file_to_markdown("index.html", "out/")  # another directory
 ///     >>> print(r.src, "->", r.dest)
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
@@ -261,7 +262,7 @@ fn html_file_to_markdown(
         .map_err(|e| MdkaError::new_err(e.to_string()))
 }
 
-// ─── バルクファイル変換 API ───────────────────────────────────────────────
+// ─── Bulk file conversion API ────────────────────────────────────────────
 
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
@@ -323,7 +324,7 @@ fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-// ─── モジュール登録 ────────────────────────────────────────────────────────
+// ─── Module registration ─────────────────────────────────────────────────
 
 #[pymodule]
 fn mdka_python(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {

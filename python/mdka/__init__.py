@@ -1,5 +1,5 @@
 """
-mdka — 省メモリ・高速な HTML to Markdown コンバータ (Rust製)
+mdka - a memory-efficient, fast HTML to Markdown converter, written in Rust
 """
 
 from .mdka_python import (  # noqa: F401

@@ -1,22 +1,22 @@
-//! mdka CLI — HTML → Markdown コンバータ
+//! mdka CLI — HTML to Markdown converter
 //!
-//! `mdka` ライブラリのすべての変換機能をコマンドラインから呼び出せる。
+//! Exposes every conversion feature of the `mdka` library on the command line.
 //!
-//! # 使い方
+//! # Usage
 //!
 //! ```text
 //! mdka [OPTIONS] [FILE...]
 //!
 //! Options:
-//!   -o, --output <DIR>   出力ディレクトリ（省略時は入力と同じディレクトリ）
-//!   -m, --mode <MODE>    balanced(既定)|strict|minimal|semantic|preserve
-//!       --preserve-ids   id 属性を保持する
-//!       --preserve-classes  [非推奨・無効] class 属性を保持する
-//!       --preserve-data  [非推奨・無効] data-* 属性を保持する
-//!       --preserve-aria  [非推奨・無効] aria-* 属性を保持する
-//!       --drop-shell     nav/header/footer/aside を除外する
-//!       --unwrap-wrappers  意味を持たない div/span/section/article/main をアンラップする
-//!   -h, --help           このヘルプを表示
+//!   -o, --output <DIR>   Output directory (defaults to the input's directory)
+//!   -m, --mode <MODE>    balanced(default)|strict|minimal|semantic|preserve
+//!       --preserve-ids   Keep id attributes
+//!       --preserve-classes  [deprecated, no effect] Keep class attributes
+//!       --preserve-data  [deprecated, no effect] Keep data-* attributes
+//!       --preserve-aria  [deprecated, no effect] Keep aria-* attributes
+//!       --drop-shell     Drop nav/header/footer/aside
+//!       --unwrap-wrappers  Unwrap div/span/section/article/main that carry no meaning
+//!   -h, --help           Show this help
 //! ```
 
 use std::io::{self, Read};
@@ -31,33 +31,33 @@ Usage:
   mdka [OPTIONS] [FILE...]
 
 Options:
-  -o, --output <DIR>      出力ディレクトリ（省略時は入力と同じディレクトリ）
-  -m, --mode <MODE>       変換モード: balanced(既定) | strict | minimal | semantic | preserve
-      --preserve-ids      id 属性を保持する
-      --preserve-classes  [非推奨・無効] class 属性を保持する（Markdown に属性構文がないため効果なし）
-      --preserve-data     [非推奨・無効] data-* 属性を保持する（同上）
-      --preserve-aria     [非推奨・無効] aria-* 属性を保持する（同上）
-      --drop-shell        nav/header/footer/aside を除外する
-      --unwrap-wrappers   意味を持たない div/span/section/article/main をアンラップする
-  -h, --help              このヘルプを表示
+  -o, --output <DIR>      Output directory (defaults to the input's directory)
+  -m, --mode <MODE>       Conversion mode: balanced(default) | strict | minimal | semantic | preserve
+      --preserve-ids      Keep id attributes
+      --preserve-classes  [deprecated, no effect] Keep class attributes (Markdown has no attribute syntax)
+      --preserve-data     [deprecated, no effect] Keep data-* attributes (same reason)
+      --preserve-aria     [deprecated, no effect] Keep aria-* attributes (same reason)
+      --drop-shell        Drop nav/header/footer/aside
+      --unwrap-wrappers   Unwrap div/span/section/article/main that carry no meaning
+  -h, --help              Show this help
 
-モード説明:
-  balanced  読みやすさと構造保持のバランス（汎用・既定）
-  strict    属性削除を最小限に。デバッグ・比較用途
-  minimal   本文と構造の要点のみ。LLM 前処理・圧縮
-  semantic  意味属性・文書構造を優先。SPA / アクセシビリティ重視
-  preserve  元情報を最大限保持。アーカイブ・監査用途
+Modes:
+  balanced  Balances readability with structural fidelity (general purpose, default)
+  strict    Removes as few attributes as possible; for debugging and comparison
+  minimal   Body text and structure only; for LLM preprocessing and compaction
+  semantic  Favours semantic attributes and document structure; for SPAs and accessibility
+  preserve  Retains as much of the original as possible; for archiving and auditing
 
-出力先:
-  -o 未指定の場合、単一ファイルは入力と同じディレクトリに .md として出力
-  複数ファイルは -o が必須
+Output:
+  Without -o, a single file is written beside its input as .md
+  -o is required when converting multiple files
 
 Examples:
   echo '<h1>Hello</h1>' | mdka
-  mdka index.html                         # → index.md (同じディレクトリ)
+  mdka index.html                         # → index.md (same directory)
   mdka -o out/ index.html                 # → out/index.md
-  mdka --mode minimal --drop-shell *.html # nav/header/footer を除外
-  mdka --mode preserve -o archive/ *.html # 最大限の情報を保持
+  mdka --mode minimal --drop-shell *.html # drop nav/header/footer
+  mdka --mode preserve -o archive/ *.html # retain as much as possible
 ";
 
 fn main() {
@@ -68,7 +68,7 @@ fn main() {
         return;
     }
 
-    // ── 引数解析 ──────────────────────────────────────────────────────
+    // ── Argument parsing ──────────────────────────────────────────────
     let mut out_dir: Option<PathBuf> = None;
     let mut mode = ConversionMode::Balanced;
     let mut preserve_ids = false;
@@ -108,7 +108,7 @@ fn main() {
         }
     }
 
-    // モードの既定設定に CLI フラグを上書き
+    // CLI flags override the mode's defaults
     let mut opts = ConversionOptions::for_mode(mode);
     if preserve_ids {
         opts.preserve_ids = true;
@@ -135,7 +135,7 @@ fn main() {
         opts.unwrap_unknown_wrappers = true;
     }
 
-    // ── 実行分岐 ──────────────────────────────────────────────────────
+    // ── Dispatch ──────────────────────────────────────────────────────
     match (file_args.is_empty(), file_args.len(), &out_dir) {
         // stdin → stdout
         (true, _, _) => {
@@ -146,7 +146,7 @@ fn main() {
             }
             print!("{}", mdka::html_to_markdown_with(&html, &opts));
         }
-        // 単一ファイル → out_dir または入力と同じディレクトリ
+        // single file → out_dir, or the input's own directory
         (false, 1, _) => {
             match mdka::html_file_to_markdown_with(&file_args[0], out_dir.as_deref(), &opts) {
                 Ok(r) => println!("{} -> {}", r.src.display(), r.dest.display()),
@@ -156,7 +156,7 @@ fn main() {
                 }
             }
         }
-        // 複数ファイル → out_dir 必須
+        // multiple files → out_dir is required
         (false, _, None) => {
             eprintln!("error: -o/--output required when converting multiple files.\n\n{USAGE}");
             process::exit(1);

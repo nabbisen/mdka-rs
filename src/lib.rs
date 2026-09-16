@@ -41,7 +41,7 @@ use thiserror::Error;
 
 pub use options::{ConversionMode, ConversionOptions};
 
-// ── エラー型 ───────────────────────────────────────────────────────────────
+// ── Error type ─────────────────────────────────────────────────────────────
 
 #[derive(Error, Debug)]
 pub enum MdkaError {
@@ -49,20 +49,20 @@ pub enum MdkaError {
     Io(#[from] std::io::Error),
 }
 
-// ── 変換結果型 ─────────────────────────────────────────────────────────────
+// ── Conversion result type ─────────────────────────────────────────────────
 
-/// ファイル変換の結果。入力パスと出力パスを保持する。
+/// Result of a file conversion: the input path and the output path.
 #[derive(Debug, Clone)]
 pub struct ConvertResult {
-    /// 変換した入力ファイルのパス。
+    /// Path of the input file that was converted.
     pub src: PathBuf,
-    /// 書き出した出力ファイルのパス。
+    /// Path of the output file that was written.
     pub dest: PathBuf,
 }
 
-// ── 文字列変換 API ─────────────────────────────────────────────────────────
+// ── String conversion API ──────────────────────────────────────────────────
 
-/// HTML 文字列を Markdown 文字列に変換する（既定モード: `balanced`）。
+/// Converts an HTML string to a Markdown string (default mode: `balanced`).
 ///
 /// # Example
 ///
@@ -74,10 +74,11 @@ pub fn html_to_markdown(html: &str) -> String {
     html_to_markdown_with(html, &ConversionOptions::default())
 }
 
-/// HTML 文字列を指定した [`ConversionOptions`] で Markdown に変換する。
+/// Converts an HTML string to Markdown with the given [`ConversionOptions`].
 ///
-/// 1回のパース + 1回のトラバースで変換を完了する。
-/// 前処理（タグ除外・アンラップ）はトラバース時にインライン実行される。
+/// The conversion completes in a single parse and a single traversal.
+/// Preprocessing (tag exclusion and unwrapping) runs inline during that
+/// traversal rather than as a separate pass.
 ///
 /// # Example
 ///
@@ -102,20 +103,20 @@ pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String {
     traversal::traverse(&document, opts)
 }
 
-// ── 単体ファイル変換 API ───────────────────────────────────────────────────
+// ── Single-file conversion API ─────────────────────────────────────────────
 
-/// 単一の HTML ファイルを Markdown に変換する（既定モード: `balanced`）。
+/// Converts a single HTML file to Markdown (default mode: `balanced`).
 ///
-/// `out_dir` が `None` の場合は入力ファイルと同じディレクトリに
-/// 拡張子を `.md` に変えて出力する。
+/// When `out_dir` is `None`, the output is written next to the input file
+/// with the extension changed to `.md`.
 ///
 /// # Example
 ///
 /// ```rust,no_run
-/// // 同じディレクトリに index.md を生成
+/// // writes index.md into the same directory
 /// let result = mdka::html_file_to_markdown("index.html", None::<&str>).unwrap();
 ///
-/// // 別ディレクトリに出力
+/// // writes into a different directory
 /// let result = mdka::html_file_to_markdown("index.html", Some("out/")).unwrap();
 /// println!("{} -> {}", result.src.display(), result.dest.display());
 /// ```
@@ -126,9 +127,9 @@ pub fn html_file_to_markdown(
     html_file_to_markdown_with(path, out_dir, &ConversionOptions::default())
 }
 
-/// 単一の HTML ファイルを指定した [`ConversionOptions`] で Markdown に変換する。
+/// Converts a single HTML file to Markdown with the given [`ConversionOptions`].
 ///
-/// `out_dir` が `None` の場合は入力ファイルと同じディレクトリに出力する。
+/// When `out_dir` is `None`, the output is written next to the input file.
 pub fn html_file_to_markdown_with(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
@@ -149,9 +150,10 @@ pub fn html_file_to_markdown_with(
     })
 }
 
-// ── バルクファイル変換 API（parallel フィーチャー） ─────────────────────────
+// ── Bulk file conversion API (`parallel` feature) ──────────────────────────
 
-/// 複数の HTML ファイルを rayon で並列変換し、`out_dir` へ書き出す（既定モード）。
+/// Converts multiple HTML files in parallel with rayon, writing them to
+/// `out_dir` (default mode).
 #[cfg(feature = "parallel")]
 pub fn html_files_to_markdown<'a, P>(
     paths: &'a [P],
@@ -163,15 +165,17 @@ where
     html_files_to_markdown_with(paths, out_dir, &ConversionOptions::default())
 }
 
-/// 複数の HTML ファイルを指定した [`ConversionOptions`] で並列変換し `out_dir` へ書き出す。
+/// Converts multiple HTML files in parallel with the given
+/// [`ConversionOptions`], writing them to `out_dir`.
 ///
 /// Important: Unlike single-file conversion,
 /// `out_dir` is **required** for bulk processing
 /// to ensure a consistent and predictable output location for all generated files.
 ///
-/// 出力先が衝突する入力は、入力順で最初のものだけが変換される。以降の衝突は
-/// 変換を行わずエラーを返す（RFC 021: 衝突を検知せず最後に書いた者が勝つ挙動は、
-/// 他の入力のデータを無言で失わせる競合状態だった）。
+/// When two inputs resolve to the same output path, only the first in input
+/// order is converted; every later collision returns an error without
+/// converting anything. RFC 021: leaving collisions undetected let whichever
+/// worker wrote last win, silently destroying the other inputs' content.
 #[cfg(feature = "parallel")]
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],
@@ -185,10 +189,11 @@ where
     use std::collections::HashMap;
     use std::collections::hash_map::Entry;
 
-    // 変換を始める前に、入力順で出力先の衝突を検知する。最初の出現が勝ち、
-    // 以降の同一出力先はここでエラー確定し、ファイル読み込みも書き込みも行わない。
-    // rayon のワーカーがどちらを先に書き終えるかに結果が左右される競合状態を、
-    // 検知を並列変換より前に置くことで断つ。
+    // Detect output-path collisions in input order, before any conversion
+    // starts. The first occurrence wins; every later one resolves to an error
+    // here and is never read from or written to. Deciding this ahead of the
+    // parallel map is what removes the race -- otherwise the result depends on
+    // which rayon worker happens to finish writing last.
     let mut claimed_by: HashMap<PathBuf, usize> = HashMap::with_capacity(paths.len());
     let rejections: Vec<Option<MdkaError>> = paths
         .iter()
@@ -233,25 +238,25 @@ where
         .collect()
 }
 
-// ── 共通コア ───────────────────────────────────────────────────────────────
+// ── Shared core ────────────────────────────────────────────────────────────
 
-/// 入力パスと出力先ディレクトリから、書き出し先パスを一意に決定する。
-/// 衝突検知（バルク変換）と実際の書き出し（`do_convert_file`）の両方から
-/// 呼ばれる共通ロジック。ここが二箇所に分かれると、検知と書き込みが食い違い
-/// うる（RFC 021）。
+/// Determines the single output path for an input path and output directory.
+/// Shared by collision detection (bulk conversion) and the actual write
+/// (`do_convert_file`). Splitting this into two implementations would let
+/// detection and writing disagree about where a file lands (RFC 021).
 fn dest_path(src: &Path, out_dir: &Path) -> PathBuf {
     let stem = src.file_stem().unwrap_or_default();
     out_dir.join(stem).with_extension("md")
 }
 
-/// HTML ファイルを読み込み → 変換 → 書き出しする共通処理。
-/// 単体変換・バルク変換の両方から呼ばれる。
+/// Reads an HTML file, converts it, and writes the result.
+/// Shared by both single-file and bulk conversion.
 fn do_convert_file(
     src: &Path,
     out_dir: &Path,
     opts: &ConversionOptions,
 ) -> Result<PathBuf, MdkaError> {
-    // out_dir が存在しない場合は自動作成する
+    // create out_dir if it does not exist
     fs::create_dir_all(out_dir)?;
     let html = fs::read_to_string(src)?;
     let md = html_to_markdown_with(&html, opts);

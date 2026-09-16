@@ -1,11 +1,11 @@
-//! Node.js バインディング for mdka (napi-rs v3)
+//! Node.js bindings for mdka (napi-rs v3)
 
 use std::str::FromStr;
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
-// ─── オプション型 ──────────────────────────────────────────────────────────
+// ─── Option types ────────────────────────────────────────────────────────
 
 #[napi(object)]
 pub struct JsConversionOptions {
@@ -103,20 +103,20 @@ fn to_rust_opts(
     Ok(opts)
 }
 
-// ─── 変換結果 ─────────────────────────────────────────────────────────────
+// ─── Conversion result ───────────────────────────────────────────────────
 
-/// ファイル変換の結果。
+/// Result of a file conversion.
 #[napi(object)]
 pub struct ConvertResult {
-    /// 変換した入力ファイルのパス。
+    /// Path of the input file that was converted.
     pub src: String,
-    /// 書き出した出力ファイルのパス。
+    /// Path of the output file that was written.
     pub dest: Option<String>,
-    /// 変換失敗時のエラーメッセージ（バルク変換のみ）。
+    /// Error message when the conversion failed (bulk conversion only).
     pub error: Option<String>,
 }
 
-// ─── 文字列変換 API ───────────────────────────────────────────────────────
+// ─── String conversion API ───────────────────────────────────────────────
 
 #[napi]
 pub fn html_to_markdown(html: String) -> String {
@@ -153,18 +153,18 @@ pub async fn html_to_markdown_with_async(
         .map_err(|e| Error::from_reason(format!("task panicked: {e}")))
 }
 
-// ─── 単体ファイル変換 API ─────────────────────────────────────────────────
+// ─── Single-file conversion API ──────────────────────────────────────────
 
-/// 単一の HTML ファイルを変換する（既定モード）。
+/// Converts a single HTML file (default mode).
 ///
-/// `outDir` が null/undefined の場合は入力と同じディレクトリに `.md` を出力。
+/// When `outDir` is null or undefined, the `.md` file is written next to the input.
 ///
 /// ```js
-/// // 同じディレクトリに出力
+/// // writes into the same directory
 /// const r = await htmlFileToMarkdown('index.html')
 /// console.log(r.src, '->', r.dest)
 ///
-/// // 別ディレクトリに出力
+/// // writes into a different directory
 /// const r = await htmlFileToMarkdown('index.html', 'out/')
 /// ```
 #[napi]
@@ -172,7 +172,7 @@ pub async fn html_file_to_markdown(path: String, out_dir: Option<String>) -> Res
     html_file_to_markdown_with(path, out_dir, None).await
 }
 
-/// 単一の HTML ファイルを指定オプションで変換する。
+/// Converts a single HTML file with the given options.
 #[napi]
 pub async fn html_file_to_markdown_with(
     path: String,
@@ -195,7 +195,7 @@ pub async fn html_file_to_markdown_with(
     .map_err(Error::from_reason)
 }
 
-// ─── バルクファイル変換 API ───────────────────────────────────────────────
+// ─── Bulk file conversion API ────────────────────────────────────────────
 
 #[napi]
 pub async fn html_files_to_markdown(
@@ -240,7 +240,7 @@ pub async fn html_files_to_markdown_with(
     .map_err(Error::from_reason)
 }
 
-// ─── バージョン ───────────────────────────────────────────────────────────
+// ─── Version ─────────────────────────────────────────────────────────────
 
 #[napi]
 pub fn version() -> &'static str {

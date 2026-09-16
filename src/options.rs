@@ -1,36 +1,37 @@
-//! 変換オプション・モード定義
+//! Conversion options and mode definitions
 //!
-//! [`ConversionMode`] で前処理と変換方針を切り替える。
-//! [`ConversionOptions`] はモードとフラグの組み合わせを保持し、
-//! `Default` は `balanced` モードを返す。
+//! [`ConversionMode`] selects the preprocessing and conversion policy.
+//! [`ConversionOptions`] holds a mode together with its flags, and
+//! `Default` returns the `balanced` mode.
 
-/// 変換モード。入力 HTML の性質と用途に応じて選択する。
+/// Conversion mode. Choose one to suit the input HTML and what it is for.
 ///
-/// | モード      | 用途                                  |
-/// |-------------|---------------------------------------|
-/// | `Balanced`  | 汎用（既定）。読みやすい Markdown      |
-/// | `Strict`    | デバッグ・比較。情報保持最大          |
-/// | `Minimal`   | LLM 前処理・圧縮。最小限抽出         |
-/// | `Semantic`  | SPA / 文書構造重視                   |
-/// | `Preserve`  | アーカイブ。元情報最大保持            |
+/// | Mode        | Intended for                                  |
+/// |-------------|-----------------------------------------------|
+/// | `Balanced`  | General purpose (default); readable Markdown   |
+/// | `Strict`    | Debugging and comparison; maximum retention    |
+/// | `Minimal`   | LLM preprocessing and compaction; bare extract |
+/// | `Semantic`  | SPAs; document structure first                 |
+/// | `Preserve`  | Archiving; retains as much as possible         |
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum ConversionMode {
-    /// 既定。読みやすさと構造保持のバランスをとる。
+    /// Default. Balances readability against structural fidelity.
     #[default]
     Balanced,
-    /// 正確性重視。属性削除を最小限にし、デバッグ用途に向く。
+    /// Accuracy first. Removes as few attributes as possible; suits debugging.
     Strict,
-    /// 抽出重視。本文と構造の要点のみ抽出する。LLM 前処理に向く。
+    /// Extraction first. Keeps only the body text and the essential structure;
+    /// suits LLM preprocessing.
     Minimal,
-    /// 意味重視。アクセシビリティ属性・文書構造を優先する。
+    /// Meaning first. Favours accessibility attributes and document structure.
     Semantic,
-    /// 忠実性重視。変換困難な情報も HTML 断片として保持する。
+    /// Fidelity first. Keeps even hard-to-convert content, as HTML fragments.
     Preserve,
 }
 
 impl ConversionMode {
-    /// モード名を文字列で返す。
+    /// Returns the mode's name as a string.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Balanced => "balanced",
@@ -41,10 +42,10 @@ impl ConversionMode {
         }
     }
 
-    /// 文字列からモードを解析する。大文字小文字を区別しない。
+    /// Parses a mode from a string, case-insensitively.
     ///
-    /// `std::str::FromStr` を実装しているため、
-    /// `"balanced".parse::<ConversionMode>()` でも利用できる。
+    /// `std::str::FromStr` is implemented as well, so
+    /// `"balanced".parse::<ConversionMode>()` works too.
     pub fn parse_mode(s: &str) -> Option<Self> {
         s.parse().ok()
     }
@@ -71,54 +72,57 @@ impl std::fmt::Display for ConversionMode {
     }
 }
 
-/// 変換オプション。モードとフラグの組み合わせを保持する。
+/// Conversion options: a mode together with its flags.
 ///
-/// `Default` は `balanced` モードの推奨設定を返す。
-/// 細かいフラグはモードの既定から上書きできる。
+/// `Default` returns the recommended settings for the `balanced` mode.
+/// Individual flags can be overridden from the mode's defaults.
 #[derive(Debug, Clone)]
 pub struct ConversionOptions {
-    /// 変換モード。
+    /// The conversion mode.
     pub mode: ConversionMode,
 
-    // ── 属性保持フラグ ──────────────────────────────────────────────────
-    /// `id` 属性を保持するか。有効な場合、非空の `id` を持つ要素の直前に
-    /// `<a id="...">...</a>` アンカーを出力する（RFC 005 Slice B1）。
+    // ── Attribute-retention flags ──────────────────────────────────────────
+    /// Whether to keep `id` attributes. When enabled, an
+    /// `<a id="...">...</a>` anchor is emitted for an element carrying a
+    /// non-empty `id` (RFC 005 Slice B1).
     pub preserve_ids: bool,
-    /// 無効。Markdown に class 属性を表現する構文はなく、効果を持たない。
+    /// Inert. Markdown has no syntax for class attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
     )]
     pub preserve_classes: bool,
-    /// 無効。Markdown に data-* 属性を表現する構文はなく、効果を持たない。
+    /// Inert. Markdown has no syntax for data-* attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
     )]
     pub preserve_data_attrs: bool,
-    /// 無効。Markdown に aria-* 属性を表現する構文はなく、効果を持たない。
+    /// Inert. Markdown has no syntax for aria-* attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
     )]
     pub preserve_aria_attrs: bool,
-    /// 無効。Markdown に未知の属性を表現する構文はなく、効果を持たない。
+    /// Inert. Markdown has no syntax for unknown attributes, so this has no effect.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
     )]
     pub preserve_unknown_attrs: bool,
 
-    // ── 前処理フラグ ────────────────────────────────────────────────────
-    /// 無効。装飾属性を出力する経路自体が存在しないため、効果を持たない。
+    // ── Preprocessing flags ────────────────────────────────────────────────
+    /// Inert. No code path emits presentational attributes at all, so this has
+    /// no effect.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
     )]
     pub drop_presentation_attrs: bool,
-    /// `nav`, `header`, `footer`, `aside` などのシェル要素を除外するか。
+    /// Whether to drop shell elements such as `nav`, `header`, `footer` and
+    /// `aside`.
     pub drop_interactive_shell: bool,
-    /// 意味を持たないラッパー要素をアンラップするか。
+    /// Whether to unwrap wrapper elements that carry no meaning.
     pub unwrap_unknown_wrappers: bool,
 }
 
@@ -129,13 +133,13 @@ impl Default for ConversionOptions {
 }
 
 impl ConversionOptions {
-    /// 指定したモードの推奨設定でオプションを生成する。
+    /// Builds the options with the recommended settings for the given mode.
     #[allow(deprecated)]
     pub fn for_mode(mode: ConversionMode) -> Self {
         match mode {
             ConversionMode::Balanced => Self {
                 mode,
-                preserve_ids: true, // アンカー用途のみ
+                preserve_ids: true, // anchors only
                 preserve_classes: false,
                 preserve_data_attrs: false,
                 preserve_aria_attrs: true,
@@ -171,7 +175,7 @@ impl ConversionOptions {
                 preserve_ids: true,
                 preserve_classes: false,
                 preserve_data_attrs: false,
-                preserve_aria_attrs: true, // 強く保持
+                preserve_aria_attrs: true, // retained strongly
                 preserve_unknown_attrs: false,
                 drop_presentation_attrs: true,
                 drop_interactive_shell: false,
@@ -191,19 +195,19 @@ impl ConversionOptions {
         }
     }
 
-    /// ビルダー: モードを設定する。
+    /// Builder: sets the mode.
     pub fn mode(mut self, mode: ConversionMode) -> Self {
         self.mode = mode;
         self
     }
 
-    /// ビルダー: `id` 属性の保持を設定する。
+    /// Builder: sets whether `id` attributes are kept.
     pub fn preserve_ids(mut self, v: bool) -> Self {
         self.preserve_ids = v;
         self
     }
 
-    /// ビルダー: `aria-*` 属性の保持を設定する。
+    /// Builder: sets whether `aria-*` attributes are kept.
     #[deprecated(
         since = "2.2.0",
         note = "no effect: Markdown has no attribute syntax. See RFC 005."
@@ -214,7 +218,7 @@ impl ConversionOptions {
         self
     }
 
-    /// ビルダー: シェル要素（nav/header/footer/aside）の除外を設定する。
+    /// Builder: sets whether shell elements (nav/header/footer/aside) are dropped.
     pub fn drop_interactive_shell(mut self, v: bool) -> Self {
         self.drop_interactive_shell = v;
         self
