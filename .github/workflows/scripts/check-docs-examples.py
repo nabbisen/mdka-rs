@@ -14,6 +14,16 @@ block is still compiled.
 
 `D-12` and `D-13` were examples that failed on their first line while the
 documentation presented them as runnable. This is the control for that.
+
+MODELLED VERSIONS -- pinned exactly; moving a pin means re-deriving the model:
+
+  mdBook 0.5.4 (docs.yaml). The Rust wrapping (a plain `fn main() {`), the
+  hidden-line rule (mdbook_line_kind), and the copy button -- which returns
+  `innerText` and so omits hidden lines (RFC 033 section 2.2) -- are all
+  mdBook 0.5.4's. An mdBook upgrade must re-check all three before the pin
+  moves; the hidden-line rejection exists because of the third.
+
+  TypeScript 7.0.2 (TYPESCRIPT, below), compiled with its `tsc --init` options.
 """
 
 import argparse
@@ -107,7 +117,9 @@ def check_readme_links(path):
     registries at 2.2.2.
 
     Scoped to README.md alone. `docs/src/` is rendered by mdbook, where
-    relative links are correct and expected.
+    relative links and in-page anchors are correct and expected.
+
+    Fragment-only links (`#section`) are rejected as well, since RFC 033.
     """
     p = Path(path)
     if not p.exists():
@@ -123,7 +135,18 @@ def check_readme_links(path):
     bad = []
     for n, line in enumerate(text, 1):
         for target in LINK.findall(line):
-            if target.startswith("#") or "://" in target or target.startswith("mailto:"):
+            # A fragment-only target is rejected too (RFC 033). The README is
+            # rendered by GitHub, crates.io, npm and PyPI, and each rewrites
+            # heading ids its own way, so an in-page anchor that works on one
+            # can silently land nowhere on another. docs/src/ is rendered by
+            # mdBook alone, so its in-page anchors stay allowed -- this function
+            # only ever reads README.md.
+            if target.startswith("#"):
+                bad.append(f"{p}:{n}: fragment-only link: {target} -- the README is "
+                           "rendered by GitHub, crates.io, npm and PyPI, which rewrite "
+                           "heading ids differently; link to the user guide instead")
+                continue
+            if "://" in target or target.startswith("mailto:"):
                 continue
             bad.append(f"{p}:{n}: relative or root-absolute link: {target}")
     return bad
@@ -140,40 +163,97 @@ def runnable(blocks):
     return out
 
 
+def mdbook_line_kind(line):
+    """Classify one line by mdBook's hidden-line rule, after leading whitespace.
+
+      `#!` or `#[`  -> "attribute" -- visible code, NOT hidden
+      `##` + rest   -> "escape"    -- hidden-line syntax; compiles with one `#` removed
+      exactly `#`   -> "empty"     -- hidden; compiles as an empty line
+      `# ` + rest   -> "hidden"    -- hidden; compiles as `rest`
+      otherwise     -> "code"
+
+    The attribute row is tested first, and is the trap: a naive
+    `startswith("#")` would treat `#[derive(Debug)]` and `#![allow(...)]` as
+    hidden. This is the single definition both mdbook_rust_source() and
+    check_rust_hidden_lines() use, so the two cannot disagree.
+    """
+    body = line.lstrip()
+    if body.startswith("#!") or body.startswith("#["):
+        return "attribute"
+    if body.startswith("##"):
+        return "escape"
+    if body == "#":
+        return "empty"
+    if body.startswith("# "):
+        return "hidden"
+    return "code"
+
+
+HIDDEN_KINDS = {"escape", "empty", "hidden"}
+
+
 def mdbook_rust_source(code):
-    """Return the Rust source mdBook actually compiles for a block.
+    """Return the Rust source mdBook compiles for a block.
 
-    mdBook hides lines from the rendered page but still compiles them. The rule
-    is line-based and applies after leading whitespace:
-
-      `# ` + rest   -> hidden; compile `rest`
-      exactly `#`   -> hidden; compile an empty line
-      `##` + rest   -> escape; compile with ONE `#` removed
-      `#!` or `#[`  -> an attribute; compile untouched
-
-    The last row is the trap. A naive `startswith("#")` would strip
-    `#[derive(Debug)]` and `#![allow(...)]` from every example -- failing in
-    confusing ways, or worse, passing because an attribute that mattered
-    vanished.
+    Since RFC 033 no published `rust` fence may contain hidden-line syntax
+    (check_rust_hidden_lines rejects it), so on every block that reaches here
+    this is a no-op -- and the gate asserts that. It is kept because it is the
+    other half of the definition the rejection shares: if mdBook's rule is ever
+    modelled differently, both change together.
 
     It is deliberately not string-literal aware, because mdBook is not: a
     `## heading` line inside a raw string compiles as `# heading`.
     """
     out = []
     for line in code.split("\n"):
+        kind = mdbook_line_kind(line)
         body = line.lstrip()
         indent = line[: len(line) - len(body)]
-        if body.startswith("#!") or body.startswith("#["):
-            out.append(line)
-        elif body.startswith("##"):
+        if kind == "escape":
             out.append(indent + body[1:])
-        elif body == "#":
+        elif kind == "empty":
             out.append("")
-        elif body.startswith("# "):
+        elif kind == "hidden":
             out.append(indent + body[2:])
         else:
             out.append(line)
     return "\n".join(out)
+
+
+def check_rust_hidden_lines(blocks):
+    """Reject mdBook hidden-line syntax in EVERY `rust` fence (RFC 033).
+
+    mdBook 0.5.4's copy button returns the block's `innerText`, which omits the
+    `display: none` hidden lines -- so Copy yields the example without, say, its
+    hidden fallible `main`, and the pasted code does not compile. What is shown
+    must be exactly what compiles.
+
+    Runs over every block whose language is `rust`, BEFORE runnable() applies
+    SKIP_MARKERS: a `fragment`, `ignore` or `compile_fail` block is copied just
+    the same, so no marker exempts it.
+
+    Returns (problems, invariant_failures). The invariant is a cheap guard that
+    the rejection and mdbook_rust_source() still agree: on a block with no
+    hidden lines, mdBook's compiled source must equal the visible source.
+    """
+    problems, invariant = [], []
+    for b in blocks:
+        if b.lang != "rust":
+            continue
+        found = False
+        for i, line in enumerate(b.code.split("\n")):
+            if mdbook_line_kind(line) in HIDDEN_KINDS:
+                found = True
+                # b.line is the opening fence; the first code line is b.line + 1.
+                problems.append(
+                    f"{b.path}:{b.line + 1 + i}: mdBook hidden-line syntax "
+                    f"({line.strip()!r}). Make the code visible; mdBook's copy "
+                    "button omits hidden lines."
+                )
+        if not found and mdbook_rust_source(b.code) != b.code:
+            invariant.append(f"{b.where}: mdbook_rust_source() changed a block with no "
+                             "hidden lines -- detection and source model disagree")
+    return problems, invariant
 
 
 def check_rust(blocks, workdir):
@@ -521,11 +601,15 @@ def check_js(blocks, workdir, binding_dir):
 # the standard way and pasting the page's example has. RFC 032: the gate used to
 # compile with looser, hand-picked flags; under these, usage-nodejs.md's
 # example failed with TS1484 (`verbatimModuleSyntax`) while the gate was green.
-TYPESCRIPT = "typescript@5.9.3"
+#
+# MODELLED VERSION: TypeScript 7.0.2, npm's `latest` when pinned (RFC 033).
+# UPGRADE POLICY: pin exactly; when the pin moves, re-run `tsc --init` at the new
+# version and re-derive TSC_INIT_OPTIONS from it before trusting the gate.
+TYPESCRIPT = "typescript@7.0.2"
 TSC_INIT_OPTIONS = {
-    # Written by `tsc --init` in TypeScript 5.9.3, except output-only options
-    # (sourceMap, declaration, declarationMap, jsx) which cannot affect whether
-    # the example compiles or runs.
+    # Written by `tsc --init` in TypeScript 7.0.2 -- identical to 5.9.3's --
+    # except output-only options (sourceMap, declaration, declarationMap, jsx),
+    # which cannot affect whether the example compiles or runs.
     "module": "nodenext",
     "target": "esnext",
     "types": [],
@@ -628,6 +712,8 @@ def main():
 
     roots = args.root or ["docs/src", "README.md"]
     blocks = extract(roots)
+    # Before runnable(): no skip marker exempts a rust fence from this (RFC 033).
+    hidden_problems, invariant_problems = check_rust_hidden_lines(blocks)
     run = runnable(blocks)
 
     if args.list:
@@ -653,19 +739,26 @@ def main():
         failures += check_js(by.get("js", []), wd, args.types)
         failures += check_ts(by.get("ts", []), wd, args.types)
 
+    if hidden_problems or invariant_problems:
+        print(f"\n{len(hidden_problems) + len(invariant_problems)} hidden-line problem(s):\n")
+        for msg in hidden_problems + invariant_problems:
+            print("  " + msg)
+
     link_problems = check_readme_links("README.md")
     if link_problems:
         print(f"\n{len(link_problems)} README link problem(s):\n")
         for msg in link_problems:
             print("  " + msg)
         print(
-            "\nREADME.md ships inside the npm tarball and renders on npmjs.com\n"
-            "and the PyPI project page, where a relative path resolves against the\n"
-            "registry rather than the repository. Use an absolute URL."
+            "\nREADME.md ships inside the npm tarball and renders on GitHub,\n"
+            "crates.io, npmjs.com and PyPI. A relative path resolves against the\n"
+            "registry, and a #fragment depends on each site's heading ids. Use an\n"
+            "absolute URL."
         )
 
-    if not failures and not link_problems:
-        print("\nAll runnable examples OK. README links OK.")
+    other = link_problems or hidden_problems or invariant_problems
+    if not failures and not other:
+        print("\nAll runnable examples OK. README links OK. No hidden lines.")
         return 0
     if not failures:
         return 1

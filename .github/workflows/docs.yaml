@@ -31,8 +31,13 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
+      # Pinned exactly (RFC 033). The docs example gate models this mdBook: its
+      # wrapping of Rust examples, its hidden-line rule, and its copy button,
+      # which omits hidden lines. Before moving the pin, re-check all three in
+      # .github/workflows/scripts/check-docs-examples.py. 0.5.4 is what `^0.5`
+      # resolved to when pinned.
       - name: Install mdBook
-        run: cargo install mdbook --no-default-features --features search --vers "^0.5" --locked
+        run: cargo install mdbook --no-default-features --features search --vers "=0.5.4" --locked
 
       - name: Build book
         run: mdbook build
