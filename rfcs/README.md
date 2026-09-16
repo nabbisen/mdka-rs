@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-Awaiting the owner's decision.
-
-- [010 — Escaping and text round-trip](./proposed/010-escaping-and-text-round-trip.md)
-  — the RFC 025 harness assigns it 24 cells, including content-destroying defects
-  (`~~~` swallowing a document, `<div>` text vanishing, `1986.` in a list losing its
-  number). Escaping by context instead of one character table. After RFC 024.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -24,16 +19,18 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
-| 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
-| 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
+| 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md), [addendum 025c](./handoffs/025-output-validity-harness/addendum-025c.md) | M3 → `2.3.0` | **P0** — harness ✅ approved (`7338b17`); **025c next**; corpus `025b` unscheduled |
+| 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 025c; amended 2026-09-16 (19 cells) |
+| 028 | [Inline elements around block content, and emphasis negated by its own style](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 024; scope amended 2026-09-16 (22 cells) |
+| 010 | [Escaping and text round-trip](./accepted/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 028; accepted 2026-09-16 (24+ cells) |
 | 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
 | 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved (031, 031b); D6 open (owner); moves to `done/` at `2.3.0` prep |
 | 032 | [Gates report every failure, and execute Python and TypeScript examples](./accepted/032-gates-report-everything-and-execute-examples.md) — [handoff](./handoffs/032-gates-report-everything-and-execute-examples/implementation-handoff.md) | M3 → `2.3.0` | **P2** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
 | 033 | [Published docs: the source is what the reader gets](./accepted/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
 | 034 | [PyPI: a declared wheel matrix, built on purpose and checked where it is published](./accepted/034-pypi-declared-wheel-matrix.md) — [handoff](./handoffs/034-pypi-declared-wheel-matrix/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved (034, 034b); moves to `done/` at `2.3.0` prep |
 
-All eight are M3. **Sequencing: 030–034 ✅, then 025 (next — handoff revised 2026-09-16), then 024, then 028.**
+All nine are M3 · Output validity → `2.3.0`. **Sequencing: 030–034 ✅, 025 ✅ → 025c → 024 → 028 → 010.**
+Tables (RFC 008) and element coverage (RFC 009) moved to M4 / `2.4.0` by owner decision on 2026-09-16; neither has a file yet.
 
 - **030 and 031 go first** and are independent of the engine work. Both are
   control repairs: each fixes a gate that was passing something the consumer's
@@ -46,8 +43,12 @@ All eight are M3. **Sequencing: 030–034 ✅, then 025 (next — handoff revise
   observe the defects before the fixes claim to have removed them, and RFC 028's
   mechanism choice depends on RFC 024's shape.
 
-**RFC 028's handoff is queued, not dispatched** — its own §0 states the
-preconditions, which are not yet met.
+- **028 and 010 follow 024, one at a time.** All three change `src/renderer.rs`;
+  each handoff opens with a stop block naming the approval it waits for.
+
+**Handoffs for 024, 028 and 010 are queued, not dispatched** — each §0 states its
+precondition. **Handoffs are frozen once named ready**; later changes arrive as dated
+addenda.
 
 ## Implemented
 

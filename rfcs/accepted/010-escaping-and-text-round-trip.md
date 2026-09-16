@@ -1,10 +1,10 @@
 # RFC 010 — Escaping and text round-trip
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-16, owner)
 **Author.** Architect
 **Created.** 2026-09-16 (number reserved in `ROADMAP.md` since M1)
-**Milestone.** M3 → `2.3.0` if the owner accepts the M3 reshape (RFC 025 review §6.1)
-**Sequencing.** After RFC 024 — escaping writes through the sink RFC 024 builds.
+**Milestone.** M3 · Output validity → `2.3.0` (M3 reshape accepted 2026-09-16)
+**Sequencing.** After RFC 024 and RFC 028 — escaping writes through the sink RFC 024 builds, and RFC 028 changes the same renderer arms.
 **Source.** The RFC 025 harness inventory (`7338b17`) — 24 cells; audit findings A-03, A-04, A-05, A-09, A-10, A-11, D-05.
 
 ---

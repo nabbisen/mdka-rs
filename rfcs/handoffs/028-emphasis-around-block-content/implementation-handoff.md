@@ -1,217 +1,178 @@
-# Developer Handoff — RFC 028 · Emphasis wrapping block content
+# Developer Handoff — RFC 028 · Inline elements around block content, and emphasis negated by its own style
 
-**Governing RFC.** [RFC 028](../../accepted/028-emphasis-around-block-content.md)
-**Milestone.** M3 → `2.3.0`
+**Governing RFC.** [RFC 028](../../accepted/028-emphasis-around-block-content.md) — **its two accepted amendments and the consolidated acceptance criteria at its end govern**
+**Milestone.** M3 · Output validity → `2.3.0`
 **Priority.** P0
-**Prepared.** 2026-09-16 · **gate revised 2026-09-16**
+**Prepared.** 2026-09-16. **Rewritten 2026-09-16, before dispatch**, for the owner's scope decisions.
 
 ---
 
-## 0. 🛑 QUEUED, NOT DISPATCHED — do not start
+## 0. 🛑 QUEUED — do not start until RFC 024 is approved
 
-**Three preconditions, none of which held when this was first written into the
-repository. That was a dispatch error on my part, not a reason for you to start.**
-
-| Precondition | Required |
+| Precondition | Status |
 |---|---|
-| `2.2.2` is cut and M2b has shipped | This changes conversion output; it must not land in a patch release not scoped for it |
-| **RFC 025** has landed | §6.5 requires removing the `known_defect` markers on its block-inside-inline cells — unsatisfiable until the matrix exists |
-| **RFC 028's mechanism choice is settled against RFC 024** | Added 2026-09-16 — see §4a |
+| RFC 025 harness landed | ✅ `7338b17` |
+| Slice `025c` approved | pending — it adds the Google Docs inline cell and GFM parsing |
+| **RFC 024 approved** | **pending** — the mechanism choice (§4) depends on the sink RFC 024 builds, and RFC 024 changes `src/renderer.rs` line numbers throughout |
 
-A handoff sitting in `rfcs/handoffs/` reads as an instruction to start. This one
-is not, until all three hold. **If you are reading this and they do not, stop and
-say so** — that is what the previous implementer did, correctly, and it is
-recorded at `.git-exclude/reviewed/028-sequencing-conflict/README.md`.
+**Start when** `.git-exclude/reviewed/024-inline-composition-output-sink/README.md` exists
+with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated
+addenda.
 
 ## 1. Purpose
 
-An emphasis element containing block children emits its delimiters around those
-blocks, producing stray `**` lines that are not emphasis in any Markdown dialect.
+An inline element whose children include blocks emits its delimiters or link syntax around
+those blocks, producing stray `**` lines, empty list items, emptied headings or lone
+backticks. And Google Docs wraps every copy in a `<b>` whose own style says *not bold*, so
+a single-paragraph paste comes out entirely bold.
 
-## 2. Reproduce it first
+## 2. Reproduce it first — re-derived 2026-09-16; re-derive again when you start
 
-```
-<strong><p>x</p><p>y</p></strong>              →  "**\n\nx\n\ny\n\n**\n"
-<b style="font-weight:normal;"><p>one</p><p>two</p></b>
-                                               →  "**\n\none\n\ntwo\n\n**\n"
-```
+**Emphasis around blocks:**
 
-Identical in every mode. **Note the first case**: plain `<strong>`, no style
-attribute, no Google Docs. The defect is structural, not a vendor quirk.
-
-**Any block child does it, not only `<p>`** — confirmed 2026-09-16:
-
-| Input | Output |
+| Input | Output today |
 |---|---|
-| `<em><p>x</p><p>y</p></em>` | `"*\n\nx\n\ny\n\n*\n"` |
-| `<b>text<p>para</p></b>` | `"**text\n\npara\n\n**\n"` |
-| `<b><em><p>x</p></em></b>` | `"***\n\nx\n\n***\n"` |
-| `<b><div>x</div></b>` | `"**\n\nx\n\n**\n"` |
-| `<b><ul><li>a</li></ul></b>` | `"**\n\n- a\n\n**\n"` |
-| `<b><h2>head</h2></b>` | `"**\n\n## head\n\n**\n"` |
+| `<strong><p>x</p><p>y</p></strong>` | `**\n\nx\n\ny\n\n**` |
+| `<em><p>x</p><p>y</p></em>` | `*\n\nx\n\ny\n\n*` — lone `*` lines parse as **empty list items** |
+| `<b>text<p>para</p></b>` | `**text\n\npara\n\n**` |
+| `<b><em><p>x</p></em></b>` | `***\n\nx\n\n***` |
+| `<b><div>x</div></b>`, `<b><ul><li>a</li></ul></b>`, `<b><h2>head</h2></b>` | stray `**` around each |
 
-**Key on the block classification, not on `p`.** A fix written against `<p>`
-alone passes the original acceptance criteria while leaving `div`, `ul` and
-headings broken.
+**Google Docs** (public captures: ProseMirror #459, MarkText #4688):
 
-## 3. Mechanism — read, not inferred
-
-| `src/renderer.rs` | |
+| Input | Output today |
 |---|---|
-| `:297` | `"strong" \| "b" =>` … `self.output.push_str("**")` |
-| `:303` | `"em" \| "i" =>` … `self.output.push('*')` |
-| `:399` | leave `"strong" \| "b" =>` `self.output.push_str("**")` |
-| `:403` | leave `"em" \| "i" =>` `self.output.push('*')` |
+| `<b style="font-weight:normal"><p>one</p><p>two</p></b>` | `**\n\none\n\ntwo\n\n**` |
+| `<b style="font-weight:normal;" id="docs-internal-guid-x"><span style="font-weight:400">Hello world</span></b>` | `**Hello world**` — **entirely bold** |
 
-Unconditional on both sides. **There is no `is_block`-style predicate anywhere in
-`renderer.rs` or `utils.rs`** — I checked. So an inline arm currently has no way
-to ask what it contains, and adding that capability is most of this slice.
+**`<a>` and `<code>` around blocks:**
 
-## 4. The required behaviour — and why it is the less obvious one
+| Input | Output today |
+|---|---|
+| `<a href="/x"><h2>Title</h2></a>` | `## \n\n[Title](/x)` — heading emptied |
+| `<a href="/out"><p>x</p><p>y</p></a>` | paragraphs collapse into one link `xy` |
+| `<code><p>x</p><p>y</p></code>` | lone backtick lines |
 
-**When an emphasis element has block children, emit no delimiters for it.**
+**Key on block classification, not on `p`.** A fix written against `<p>` alone passes the
+first case and leaves `div`, `ul` and headings broken.
 
-```
-<strong><p>x</p><p>y</p></strong>   →   "x\n\ny\n"
-```
+## 3. The required behaviour
 
-The obvious alternative is to distribute the emphasis over each block child
-(`**x**\n\n**y**`), which preserves information rather than discarding it.
-**That is wrong here, and RFC 028 records why:** Google Docs wraps its entire
-clipboard payload in `<b style="font-weight:normal">`, so distributing would
-make *every Google Docs paste entirely bold*. Today's stray `**` at least looks
-like a bug; fully bold output looks intentional and nobody reports it.
+The RFC's consolidated criteria are the specification. In short:
 
-**If you conclude distribution is right after all, stop and report** rather than
-choosing. The decision turns on which real-world producer dominates. The corpus
-(§7) will not arrive in time; the Google Docs premise was verified independently
-against public captures on 2026-09-16 (RFC 028, "Verification input").
+| Element | Children include blocks | Own style negates it | Otherwise |
+|---|---|---|---|
+| `<strong>`/`<b>` | no delimiters, blocks kept | no delimiters | `**…**` unchanged |
+| `<em>`/`<i>` | no delimiters, blocks kept | no delimiters | `*…*` unchanged |
+| `<code>` | no delimiters, blocks kept | — | unchanged |
+| `<a href>` | **link each block's content**: `## [Title](/x)` | — | unchanged |
 
-## 4a. Mechanism — two routes, choose after RFC 024
+### 3.1 Why not distribute emphasis (option B) — unchanged, and now stronger
 
-**Route 1 — tree query.** `traversal.rs` computes a "has block descendant" flag
-and the renderer consumes it. `enter_element` takes `&scraper::node::Element`,
-which carries no children, so the query cannot live in the renderer.
+Distributing `**` over each block would make every multi-paragraph Google Docs paste
+entirely bold. **Style negation (§3.2) is not a reason to revisit that**: genuine `<strong>`
+around blocks is invalid HTML, and output that looks intentionally bold is never reported.
+If you conclude otherwise, **stop and report**.
 
-**Route 2 — buffer and decide on leave.** Capture the emphasis content the way
-the link path already does, then emit with or without delimiters based on what
-was captured. No tree query at all. **RFC 024 generalises exactly this
-machinery**, so after it lands this route may be nearly free.
+### 3.2 Style negation — exactly this, nothing more
 
-**Do not choose before RFC 024's shape is known.** Building Route 1 first means
-RFC 024 later has to absorb a parallel mechanism.
+- `<b>`/`<strong>`: no delimiters if **its own** `style` declares `font-weight` as `normal`
+  or a number **≤ 500**. `lighter`/`bolder` → unchanged.
+- `<i>`/`<em>`: no delimiters if its own `style` declares `font-style: normal`.
+- Parse: split on `;`; name before `:` trimmed and case-folded; value trimmed, case-folded,
+  `!important` stripped; **last declaration of the property wins**; no other property read.
+  No inheritance, no stylesheets.
+- **Never adds emphasis.** `<span style="font-weight:700">` stays plain — a separate,
+  unscheduled candidate.
+- This is the first `style` reading in mdka. Keep it a small, separately tested function.
 
-### Requirements that bind whichever route is chosen
+### 3.3 `<a>` around blocks — linking each block
 
-- **O(n) total over the document, not O(n) per emphasis element.** A descendant
-  scan per emphasis element is O(subtree), and nested emphasis makes it
-  quadratic. The Google Docs shape — one `<b>` wrapping an entire clipboard
-  payload — is exactly the input that produces the bad case. A single bottom-up
-  pass satisfies this: each node's flag is *(any child is a block tag) OR (any
-  child has a block descendant)*, computed once as the walk unwinds.
-- **Descendant, not child.** `<b><em><p>x</p></em></b>` has only an inline direct
-  child. A direct-children predicate fails it silently.
-- **One block-tag list, two consumers.** Extract the set into `const`s in
-  `utils.rs` — which already houses `is_skip_tag`, `is_shell_tag`,
-  `is_wrapper_tag`, `is_structural_tag` — and have both the renderer's arms and
-  the new predicate read from it. Not a second list.
+- Paragraph, heading, list item, blockquote content: wrap **that block's inline content** in
+  `[…](dest "title")`.
+- `<pre>` inside `<a>`: a code block holds text only (RFC 024 criterion 3) — **not linked**.
+  Test that explicitly.
+- A block with no text and no image: no link (RFC 024's empty-link rule).
+- An inner link inside the block content (html5ever usually splits nested anchors): define
+  and test; do not produce `[[x](/in)](/out)`.
 
-State which route you chose and why in the review request.
+## 4. Mechanism — choose after RFC 024
 
-## 5. Scope
+**Route 1 — tree query.** `traversal.rs` computes a "has block descendant" flag, bottom-up,
+and the renderer consumes it. `enter_element` takes `&scraper::node::Element`, which carries
+no children, so the query cannot live in the renderer.
 
-Both pairs — `strong`/`b` and `em`/`i` — plus nesting of one inside the other.
+**Route 2 — buffer and decide on leave.** Capture the element's content as the link path
+does, then emit with or without delimiters based on what was captured. RFC 024 generalises
+that machinery; after it lands this route may be nearly free. `<a>`-around-blocks needs to
+place link syntax **inside** each block, which likely favours knowing the answer on enter —
+weigh that.
 
-**The block predicate must be shared with, not duplicated from, the arms that
-actually emit blocks.** Two disjoint lists that must agree is the
-`figure`/`figcaption` defect from RFC 003, and it has already cost this project
-once.
+**State which route you chose and why.**
 
-Cases that must be defined and tested, not left to fall out:
+### Requirements that bind either route
 
-- **Mixed children** — `<b>text<p>para</p></b>`. Real in clipboard HTML.
-- **Nested emphasis around blocks** — `<b><em><p>x</p></em></b>` must emit
-  neither delimiter.
-- **Emphasis around purely inline content must be byte-identical to `2.2.1`.**
-  This is the overwhelmingly common case and must not move.
+- **O(n) over the document**, not per element. One `<b>` wrapping an entire Google Docs payload
+  is exactly the quadratic case.
+- **Descendant, not child.** `<b><em><p>x</p></em></b>` has only an inline direct child.
+- **One block-tag list, shared** with the arms that emit blocks — in `utils.rs` beside
+  `is_structural_tag` and friends. Two lists that must agree is the `figure`/`figcaption`
+  defect from RFC 003.
 
-### Scope boundary, per RFC 027 Rule 2
+## 5. First commit — re-label the harness
 
-This handoff covers the structural defect only: emphasis elements whose children
-are blocks.
+RFC 025 marks these cells UNOWNED; the owner has assigned them to this RFC. **Before any
+`src/` change**, change their `defect(...)` owner to RFC 028 — **no expectation edits**:
 
-**Not covered:** whether `<b style="font-weight:normal">` should mean "not bold"
-around *inline* content. That needs reading the `style` attribute, which is a
-behaviour change and belongs with the inline-`style` candidate recorded in
-`ROADMAP.md`. Fixing §4 makes the Google Docs case correct without reading
-`style` at all — that is why the two can be separated.
+- the 10 `<a>`/`<code>` × block cells in `block_in_inline.rs` — `p_in_a`, `ul_in_a`,
+  `blockquote_in_a`, `pre_in_a`, `heading_in_a`, `p_in_code`, `ul_in_code`,
+  `blockquote_in_code`, `pre_in_code`, `heading_in_code` (names as of `7338b17`; the
+  harness is authoritative if they have moved);
+- the single-paragraph Google Docs cell `025c` adds — and **replace its "pending the owner's decision" comment**: the owner accepted RFC 028's style amendment on 2026-09-16.
 
-Also not covered: `A-06` (`<li>` with block children), which is RFC 009.
+After re-labelling, RFC 028 owns **22** cells. Confirm the count.
 
-## 6. Required verification
+## 6. Scope boundary, per RFC 027 Rule 2
 
-Per RFC 027 Rule 3, state for each whether it ran against the workspace tree or
-an installed artifact.
+- **Where bytes go** inside links and code — RFC 024 (done by then).
+- **Escaping** — RFC 010.
+- The `docs-internal-guid` id anchor Balanced mode emits — `preserve_ids`; recorded as evidence
+  for a future option, **not here**.
+- Recovering real emphasis from `<span style>` — not here.
 
-1. The §2 cases, before and after.
-2. Mixed inline-and-block children — behaviour stated and tested.
-3. Nested emphasis around blocks.
-4. **Emphasis around inline content byte-identical to `2.2.1`**, over the whole
-   existing corpus. Show it, do not assert it.
-5. The RFC 025 block-inside-inline cells' `known_defect` markers removed, and the cells passing (RFC 025 uses strict expected failures, not `#[ignore]`, since 2026-09-16).
-6. `cargo test --workspace --all-features --locked`, fmt, clippy `-D warnings`.
-7. Count reconciled.
+## 7. Required verification
 
-## 7. Verification input
+Per RFC 027 Rule 3, label what each ran against.
 
-**Corrected 2026-09-16.** bekoedit's corpus **does not exist yet** and has no date;
-the defect was exposed by a **hand-written** reproduction, not a capture. **Do not
-wait.** Implement against the §2 cases, bekoedit's reproduction, and RFC 025's two
-Google Docs shape cells. If the corpus has somehow arrived when you start, use it
-too.
+1. §2 cases, before and after, release build.
+2. **All 22 RFC 028 cells** have markers removed and pass, under CommonMark and GFM, in all
+   five modes — listed.
+3. **No other harness cell changes state**, or each change reported with its owner.
+4. Style parser edge cases: `!important`, upper case, whitespace, repeated declaration (last
+   wins), other properties present, `font-weight: 500` vs `600`, `lighter`/`bolder`.
+5. **Inline-only emphasis and links byte-identical to 2.2.3** across every existing test and
+   the runner fixtures — except elements whose own style negates emphasis. Show the diff scope.
+6. O(n): a benchmark or a test on deeply nested emphasis around a large payload, before and after.
+7. `cargo test --workspace --all-features --locked --no-fail-fast`; fmt; clippy per CI.
 
 ## 8. Prohibited shortcuts
 
-- Do not distribute the emphasis over block children without reporting first.
-- Do not read the `style` attribute — out of scope. **⚠ Under review:** RFC 028 carries a proposed amendment that would read two `style` properties to drop negated emphasis. Until the owner decides and this handoff is revised, this line stands.
+- Do not distribute emphasis over block children without reporting first.
+- Do not read any `style` property other than the two in §3.2, or add emphasis from style.
 - Do not write a second block-tag list.
-- Do not let the inline-only case move.
+- Do not edit a harness expectation.
 
-## 9. Known risks
+## 9. Acceptance checklist
 
-| Risk | If it happens |
-|---|---|
-| The block predicate disagrees with the arms that emit blocks | Derive it from the same classification. If that classification does not exist in a reusable form, creating it *is* the work — report the shape you chose. |
-| html5ever restructures the tree before we see it | Possible for invalid HTML. If `<strong><p>` does not reach the renderer as you expect, report what it does reach as. |
-| The inline case shifts by a byte | Stop. That is the common path and a regression there outweighs this fix. |
-| Distribution turns out to be right | Report before implementing — see §4. |
+- [ ] §0 honoured — started after RFC 024's approval
+- [ ] §5 re-label first; 22 cells owned
+- [ ] Consolidated criteria 1–13 of RFC 028, each addressed in the review request
+- [ ] Route chosen and justified
+- [ ] §7.3 no other cell changed state
+- [ ] §7.5 inline-only byte-identity, with the one stated exception
+- [ ] CHANGELOG with before/after, including style negation
 
-## 10. Acceptance checklist
+## 10. Report back
 
-- [ ] `<strong><p>x</p><p>y</p></strong>` → `"x\n\ny\n"`
-- [ ] The Google Docs shape → `"one\n\ntwo\n"`
-- [ ] `em`/`i` behave the same
-- [ ] Nested emphasis around blocks emits neither delimiter
-- [ ] Mixed children defined and tested
-- [ ] Inline-only emphasis byte-identical to `2.2.1`, demonstrated
-- [ ] Block predicate shared, not duplicated
-- [ ] RFC 025's block-inside-inline cells pass
-- [ ] CHANGELOG entry showing before and after
-- [ ] Count reconciles; fmt and clippy clean
-
-## 11. Escalate rather than decide
-
-Stop and raise if: distribution looks right; html5ever's tree differs from the
-assumption in §3; the block predicate cannot be shared without restructuring; or
-inline-only output moves at all.
-
-## 12. Where this came from
-
-A downstream GUI editor building paste-as-Markdown, not from our own testing. A
-56-finding external audit missed it, and RFC 025's composition matrix as
-originally specified would have missed it too — every cell put an inline
-construct inside a container, and this is a block inside an inline.
-
-Worth knowing while you work on it: **the matrix had a direction, and the defect
-was on the other side of it.** If you notice a third direction we are not
-testing, that is worth more than this fix.
+`.git-exclude/review-request/028-inline-around-blocks/README.md`, evidence under `evidence/`,
+exit codes inside the files.

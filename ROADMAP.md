@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and **M2c complete**. **M3 is next.**
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034 and the RFC 025 harness done; 025c, 024, 028, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -426,11 +426,16 @@ the failure mode moved from crash to hang. M4. And F-23, default `Balanced`
 emitting 1,190 `<a id>` anchors on a real Wikipedia page — a design question
 shared with bekoedit's item 8, not a defect.
 
-### M3 · Conversion fidelity → `2.3.0` (minor)
+### M3 · Output validity → `2.3.0` (minor)
 
-Purely additive element coverage. Tables are the largest known gap against the
-project's GFM positioning; today `<table>` content is emitted as an unstructured
-text run.
+**Reshaped by owner decision, 2026-09-16.** M3 was "conversion fidelity", with tables
+(RFC 008) and element coverage (RFC 009) in it. The RFC 025 harness then measured the
+output: **104 cells, 64 known defects**, several of them content-destroying, on HTML
+mdka already claims to handle. `2.3.0` is now **validity**: every known defect in
+existing output has an owner and ships together — RFC 025, 024, 028, 010. Tables and
+element coverage move to **M4 / `2.4.0`**, where they build on valid output and on the
+GFM parsing the harness gains in `025c`. Reasoning:
+`.git-exclude/reviewed/025-output-validity-harness/README.md` §5–§6.
 
 | RFC | Title | Priority | Size | Order |
 |---|---|---|---|---|
@@ -441,10 +446,8 @@ text run.
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness approved (`7338b17`, 104 cells, 64 known defects); **`025c` next**; corpus slice `025b` unscheduled |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after `025c` — 19 harness cells, incl. blockquote-loses-`>` |
-| 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 — ⚠ **proposed scope amendment awaiting owner** (negated inline `style`; single-paragraph Google Docs pastes stay fully bold otherwise) |
-| 010 | Escaping and text round-trip | **P0** | L | *proposed* — 24 harness cells, content-destroying; after 024 |
-| 008 | GFM table support | P1 | L | ⚠ **owner decision:** move to M4 / `2.4.0` (RFC 025 review §6.1) |
-| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M | ⚠ **owner decision:** move to M4 / `2.4.0` with 008 |
+| 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | after 024 — scope extended 2026-09-16 (`<a>`, `<code>` around blocks; negated `font-weight`/`font-style`) |
+| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 24 harness cells, content-destroying; after 028 |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
@@ -478,6 +481,7 @@ audit found the larger *unknown* one. `mdka` produces invalid Markdown for
 several everyday constructs — a linked image, bold inside a link, a bare `<pre>`,
 a code span containing `_`. Emitting a correct table matters less than emitting
 correct output for HTML that is already in scope, so 024/025/010 precede 008.
+**Carried further on 2026-09-16:** 008 and 009 left M3 entirely (see the note at the top of this milestone).
 
 **RFC 030 (implemented) and RFC 031 go first, ahead of the engine work, though
 neither is the most important item here.** RFC 031 came from the `2.2.3`
@@ -602,10 +606,12 @@ RFC 005 and RFC 006 spent a milestone making the option surface honest. **Adding
 four options needs deliberate appetite, not accumulation** — which is why this is
 a candidate rather than a plan.
 
-### M4 · Durability → `2.4.0` (minor)
+### M4 · Coverage and durability → `2.4.0` (minor)
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
+| 008 | GFM table support — **moved from M3, 2026-09-16** | P1 | L |
+| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, task-list checkboxes) — **moved from M3 with 008** | P2 | M |
 | 011 | Robustness: fuzzing + `MdkaError::Io` error-path tests | P2 | M |
 | 012 | Benchmark hardening + regenerate published performance claims | P2 | M |
 | 013 | Internal comment migration to English | P2 | L |
@@ -670,14 +676,17 @@ Japanese text remains in `src/`, `cli/`, `node/`, or `python/`.
 | 005 | `ConversionOptions` semantics | M2 | P0 | L | 001, 004 |
 | 006 | Option docs + binding parity | M2 | P1 | M | 005 |
 | 007 | English-only public surface | M2 | P1 | M | — |
-| 008 | GFM table support | M3 | P0 | L | 001 |
-| 009 | Element coverage extension | M3 | P2 | M | 008 |
-| 010 | Escaping & text-processing audit | M3 | P1 | M | 001 |
+| 008 | GFM table support | M4 (moved from M3, 2026-09-16) | P1 | L | 001, 025 |
+| 009 | Element coverage extension | M4 (moved from M3, 2026-09-16) | P2 | M | 008 |
+| 010 | Escaping and text round-trip | M3 | P0 | L | 024, 025 |
 | 011 | Robustness: fuzzing + I/O error paths | M4 | P2 | M | 001 |
 | 012 | Benchmark hardening | M4 | P2 | M | 008 |
 | 013 | Internal comment migration to English | M4 | P2 | L | 007 |
 | 014 | Release-time CI verification | M1 | P1 | S | 001 |
 | 015 | Release tooling completion | M1b | P1 | M | 014 |
+
+RFCs 016 onward are tracked in [`rfcs/README.md`](rfcs/README.md), which is the
+authoritative index; this table is kept for the originally planned portfolio only.
 
 Numbers are permanent and never reused, per RFC 000. Numbers 005–013 are
 reserved; those RFCs are drafted at the start of their milestone rather than up

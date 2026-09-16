@@ -1,7 +1,12 @@
-# RFC 028 — Emphasis wrapping block content emits stray delimiters
+# RFC 028 — Inline elements around block content, and emphasis negated by its own style
 
-**Status.** Accepted 2026-09-16 — implementer may start
-**Tracks.** M3 · Conversion fidelity → `2.3.0`
+> **Retitled 2026-09-16.** Originally *"Emphasis wrapping block content emits stray
+> delimiters"*. Both amendments at the end of this document were **accepted by the
+> owner on 2026-09-16**; where they conflict with the body, **the amendments win**, and
+> the consolidated acceptance criteria at the end replace the list in the body.
+
+**Status.** Accepted 2026-09-16; scope amended and accepted 2026-09-16
+**Tracks.** M3 · Output validity → `2.3.0`
 **Priority.** P0
 **Sequencing.** After **RFC 025 and RFC 024**. Amended 2026-09-16 — see below.
 **Touches.** `src/renderer.rs`, `src/traversal.rs`, `src/utils.rs`.
@@ -92,7 +97,7 @@ Genuine `<strong>` wrapping block elements is invalid HTML — `<b>`/`<strong>` 
 phrasing content — so A's loss applies to a case that should not occur, while B's
 damage applies to one that occurs constantly.
 
-### Not in scope: honouring `font-weight:normal`
+### ~~Not in scope: honouring `font-weight:normal`~~ — superseded by the style amendment below
 
 Whether `<b style="font-weight:normal">` should be treated as not-bold even
 around *inline* content is a separate question, filed with the inline-`style`
@@ -180,9 +185,9 @@ Word and LibreOffice.
 
 ---
 
-## ⚠ Proposed amendment — awaiting owner decision (2026-09-16)
+## Amendment 1 — emphasis negated by its own style — **accepted 2026-09-16**
 
-**Not accepted. Do not implement until decided.** Full reasoning:
+**Accepted by the owner, 2026-09-16.** Full reasoning:
 `.git-exclude/reviewed/upstream-bekoedit-2026-09-16-re-corpus/README.md` §4–§5.
 
 **The gap.** A single-paragraph Google Docs copy wraps **inline** content:
@@ -204,7 +209,7 @@ cites to reject option B, and criterion 6 would lock it in.
 - Criterion 6 becomes: *byte-identical to 2.2.1 unless the element's own style
   negates the emphasis.*
 
-### Proposed extension — also awaiting owner (RFC 025 review, 2026-09-16)
+## Amendment 2 — `<a>` and `<code>` around blocks — **accepted 2026-09-16**
 
 The RFC 025 harness found the same defect class for **`<a>` and `<code>` wrapping
 blocks** — 10 cells, currently UNOWNED:
@@ -225,3 +230,21 @@ RFC to **inline elements wrapping block content**:
   the document meant.
 
 Reasoning: `.git-exclude/reviewed/025-output-validity-harness/README.md` §3 (Q4–Q6), §6.2.
+
+---
+
+## Consolidated acceptance criteria — replace the list in the body
+
+1. `<strong><p>x</p><p>y</p></strong>` → `x\n\ny\n`; no stray delimiters. Same for `<b>`, `<em>`, `<i>`.
+2. The multi-paragraph Google Docs shape `<b style="font-weight:normal"><p>para one</p><p>para two</p></b>` → `para one\n\npara two\n`.
+3. **The single-paragraph Google Docs shape** `<b style="font-weight:normal;" id="…"><span style="font-weight:400">Hello world</span></b>` → a paragraph `Hello world` **with no emphasis**, in every mode. (The id anchor Balanced mode emits is `preserve_ids` behaviour, not this RFC's.)
+4. Style negation (Amendment 1): `<b>`/`<strong>` with its own `font-weight` of `normal` or a number ≤ 500 emits no delimiters; `<i>`/`<em>` with its own `font-style: normal` emits no delimiters; relative values (`lighter`, `bolder`) leave delimiters unchanged; parsing rules as stated in Amendment 1, each edge case tested (`!important`, case, whitespace, repeated declaration, other properties present).
+5. Style negation **never adds** emphasis.
+6. `<code>` around blocks: no delimiters, blocks kept.
+7. `<a>` around blocks: **each block's content is linked** — `<a href="/x"><h2>Title</h2></a>` → `## [Title](/x)`. Defined and tested for paragraphs, headings, list items, blockquotes, and `<pre>` (whose code block holds text only, per RFC 024 criterion 3, so it is not linked — say so in a test). A block with no text or image emits no link.
+8. Nested inline-around-block (`<b><em><p>x</p></em></b>`, `<a><strong><p>x</p></strong></a>`) defined and tested.
+9. Mixed inline and block children defined and tested.
+10. **Emphasis and links around purely inline content are byte-identical to 2.2.3, unless the element's own style negates the emphasis** (criterion 4).
+11. The block predicate is shared with, not duplicated from, the block-emitting arms, and is O(n) over the document.
+12. Every RFC 025 cell owned by RFC 028 — **22** after re-labelling: 11 `<strong>`/`<em>` × block and bekoedit item 3, 10 `<a>`/`<code>` × block, 1 single-paragraph Google Docs — has its `known_defect` marker removed and passes under CommonMark and GFM.
+13. CHANGELOG entry with before/after, including the style-negation behaviour change.
