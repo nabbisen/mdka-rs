@@ -68,11 +68,16 @@ handler cannot write around it:
   code span with no text.
 - **Bookkeeping per destination**: `newlines_emitted` (prevents double blank
   lines), `at_line_start`, and the pending space between words.
-- **The blockquote prefix.** Rather than emitting `> ` on entering a
-  blockquote, the sink writes it before the first content byte at a line
-  start -- text, emphasis delimiters, images, links, list and heading markers
-  alike. Nested blockquotes get the correct number of `>` however many block
-  elements intervene.
+- **The container prefix.** Blockquotes and list items form a stack in the
+  sink. Every line written inside them -- content, blank separator lines and
+  code block lines -- starts with the whole stack's prefix, outermost first:
+  `> ` for a quote (`>` alone on a blank line), and for a list item as many
+  spaces as its content column (`- ` → 2, `1. ` → 3). No element handler
+  writes a prefix; the sink writes it before the first byte of a line. Line
+  breaks are recorded and written when the next content arrives, so a blank
+  line carries the prefix of exactly the containers still open across it.
+  Whether a list is tight or loose is decided before rendering, by the same
+  one pass over the document that finds inline elements around blocks.
 
 Inside code -- an inline `<code>`, or a `<pre>` with or without `<code>` --
 child elements contribute text only: Markdown has no emphasis, links or images

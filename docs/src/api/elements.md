@@ -10,11 +10,11 @@ Markdown it produces. Elements not listed are either silently removed
 |---|---|---|
 | `<h1>` – `<h6>` | `# ` – `###### ` | ATX-style headings |
 | `<p>` | Paragraph (blank lines around) | |
-| `<blockquote>` | `> ` prefix | Nesting produces `> > `, `> > > `, … |
+| `<blockquote>` | `> ` prefix | On every line inside the quote, including blank lines (`>`) and code block lines. Nesting produces `> > `, `> > > `, … |
 | `<pre><code>` | Fenced code block ` ``` ` | Preserves whitespace and newlines |
-| `<ul>` | `- ` list | Nested lists indented by 2 spaces |
-| `<ol>` | `1. ` list | Respects `start` attribute |
-| `<li>` | List item | |
+| `<ul>` | `- ` list | Tight or loose, see [Lists](#lists-tight-and-loose) |
+| `<ol>` | `1. ` list | Respects `start` attribute. Tight or loose, see [Lists](#lists-tight-and-loose) |
+| `<li>` | List item | Everything inside it stays in the item: later lines are indented to the item's content column (`- ` → 2 spaces, `1. ` → 3, `10. ` → 4), including nested lists and code block lines |
 | `<hr>` | `---` | |
 | `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
 | `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
@@ -33,6 +33,63 @@ Markdown it produces. Elements not listed are either silently removed
 `<span>` is **not** in either table, and that is deliberate: it produces no
 output of its own and no break. `<span>A</span><span>B</span>` converts to
 `AB`, with the children passed straight through.
+
+## Lists: tight and loose
+
+Markdown has two kinds of list: **tight**, with no blank line between items,
+and **loose**, where items are separated by blank lines and each item's text is
+a paragraph. HTML has no such distinction — whether an item's text is wrapped
+in `<p>` is usually a matter of how the page was produced — so mdka decides by
+the item's content:
+
+> A list is **loose** if and only if some item contains **two or more
+> blocks**, where a run of inline content (text, links, bold, images, line
+> breaks) counts as one block, and **nested lists are not counted**.
+> Otherwise it is **tight**.
+
+A block is a paragraph, heading, blockquote, code block or rule, and anything
+else the chosen mode renders as a block: `<div>` counts in Balanced, Strict and
+Preserve, but not in Minimal and Semantic, which unwrap it; an element the
+mode drops counts as nothing.
+
+A CMS list with one `<p>` per item stays tight:
+
+```html
+<ul><li><p>a</p></li><li><p>b</p></li></ul>
+```
+
+```
+- a
+- b
+```
+
+A nested list is not counted, so text followed by a sublist is still one block:
+
+```html
+<ol><li>one<ol><li>inner</li></ol></li></ol>
+```
+
+```
+1. one
+   1. inner
+```
+
+Two paragraphs in one item make the whole list loose:
+
+```html
+<ul><li><p>a</p><p>b</p></li><li>c</li></ul>
+```
+
+```
+- a
+
+  b
+
+- c
+```
+
+Each list is decided on its own: a loose list nested inside a tight one leaves
+the outer list tight.
 
 ## Not Yet Supported
 

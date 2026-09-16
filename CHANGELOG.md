@@ -156,6 +156,45 @@ that did not say what the HTML said to Markdown that does.
     count, and a `style` never adds emphasis: `<span style="font-weight:700">`
     stays plain.
   - Bold and italic without such a style are unchanged.
+- **Paragraphs, code blocks, quotes and nested lists inside a list item now
+  stay in the item.** Content wrapped in `<p>`, which WordPress and most CMSs
+  produce for every list item, was written after an empty bullet, outside the
+  list:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<ul><li><p>a</p></li><li><p>b</p></li></ul>` | `- \n\na\n\n- \n\nb` — two empty items | `- a\n- b` |
+  | `<ul><li><p>a</p><p>b</p></li></ul>` | `- \n\na\n\nb` | `- a\n\n  b` |
+  | `<ul><li>see<pre><code>x</code></pre></li></ul>` | ``- see\n\n```\nx\n``` `` — the code is outside the list | ``- see\n\n  ```\n  x\n  ``` `` |
+  | `<ul><li><blockquote><p>q</p></blockquote></li></ul>` | `- \n\n> q` | `- > q` |
+
+  Lines inside an item are indented to the item's content column. A list is
+  loose (blank lines between items) only when some item holds two or more
+  blocks; one `<p>` per item stays tight. The rule is on the
+  [Supported HTML Elements](https://nabbisen.github.io/mdka-rs/api/elements.html#lists-tight-and-loose)
+  page.
+- **A list nested in a numbered item is nested.** It was indented by two
+  spaces, which is less than `1. ` needs, so it read as a continuation of the
+  parent's text:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<ol><li>one<ol><li>inner</li></ol></li></ol>` | `1. one\n  1. inner` — no sublist | `1. one\n   1. inner` |
+  | `<ol><li>one<ul><li>inner</li></ul></li></ol>` | `1. one\n  - inner` — no sublist | `1. one\n   - inner` |
+
+  Lists nested under `- ` items are unchanged.
+- **A blockquote with several paragraphs, or with a multi-line code block, is
+  one quote.** Blank lines between its blocks had no `>`, which ends a quote,
+  and code lines after the first had none either, so the code left the quote:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<blockquote><p>one</p><p>two</p></blockquote>` | `> one\n\n> two` — two quotes | `> one\n>\n> two` |
+  | `<blockquote><pre><code>l1\nl2</code></pre></blockquote>` | ``> ```\nl1\nl2\n``` `` | ``> ```\n> l1\n> l2\n> ``` `` |
+
+  The same holds at any depth: quotes in list items, lists in quotes, and
+  quotes in quotes. A line break inside a list item is now followed by the
+  item's indent too (`- a  \n  b`, was `- a  \nb`); both read the same.
 
 These documentation fixes are already live on the user guide, which publishes
 from `main`; they are listed here so the release records them.
