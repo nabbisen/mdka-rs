@@ -1,6 +1,6 @@
 # RFC 033 — Published docs: the source is what the reader gets
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-16, owner)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — after RFC 032, before RFC 025
@@ -193,3 +193,25 @@ mdBook's wrapping, and that must not drift unseen.
 - [ ] `docs.yaml` pins `=0.5.4`; gate docstring names the modelled version
 - [ ] CHANGELOG `[Unreleased]` entry corrected (§6)
 - [ ] Docs gate runnable count unchanged; all six workflows green
+
+---
+
+## Amendment — at handoff, 2026-09-16: forbid hidden lines in **every** `rust` fence
+
+§2.4 and §7 scope the rejection to *runnable* `rust` blocks and exempt `fragment`.
+Tightened, before implementation:
+
+**The gate rejects mdBook hidden lines in every `rust` fence** under `docs/src/`
+and in `README.md` — runnable, `no_run`, `ignore`, `compile_fail` and `fragment`
+alike.
+
+**Why.** The copy-button defect in §2.2 does not depend on whether the gate
+compiles a block. mdBook hides the lines in any `rust` fence, and Copy drops them
+in any `rust` fence. A fragment is labelled incomplete, but a reader still
+deserves to copy what they see. One unconditional rule is also simpler to state,
+to enforce and to review than a rule with exemptions.
+
+**Cost today: none.** Re-derived at handoff: the only hidden lines in any `rust`
+fence are the five RFC 031 blocks, three lines each. No fragment uses them.
+
+This is stricter than the accepted text, never looser.
