@@ -16,78 +16,58 @@ use crate::harness::{tree, undecided};
 
 cells! {
     p_in_strong: "<strong><p>x</p><p>y</p></strong>"
-        => tree(r#"para("x"), para("y")"#),
-        defect(Rfc028, "`**` emitted around the paragraphs as stray `**` lines");
+        => tree(r#"para("x"), para("y")"#);
     ul_in_strong: "<strong><ul><li>x</li><li>y</li></ul></strong>"
-        => tree(r#"ul(li("x"), li("y"))"#),
-        defect(Rfc028, "`**` emitted around the list as stray `**` lines");
+        => tree(r#"ul(li("x"), li("y"))"#);
     blockquote_in_strong: "<strong><blockquote><p>x</p></blockquote></strong>"
-        => tree(r#"quote(para("x"))"#),
-        defect(Rfc028, "`**` emitted around the quote as stray `**` lines");
+        => tree(r#"quote(para("x"))"#);
     pre_in_strong: "<strong><pre>x</pre></strong>"
-        => tree(r#"codeblock("x")"#),
-        defect(Rfc028, "`**` around the block, plus bare <pre> (RFC 024): the trailing `**` lands in an unterminated code block");
+        => tree(r#"codeblock("x")"#);
     heading_in_strong: "<strong><h2>x</h2></strong>"
-        => tree(r#"h2("x")"#),
-        defect(Rfc028, "`**` emitted around the heading as stray `**` lines");
+        => tree(r#"h2("x")"#);
 }
 
 // ── in <em> ────────────────────────────────────────────────────────────────
 
 cells! {
     p_in_em: "<em><p>x</p><p>y</p></em>"
-        => tree(r#"para("x"), para("y")"#),
-        defect(Rfc028, "a lone `*` line around the paragraphs parses as an empty list item, before and after");
+        => tree(r#"para("x"), para("y")"#);
     ul_in_em: "<em><ul><li>x</li><li>y</li></ul></em>"
-        => tree(r#"ul(li("x"), li("y"))"#),
-        defect(Rfc028, "lone `*` lines parse as two extra empty lists around the real one");
+        => tree(r#"ul(li("x"), li("y"))"#);
     blockquote_in_em: "<em><blockquote><p>x</p></blockquote></em>"
-        => tree(r#"quote(para("x"))"#),
-        defect(Rfc028, "lone `*` lines parse as empty lists around the quote");
+        => tree(r#"quote(para("x"))"#);
     pre_in_em: "<em><pre>x</pre></em>"
-        => tree(r#"codeblock("x")"#),
-        defect(Rfc028, "lone `*` line becomes an empty list, plus bare <pre> (RFC 024): unterminated code block");
+        => tree(r#"codeblock("x")"#);
     heading_in_em: "<em><h2>x</h2></em>"
-        => tree(r#"h2("x")"#),
-        defect(Rfc028, "lone `*` lines parse as empty lists around the heading");
+        => tree(r#"h2("x")"#);
 }
 
 // ── in <a> ─────────────────────────────────────────────────────────────────
 
 cells! {
     p_in_a: r#"<a href="/out"><p>x</p><p>y</p></a>"#
-        => undecided("Q4: block content inside <a> (valid HTML5): where does the link go?"),
-        defect(Rfc028, "the paragraphs collapse into one link text `xy`: the paragraph break and the space are lost");
+        => undecided("Q4: block content inside <a> (valid HTML5): where does the link go?");
     ul_in_a: r#"<a href="/out"><ul><li>x</li><li>y</li></ul></a>"#
-        => undecided("Q4"),
-        defect(Rfc028, "the list items are emptied and their text moves into one link `xy` after the list");
+        => undecided("Q4");
     blockquote_in_a: r#"<a href="/out"><blockquote><p>x</p></blockquote></a>"#
-        => undecided("Q4"),
-        defect(Rfc028, "the quote disappears; only a link with its text remains");
+        => undecided("Q4");
     pre_in_a: r#"<a href="/out"><pre>x</pre></a>"#
-        => undecided("Q4"),
-        defect(Rfc028, "bare <pre> inside <a>: no opening fence, and the link lands in an unterminated code block");
+        => undecided("Q4");
     heading_in_a: r#"<a href="/out"><h2>x</h2></a>"#
-        => undecided("Q4"),
-        defect(Rfc028, "the heading is emptied; its text becomes a link paragraph after it");
+        => undecided("Q4");
 }
 
 // ── in <code> ──────────────────────────────────────────────────────────────
 
 cells! {
     p_in_code: "<code><p>x</p><p>y</p></code>"
-        => undecided("Q5: block content inside inline <code>"),
-        defect(Rfc028, "lone backtick lines around the paragraphs: stray backticks, no code span");
+        => undecided("Q5: block content inside inline <code>");
     ul_in_code: "<code><ul><li>x</li><li>y</li></ul></code>"
-        => undecided("Q5"),
-        defect(Rfc028, "lone backtick lines around the list: stray backticks");
+        => undecided("Q5");
     blockquote_in_code: "<code><blockquote><p>x</p></blockquote></code>"
-        => undecided("Q5"),
-        defect(Rfc028, "lone backtick lines around the quote: stray backticks");
+        => undecided("Q5");
     pre_in_code: "<code><pre>x</pre></code>"
-        => undecided("Q5"),
-        defect(Rfc028, "stray backtick, plus bare <pre>: unterminated code block");
+        => undecided("Q5");
     heading_in_code: "<code><h2>x</h2></code>"
-        => undecided("Q5"),
-        defect(Rfc028, "lone backtick lines around the heading: stray backticks");
+        => undecided("Q5");
 }

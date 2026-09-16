@@ -14,8 +14,7 @@ cells! {
     // vendored with their permission. The multi-paragraph shape of the Google
     // Docs clipboard wrapper; RFC 028 behaviour A.
     bekoedit_google_docs_bold_wrapper: r#"<b style="font-weight:normal;"><p>para one</p><p>para two</p></b>"#
-        => tree(r#"para("para one"), para("para two")"#),
-        defect(Rfc028, "`**` emitted around the paragraphs as stray `**` lines (bekoedit item 3)");
+        => tree(r#"para("para one"), para("para two")"#);
     // Google Docs wraps copied content in a non-bold
     // `<b style="font-weight:normal" id="docs-internal-guid-…">`, per public
     // issue reports quoting clipboard captures: ProseMirror #459 (2016),
@@ -24,8 +23,7 @@ cells! {
     // HTML is copied. RFC 028's style amendment (accepted by the owner,
     // 2026-09-16) makes the wrapper's own font-weight:normal drop the `**`.
     google_docs_bold_wrapper_inline: r#"<b style="font-weight:normal;" id="docs-internal-guid-x"><span style="font-weight:400">Hello world</span></b>"#
-        => tree(r#"para("Hello world")"#),
-        defect(Rfc028, "the non-bold wrapper is emitted as `**`: the whole paragraph becomes bold, although the wrapper's own style says font-weight:normal (RFC 028 Amendment 1)");
+        => tree(r#"para("Hello world")"#);
     // 2.2.2 consumer pass (RFC 024 addendum): a space lost inside a link only.
     space_around_inline_in_link: r#"<a href="/x">Read <strong>more</strong> now</a>"#
         => tree(r#"para(link[/x]("Read ", strong("more"), " now"))"#);

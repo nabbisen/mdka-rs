@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::utils;
+use crate::utils::{self, Block};
 
 mod sink;
 
@@ -38,6 +38,14 @@ enum Fence {
 enum LinkState {
     /// Opened a link capture.
     Captured,
+    /// Wraps block content (RFC 028 criterion 7): each run of inline content
+    /// between block boundaries is linked on its own -- `## [Title](/x)`.
+    /// `capturing` is true while such a run's link capture is open.
+    Distributed {
+        href: String,
+        title: Option<String>,
+        capturing: bool,
+    },
     /// Inside another link, a `<pre>` or a code span: text only.
     TextOnly,
 }
@@ -54,6 +62,9 @@ pub struct MarkdownRenderer {
     links: Vec<LinkState>,
     /// Per open inline `<code>`: whether it opened a code-span capture.
     code_captures: Vec<bool>,
+    /// Per open `<strong>`/`<b>`/`<em>`/`<i>`: the delimiter it wrote, if any,
+    /// so leaving writes exactly what entering did.
+    emphasis: Vec<Option<&'static str>>,
 }
 
 impl MarkdownRenderer {
@@ -66,6 +77,7 @@ impl MarkdownRenderer {
             fence: Fence::None,
             links: Vec::new(),
             code_captures: Vec::new(),
+            emphasis: Vec::new(),
         }
     }
 
@@ -80,11 +92,68 @@ impl MarkdownRenderer {
     fn begin_block(&mut self) {
         // The blockquote prefix is not written here; the sink writes it
         // before the next content byte.
-        self.sink.ensure_newlines(2);
+        self.ensure_newlines(2);
     }
 
     fn end_block(&mut self) {
-        self.sink.ensure_newlines(2);
+        self.ensure_newlines(2);
+    }
+
+    /// Every block boundary goes through here: a distributed link's current
+    /// run ends before the line does.
+    fn ensure_newlines(&mut self, count: usize) {
+        self.close_distributed_link();
+        self.sink.ensure_newlines(count);
+    }
+
+    /// Before inline content: if the nearest enclosing link wraps blocks and
+    /// has no run open, open one (RFC 028 criterion 7). Code holds text only,
+    /// so nothing is linked inside it. Returns whether a run was opened.
+    fn open_distributed_link(&mut self) -> bool {
+        if self.in_code() {
+            return false;
+        }
+        if let Some(LinkState::Distributed {
+            href,
+            title,
+            capturing,
+        }) = self
+            .links
+            .iter_mut()
+            .rev()
+            .find(|l| !matches!(l, LinkState::TextOnly))
+            && !*capturing
+        {
+            self.sink.begin_capture(Capture::Link {
+                href: href.clone(),
+                title: title.clone(),
+            });
+            *capturing = true;
+            return true;
+        }
+        false
+    }
+
+    /// Ends a distributed link's open run, writing `[run](href)` -- or nothing
+    /// for a run with no text and no image.
+    fn close_distributed_link(&mut self) {
+        let Some(LinkState::Distributed { capturing, .. }) = self
+            .links
+            .iter_mut()
+            .rev()
+            .find(|l| !matches!(l, LinkState::TextOnly))
+        else {
+            return;
+        };
+        if !*capturing {
+            return;
+        }
+        *capturing = false;
+        if let Some((Capture::Link { href, title }, text, trailing)) = self.sink.end_capture() {
+            let rendered =
+                (!text.trim().is_empty()).then(|| link_syntax(&text, &href, title.as_deref()));
+            self.sink.splice(rendered.as_deref(), trailing);
+        }
     }
 
     /// Writes the pending opening fence of the current `<pre>`, if any.
@@ -118,6 +187,15 @@ impl MarkdownRenderer {
             }
             self.sink.code_block_content(text);
             return;
+        }
+        if !text.trim().is_empty() {
+            let at_line_start = self.sink.at_line_start();
+            if self.open_distributed_link() && at_line_start {
+                // A run opened at the start of a line: whitespace before its
+                // first word would be dropped there, so it is not link text.
+                self.sink.text(text.trim_start());
+                return;
+            }
         }
         self.sink.text(text);
     }
@@ -158,7 +236,14 @@ impl MarkdownRenderer {
 
     // ─── Enter ─────────────────────────────────────────────────────────────
 
-    pub fn enter_element(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
+    /// `wraps_blocks`: the element has a rendered block among its descendants
+    /// (computed once per document by the traversal).
+    pub fn enter_element(
+        &mut self,
+        elem: &scraper::node::Element,
+        preserve_ids: bool,
+        wraps_blocks: bool,
+    ) {
         let tag = elem.name();
         // Tags whose own arm opens a capture or a code block: anchor first.
         // Adding a tag that sets either guard means adding it here too
@@ -167,19 +252,26 @@ impl MarkdownRenderer {
         if anchor_before {
             self.emit_id_anchor(elem, preserve_ids);
         }
-        match tag {
-            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
+        if let Some(block) = utils::block_kind(tag) {
+            self.enter_block(block, elem);
+        } else {
+            self.enter_inline(tag, elem, wraps_blocks);
+        }
+        if !anchor_before {
+            self.emit_id_anchor(elem, preserve_ids);
+        }
+    }
+
+    fn enter_block(&mut self, block: Block, elem: &scraper::node::Element) {
+        match block {
+            Block::Heading(level) => {
                 self.begin_block();
-                let level = (tag.as_bytes()[1] - b'0') as usize;
                 let mut marker = "#".repeat(level);
                 marker.push(' ');
                 self.sink.markup_closed(&marker);
             }
-            "p" | "div" | "article" | "section" | "main" | "header" | "footer" | "nav"
-            | "aside" | "figure" | "figcaption" => {
-                self.begin_block();
-            }
-            "ul" => {
+            Block::Paragraph => self.begin_block(),
+            Block::UnorderedList => {
                 if self.list_stack.is_empty() {
                     self.begin_block();
                 }
@@ -187,7 +279,7 @@ impl MarkdownRenderer {
                     kind: ListKind::Unordered,
                 });
             }
-            "ol" => {
+            Block::OrderedList => {
                 if self.list_stack.is_empty() {
                     self.begin_block();
                 }
@@ -199,8 +291,8 @@ impl MarkdownRenderer {
                     kind: ListKind::Ordered { counter: start },
                 });
             }
-            "li" => {
-                self.sink.ensure_newlines(1);
+            Block::ListItem => {
+                self.ensure_newlines(1);
                 let depth = self.list_stack.len().saturating_sub(1);
                 let mut marker = "  ".repeat(depth);
                 if let Some(ctx) = self.list_stack.last_mut() {
@@ -216,11 +308,11 @@ impl MarkdownRenderer {
                 }
                 self.sink.markup_closed(&marker);
             }
-            "blockquote" => {
+            Block::Quote => {
                 self.begin_block();
                 self.sink.enter_blockquote();
             }
-            "pre" => {
+            Block::Pre => {
                 self.pre_depth += 1;
                 if self.pre_depth == 1 {
                     self.begin_block();
@@ -230,6 +322,16 @@ impl MarkdownRenderer {
                     };
                 }
             }
+            Block::Rule => {
+                self.begin_block();
+                self.sink.block_raw("---");
+                self.end_block();
+            }
+        }
+    }
+
+    fn enter_inline(&mut self, tag: &str, elem: &scraper::node::Element, wraps_blocks: bool) {
+        match tag {
             "code" if self.in_pre => {
                 // One <pre>, one code block: only the first thing inside the
                 // <pre> opens the fence, and only a <code> that opens it names
@@ -243,19 +345,33 @@ impl MarkdownRenderer {
                 }
             }
             "code" => {
-                let capture = !self.sink.in_code_span();
+                // A code span around blocks writes no backticks and keeps the
+                // blocks (RFC 028 criterion 6).
+                let capture = !self.sink.in_code_span() && !wraps_blocks;
                 if capture {
+                    let _ = self.open_distributed_link();
                     self.sink.begin_capture(Capture::CodeSpan);
                 }
                 self.code_captures.push(capture);
             }
-            "strong" | "b" if !self.in_code() => {
-                self.sink.flush_space();
-                self.sink.markup("**");
-            }
-            "em" | "i" if !self.in_code() => {
-                self.sink.flush_space();
-                self.sink.markup("*");
+            "strong" | "b" | "em" | "i" => {
+                // No delimiters inside code, around blocks (RFC 028 criterion
+                // 1), or when the element's own style negates the emphasis
+                // (criterion 4).
+                let delimiter = if matches!(tag, "strong" | "b") {
+                    "**"
+                } else {
+                    "*"
+                };
+                let write = !self.in_code()
+                    && !wraps_blocks
+                    && !utils::emphasis_negated_by_style(tag, elem.attr("style"));
+                if write {
+                    let _ = self.open_distributed_link();
+                    self.sink.flush_space();
+                    self.sink.markup(delimiter);
+                }
+                self.emphasis.push(write.then_some(delimiter));
             }
             "a" => {
                 let href = elem.attr("href").unwrap_or("").to_string();
@@ -263,6 +379,12 @@ impl MarkdownRenderer {
                 let in_link = self.links.iter().any(|l| !matches!(l, LinkState::TextOnly));
                 let state = if in_link || self.in_code() {
                     LinkState::TextOnly
+                } else if wraps_blocks {
+                    LinkState::Distributed {
+                        href,
+                        title,
+                        capturing: false,
+                    }
                 } else {
                     self.sink.begin_capture(Capture::Link { href, title });
                     LinkState::Captured
@@ -283,13 +405,9 @@ impl MarkdownRenderer {
                     image.push('"');
                 }
                 image.push(')');
+                let _ = self.open_distributed_link();
                 self.sink.flush_space();
                 self.sink.markup_closed(&image);
-            }
-            "hr" => {
-                self.begin_block();
-                self.sink.block_raw("---");
-                self.end_block();
             }
             "br" => {
                 // The next content line gets the blockquote prefix, if any.
@@ -297,31 +415,72 @@ impl MarkdownRenderer {
             }
             _ => {}
         }
-        if !anchor_before {
-            self.emit_id_anchor(elem, preserve_ids);
-        }
     }
 
     // ─── Leave ─────────────────────────────────────────────────────────────
 
     pub fn leave_element(&mut self, elem: &scraper::node::Element) {
         let tag = elem.name();
+        if let Some(block) = utils::block_kind(tag) {
+            self.leave_block(block);
+            return;
+        }
         match tag {
-            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => self.end_block(),
-            "p" | "div" | "article" | "section" | "main" | "header" | "footer" | "nav"
-            | "aside" | "figure" | "figcaption" => self.end_block(),
-            "ul" | "ol" => {
+            "code" if !self.in_pre => {
+                if self.code_captures.pop() == Some(true)
+                    && let Some((_, content, trailing)) = self.sink.end_capture()
+                {
+                    // A code span with no content writes nothing.
+                    let rendered = (!content.is_empty()).then(|| format!("`{content}`"));
+                    self.sink.splice(rendered.as_deref(), trailing);
+                }
+            }
+            "strong" | "b" | "em" | "i" => {
+                if let Some(Some(delimiter)) = self.emphasis.pop() {
+                    self.sink.markup(delimiter);
+                }
+            }
+            "a" => match self.links.pop() {
+                Some(LinkState::Captured) => {
+                    if let Some((Capture::Link { href, title }, text, trailing)) =
+                        self.sink.end_capture()
+                    {
+                        // A link with no text and no image writes nothing
+                        // (RFC 024 criterion 7): `[](/x)` renders as nothing.
+                        let rendered = (!text.trim().is_empty())
+                            .then(|| link_syntax(&text, &href, title.as_deref()));
+                        self.sink.splice(rendered.as_deref(), trailing);
+                    }
+                }
+                Some(state @ LinkState::Distributed { .. }) => {
+                    // Close the last run while this link is still the nearest.
+                    self.links.push(state);
+                    self.close_distributed_link();
+                    self.links.pop();
+                }
+                Some(LinkState::TextOnly) | None => {}
+            },
+            _ => {}
+        }
+    }
+
+    fn leave_block(&mut self, block: Block) {
+        match block {
+            Block::Heading(_) | Block::Paragraph => self.end_block(),
+            Block::UnorderedList | Block::OrderedList => {
                 self.list_stack.pop();
                 if self.list_stack.is_empty() {
                     self.end_block();
                 }
             }
-            "li" => self.sink.ensure_newlines(1),
-            "blockquote" => {
+            Block::ListItem => self.ensure_newlines(1),
+            Block::Quote => {
+                // End a link run before the quote's prefix goes away.
+                self.close_distributed_link();
                 self.sink.leave_blockquote();
                 self.end_block();
             }
-            "pre" => {
+            Block::Pre => {
                 self.pre_depth = self.pre_depth.saturating_sub(1);
                 if self.pre_depth > 0 {
                     return;
@@ -336,32 +495,7 @@ impl MarkdownRenderer {
                 self.fence = Fence::None;
                 self.end_block();
             }
-            "code" if !self.in_pre => {
-                if self.code_captures.pop() == Some(true)
-                    && let Some((_, content, trailing)) = self.sink.end_capture()
-                {
-                    // A code span with no content writes nothing.
-                    let rendered = (!content.is_empty()).then(|| format!("`{content}`"));
-                    self.sink.splice(rendered.as_deref(), trailing);
-                }
-            }
-            "strong" | "b" if !self.in_code() => self.sink.markup("**"),
-            "em" | "i" if !self.in_code() => self.sink.markup("*"),
-            "a" => match self.links.pop() {
-                Some(LinkState::Captured) => {
-                    if let Some((Capture::Link { href, title }, text, trailing)) =
-                        self.sink.end_capture()
-                    {
-                        // A link with no text and no image writes nothing
-                        // (RFC 024 criterion 7): `[](/x)` renders as nothing.
-                        let rendered = (!text.trim().is_empty())
-                            .then(|| link_syntax(&text, &href, title.as_deref()));
-                        self.sink.splice(rendered.as_deref(), trailing);
-                    }
-                }
-                Some(LinkState::TextOnly) | None => {}
-            },
-            _ => {}
+            Block::Rule => {}
         }
     }
 

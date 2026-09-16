@@ -112,6 +112,11 @@ impl Sink {
             .any(|open| matches!(open.kind, Capture::CodeSpan))
     }
 
+    /// Whether the next content byte in the current destination starts a line.
+    pub(super) fn at_line_start(&self) -> bool {
+        self.dest_ref().at_line_start
+    }
+
     pub(super) fn ends_with_newline(&self) -> bool {
         self.dest_ref().buf.ends_with('\n')
     }
