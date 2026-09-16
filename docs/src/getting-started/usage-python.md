@@ -135,7 +135,7 @@ silently. Typed stubs are the real fix and are not written yet.
 
 Until then, the signatures are:
 
-```python,fragment
+```python
 from mdka import (
     html_to_markdown,          # (html: str) -> str
     html_to_markdown_with,     # (html: str, mode=..., **flags) -> str

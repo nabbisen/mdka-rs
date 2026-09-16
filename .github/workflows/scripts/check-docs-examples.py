@@ -258,6 +258,13 @@ def main():
     ap.add_argument("--list", action="store_true", help="list blocks and exit")
     args = ap.parse_args()
 
+    # Fail loudly rather than with a traceback from deep inside subprocess:
+    # a missing interpreter means the symbol-resolution check would silently
+    # not happen, and a gate that degrades quietly is worse than one that stops.
+    if args.python and not Path(args.python).exists():
+        print(f"error: --python {args.python} does not exist", file=sys.stderr)
+        return 2
+
     blocks = extract(args.root)
     run = runnable(blocks)
 
