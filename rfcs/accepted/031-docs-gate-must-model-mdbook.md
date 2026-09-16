@@ -1,6 +1,6 @@
 # RFC 031 — Docs example gate must compile what mdBook publishes
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-16, owner)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — control repair, **before the engine work**, alongside RFC 030

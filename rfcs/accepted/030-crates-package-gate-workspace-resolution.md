@@ -43,7 +43,23 @@ path dependencies have been stripped and `mdka` must come from the registry. On
 release will publish. So it cannot be on crates.io yet, and the three dependent
 crates cannot resolve it.
 
-**This is not a flaky failure. It is guaranteed, at every commit, forever.**
+**This is not a flaky failure — but it is not constant either.** It fails
+**exactly at the release commit**, where the workspace version has just been
+bumped and not yet published, and passes on either side of it.
+
+> **Corrected during review.** The first draft said this failure was
+> "guaranteed, at every commit, forever". That was wrong, and contradicted §2.2
+> below. The implementer checked CI history before changing anything:
+>
+> | Commit | Version on `main` | Published then? | Gate |
+> |---|---|---|---|
+> | `64ae672` | 2.2.2 | yes | success |
+> | **`98dcf1f`** — Release 2.2.3 | **2.2.3** | **not yet** | **failure** |
+> | `15d5b11`, `52c1935` | 2.2.3 | yes | success |
+>
+> **That pattern is why it survived two releases.** The gate was green whenever
+> anyone happened to look, and red only at the one moment the release checklist
+> consults it — when a red with a ready explanation is easiest to accept.
 
 ### 2.1 Why it matters more than "a red we explain"
 

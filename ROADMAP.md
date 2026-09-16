@@ -434,7 +434,8 @@ text run.
 
 | RFC | Title | Priority | Size | Order |
 |---|---|---|---|---|
-| 030 | Crates package gate: verify the workspace, not the registry | P1 | S | **first** — independent of the rest |
+| 030 | Crates package gate: verify the workspace, not the registry | P1 | S | ✅ implemented & approved |
+| 031 | Docs example gate must compile what mdBook publishes | P1 | M | **next** — before the engine work |
 | 025 | Markdown output-validity harness | **P0** | M | before 024 |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
@@ -448,10 +449,16 @@ several everyday constructs — a linked image, bold inside a link, a bare `<pre
 a code span containing `_`. Emitting a correct table matters less than emitting
 correct output for HTML that is already in scope, so 024/025/010 precede 008.
 
-**RFC 030 goes first, ahead of the engine work, though it is not the most
-important item here.** It is CI-only and small, and it repairs the instrument
+**RFC 030 (implemented) and RFC 031 go first, ahead of the engine work, though
+neither is the most important item here.** RFC 031 came from the `2.2.3`
+consumer pass: the docs example gate wrapped `?`-using Rust in a
+`Result`-returning main while mdBook wraps in a plain one, so two examples
+failed behind a Run button under a green gate — the third gate in this project
+found checking a more forgiving stand-in than the consumer's artifact.
+
+**On RFC 030:** It is CI-only and small, and it repairs the instrument
 that will be watching everything else in M3. The crates package gate has been
-red at every release since RFC 026 created it, and its red *skips* `mdka-node`
+red at every release commit since RFC 026 created it, and its red *skips* `mdka-node`
 and `mdka-python` — so for two releases nothing has verified that those two
 crates package standalone. Worse, now that `2.2.3` is published the gate will
 read **green on `main` with no code change at all**, and flip red again at the
