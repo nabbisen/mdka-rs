@@ -474,6 +474,13 @@ a candidate rather than a plan.
 | 012 | Benchmark hardening + regenerate published performance claims | P2 | M |
 | 013 | Internal comment migration to English | P2 | L |
 
+**RFC 013's scope is measured, 2026-09-16.** The published `2.2.1` sdist carries
+Japanese in 22 files, ~304 lines — the private modules in `src/`, plus `tests/`,
+`benches/`, `examples/`, `python/test_mdka.py`, `version.sh` and
+`python/pyproject.toml`. RFC 007 cleared everything *rendered* to a user, so the
+**wheel** `pip install` fetches now carries zero non-compliant Japanese. What
+remains is source-visible only and all of it belongs here.
+
 RFC 013 is a large, purely mechanical diff. It is scheduled into a quiet release
 deliberately, so it does not bury substantive changes in `git blame`.
 

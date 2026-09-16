@@ -16,14 +16,23 @@ English. Internal comments are RFC 013.
 
 Counted across tracked files, 2026-09-16:
 
-| Surface | Japanese lines | Seen by |
-|---|---|---|
-| `cli/src/main.rs` — `const USAGE` and `//!` | 38 | every run of `mdka --help` |
-| `src/options.rs` doc comments | 38 | docs.rs — `pub mod options` |
-| `src/lib.rs` doc comments | 25 | docs.rs — crate root |
-| `node/src/lib.rs` doc comments | 10 | **npm**, via generated `index.d.ts`, in editor tooltips |
-| `python/src/lib.rs` doc comments | 16 | PyO3 `__doc__` |
-| `python/mdka/__init__.py:2` | 1 | `help(mdka)` on PyPI |
+| Surface | doc lines | **total CJK** | Seen by |
+|---|---|---|---|
+| `cli/src/main.rs` — `const USAGE` and `//!` | 12 | **38** | every run of `mdka --help` |
+| `src/options.rs` | 38 | **42** | docs.rs — `pub mod options` |
+| `src/lib.rs` | 25 | **36** | docs.rs — crate root |
+| `node/src/lib.rs` | 10 | **16** | **npm**, via generated `index.d.ts`, in editor tooltips |
+| `python/src/lib.rs` | 16 | **20** | PyO3 `__doc__` |
+| `python/mdka/__init__.py:2` | 0 | **1** | `help(mdka)` on PyPI |
+| | | **153** | |
+
+**Corrected 2026-09-16.** This table first totalled 128, by pulling `cli`'s
+*total* and the other four's *doc-comment* counts from two different scans
+without labelling either. The file list was right; the arithmetic was not, and
+translating to the stated figure would have left 25 lines behind. The
+implementer worked to the measured figure and reported the gap.
+
+**A table assembled from two scans needs a column saying which.**
 
 **Not in scope** — private modules `renderer`, `traversal`, `utils`. Verified
 against `src/lib.rs`: only `options` and `alloc_counter` are `pub mod`, so no
@@ -32,6 +41,25 @@ private-module doc comment reaches docs.rs. They are RFC 013.
 `alloc_counter` is excluded: it is `#[deprecated]`, regains `#[doc(hidden)]`
 under the RFC 022 correction, and is removed at `2.4.0`. Translating it would be
 work with a two-release lifespan.
+
+### The scope boundary, corrected 2026-09-16
+
+This RFC's handoff first set the boundary as *"can a user of the published
+artifacts see it?"* **That is unusable.** The PyPI **sdist** contains essentially
+the whole source tree — 22 files with Japanese, ~304 lines, including `src/`,
+`tests/`, `benches/`, `examples/`, `python/test_mdka.py` and `pyproject.toml` —
+so taken literally it drags all of RFC 013 in here.
+
+The workable test is **"is it rendered to a user by a tool in normal use?"** —
+`--help`, docs.rs, editor tooltips, `help(mdka)`, the PyPI page.
+
+Measured against the published `2.2.1` **wheel**, which is what `pip install`
+actually fetches: its only two CJK occurrences are `mdka/__init__.py` (in scope
+here) and `METADATA`'s `"ka" means "化 (か)"`, which is the compliant etymology.
+After this RFC the wheel carries zero non-compliant Japanese.
+
+So **`python/pyproject.toml`, `python/example.py` and `examples/*.rs` are
+RFC 013** — they ship in the sdist but are never rendered.
 
 ## ⚠ Two traps
 

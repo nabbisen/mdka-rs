@@ -70,9 +70,14 @@ change. Confirm the diff contains only your translated comments.
 
 ### Scope boundary, per RFC 027 Rule 2
 
-The boundary is *"can a user of the published artifacts see it?"* Everything on
-the user's side is here; everything on ours is RFC 013, which has a milestone
-and a number. Nothing in the repository's Japanese is left without an owner.
+**Corrected 2026-09-16.** This first read *"can a user of the published artifacts
+see it?"* — which is unusable, because the PyPI sdist ships essentially the whole
+source tree and that test pulls all of RFC 013 in here.
+
+The boundary is **"is it rendered to a user by a tool in normal use?"** —
+`--help`, docs.rs, editor tooltips, `help(mdka)`, the PyPI page. Everything on
+that side is here; everything else is RFC 013, which has a milestone and a
+number. Nothing in the repository's Japanese is left without an owner.
 
 ## 5. Coordination with RFC 023 — same release, same content
 
