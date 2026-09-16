@@ -42,10 +42,21 @@ md = mdka.html_to_markdown_with(
 )
 ```
 
-`preserve_aria_attrs`, `preserve_classes`, `preserve_data_attrs`,
-`preserve_unknown_attrs` and `drop_presentation_attrs` are accepted but have
-**no effect**: Markdown has no attribute syntax to carry them into. They are
-kept so existing calls keep working. Use `mode` to influence the output.
+**Three** of the deprecated attribute options are accepted here and have **no
+effect**: `preserve_classes`, `preserve_data_attrs` and `preserve_aria_attrs`.
+Markdown has no attribute syntax to carry them into. They are kept so existing
+calls keep working.
+
+The other two — `preserve_unknown_attrs` and `drop_presentation_attrs` — exist
+on the Rust `ConversionOptions` but are **not exposed by this binding at all**.
+Passing either raises:
+
+```
+TypeError: html_to_markdown_with() got an unexpected keyword argument
+'preserve_unknown_attrs'
+```
+
+Use `mode` to influence the output.
 
 Available modes: `ConversionMode.Balanced` (default), `Strict`, `Minimal`,
 `Semantic`, `Preserve`.

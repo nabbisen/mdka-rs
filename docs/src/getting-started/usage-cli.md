@@ -55,6 +55,12 @@ truth — it is generated from the binary you are running.
 | `--drop-shell` | Drop `nav`, `header`, `footer`, `aside` |
 | `--unwrap-wrappers` | Unwrap `div`, `span`, `section`, `article`, `main` that carry no meaning |
 | `-h, --help` | Show this help |
+| `-V, --version` | Show the version |
+| `--` | End of options; everything after is a path |
+
+An unrecognised `-`-prefixed argument is rejected rather than treated as a
+filename. If you genuinely have a file whose name begins with `-`, put `--`
+before it: `mdka -- -weird.html`.
 
 The three deprecated flags are still accepted, so existing command lines keep
 working, but they change nothing about the output. They are documented here

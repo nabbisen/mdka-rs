@@ -13,7 +13,7 @@
 [![npm](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml)
 [![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
 
-![logo](/docs/src/assets/logo.png)
+![logo](https://raw.githubusercontent.com/nabbisen/mdka-rs/main/docs/src/assets/logo.png)
 
 mdka balances conversion quality with runtime efficiency —
 readable output from real-world HTML, without sacrificing speed or memory.    
@@ -37,7 +37,8 @@ CMS output, and SPA-rendered DOM without special-casing.
 no matter the nesting depth.
 - **Configurable pre-processing.**
     Five [conversion modes](#conversion-modes) let you tune what gets kept or
-stripped — from noise-free LLM input to lossless archiving.
+stripped, from noise-free LLM input to maximum retention. Three of the five
+currently produce identical output — see [Conversion Modes](#conversion-modes).
 - **Multi-language.**
     The same Rust implementation is accessible from Node.js (napi-rs) and
 Python (PyO3).
@@ -86,7 +87,7 @@ echo '<h1>Hello</h1><p><strong>world</strong></p>' | mdka
 
 ```bash
 mdka page.html                          # → page.md  (same directory)
-mdka --mode minimal --drop-shell *.html # strip nav/header/footer
+mdka --mode minimal --drop-shell -o out/ *.html  # strip nav/header/footer
 mdka --help                             # full option list
 ```
 
@@ -108,12 +109,14 @@ let md = html_to_markdown("<h1>Hello</h1><p><em>world</em></p>");
 With options:
 
 ```rust
-use mdka::{html_to_markdown_with};
+use mdka::html_to_markdown_with;
 use mdka::options::{ConversionMode, ConversionOptions};
 
+let html = "<nav>menu</nav><h1>Hello</h1>";
 let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 opts.drop_interactive_shell = true;
 let md = html_to_markdown_with(html, &opts);
+// "# Hello\n"
 ```
 
 ### Add to a Node.js project
@@ -123,14 +126,20 @@ npm install mdka
 ```
 
 ```js
-const { htmlToMarkdown, htmlToMarkdownWith } = require('mdka')
+const { htmlToMarkdown, htmlToMarkdownWithAsync } = require('mdka')
 
 const md = htmlToMarkdown('<h1>Hello</h1>')
+// "# Hello\n"
 
-const md = await htmlToMarkdownWithAsync(html, {
-  mode: 'minimal',
-  dropInteractiveShell: true,
-})
+async function main() {
+  const html = '<nav>menu</nav><h1>Hello</h1>'
+  const minimal = await htmlToMarkdownWithAsync(html, {
+    mode: 'minimal',
+    dropInteractiveShell: true,
+  })
+  console.log(minimal)
+}
+main()
 ```
 
 ### Add to a Python project
@@ -143,8 +152,10 @@ pip install mdka
 import mdka
 
 md = mdka.html_to_markdown('<h1>Hello</h1>')
+# "# Hello\n"
 
-md = mdka.html_to_markdown_with(
+html = '<nav>menu</nav><h1>Hello</h1>'
+minimal = mdka.html_to_markdown_with(
     html,
     mode=mdka.ConversionMode.Minimal,
     drop_interactive_shell=True,
@@ -163,11 +174,24 @@ md = mdka.html_to_markdown_with(
 | `Semantic` | SPA content, ARIA-aware pipelines |
 | `Preserve` | Archiving, audit trails |
 
+**`Balanced`, `Strict` and `Preserve` currently produce identical output.** They
+differ only in the defaults of five fields that have no effect, so choosing
+between them changes nothing today. They remain distinct API and may diverge
+again — see
+[Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes), which explains
+why in full.
+
+**Tables are not yet converted.** `<table>` cell text is emitted without
+structure or separators, so a table becomes a run of joined text. See
+[Supported Elements](https://nabbisen.github.io/mdka-rs/api/elements) for the
+full list of what is and is not supported.
+
 ---
 
 ## Learn More
 
-Full documentation lives in the [`docs/`](./docs/) folder, published as GitHub Pages.
+Full documentation is published as GitHub Pages, and its source lives in
+[`docs/`](https://github.com/nabbisen/mdka-rs/tree/main/docs).
 
 https://nabbisen.github.io/mdka-rs/
 
@@ -186,8 +210,8 @@ https://nabbisen.github.io/mdka-rs/
 | Performance Characteristics | [/design/performance-characteristics](https://nabbisen.github.io/mdka-rs/design/performance-characteristics) |
 | Architecture | [/design/architecture](https://nabbisen.github.io/mdka-rs/design/architecture) |
 | Features | [/design/features](https://nabbisen.github.io/mdka-rs/design/features) |
-| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
-| Roadmap | [ROADMAP.md](./ROADMAP.md) |
+| Changelog | [CHANGELOG.md](https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md) |
+| Roadmap | [ROADMAP.md](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 
 ---
 

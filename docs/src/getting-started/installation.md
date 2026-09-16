@@ -38,9 +38,33 @@ npm install mdka
 yarn add mdka
 ```
 
-Requires Node.js 16 or later.    
-Pre-built binaries are bundled for major platforms such as Linux, macOS and Windows of specific architecture.    
-On other platforms, run `npm run build` with Rust installed.
+Requires Node.js 16 or later.
+
+Prebuilt native bindings are published for **three** platforms, resolved
+automatically through `optionalDependencies`:
+
+| Platform | Package |
+|---|---|
+| Linux x64 (glibc) | `@mdka/lib-linux-x64-gnu` |
+| macOS Apple Silicon | `@mdka/lib-darwin-arm64` |
+| Windows x64 (MSVC) | `@mdka/lib-win32-x64-msvc` |
+
+**On any other platform — musl, Linux arm64, macOS Intel, Windows ARM — there
+is no fallback inside the package.** The published tarball contains four files
+(`index.js`, `index.d.ts`, `package.json`, `README.md`) and no Rust source, so
+`npm run build` cannot work from an installed copy: there is nothing to build,
+and the napi toolchain is a development dependency that is not installed for
+consumers.
+
+What does work on those platforms:
+
+- Build the binding from the repository — clone
+  [nabbisen/mdka-rs](https://github.com/nabbisen/mdka-rs), then `cd node && npm
+  install && npm run build`, which needs a Rust toolchain. This produces a local
+  binding; it does not make `npm install mdka` work elsewhere.
+- Use the CLI instead: `cargo install mdka-cli`, which builds from source for
+  whatever platform you are on.
+- Use the Rust crate directly, if the surrounding project allows it.
 
 ## As a Python Package
 

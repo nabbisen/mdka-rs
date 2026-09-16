@@ -17,6 +17,8 @@
 //!       --drop-shell     Drop nav/header/footer/aside
 //!       --unwrap-wrappers  Unwrap div/span/section/article/main that carry no meaning
 //!   -h, --help           Show this help
+//!   -V, --version        Show the version
+//!       --               End of options; everything after is a path
 //! ```
 
 use std::io::{self, Read};
@@ -40,6 +42,8 @@ Options:
       --drop-shell        Drop nav/header/footer/aside
       --unwrap-wrappers   Unwrap div/span/section/article/main that carry no meaning
   -h, --help              Show this help
+  -V, --version           Show the version
+      --                  End of options; everything after is a path
 
 Modes:
   balanced  Balances readability with structural fidelity (general purpose, default)
@@ -56,7 +60,7 @@ Examples:
   echo '<h1>Hello</h1>' | mdka
   mdka index.html                         # → index.md (same directory)
   mdka -o out/ index.html                 # → out/index.md
-  mdka --mode minimal --drop-shell *.html # drop nav/header/footer
+  mdka --mode minimal --drop-shell -o out/ *.html  # drop nav/header/footer
   mdka --mode preserve -o archive/ *.html # retain as much as possible
 ";
 
@@ -65,6 +69,11 @@ fn main() {
 
     if args.iter().any(|a| a == "-h" || a == "--help") {
         print!("{USAGE}");
+        return;
+    }
+
+    if args.iter().any(|a| a == "-V" || a == "--version") {
+        println!("mdka {}", env!("CARGO_PKG_VERSION"));
         return;
     }
 
@@ -80,8 +89,17 @@ fn main() {
     let mut file_args: Vec<String> = Vec::new();
 
     let mut iter = args.into_iter().peekable();
+    let mut only_files = false;
     while let Some(arg) = iter.next() {
+        if only_files {
+            file_args.push(arg);
+            continue;
+        }
         match arg.as_str() {
+            // End of options: everything after is a path, however it starts.
+            // This is what keeps a file named `-x.html` reachable now that
+            // unknown `-` arguments are rejected.
+            "--" => only_files = true,
             "-o" | "--output" => {
                 out_dir = Some(PathBuf::from(iter.next().unwrap_or_else(|| {
                     eprintln!("error: -o/--output requires a directory");
@@ -104,6 +122,15 @@ fn main() {
             "--preserve-aria" => preserve_aria_override = Some(true),
             "--drop-shell" => drop_shell = true,
             "--unwrap-wrappers" => unwrap_wrappers = true,
+            // An unrecognised `-`-prefixed argument used to be taken as a file
+            // path, so `mdka --version` reported "No such file or directory"
+            // and a typo like `--drop-shel` silently converted nothing
+            // (audit A-17). `-` alone is left alone: it is a conventional
+            // stdin placeholder, not a flag.
+            _ if arg.starts_with('-') && arg != "-" => {
+                eprintln!("error: unknown option '{arg}'\n\n{USAGE}");
+                process::exit(1);
+            }
             _ => file_args.push(arg),
         }
     }

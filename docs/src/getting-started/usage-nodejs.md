@@ -110,9 +110,20 @@ becoming `out/index.md` — are not both converted. The first in the array wins
 and each later one comes back with `error` set, rather than silently
 overwriting.
 
-`preserveAriaAttrs`, `preserveClasses`, `preserveDataAttrs`,
-`preserveUnknownAttrs` and `dropPresentationAttrs` are accepted but have **no
-effect**: Markdown has no attribute syntax to carry them into. Use `mode`.
+**Three** of the deprecated attribute options are accepted here and have **no
+effect**: `preserveClasses`, `preserveDataAttrs` and `preserveAriaAttrs`.
+Markdown has no attribute syntax to carry them into.
+
+The other two — `preserveUnknownAttrs` and `dropPresentationAttrs` — exist on
+the Rust `ConversionOptions` but are **not fields of `JsConversionOptions`**,
+which has seven. In TypeScript, passing either is a compile error:
+
+```
+TS2353: Object literal may only specify known properties, and
+'preserveUnknownAttrs' does not exist in type 'JsConversionOptions'.
+```
+
+Use `mode`.
 
 ## TypeScript
 
