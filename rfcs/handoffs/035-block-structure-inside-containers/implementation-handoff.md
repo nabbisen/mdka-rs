@@ -7,15 +7,15 @@
 
 ---
 
-## 0. 🛑 QUEUED — do not start until slice `028b` is approved
+## 0. Preconditions — met (2026-09-17)
 
 | Precondition | Status and why |
 |---|---|
 | RFC 024 complete (024, 024b, 024c) | ✅ met 2026-09-17 |
 | RFC 028 approved | ✅ met 2026-09-17 (`b91aafb`) — it chose the look-ahead mechanism (a tree query, §4) that §3.1's tight/loose decision must **reuse**, not duplicate |
-| **Slice `028b` approved** | **pending** — it edits the same harness files |
+| Slice `028b` approved | ✅ met 2026-09-17 (`cb5e351`) |
 
-**Start when** `.git-exclude/reviewed/028b-harness-guards/README.md` exists with an approved verdict.
+**All preconditions are met. This handoff is an instruction to start.** The §2 table was re-derived on `cb5e351`'s `src/` before handover — unchanged. Baseline test count: **335**.
 **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
