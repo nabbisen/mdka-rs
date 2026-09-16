@@ -7,8 +7,22 @@ name: crates package gate
 # packaged .crate.
 #
 # `cargo package` (without --no-verify) packages each crate and then builds
-# from the extracted package, resolving dependencies from the registry
-# rather than from the workspace. That is the consumer's build.
+# from the extracted package, where path dependencies are stripped. That is
+# the consumer's build.
+#
+# RFC 030: this is ONE `--workspace` invocation, not four per-crate steps,
+# and that is deliberate. Packaging the dependents separately makes each
+# resolve `mdka` from crates.io -- but on main the workspace version is the
+# NEXT version, which is not published yet, so mdka-cli failed with
+# "failed to select a version for the requirement mdka = ^X.Y.Z" at every
+# release commit. Worse, that failure skipped mdka-node and mdka-python
+# entirely, so the red masked the gate's own coverage: across 2.2.2 and
+# 2.2.3 nothing verified that those two package and build standalone.
+#
+# `--workspace` builds a temporary local registry from the packaged members
+# (target/package/tmp-registry/) and resolves the dependents against it, so
+# it works whether or not the version is published. Do not "simplify" this
+# back into four steps.
 #
 # Its own workflow file, not ci.yaml -- see RFC 026 §3.5 and RFC 020's
 # correction record.
@@ -51,23 +65,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-package-gate-
 
-      # mdka first: the other three depend on it, and their verification
-      # builds resolve it from the registry.
-      #
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
       # the distinction this whole milestone is about.
-      - name: cargo package -p mdka
-        run: cargo package -p mdka --locked
-
-      - name: cargo package -p mdka-cli
-        run: cargo package -p mdka-cli --locked
-
-      - name: cargo package -p mdka-node
-        run: cargo package -p mdka-node --locked
-
-      - name: cargo package -p mdka-python
-        run: cargo package -p mdka-python --locked
+      - name: cargo package --workspace
+        run: cargo package --workspace --locked
 
       - name: Show what each package actually contains
         run: |
