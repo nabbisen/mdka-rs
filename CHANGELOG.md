@@ -62,6 +62,43 @@ confidence, that is stated explicitly rather than guessed.
 
 ### Fixed
 
+Conversion output — inline elements inside links, code and blockquotes. Output
+changes for any document containing these shapes; each change is from Markdown
+that did not say what the HTML said to Markdown that does.
+
+- **An image, bold or italic text, or a code span inside a link now stays
+  inside the link.** Previously it was written before the link, leaving an
+  empty link or stray delimiters:
+
+  | HTML | Before | Now |
+  |---|---|---|
+  | `<a href="/p"><img src="i.png" alt="pic"></a>` | `![pic](i.png)[](/p)` | `[![pic](i.png)](/p)` |
+  | `<a href="/x"><strong>b</strong></a>` | `****[b](/x)` | `[**b**](/x)` |
+  | `<a href="/x"><code>c</code></a>` | ` ``[c](/x) ` | `` [`c`](/x) `` |
+
+- **Spaces inside a link are kept.** `<a href="/x">Read <strong>more</strong>
+  now</a>` produced `****[Readmore now](/x)`, silently joining two words; it
+  now produces `[Read **more** now](/x)`, the same text as outside a link. A
+  space at the end of link text is kept after the link: `<a>x </a>y` →
+  `[x](…) y`, previously `[x](…)y`.
+- **A link with no text and no image is no longer emitted.** `[](/x)` renders
+  as nothing. This includes the empty outer link left when HTML nests one
+  `<a>` inside another.
+- **`<pre>` without a `<code>` child produces a balanced code block.** Only the
+  closing fence was written, so everything after it became code:
+  `<pre>plain</pre><p>After</p>` gave `` plain\n```\n\nAfter ``; it now gives
+  `` ```\nplain\n```\n\nAfter ``. `<pre><code>` output is unchanged.
+- **Code holds text only.** Inside a `<pre>` without a `<code>` child, or an
+  inline `<code>`, bold, italic, links and images contribute their text, with
+  no Markdown syntax:
+  `<code><strong>b</strong></code>` gave `` `**b**` `` and now gives `` `b` ``.
+  An inline code span with no text is no longer emitted as a stray ` `` `.
+- **A blockquote that begins with bold, italic, code, a link or an image keeps
+  its `>`.** `<blockquote><strong>b</strong> rest</blockquote>` gave
+  `**b** rest`, with no quote at all; it now gives `> **b** rest`.
+- With `preserve_ids`, the anchor for an inline `<code id="…">` is now placed
+  before the code span rather than inside it, where it was literal text.
+
 These documentation fixes are already live on the user guide, which publishes
 from `main`; they are listed here so the release records them.
 
