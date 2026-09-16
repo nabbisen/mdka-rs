@@ -104,7 +104,20 @@ that did not say what the HTML said to Markdown that does.
   them, used to write extra fences into the content:
   `<pre><code>a</code><code>b</code></pre>` gave a block containing
   `` a```\nb ``; it now gives one block containing `ab`. The language comes from
-  the first `<code>`. Other `<pre><code>` output is unchanged.
+  the first `<code>` when only whitespace comes before it.
+- **Indented `<code>` inside `<pre>` no longer breaks the code block.**
+  Whitespace between `<pre>` and `<code>` was written in front of the fence. At
+  four or more spaces the fence was not a fence, and the closing fence opened a
+  code block that swallowed the rest of the document:
+
+  | HTML | Before | Now |
+  |---|---|---|
+  | `<pre>\n    <code class="language-js">x</code>\n</pre><p>after</p>` | `` ␣␣␣␣```js\nx\n```\n\nafter `` — `after` ends up inside code | `` ```js\n␣␣␣␣x\n```\n\nafter `` |
+  | `<pre>\n  <code class="language-js">x</code>\n</pre>` | `` ␣␣```js\nx\n``` `` | `` ```js\n␣␣x\n``` `` |
+
+  The whitespace is now part of the code, as a browser shows it, so the
+  two-space shape, which parsed correctly before, also changes: its spaces move
+  inside the block. Other `<pre><code>` output is unchanged.
 - **A blockquote that begins with bold, italic, code, a link or an image keeps
   its `>`.** `<blockquote><strong>b</strong> rest</blockquote>` gave
   `**b** rest`, with no quote at all; it now gives `> **b** rest`.
