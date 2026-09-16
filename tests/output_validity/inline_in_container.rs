@@ -11,17 +11,13 @@ use crate::harness::{tree, undecided};
 
 cells! {
     img_in_a: r#"<a href="/out"><img src="i.png" alt="pic"></a>"#
-        => tree(r#"para(link[/out](image[i.png]("pic")))"#),
-        defect(Rfc024, "image escapes the link: an image followed by an empty link");
+        => tree(r#"para(link[/out](image[i.png]("pic")))"#);
     strong_in_a: r#"<a href="/out"><strong>b</strong></a>"#
-        => tree(r#"para(link[/out](strong("b")))"#),
-        defect(Rfc024, "`**` delimiters escape the link: literal `****` before it");
+        => tree(r#"para(link[/out](strong("b")))"#);
     em_in_a: r#"<a href="/out"><em>e</em></a>"#
-        => tree(r#"para(link[/out](em("e")))"#),
-        defect(Rfc024, "`*` delimiters escape the link: literal `**` before it");
+        => tree(r#"para(link[/out](em("e")))"#);
     code_in_a: r#"<a href="/out"><code>c</code></a>"#
-        => tree(r#"para(link[/out](code("c")))"#),
-        defect(Rfc024, "backticks escape the link: literal ``` `` ``` before it, code span lost");
+        => tree(r#"para(link[/out](code("c")))"#);
     a_in_a: r#"<a href="/out"><a href="/in">t</a></a>"#
         => undecided("Q1: html5ever turns nested anchors into an empty /out link and a /in link; should the empty link be emitted?");
     text_in_a: r#"<a href="/out">a_b *c* [d] (e)</a>"#
@@ -32,41 +28,32 @@ cells! {
 
 cells! {
     img_in_pre: r#"<pre><img src="i.png" alt="pic"></pre>"#
-        => undecided("Q2: inline markup, links and images inside <pre> without <code>"),
-        defect(Rfc024, "bare <pre>: no opening fence, so the closing fence opens an unterminated code block");
+        => undecided("Q2: inline markup, links and images inside <pre> without <code>");
     strong_in_pre: r#"<pre><strong>b</strong></pre>"#
-        => undecided("Q2"),
-        defect(Rfc024, "bare <pre>: no opening fence; `b` becomes bold prose and the fence is left open");
+        => undecided("Q2");
     em_in_pre: r#"<pre><em>e</em></pre>"#
-        => undecided("Q2"),
-        defect(Rfc024, "bare <pre>: no opening fence; `e` becomes emphasis and the fence is left open");
+        => undecided("Q2");
     code_in_pre: r#"<pre><code>c</code></pre>"#
         => tree(r#"codeblock("c")"#);
     a_in_pre: r#"<pre><a href="/in">t</a></pre>"#
-        => undecided("Q2"),
-        defect(Rfc024, "bare <pre>: no opening fence; the text is prose, the link emptied, the fence left open");
+        => undecided("Q2");
     text_in_pre: r#"<pre>a_b *c* [d] (e)</pre>"#
-        => tree(r#"codeblock("a_b *c* [d] (e)")"#),
-        defect(Rfc024, "bare <pre>: no opening fence; the content is parsed as Markdown (`*c*` becomes emphasis)");
+        => tree(r#"codeblock("a_b *c* [d] (e)")"#);
 }
 
 // ── in <code> ──────────────────────────────────────────────────────────────
 
 cells! {
     img_in_code: r#"<code><img src="i.png" alt="pic"></code>"#
-        => undecided("Q3: inline markup, links and images inside inline <code>"),
-        defect(Rfc024, "image syntax emitted inside the code span: reads as literal `![pic](i.png)`; a code span holds text only (RFC 025 review Q3)");
+        => undecided("Q3: inline markup, links and images inside inline <code>");
     strong_in_code: r#"<code><strong>b</strong></code>"#
-        => undecided("Q3"),
-        defect(Rfc024, "`**` emitted inside the code span: reads as literal `**b**`; a code span holds text only (RFC 025 review Q3)");
+        => undecided("Q3");
     em_in_code: r#"<code><em>e</em></code>"#
-        => undecided("Q3"),
-        defect(Rfc024, "`*` emitted inside the code span: reads as literal `*e*`; a code span holds text only (RFC 025 review Q3)");
+        => undecided("Q3");
     code_in_code: r#"<code><code>c</code></code>"#
         => tree(r#"para(code("c"))"#);
     a_in_code: r#"<code><a href="/in">t</a></code>"#
-        => undecided("Q3"),
-        defect(Rfc024, "link syntax emitted inside the code span: reads as literal `[t](/in)`, link lost; a code span holds text only (RFC 025 review Q3)");
+        => undecided("Q3");
     text_in_code: r#"<code>a_b *c* [d] (e)</code>"#
         => tree(r#"para(code("a_b *c* [d] (e)"))"#),
         defect(Rfc010Planned, "escaping applied inside the code span, where CommonMark does not honour it: literal backslashes (audit A-03)");
@@ -93,20 +80,15 @@ cells! {
 
 cells! {
     img_in_blockquote: r#"<blockquote><img src="i.png" alt="pic"></blockquote>"#
-        => tree(r#"quote(para(image[i.png]("pic")))"#),
-        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
+        => tree(r#"quote(para(image[i.png]("pic")))"#);
     strong_in_blockquote: r#"<blockquote><strong>b</strong></blockquote>"#
-        => tree(r#"quote(para(strong("b")))"#),
-        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
+        => tree(r#"quote(para(strong("b")))"#);
     em_in_blockquote: r#"<blockquote><em>e</em></blockquote>"#
-        => tree(r#"quote(para(em("e")))"#),
-        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
+        => tree(r#"quote(para(em("e")))"#);
     code_in_blockquote: r#"<blockquote><code>c</code></blockquote>"#
-        => tree(r#"quote(para(code("c")))"#),
-        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
+        => tree(r#"quote(para(code("c")))"#);
     a_in_blockquote: r#"<blockquote><a href="/in">t</a></blockquote>"#
-        => tree(r#"quote(para(link[/in]("t")))"#),
-        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
+        => tree(r#"quote(para(link[/in]("t")))"#);
     text_in_blockquote: r#"<blockquote>a_b *c* [d] (e)</blockquote>"#
         => tree(r#"quote(para("a_b *c* [d] (e)"))"#);
 }

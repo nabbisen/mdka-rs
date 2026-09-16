@@ -28,8 +28,7 @@ cells! {
         defect(Unowned, "the non-bold wrapper is emitted as `**`: the whole paragraph becomes bold; pending the owner's decision on RFC 028's style amendment");
     // 2.2.2 consumer pass (RFC 024 addendum): a space lost inside a link only.
     space_around_inline_in_link: r#"<a href="/x">Read <strong>more</strong> now</a>"#
-        => tree(r#"para(link[/x]("Read ", strong("more"), " now"))"#),
-        defect(Rfc024, "`**` escapes the link and the space before `more` is lost: `****[Readmore now](/x)`");
+        => tree(r#"para(link[/x]("Read ", strong("more"), " now"))"#);
     // Its control case, outside a link.
     space_around_inline_in_paragraph: "<p>Read <strong>more</strong> now</p>"
         => tree(r#"para("Read ", strong("more"), " now")"#);

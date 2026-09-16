@@ -2,6 +2,10 @@ use std::fmt::Write;
 
 use crate::utils;
 
+mod sink;
+
+use sink::{Capture, Sink};
+
 #[derive(Debug, Clone)]
 pub enum ListKind {
     Unordered,
@@ -13,166 +17,139 @@ pub struct ListContext {
     pub kind: ListKind,
 }
 
-#[derive(Debug)]
-enum InlineCapture {
-    Link {
-        href: String,
-        title: Option<String>,
-        buf: String,
-    },
+/// The opening fence of the current `<pre>` (RFC 024 A-02).
+///
+/// The fence belongs to `<pre>`, not to `<code>`, so a `<pre>` without a
+/// `<code>` child still opens and closes one. It is held until the first
+/// content so that `<pre><code class="language-x">` can still name the
+/// language, which keeps `<pre><code>` output byte-identical.
+enum Fence {
+    /// Not inside `<pre>`.
     None,
+    /// Inside `<pre>`, fence not written yet. Whitespace-only text seen so far
+    /// is held and written just before the fence, where it was before.
+    Pending {
+        held: String,
+    },
+    Open,
+}
+
+/// What an open `<a>` did on entering.
+enum LinkState {
+    /// Opened a link capture.
+    Captured,
+    /// Inside `<pre><code>`: writes 2.2.3's `[](href)` on leaving (see
+    /// `in_legacy_code_block`).
+    Legacy { href: String, title: Option<String> },
+    /// Inside another link, a bare `<pre>` or a code span: text only.
+    TextOnly,
 }
 
 pub struct MarkdownRenderer {
-    pub output: String,
-    pub list_stack: Vec<ListContext>,
-    pub blockquote_depth: usize,
-    pub newlines_emitted: usize,
-    pub in_pre: bool,
-    pub pre_lang: Option<String>,
-    last_was_space: bool,
-    at_line_start: bool,
-    inline_capture: InlineCapture,
-    capture_depth: usize,
-    link_depth: usize,
+    sink: Sink,
+    list_stack: Vec<ListContext>,
+    in_pre: bool,
+    /// Open `<pre>` elements. A `<pre>` nested in another opens no second
+    /// fence and must not close the first.
+    pre_depth: usize,
+    fence: Fence,
+    /// A `<code>` element opened the current `<pre>`'s fence.
+    pre_has_code: bool,
+    /// Per open `<a>`.
+    links: Vec<LinkState>,
+    /// Per open inline `<code>`: whether it opened a code-span capture.
+    code_captures: Vec<bool>,
 }
 
 impl MarkdownRenderer {
     pub fn new(capacity: usize) -> Self {
         Self {
-            output: String::with_capacity(capacity),
+            sink: Sink::new(capacity),
             list_stack: Vec::with_capacity(8),
-            blockquote_depth: 0,
-            newlines_emitted: 0,
             in_pre: false,
-            pre_lang: None,
-            last_was_space: false,
-            at_line_start: true,
-            inline_capture: InlineCapture::None,
-            capture_depth: 0,
-            link_depth: 0,
+            pre_depth: 0,
+            fence: Fence::None,
+            pre_has_code: false,
+            links: Vec::new(),
+            code_captures: Vec::new(),
         }
     }
 
-    // ─── 改行制御 ──────────────────────────────────────────────────────────
-
-    pub fn ensure_newlines(&mut self, count: usize) {
-        // 出力が空のときは先頭に改行を入れない
-        // （scraper が補完する <html><body> の begin_block 対策）
-        if self.output.is_empty() {
-            self.at_line_start = true;
-            return;
-        }
-        while self.newlines_emitted < count {
-            self.output.push('\n');
-            self.newlines_emitted += 1;
-        }
-        self.last_was_space = false;
-        self.at_line_start = true;
+    /// Inside a bare `<pre>` or an inline code span, child elements contribute
+    /// text only: no emphasis delimiters, image or link syntax (RFC 024
+    /// criteria 3 and 9). Markdown has no markup inside code.
+    fn in_code(&self) -> bool {
+        (self.in_pre && !self.pre_has_code) || self.sink.in_code_span()
     }
 
-    /// 遅延プレフィックス: コンテンツ書き込み直前に呼ぶ。
-    /// 行頭かつ blockquote 内なら "> "×depth を出力してフラグをリセット。
-    fn emit_pending_prefix(&mut self) {
-        if self.at_line_start && self.blockquote_depth > 0 {
-            for _ in 0..self.blockquote_depth {
-                self.output.push_str("> ");
-            }
-            self.at_line_start = false;
-        }
+    /// Inside `<pre><code>`, whose output RFC 024 criterion 4 requires to be
+    /// byte-identical to 2.2.3. Markup there is written as 2.2.3 wrote it --
+    /// delimiters, image syntax and an empty `[](href)` inside the code block,
+    /// none of which Markdown reads as markup. Reported in the RFC 024 review
+    /// request rather than changed here.
+    fn in_legacy_code_block(&self) -> bool {
+        self.in_pre && self.pre_has_code
     }
 
     fn begin_block(&mut self) {
-        // プレフィックスはここでは出力しない。
-        // コンテンツ書き込み時に emit_pending_prefix() が担う。
-        self.ensure_newlines(2);
+        // The blockquote prefix is not written here; the sink writes it
+        // before the next content byte.
+        self.sink.ensure_newlines(2);
     }
 
     fn end_block(&mut self) {
-        self.ensure_newlines(2);
+        self.sink.ensure_newlines(2);
     }
 
-    // ─── 生文字列プッシュ ──────────────────────────────────────────────────
-
-    pub fn push_raw(&mut self, s: &str) {
-        if s.is_empty() {
-            return;
-        }
-        self.output.push_str(s);
-        let trailing = s
-            .as_bytes()
-            .iter()
-            .rev()
-            .take_while(|&&b| b == b'\n')
-            .count();
-        if trailing > 0 {
-            self.newlines_emitted = trailing;
-            self.at_line_start = true;
-            self.last_was_space = false;
-        } else {
-            self.newlines_emitted = 0;
-            self.at_line_start = false;
+    /// Writes the pending opening fence of the current `<pre>`, if any.
+    fn open_fence(&mut self, lang: &str) {
+        if let Fence::Pending { held } = std::mem::replace(&mut self.fence, Fence::Open) {
+            let mut line = held;
+            line.push_str("```");
+            line.push_str(lang);
+            line.push('\n');
+            self.sink.fence_line(&line);
         }
     }
 
-    // ─── テキスト処理 ──────────────────────────────────────────────────────
+    // ─── Text ──────────────────────────────────────────────────────────────
 
     pub fn process_text(&mut self, text: &str) {
         if self.in_pre {
-            self.push_raw(text);
-            return;
-        }
-        if self.capture_depth > 0 {
-            if let InlineCapture::Link { buf, .. } = &mut self.inline_capture {
-                let mut _ls = false;
-                let mut _al = false;
-                utils::write_normalised(text, buf, &mut _ls, false, &mut _al);
+            if let Fence::Pending { held } = &mut self.fence {
+                if text.trim().is_empty() {
+                    held.push_str(text);
+                    return;
+                }
+                self.open_fence("");
             }
+            self.sink.code_block_content(text);
             return;
         }
-        // 実際のテキストを書く前にプレフィックスを確定させる
-        if !text.trim().is_empty() {
-            self.emit_pending_prefix();
-        }
-        let at_block = self.at_line_start;
-        utils::write_normalised(
-            text,
-            &mut self.output,
-            &mut self.last_was_space,
-            at_block,
-            &mut self.at_line_start,
-        );
-        if !text.trim().is_empty() {
-            self.newlines_emitted = 0;
-        }
+        self.sink.text(text);
     }
 
-    // ─── アンカー（id 属性） ──────────────────────────────────────────────
+    // ─── Id anchors ────────────────────────────────────────────────────────
 
-    /// `preserve_ids` が有効かつ非空の `id` を持つ要素の「先頭コンテンツ」として
-    /// アンカーを出力する。見出しの `# `、リスト項目の `- `、blockquote の `> `
-    /// など、要素自身のプレフィックス／マーカーの直後に置くため、この呼び出しは
-    /// 通常、各タグの処理（`match tag` 内）の**後**に行う。
+    /// Emits an `<a id="…"></a>` anchor for an element with a non-empty `id`
+    /// when `preserve_ids` is on. It is normally placed as the element's
+    /// leading content -- after a heading's `# `, a list item's `- `, a
+    /// blockquote's `> ` -- so `enter_element` calls it after the tag's arm.
     ///
-    /// 例外は `a` と `pre`：この2つは自身の処理で `capture_depth` /
-    /// `in_pre` を立てるため、後に呼ぶと自分自身の `id` まで「キャプチャ中」
-    /// と誤認して抑制してしまう。そのため呼び出し側（`enter_element`）は
-    /// この2タグに限り `match tag` の**前**に呼ぶ。祖先から継承した
-    /// `capture_depth` / `in_pre`（子孫要素の `id`）は、その時点ですでに
-    /// 立っているため、以下のガードで引き続き正しく抑制される。
-    ///
-    /// リンクキャプチャ中（`capture_depth > 0`）とコードブロック内（`in_pre`）は
-    /// 出力先が異なる／内容を改変してはならないため対象外とする。
+    /// The exception is the tags whose own arm opens a capture or a code
+    /// block (`a`, `code`, `pre`): called afterwards, their own `id` would be
+    /// suppressed by the guard below. For those, `enter_element` calls it
+    /// before the arm, with only the inherited state. An anchor is never
+    /// written into a capture or a code block, where it would corrupt the
+    /// content.
     fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
-        if !preserve_ids || self.capture_depth > 0 || self.in_pre {
+        if !preserve_ids || self.sink.is_capturing() || self.in_pre {
             return;
         }
         let Some(id) = elem.attr("id") else { return };
         if id.is_empty() {
             return;
         }
-        self.emit_pending_prefix();
-        self.flush_space();
         let mut anchor = String::with_capacity(id.len() + 10);
         anchor.push_str("<a id=\"");
         for c in id.chars() {
@@ -183,32 +160,27 @@ impl MarkdownRenderer {
             }
         }
         anchor.push_str("\"></a>");
-        self.push_raw(&anchor);
+        self.sink.id_anchor(&anchor);
     }
 
-    // ─── 要素 Enter ────────────────────────────────────────────────────────
+    // ─── Enter ─────────────────────────────────────────────────────────────
 
     pub fn enter_element(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
         let tag = elem.name();
-        // "a"/"pre" は自身の match アームで capture_depth/in_pre を立てる
-        // ため、アンカーは先に出す（要素の前に置く旧配置）。他のタグは通常
-        // 通り後に出す（要素内の先頭コンテンツとして置く）。
-        let anchor_before = matches!(tag, "a" | "pre");
+        // Tags whose own arm opens a capture or a code block: anchor first.
+        // Adding a tag that sets either guard means adding it here too
+        // (RFC 006 Slice D; tests/anchor_drift_guard.rs).
+        let anchor_before = matches!(tag, "a" | "code" | "pre");
         if anchor_before {
             self.emit_id_anchor(elem, preserve_ids);
         }
         match tag {
             "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
                 self.begin_block();
-                self.emit_pending_prefix();
                 let level = (tag.as_bytes()[1] - b'0') as usize;
-                for _ in 0..level {
-                    self.output.push('#');
-                }
-                self.output.push(' ');
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
-                self.last_was_space = false;
+                let mut marker = "#".repeat(level);
+                marker.push(' ');
+                self.sink.markup_closed(&marker);
             }
             "p" | "div" | "article" | "section" | "main" | "header" | "footer" | "nav"
             | "aside" | "figure" | "figcaption" => {
@@ -235,127 +207,115 @@ impl MarkdownRenderer {
                 });
             }
             "li" => {
-                self.ensure_newlines(1);
-                self.emit_pending_prefix();
+                self.sink.ensure_newlines(1);
                 let depth = self.list_stack.len().saturating_sub(1);
-                for _ in 0..depth {
-                    self.output.push_str("  ");
-                }
+                let mut marker = "  ".repeat(depth);
                 if let Some(ctx) = self.list_stack.last_mut() {
                     match &mut ctx.kind {
-                        ListKind::Unordered => self.output.push_str("- "),
+                        ListKind::Unordered => marker.push_str("- "),
                         ListKind::Ordered { counter } => {
                             let n = *counter;
                             *counter += 1;
-                            push_usize(&mut self.output, n);
-                            self.output.push_str(". ");
+                            push_usize(&mut marker, n);
+                            marker.push_str(". ");
                         }
                     }
                 }
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
-                self.last_was_space = false;
+                self.sink.markup_closed(&marker);
             }
             "blockquote" => {
                 self.begin_block();
-                self.blockquote_depth += 1;
-                // プレフィックスは次のコンテンツ書き込み時に emit_pending_prefix() が出す
+                self.sink.enter_blockquote();
             }
             "pre" => {
-                self.begin_block();
-                self.emit_pending_prefix();
-                // `anchor_before`（下記 §要素 Enter）が `"pre"` を判定基準に
-                // 使っている。ここでガード状態を立てる他のタグを追加する場合は
-                // `anchor_before` も更新すること — さもないと、その要素自身の
-                // `id` のアンカーが自分自身のガードに引っかかって消える
-                // （RFC 006 Slice D、過去に "a" と "pre" 自体で二度発生）。
-                self.in_pre = true;
-                self.pre_lang = None;
+                self.pre_depth += 1;
+                if self.pre_depth == 1 {
+                    self.begin_block();
+                    self.in_pre = true;
+                    self.fence = Fence::Pending {
+                        held: String::new(),
+                    };
+                }
             }
             "code" if self.in_pre => {
                 let lang = elem
                     .attr("class")
                     .and_then(|cls| utils::extract_code_lang(Some(cls)))
                     .unwrap_or("");
-                self.output.push_str("```");
-                self.output.push_str(lang);
-                self.output.push('\n');
-                self.newlines_emitted = 0;
-                self.at_line_start = true;
-                self.pre_lang = if lang.is_empty() {
-                    None
+                self.pre_has_code = true;
+                if matches!(self.fence, Fence::Open) {
+                    // A second <code> in the same <pre> writes a fence line
+                    // again, byte-identical to 2.2.3 (RFC 024 criterion 4
+                    // forbids moving <pre><code> output). That output is
+                    // malformed -- the line lands after the previous content
+                    // -- and is reported, not fixed, here.
+                    self.sink.code_block_content(&format!("```{lang}\n"));
                 } else {
-                    Some(lang.to_string())
-                };
+                    self.open_fence(lang);
+                }
             }
             "code" => {
-                self.flush_space();
-                self.output.push('`');
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
+                let capture = !self.sink.in_code_span();
+                if capture {
+                    self.sink.begin_capture(Capture::CodeSpan);
+                }
+                self.code_captures.push(capture);
             }
-            "strong" | "b" => {
-                self.flush_space();
-                self.output.push_str("**");
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
+            "strong" | "b" if self.in_legacy_code_block() => self.sink.code_block_content("**"),
+            "em" | "i" if self.in_legacy_code_block() => self.sink.code_block_content("*"),
+            "strong" | "b" if !self.in_code() => {
+                self.sink.flush_space();
+                self.sink.markup("**");
             }
-            "em" | "i" => {
-                self.flush_space();
-                self.output.push('*');
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
+            "em" | "i" if !self.in_code() => {
+                self.sink.flush_space();
+                self.sink.markup("*");
             }
             "a" => {
-                self.link_depth += 1;
-                if self.link_depth == 1 {
-                    let href = elem.attr("href").unwrap_or("").to_string();
-                    let title = elem.attr("title").map(|t| t.to_string());
-                    self.flush_space();
-                    self.inline_capture = InlineCapture::Link {
-                        href,
-                        title,
-                        buf: String::new(),
-                    };
-                    // `anchor_before`（下記 §要素 Enter）が `"a"` を判定基準に
-                    // 使っている。ここでガード状態を立てる他のタグを追加する場合は
-                    // `anchor_before` も更新すること — さもないと、その要素自身の
-                    // `id` のアンカーが自分自身のガードに引っかかって消える
-                    // （RFC 006 Slice D、過去に "a" と "pre" 自体で二度発生）。
-                    self.capture_depth += 1;
-                }
+                let href = elem.attr("href").unwrap_or("").to_string();
+                let title = elem.attr("title").map(str::to_string);
+                let in_link = self.links.iter().any(|l| !matches!(l, LinkState::TextOnly));
+                let state = if in_link {
+                    LinkState::TextOnly
+                } else if self.in_legacy_code_block() {
+                    LinkState::Legacy { href, title }
+                } else if self.in_code() {
+                    LinkState::TextOnly
+                } else {
+                    self.sink.begin_capture(Capture::Link { href, title });
+                    LinkState::Captured
+                };
+                self.links.push(state);
             }
-            "img" => {
+            "img" if !self.in_code() => {
                 let src = elem.attr("src").unwrap_or("");
                 let alt = elem.attr("alt").unwrap_or("");
-                let title = elem.attr("title");
-                self.flush_space();
-                self.output.push_str("![");
-                self.output.push_str(alt);
-                self.output.push_str("](");
-                self.output.push_str(src);
-                if let Some(t) = title {
-                    self.output.push_str(" \"");
-                    self.output.push_str(t);
-                    self.output.push('"');
+                let mut image = String::with_capacity(src.len() + alt.len() + 8);
+                image.push_str("![");
+                image.push_str(alt);
+                image.push_str("](");
+                image.push_str(src);
+                if let Some(t) = elem.attr("title") {
+                    image.push_str(" \"");
+                    image.push_str(t);
+                    image.push('"');
                 }
-                self.output.push(')');
-                self.newlines_emitted = 0;
-                self.at_line_start = false;
-                self.last_was_space = false;
+                image.push(')');
+                if self.in_legacy_code_block() {
+                    self.sink.code_block_content(&image);
+                } else {
+                    self.sink.flush_space();
+                    self.sink.markup_closed(&image);
+                }
             }
             "hr" => {
                 self.begin_block();
-                self.emit_pending_prefix();
-                self.push_raw("---");
+                self.sink.block_raw("---");
                 self.end_block();
             }
             "br" => {
-                self.output.push_str("  \n");
-                self.newlines_emitted = 1;
-                self.at_line_start = true;
-                self.last_was_space = false;
-                // br 後の行頭プレフィックスは次のコンテンツ書き込み時に出る
+                // The next content line gets the blockquote prefix, if any.
+                self.sink.hard_break();
             }
             _ => {}
         }
@@ -364,7 +324,7 @@ impl MarkdownRenderer {
         }
     }
 
-    // ─── 要素 Leave ────────────────────────────────────────────────────────
+    // ─── Leave ─────────────────────────────────────────────────────────────
 
     pub fn leave_element(&mut self, elem: &scraper::node::Element) {
         let tag = elem.name();
@@ -378,77 +338,85 @@ impl MarkdownRenderer {
                     self.end_block();
                 }
             }
-            "li" => self.ensure_newlines(1),
+            "li" => self.sink.ensure_newlines(1),
             "blockquote" => {
-                self.blockquote_depth = self.blockquote_depth.saturating_sub(1);
+                self.sink.leave_blockquote();
                 self.end_block();
             }
             "pre" => {
-                if !self.output.ends_with('\n') {
-                    self.output.push('\n');
+                self.pre_depth = self.pre_depth.saturating_sub(1);
+                if self.pre_depth > 0 {
+                    return;
                 }
-                self.push_raw("```");
+                // An empty <pre> still gets a balanced, empty code block.
+                self.open_fence("");
+                if !self.sink.ends_with_newline() {
+                    self.sink.code_block_content("\n");
+                }
+                self.sink.code_block_content("```");
                 self.in_pre = false;
-                self.pre_lang = None;
+                self.pre_has_code = false;
+                self.fence = Fence::None;
                 self.end_block();
             }
             "code" if !self.in_pre => {
-                self.output.push('`');
-                self.newlines_emitted = 0;
+                if self.code_captures.pop() == Some(true)
+                    && let Some((_, content, trailing)) = self.sink.end_capture()
+                {
+                    // A code span with no content writes nothing.
+                    let rendered = (!content.is_empty()).then(|| format!("`{content}`"));
+                    self.sink.splice(rendered.as_deref(), trailing);
+                }
             }
-            "strong" | "b" => {
-                self.output.push_str("**");
-                self.newlines_emitted = 0;
-            }
-            "em" | "i" => {
-                self.output.push('*');
-                self.newlines_emitted = 0;
-            }
-            "a" => {
-                if self.link_depth == 1 {
-                    self.capture_depth = self.capture_depth.saturating_sub(1);
-                    let captured = std::mem::replace(&mut self.inline_capture, InlineCapture::None);
-                    if let InlineCapture::Link { href, title, buf } = captured {
-                        self.output.push('[');
-                        self.output.push_str(&buf);
-                        self.output.push_str("](");
-                        self.output.push_str(&href);
-                        if let Some(t) = &title {
-                            self.output.push_str(" \"");
-                            self.output.push_str(t);
-                            self.output.push('"');
-                        }
-                        self.output.push(')');
-                        self.newlines_emitted = 0;
-                        self.at_line_start = false;
-                        self.last_was_space = false;
+            "strong" | "b" if self.in_legacy_code_block() => self.sink.code_block_content("**"),
+            "em" | "i" if self.in_legacy_code_block() => self.sink.code_block_content("*"),
+            "strong" | "b" if !self.in_code() => self.sink.markup("**"),
+            "em" | "i" if !self.in_code() => self.sink.markup("*"),
+            "a" => match self.links.pop() {
+                Some(LinkState::Captured) => {
+                    if let Some((Capture::Link { href, title }, text, trailing)) =
+                        self.sink.end_capture()
+                    {
+                        // A link with no text and no image writes nothing
+                        // (RFC 024 criterion 7): `[](/x)` renders as nothing.
+                        let rendered = (!text.trim().is_empty())
+                            .then(|| link_syntax(&text, &href, title.as_deref()));
+                        self.sink.splice(rendered.as_deref(), trailing);
                     }
                 }
-                self.link_depth = self.link_depth.saturating_sub(1);
-            }
+                Some(LinkState::Legacy { href, title }) => {
+                    self.sink
+                        .code_block_content(&link_syntax("", &href, title.as_deref()));
+                }
+                Some(LinkState::TextOnly) | None => {}
+            },
             _ => {}
         }
     }
 
-    fn flush_space(&mut self) {
-        if self.last_was_space && !self.at_line_start {
-            self.output.push(' ');
-            self.last_was_space = false;
-        }
-    }
-
-    pub fn finish(mut self) -> String {
-        // 末尾の空白・改行を除去
-        let end = self.output.trim_end().len();
-        self.output.truncate(end);
-        if !self.output.is_empty() {
-            self.output.push('\n');
-        }
-        self.output
+    pub fn finish(self) -> String {
+        self.sink.finish()
     }
 }
 
-/// usize を String へ直接書き込む（`format!` によるアロケーション回避）。
+/// `[text](href "title")`. Destinations and titles are written as given;
+/// escaping them is RFC 010's.
+fn link_syntax(text: &str, href: &str, title: Option<&str>) -> String {
+    let mut link = String::with_capacity(text.len() + href.len() + 4);
+    link.push('[');
+    link.push_str(text);
+    link.push_str("](");
+    link.push_str(href);
+    if let Some(t) = title {
+        link.push_str(" \"");
+        link.push_str(t);
+        link.push('"');
+    }
+    link.push(')');
+    link
+}
+
+/// Writes a usize without an intermediate allocation.
 #[inline]
 fn push_usize(s: &mut String, n: usize) {
     let _ = write!(s, "{n}");

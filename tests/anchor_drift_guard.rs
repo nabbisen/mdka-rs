@@ -1,18 +1,18 @@
 //! Integration test: RFC 006 Slice D — anchor drift guard.
 //!
-//! `enter_element`'s `anchor_before = matches!(tag, "a" | "pre")` duplicates
-//! knowledge that lives at the two sites in `src/renderer.rs` that mutate
-//! `capture_depth`/`in_pre` as part of entering that tag's own arm. If a
-//! future tag starts setting either guard without `anchor_before` being
-//! updated to include it, that tag's own `id` would silently stop getting
-//! an anchor -- this happened twice already, for `"a"` and `"pre"`
-//! themselves, before the placement fix.
+//! `enter_element`'s `anchor_before = matches!(tag, "a" | "code" | "pre")`
+//! duplicates knowledge that lives at the sites in `src/renderer.rs` that open
+//! a capture or a code block as part of entering that tag's own arm (RFC 024
+//! added `code`, which now opens a code-span capture). If a future tag starts
+//! doing either without `anchor_before` being updated to include it, that
+//! tag's own `id` would silently stop getting an anchor -- this happened twice
+//! already, for `"a"` and `"pre"` themselves, before the placement fix.
 //!
 //! This test asserts the **observable**: every tag mdka handles specially,
 //! given a non-empty `id` at the top level (not nested inside another
 //! capturing element), produces an anchor somewhere in its output under a
 //! mode where `preserve_ids` is on. A test that instead asserted
-//! `matches!(tag, "a" | "pre")` is still the right set would pass forever
+//! `matches!(tag, "a" | "code" | "pre")` is still the right set would pass forever
 //! and catch nothing -- see the review that requested this file for why
 //! that shape was explicitly rejected.
 

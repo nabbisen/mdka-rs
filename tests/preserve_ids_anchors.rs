@@ -161,7 +161,7 @@ fn nested_id_bearing_elements_each_get_their_own_anchor() {
 
 #[test]
 fn id_inside_link_capture_is_guarded() {
-    // capture_depth > 0 guard: an id on an element nested inside a link's
+    // Capture guard: an id on an element nested inside a link's
     // captured text must not emit into the main output stream, which would
     // corrupt the link's buffered content.
     assert_eq!(
@@ -175,7 +175,7 @@ fn id_inside_link_capture_is_guarded() {
 
 #[test]
 fn id_inside_pre_is_guarded() {
-    // in_pre guard: an id on an element inside a code block must not emit
+    // Code block guard: an id on an element inside a code block must not emit
     // into the block's literal content.
     assert_eq!(
         conv_with(
@@ -188,11 +188,12 @@ fn id_inside_pre_is_guarded() {
 
 // ─── Placement correction round 2: elements that open their own capture ────
 //
-// `a` and `pre` set capture_depth/in_pre themselves as part of entering the
-// element. When emit_id_anchor ran only after the match, this meant an <a>
-// or <pre> with its OWN id tripped its own guard and silently lost its
-// anchor -- a real regression, caught by testing beyond the required table.
-// The fix: for these two tags only, the anchor is emitted before the match
+// `a` and `pre` (and, since RFC 024, `code`) open a capture or a code block
+// themselves as part of entering the element. When emit_id_anchor ran only
+// after the match, this meant an <a> or <pre> with its OWN id tripped its own
+// guard and silently lost its anchor -- a real regression, caught by testing
+// beyond the required table.
+// The fix: for these tags only, the anchor is emitted before the match
 // (the exception to the "leading content" placement rule), so it uses the
 // pre-match (inherited-only) guard state. A descendant's id, nested inside
 // an already-open capture/pre, is still correctly suppressed -- see
