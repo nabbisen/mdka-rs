@@ -6,6 +6,7 @@ description = "CLI executable for mdka – a HTML to Markdown converter"
 license     = "Apache-2.0"
 readme      = "../README.md"
 repository  = "https://github.com/nabbisen/mdka-rs"
+homepage    = "https://nabbisen.github.io/mdka-rs/"
 
 [[bin]]
 name = "mdka"

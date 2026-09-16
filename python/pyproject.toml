@@ -16,6 +16,12 @@ classifiers     = [
     "License :: OSI Approved :: Apache Software License",
 ]
 
+[project.urls]
+Homepage      = "https://nabbisen.github.io/mdka-rs/"
+Documentation = "https://nabbisen.github.io/mdka-rs/getting-started/usage-python"
+Source        = "https://github.com/nabbisen/mdka-rs"
+Changelog     = "https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md"
+
 [tool.maturin]
 # Rust で生成されるネイティブモジュール名
 module-name  = "mdka.mdka_python"
