@@ -1,0 +1,112 @@
+name: pypi wheel gate
+
+# RFC 026 §4.1. The `python` job in ci.yaml runs `maturin develop` + pytest,
+# which imports the project from the workspace. That cannot see anything
+# missing from the *wheel* -- the artifact `pip install mdka` actually
+# fetches. This gate builds the wheel, installs it into a venv outside the
+# workspace, and imports it from there.
+#
+# Its own workflow file, not ci.yaml: release-npm.yaml and
+# create-release.yaml gate on ci.yaml's conclusion, so an artifact gate
+# living there can block the very release that would make it pass. That
+# deadlocked 2.2.1. See RFC 020's correction record and RFC 026 §3.5.
+#
+# It does NOT assert py.typed. RFC 023 decided to remove that claim rather
+# than ship the marker: every public symbol comes from a compiled PyO3
+# module with no .pyi stubs, so shipping py.typed would silence a type
+# checker without giving it anything to check. See RFC 023.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pypi-wheel-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-wheel-gate-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-wheel-gate-
+
+      # python/pyproject.toml declares readme = "README.md" but the README
+      # lives at the repository root. Same staging the `python` job does.
+      - name: Stage README for maturin
+        run: cp -f README.md python/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Install maturin
+        run: |
+          uv venv
+          uv pip install maturin
+
+      # `maturin build`, never `maturin develop`. develop is the blind spot
+      # this gate exists to close.
+      - name: Build the wheel
+        working-directory: python
+        run: |
+          source ../.venv/bin/activate
+          maturin build --out "$RUNNER_TEMP/wheels"
+
+      - name: Install the wheel outside the workspace and use it
+        run: |
+          set -euo pipefail
+          venv="$RUNNER_TEMP/wheel-gate-venv"
+          python -m venv "$venv"
+          wheel=$(ls "$RUNNER_TEMP"/wheels/mdka-*.whl)
+          echo "Installing $wheel"
+          "$venv/bin/pip" install --no-index "$wheel"
+
+          # cd out of the workspace so `import mdka` cannot resolve to the
+          # source tree instead of the installed package.
+          cd "$RUNNER_TEMP"
+          "$venv/bin/python" - <<'PY'
+          import mdka, pathlib, sys
+
+          # Prove we imported the installed package, not a source checkout.
+          where = pathlib.Path(mdka.__file__).resolve()
+          print("imported from:", where)
+          assert "site-packages" in where.parts, f"not the installed package: {where}"
+
+          out = mdka.html_to_markdown("<h1>x</h1>")
+          assert "# x" in out, f"unexpected output: {out!r}"
+
+          # The compiled binding must be inside the wheel, not merely
+          # importable because something else built it.
+          so = list(where.parent.glob("mdka_python*.so"))
+          assert so, f"native binding missing from the installed package: {list(where.parent.iterdir())}"
+
+          print("OK:", repr(out), "| binding:", so[0].name, "| version:", mdka.__version__)
+          PY

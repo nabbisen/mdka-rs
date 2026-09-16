@@ -50,7 +50,7 @@ wrappers (`unwrap_unknown_wrappers`) without dropping shell elements.
 elements (`nav`/`header`/`footer`/`aside`), does not unwrap wrapper
 elements.
 
-```rust
+```rust,fragment
 let md = mdka::html_to_markdown(html); // Balanced is the default
 ```
 
@@ -64,7 +64,7 @@ let md = mdka::html_to_markdown(html); // Balanced is the default
 above. Distinct API, in case attribute preservation becomes a real feature
 later.
 
-```rust
+```rust,fragment
 use mdka::options::{ConversionMode, ConversionOptions};
 
 let opts = ConversionOptions::for_mode(ConversionMode::Strict);
@@ -83,7 +83,7 @@ The most aggressive mode for extracting body content — useful for piping
 into an LLM prompt or a search index, where surrounding navigation chrome
 and wrapper markup are noise.
 
-```rust
+```rust,fragment
 let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 let md = mdka::html_to_markdown_with(html, &opts);
 ```
@@ -97,7 +97,7 @@ elements, emits `id` anchors. The one mode that unwraps wrappers *without*
 dropping shell elements — useful when you want compact structure but still
 need navigation landmarks preserved.
 
-```rust
+```rust,fragment
 let opts = ConversionOptions::for_mode(ConversionMode::Semantic);
 let md = mdka::html_to_markdown_with(html, &opts);
 ```
@@ -109,7 +109,7 @@ let md = mdka::html_to_markdown_with(html, &opts);
 **Currently identical to `Balanced` and `Strict`** — see the notice above.
 Distinct API, in case attribute preservation becomes a real feature later.
 
-```rust
+```rust,fragment
 let opts = ConversionOptions::for_mode(ConversionMode::Preserve);
 let md = mdka::html_to_markdown_with(html, &opts);
 ```

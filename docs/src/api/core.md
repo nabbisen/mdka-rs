@@ -2,7 +2,7 @@
 
 ## `html_to_markdown`
 
-```rust
+```rust,fragment
 pub fn html_to_markdown(html: &str) -> String
 ```
 
@@ -21,7 +21,7 @@ assert_eq!(md, "# Hello\n");
 
 ## `html_to_markdown_with`
 
-```rust
+```rust,fragment
 pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String
 ```
 
@@ -32,7 +32,7 @@ value that controls pre-processing and conversion behaviour.
 **Output:** Markdown string.  
 **Errors:** None.
 
-```rust
+```rust,fragment
 use mdka::options::{ConversionMode, ConversionOptions};
 
 let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
@@ -44,7 +44,7 @@ let md = mdka::html_to_markdown_with(html, &opts);
 
 ## `html_file_to_markdown`
 
-```rust
+```rust,fragment
 pub fn html_file_to_markdown(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
@@ -74,7 +74,7 @@ println!("{} → {}", r.src.display(), r.dest.display());
 
 ## `html_file_to_markdown_with`
 
-```rust
+```rust,fragment
 pub fn html_file_to_markdown_with(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
@@ -88,7 +88,7 @@ Same as `html_file_to_markdown`, but applies the given `ConversionOptions`.
 
 ## `html_files_to_markdown`
 
-```rust
+```rust,fragment
 pub fn html_files_to_markdown<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -121,7 +121,7 @@ for (src, result) in mdka::html_files_to_markdown(&files, Path::new("out/")) {
 
 ## `html_files_to_markdown_with`
 
-```rust
+```rust,fragment
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -137,7 +137,7 @@ Same as `html_files_to_markdown`, but applies the given `ConversionOptions` to e
 
 ## `ConvertResult`
 
-```rust
+```rust,fragment
 pub struct ConvertResult {
     pub src:  PathBuf,
     pub dest: PathBuf,

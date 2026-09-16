@@ -1,0 +1,94 @@
+name: docs example gate
+
+# RFC 026 §4.3. Nothing has ever executed the examples in docs/src/. D-12
+# and D-13 shipped examples that fail on their first line -- a duplicate
+# `const`, and a TypeScript import of a type the bindings never exported.
+#
+# Every fenced block whose info string names a language we can check is
+# checked. A block that is deliberately a fragment carries a `fragment`
+# marker, and the marker is what excludes it: there is no list of exceptions
+# kept elsewhere that can drift out of step with the documents. The
+# convention is documented in CONTRIBUTING.md.
+#
+# Its own workflow file, not ci.yaml -- see RFC 026 §3.5.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  docs-example-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-docs-gate-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-docs-gate-
+
+      # The TypeScript examples are checked against the generated
+      # declarations, so those must exist and be current.
+      - name: Generate the TypeScript declarations
+        working-directory: node
+        run: |
+          npm ci
+          npm run build
+
+      # Python examples resolve their `mdka` symbols against the installed
+      # package, so a documented function that does not exist is caught.
+      - name: Stage README for maturin
+        run: cp -f README.md python/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Build and install the wheel into a venv
+        run: |
+          set -euo pipefail
+          uv venv
+          uv pip install maturin
+          cd python
+          source ../.venv/bin/activate
+          maturin build --out "$RUNNER_TEMP/wheels"
+          cd ..
+          python -m venv "$RUNNER_TEMP/docs-venv"
+          "$RUNNER_TEMP/docs-venv/bin/pip" install --no-index "$RUNNER_TEMP"/wheels/mdka-*.whl
+
+      - name: Check every runnable example in docs/src/
+        run: |
+          python .github/workflows/scripts/check-docs-examples.py \
+            --python "$RUNNER_TEMP/docs-venv/bin/python"

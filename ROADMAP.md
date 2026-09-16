@@ -344,6 +344,32 @@ performed against the released `2.2.2` and recorded**.
 The last two are the ones that matter beyond this release. The first four would
 leave us exactly where we were on 2026-08-30: correct, and unable to tell.
 
+#### Known limitation of the consumer-artifact gates — recorded 2026-09-16
+
+**The four gates prove the Linux artifacts install. They do not prove the macOS
+or Windows ones do.** Stated because RFC 026 §6 requires the gap to be written
+down rather than left implicit in a green checkmark.
+
+| Gate | Covers | Blind to |
+|---|---|---|
+| `npm install gate` | the published package, on `ubuntu-latest` | macOS and Windows per-platform packages — they exist only after publication, so nothing can install them beforehand |
+| `pypi wheel gate` | the wheel built on `ubuntu-latest` | macOS and Windows wheels, built only by the release workflow |
+| `crates package gate` | all four crates, built from their packaged form | platform-specific build failures; the crates are pure Rust, so this is the smallest of the three gaps |
+| `docs example gate` | every runnable example in `docs/src/` | whether an example is *correct advice*, as opposed to syntactically and referentially valid |
+
+The npm gate additionally reports on the **last published release**, not the
+working tree — `optionalDependencies` are injected at publish time, so no local
+artifact carries them. That lag is inherent and is documented in the workflow
+itself.
+
+**Mitigation: release-time verification.** The consumer pass (RFC 027 Rule 1)
+installs from every registry on a real machine after publication, which is the
+only position from which the macOS and Windows paths can be checked at all.
+These gates narrow what the consumer pass has to catch; they do not replace it.
+
+**Do not describe this set as complete coverage.** Four green checkmarks mean
+the Linux artifacts install and the documented examples resolve — nothing more.
+
 ### M3 · Conversion fidelity → `2.3.0` (minor)
 
 Purely additive element coverage. Tables are the largest known gap against the

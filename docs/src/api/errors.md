@@ -2,7 +2,7 @@
 
 ## MdkaError
 
-```rust
+```rust,fragment
 #[derive(Error, Debug)]
 pub enum MdkaError {
     #[error("IO error: {0}")]
@@ -46,7 +46,7 @@ let result = mdka::html_file_to_markdown("page.html", None::<&str>)?;
 In `html_files_to_markdown`, each file fails independently.
 A failed file does not abort the rest of the batch:
 
-```rust
+```rust,fragment
 for (src, result) in mdka::html_files_to_markdown(&files, Path::new("out/")) {
     if let Err(e) = result {
         eprintln!("skipped {}: {e}", src);

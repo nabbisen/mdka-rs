@@ -1,6 +1,6 @@
 # ConversionOptions
 
-```rust
+```rust,fragment
 pub struct ConversionOptions {
     pub mode: ConversionMode,
 
@@ -46,7 +46,7 @@ let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 
 ### Modify fields after creation
 
-```rust
+```rust,fragment
 let mut opts = ConversionOptions::for_mode(ConversionMode::Balanced);
 opts.drop_interactive_shell = true; // also strip nav/header/footer/aside
 opts.preserve_ids           = false; // don't emit <a id="…"> anchors
@@ -54,7 +54,7 @@ opts.preserve_ids           = false; // don't emit <a id="…"> anchors
 
 ### Default
 
-```rust
+```rust,fragment
 let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 ```
 

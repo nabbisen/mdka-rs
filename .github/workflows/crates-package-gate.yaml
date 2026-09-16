@@ -1,0 +1,78 @@
+name: crates package gate
+
+# RFC 026 §4.2. The `rust` job in ci.yaml runs `cargo test` in-workspace,
+# where every path dependency resolves and every file is present. It cannot
+# see a crate that compiles here and fails standalone -- through a missing
+# `include`, a path dependency with no version, or a file absent from the
+# packaged .crate.
+#
+# `cargo package` (without --no-verify) packages each crate and then builds
+# from the extracted package, resolving dependencies from the registry
+# rather than from the workspace. That is the consumer's build.
+#
+# Its own workflow file, not ci.yaml -- see RFC 026 §3.5 and RFC 020's
+# correction record.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  crates-package-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Cache cargo dependencies and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-package-gate-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-package-gate-
+
+      # mdka first: the other three depend on it, and their verification
+      # builds resolve it from the registry.
+      #
+      # No --no-verify anywhere. Packaging without building the result would
+      # check that the tarball can be produced, not that it works -- which is
+      # the distinction this whole milestone is about.
+      - name: cargo package -p mdka
+        run: cargo package -p mdka --locked
+
+      - name: cargo package -p mdka-cli
+        run: cargo package -p mdka-cli --locked
+
+      - name: cargo package -p mdka-node
+        run: cargo package -p mdka-node --locked
+
+      - name: cargo package -p mdka-python
+        run: cargo package -p mdka-python --locked
+
+      - name: Show what each package actually contains
+        run: |
+          set -euo pipefail
+          for crate in target/package/*.crate; do
+            echo "=== $crate"
+            tar -tzf "$crate" | sed 's/^/    /'
+          done
