@@ -38,10 +38,7 @@ enum Fence {
 enum LinkState {
     /// Opened a link capture.
     Captured,
-    /// Inside `<pre><code>`: writes 2.2.3's `[](href)` on leaving (see
-    /// `in_legacy_code_block`).
-    Legacy { href: String, title: Option<String> },
-    /// Inside another link, a bare `<pre>` or a code span: text only.
+    /// Inside another link, a `<pre>` or a code span: text only.
     TextOnly,
 }
 
@@ -53,8 +50,6 @@ pub struct MarkdownRenderer {
     /// fence and must not close the first.
     pre_depth: usize,
     fence: Fence,
-    /// A `<code>` element opened the current `<pre>`'s fence.
-    pre_has_code: bool,
     /// Per open `<a>`.
     links: Vec<LinkState>,
     /// Per open inline `<code>`: whether it opened a code-span capture.
@@ -69,26 +64,17 @@ impl MarkdownRenderer {
             in_pre: false,
             pre_depth: 0,
             fence: Fence::None,
-            pre_has_code: false,
             links: Vec::new(),
             code_captures: Vec::new(),
         }
     }
 
-    /// Inside a bare `<pre>` or an inline code span, child elements contribute
-    /// text only: no emphasis delimiters, image or link syntax (RFC 024
-    /// criteria 3 and 9). Markdown has no markup inside code.
+    /// Inside a `<pre>` -- with or without `<code>` -- or an inline code span,
+    /// child elements contribute text only: no emphasis delimiters, image or
+    /// link syntax, and an image contributes nothing (RFC 024 criteria 3 and 9,
+    /// amended 2026-09-17). Markdown has no markup inside code.
     fn in_code(&self) -> bool {
-        (self.in_pre && !self.pre_has_code) || self.sink.in_code_span()
-    }
-
-    /// Inside `<pre><code>`, whose output RFC 024 criterion 4 requires to be
-    /// byte-identical to 2.2.3. Markup there is written as 2.2.3 wrote it --
-    /// delimiters, image syntax and an empty `[](href)` inside the code block,
-    /// none of which Markdown reads as markup. Reported in the RFC 024 review
-    /// request rather than changed here.
-    fn in_legacy_code_block(&self) -> bool {
-        self.in_pre && self.pre_has_code
+        self.in_pre || self.sink.in_code_span()
     }
 
     fn begin_block(&mut self) {
@@ -238,19 +224,14 @@ impl MarkdownRenderer {
                 }
             }
             "code" if self.in_pre => {
-                let lang = elem
-                    .attr("class")
-                    .and_then(|cls| utils::extract_code_lang(Some(cls)))
-                    .unwrap_or("");
-                self.pre_has_code = true;
-                if matches!(self.fence, Fence::Open) {
-                    // A second <code> in the same <pre> writes a fence line
-                    // again, byte-identical to 2.2.3 (RFC 024 criterion 4
-                    // forbids moving <pre><code> output). That output is
-                    // malformed -- the line lands after the previous content
-                    // -- and is reported, not fixed, here.
-                    self.sink.code_block_content(&format!("```{lang}\n"));
-                } else {
+                // One <pre>, one code block: only the first thing inside the
+                // <pre> opens the fence, and only a <code> that opens it names
+                // the language. A later <code> adds its text to the same block.
+                if matches!(self.fence, Fence::Pending { .. }) {
+                    let lang = elem
+                        .attr("class")
+                        .and_then(|cls| utils::extract_code_lang(Some(cls)))
+                        .unwrap_or("");
                     self.open_fence(lang);
                 }
             }
@@ -261,8 +242,6 @@ impl MarkdownRenderer {
                 }
                 self.code_captures.push(capture);
             }
-            "strong" | "b" if self.in_legacy_code_block() => self.sink.code_block_content("**"),
-            "em" | "i" if self.in_legacy_code_block() => self.sink.code_block_content("*"),
             "strong" | "b" if !self.in_code() => {
                 self.sink.flush_space();
                 self.sink.markup("**");
@@ -275,11 +254,7 @@ impl MarkdownRenderer {
                 let href = elem.attr("href").unwrap_or("").to_string();
                 let title = elem.attr("title").map(str::to_string);
                 let in_link = self.links.iter().any(|l| !matches!(l, LinkState::TextOnly));
-                let state = if in_link {
-                    LinkState::TextOnly
-                } else if self.in_legacy_code_block() {
-                    LinkState::Legacy { href, title }
-                } else if self.in_code() {
+                let state = if in_link || self.in_code() {
                     LinkState::TextOnly
                 } else {
                     self.sink.begin_capture(Capture::Link { href, title });
@@ -301,12 +276,8 @@ impl MarkdownRenderer {
                     image.push('"');
                 }
                 image.push(')');
-                if self.in_legacy_code_block() {
-                    self.sink.code_block_content(&image);
-                } else {
-                    self.sink.flush_space();
-                    self.sink.markup_closed(&image);
-                }
+                self.sink.flush_space();
+                self.sink.markup_closed(&image);
             }
             "hr" => {
                 self.begin_block();
@@ -355,7 +326,6 @@ impl MarkdownRenderer {
                 }
                 self.sink.code_block_content("```");
                 self.in_pre = false;
-                self.pre_has_code = false;
                 self.fence = Fence::None;
                 self.end_block();
             }
@@ -368,8 +338,6 @@ impl MarkdownRenderer {
                     self.sink.splice(rendered.as_deref(), trailing);
                 }
             }
-            "strong" | "b" if self.in_legacy_code_block() => self.sink.code_block_content("**"),
-            "em" | "i" if self.in_legacy_code_block() => self.sink.code_block_content("*"),
             "strong" | "b" if !self.in_code() => self.sink.markup("**"),
             "em" | "i" if !self.in_code() => self.sink.markup("*"),
             "a" => match self.links.pop() {
@@ -383,10 +351,6 @@ impl MarkdownRenderer {
                             .then(|| link_syntax(&text, &href, title.as_deref()));
                         self.sink.splice(rendered.as_deref(), trailing);
                     }
-                }
-                Some(LinkState::Legacy { href, title }) => {
-                    self.sink
-                        .code_block_content(&link_syntax("", &href, title.as_deref()));
                 }
                 Some(LinkState::TextOnly) | None => {}
             },

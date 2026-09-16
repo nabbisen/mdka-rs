@@ -114,25 +114,6 @@ fn whitespace_before_code_in_pre_stays_where_it_was() {
     );
 }
 
-#[test]
-fn markup_inside_pre_code_is_byte_identical_to_2_2_3() {
-    // Pinned, not endorsed: criterion 4 forbids moving <pre><code> output, so
-    // markup inside it is still written the way 2.2.3 wrote it, although
-    // Markdown reads none of it as markup. Reported in the RFC 024 review.
-    assert_eq!(
-        conv("<pre><code><b>kw</b> fn</code></pre>"),
-        "```\n**kw** fn\n```\n"
-    );
-    assert_eq!(
-        conv(r#"<pre><code><a href="/x">t</a></code></pre>"#),
-        "```\nt[](/x)\n```\n"
-    );
-    assert_eq!(
-        conv("<pre><code>a</code><code>b</code></pre>"),
-        "```\na```\nb\n```\n"
-    );
-}
-
 // ── criterion 9: an inline code span holds text only ───────────────────────
 
 #[test]
