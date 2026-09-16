@@ -10,12 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | Milestone | Priority |
-|----|-------|-----------|----------|
-| 007 | [English-only public surface](./proposed/007-english-only-public-surface.md) | M2b → `2.2.2` | P1 |
-
-Drafted 2026-09-16 after the owner updated the language rule. Awaiting
-acceptance.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -24,6 +19,7 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
+| 007 | [English-only public surface](./accepted/007-english-only-public-surface.md) — [handoff](./handoffs/007-english-only-public-surface/implementation-handoff.md) | M2b → `2.2.2` | P1 |
 | 021 | [Bulk conversion output-collision safety](./accepted/021-bulk-output-collision-safety.md) — [handoff](./handoffs/021-bulk-output-collision-safety/implementation-handoff.md) | M2b → `2.2.2` | **P0** |
 | 022 | [CLI allocator removal; settle `jemalloc`](./accepted/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) | M2b → `2.2.2` | P1 |
 | 023 | [Getting-started documentation reconciliation](./accepted/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | M2b → `2.2.2` | P1 |
@@ -33,7 +29,8 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
-**RFC 028 accepted 2026-09-16**, from the bekoedit field report. The other eight
+**RFC 007 and RFC 028 accepted 2026-09-16** — 007 after the owner updated the
+language rule, 028 from the bekoedit field report. The other eight
 were **accepted by the project owner, 2026-08-31.** They arise from the
 independent audit of that date. RFC 020 shipped in `2.2.1`, below; M2b split
 into `2.2.1` + `2.2.2` on 2026-09-01 once RFC 020's implementation established

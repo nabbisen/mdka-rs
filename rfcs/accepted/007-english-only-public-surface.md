@@ -1,6 +1,6 @@
 # RFC 007 — English-only public surface
 
-**Status.** Proposed
+**Status.** Accepted 2026-09-16 — implementer may start
 **Tracks.** M2b → `2.2.2`
 **Priority.** P1
 **Touches.** `cli/src/main.rs`, `node/src/lib.rs` (+ regenerated `node/index.d.ts`), `python/mdka/__init__.py`, `src/options.rs`, `src/lib.rs`.
