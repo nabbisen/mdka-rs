@@ -25,7 +25,7 @@ enum Event<'a> {
 }
 
 /// What the traversal does with an element. Shared by the traversal and by
-/// [`inline_wrappers_of_blocks`], so the pre-pass sees exactly the elements
+/// [`structure_hints`], so the pre-pass sees exactly the elements
 /// the renderer will see.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Disposition {
@@ -49,49 +49,162 @@ fn disposition(tag: &str, opts: &ConversionOptions) -> Disposition {
     }
 }
 
-/// The inline wrapper elements (`strong`/`b`, `em`/`i`, `code`, `a`) that have
-/// a rendered block among their descendants (RFC 028).
-///
-/// One bottom-up pass over the document -- O(n) in total, not O(subtree) per
-/// element, so one `<b>` wrapping a whole Google Docs payload costs nothing
-/// extra -- and non-recursive (`Traverse` is an iterator), so deep nesting
-/// cannot overflow the stack. A block counts if the traversal will render it:
-/// skipped subtrees contribute nothing, unwrapped wrappers are not blocks
-/// themselves but pass their children's blocks up.
-fn inline_wrappers_of_blocks(document: &Html, opts: &ConversionOptions) -> HashSet<NodeId> {
-    let mut wrappers = HashSet::new();
-    // Per open element: its disposition, and whether a rendered block has been
-    // seen among its descendants so far.
-    let mut open: Vec<(Disposition, bool)> = Vec::with_capacity(64);
+/// What one pass over the document knows before rendering.
+struct Hints {
+    /// Inline wrapper elements (`strong`/`b`, `em`/`i`, `code`, `a`) with a
+    /// rendered block among their descendants (RFC 028).
+    wrappers: HashSet<NodeId>,
+    /// Lists (`ul`/`ol`) that are loose (RFC 035 §3.1).
+    loose_lists: HashSet<NodeId>,
+}
+
+/// What an element's rendered content amounts to, for counting the blocks of
+/// a list item (RFC 035 §3.1): how many blocks, where a maximal run of inline
+/// content is one block, and whether it starts or ends with inline content
+/// (so that runs meeting across element boundaries merge). A nested list is
+/// a barrier: it separates runs and is not counted.
+#[derive(Clone, Copy, Default)]
+struct Units {
+    count: usize,
+    leading_inline: bool,
+    trailing_inline: bool,
+    empty: bool,
+}
+
+impl Units {
+    const NONE: Units = Units {
+        count: 0,
+        leading_inline: false,
+        trailing_inline: false,
+        empty: true,
+    };
+    const INLINE: Units = Units {
+        count: 1,
+        leading_inline: true,
+        trailing_inline: true,
+        empty: false,
+    };
+    const BLOCK: Units = Units {
+        count: 1,
+        leading_inline: false,
+        trailing_inline: false,
+        empty: false,
+    };
+    const BARRIER: Units = Units {
+        count: 0,
+        leading_inline: false,
+        trailing_inline: false,
+        empty: false,
+    };
+
+    fn append(&mut self, next: Units) {
+        if next.empty {
+            return;
+        }
+        if self.empty {
+            *self = next;
+            return;
+        }
+        let merged = usize::from(self.trailing_inline && next.leading_inline);
+        self.count = self.count + next.count - merged;
+        self.trailing_inline = next.trailing_inline;
+    }
+}
+
+/// One element open during the pass.
+struct Frame {
+    disposition: Disposition,
+    /// A rendered block has been seen among its descendants.
+    has_block: bool,
+    /// Its rendered content so far, as counted units.
+    units: Units,
+    /// A rendered `ul`/`ol`, the list its `li` descendants belong to.
+    is_list: bool,
+    id: NodeId,
+}
+
+/// One bottom-up pass over the document computing [`Hints`] -- O(n) in total,
+/// not O(subtree) per element, so one `<b>` wrapping a whole Google Docs
+/// payload costs nothing extra -- and non-recursive (`Traverse` is an
+/// iterator), so deep nesting cannot overflow the stack. It follows the
+/// traversal's own decisions: skipped subtrees contribute nothing, and
+/// unwrapped wrappers are not blocks themselves but pass their content up.
+fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
+    let mut hints = Hints {
+        wrappers: HashSet::new(),
+        loose_lists: HashSet::new(),
+    };
+    let mut open: Vec<Frame> = Vec::with_capacity(64);
     for edge in document.tree.root().traverse() {
         match edge {
-            Edge::Open(node) => {
-                if let scraper::Node::Element(elem) = node.value() {
-                    open.push((disposition(elem.name(), opts), false));
+            Edge::Open(node) => match node.value() {
+                scraper::Node::Element(elem) => {
+                    let tag = elem.name();
+                    open.push(Frame {
+                        disposition: disposition(tag, opts),
+                        has_block: false,
+                        units: Units::NONE,
+                        is_list: disposition(tag, opts) == Disposition::Render
+                            && matches!(
+                                utils::block_kind(tag),
+                                Some(utils::Block::UnorderedList | utils::Block::OrderedList)
+                            ),
+                        id: node.id(),
+                    });
                 }
-            }
+                scraper::Node::Text(text) if !text.trim().is_empty() => {
+                    if let Some(frame) = open.last_mut() {
+                        frame.units.append(Units::INLINE);
+                    }
+                }
+                _ => {}
+            },
             Edge::Close(node) => {
                 let scraper::Node::Element(elem) = node.value() else {
                     continue;
                 };
-                let Some((disp, has_block)) = open.pop() else {
+                let Some(frame) = open.pop() else {
                     continue;
                 };
-                if disp == Disposition::Skip {
+                if frame.disposition == Disposition::Skip {
                     continue;
                 }
                 let tag = elem.name();
-                let is_block = disp == Disposition::Render && utils::block_kind(tag).is_some();
-                if has_block && disp == Disposition::Render && utils::is_inline_wrapper(tag) {
-                    wrappers.insert(node.id());
+                let render = frame.disposition == Disposition::Render;
+                let kind = if render { utils::block_kind(tag) } else { None };
+                if frame.has_block && render && utils::is_inline_wrapper(tag) {
+                    hints.wrappers.insert(node.id());
                 }
+                // RFC 035 §3.1: two or more blocks in an item make its list loose.
+                if kind == Some(utils::Block::ListItem)
+                    && frame.units.count >= 2
+                    && let Some(list) = open.iter().rev().find(|f| f.is_list)
+                {
+                    hints.loose_lists.insert(list.id);
+                }
+                let contribution = match kind {
+                    Some(utils::Block::UnorderedList | utils::Block::OrderedList) => Units::BARRIER,
+                    Some(utils::Block::ListItem) => Units::BARRIER,
+                    // A paragraph-like block holding blocks renders as those
+                    // blocks, so its content counts, not itself.
+                    Some(utils::Block::Paragraph) if frame.has_block => frame.units,
+                    Some(_) => Units::BLOCK,
+                    None if !render => frame.units,
+                    // An inline element around blocks renders as its content.
+                    None if frame.has_block => frame.units,
+                    None if matches!(tag, "img" | "br") => Units::INLINE,
+                    None if frame.units.empty => Units::NONE,
+                    None => Units::INLINE,
+                };
+                let is_block = kind.is_some();
                 if let Some(parent) = open.last_mut() {
-                    parent.1 |= has_block || is_block;
+                    parent.has_block |= frame.has_block || is_block;
+                    parent.units.append(contribution);
                 }
             }
         }
     }
-    wrappers
+    hints
 }
 
 /// HTML ドキュメントをトラバースして Markdown 文字列を生成する。
@@ -104,7 +217,7 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
     // 元の HTML サイズの半分を初期容量として確保
     let capacity = document.html().len() / 2;
     let mut renderer = MarkdownRenderer::new(capacity.max(256));
-    let wrappers = inline_wrappers_of_blocks(document, opts);
+    let hints = structure_hints(document, opts);
 
     // root() は Document ノードなので子ノードだけを逆順で積む
     let mut stack: Vec<Event> = Vec::with_capacity(64);
@@ -132,7 +245,12 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
                         Disposition::Render => {}
                     }
 
-                    renderer.enter_element(elem, opts.preserve_ids, wrappers.contains(&node.id()));
+                    renderer.enter_element(
+                        elem,
+                        opts.preserve_ids,
+                        hints.wrappers.contains(&node.id()),
+                        hints.loose_lists.contains(&node.id()),
+                    );
 
                     // Leave イベントを先にスタックへ（子より後に処理される）
                     stack.push(Event::Leave(node));

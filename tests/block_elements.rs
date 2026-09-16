@@ -44,6 +44,28 @@ fn ordered_list_nested_inside_unordered() {
     assert!(md.contains("1. A"), "inner missing: {md}");
 }
 
+// ─── Loose and tight lists (RFC 035 §3.1) ────────────────────────────────
+
+#[test]
+fn loose_list_nested_in_tight_item_keeps_blank_lines_between_its_items() {
+    // The inner list is loose, the outer one tight: the blank line between
+    // the inner items belongs to the inner list.
+    let md = conv("<ul><li>x<ol><li><p>a</p><p>b</p></li><li>c</li></ol></li><li>y</li></ul>");
+    assert_eq!(md, "- x\n  1. a\n\n     b\n\n  2. c\n- y\n");
+}
+
+#[test]
+fn nested_list_does_not_loosen_its_item() {
+    let md = conv("<ul><li><p>a</p><ul><li>b</li></ul></li><li>c</li></ul>");
+    assert_eq!(md, "- a\n  - b\n- c\n");
+}
+
+#[test]
+fn text_around_nested_list_is_two_blocks() {
+    let md = conv("<ul><li>a<ul><li>i</li></ul>b</li></ul>");
+    assert_eq!(md, "- a\n  - i\n\n  b\n");
+}
+
 // ─── Blockquote ───────────────────────────────────────────────────────────
 
 #[test]

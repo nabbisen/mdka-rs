@@ -29,9 +29,12 @@ fn hr_consecutive() {
 
 #[test]
 fn hr_in_blockquote() {
+    // RFC 035: blank separator lines inside a quote carry `>`. The previous
+    // expectation, "> Q\n\n> ---\n\n> R\n", was audit A-08's defect: a
+    // CommonMark reader sees three quotes, not one.
     assert_eq!(
         conv("<blockquote><p>Q</p><hr><p>R</p></blockquote>"),
-        "> Q\n\n> ---\n\n> R\n"
+        "> Q\n>\n> ---\n>\n> R\n"
     );
 }
 

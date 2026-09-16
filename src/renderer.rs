@@ -15,6 +15,10 @@ pub enum ListKind {
 #[derive(Debug, Clone)]
 pub struct ListContext {
     pub kind: ListKind,
+    /// Loose per RFC 035 §3.1: items are separated by blank lines.
+    pub loose: bool,
+    /// An item of this list has been opened.
+    pub started: bool,
 }
 
 /// The opening fence of the current `<pre>` (RFC 024 A-02).
@@ -236,13 +240,15 @@ impl MarkdownRenderer {
 
     // ─── Enter ─────────────────────────────────────────────────────────────
 
-    /// `wraps_blocks`: the element has a rendered block among its descendants
-    /// (computed once per document by the traversal).
+    /// `wraps_blocks`: the element has a rendered block among its descendants.
+    /// `loose_list`: the element is a list that is loose (RFC 035 §3.1). Both
+    /// are computed once per document by the traversal.
     pub fn enter_element(
         &mut self,
         elem: &scraper::node::Element,
         preserve_ids: bool,
         wraps_blocks: bool,
+        loose_list: bool,
     ) {
         let tag = elem.name();
         // Tags whose own arm opens a capture or a code block: anchor first.
@@ -253,7 +259,7 @@ impl MarkdownRenderer {
             self.emit_id_anchor(elem, preserve_ids);
         }
         if let Some(block) = utils::block_kind(tag) {
-            self.enter_block(block, elem);
+            self.enter_block(block, elem, loose_list);
         } else {
             self.enter_inline(tag, elem, wraps_blocks);
         }
@@ -262,7 +268,7 @@ impl MarkdownRenderer {
         }
     }
 
-    fn enter_block(&mut self, block: Block, elem: &scraper::node::Element) {
+    fn enter_block(&mut self, block: Block, elem: &scraper::node::Element, loose_list: bool) {
         match block {
             Block::Heading(level) => {
                 self.begin_block();
@@ -277,6 +283,8 @@ impl MarkdownRenderer {
                 }
                 self.list_stack.push(ListContext {
                     kind: ListKind::Unordered,
+                    loose: loose_list,
+                    started: false,
                 });
             }
             Block::OrderedList => {
@@ -289,13 +297,23 @@ impl MarkdownRenderer {
                     .unwrap_or(1);
                 self.list_stack.push(ListContext {
                     kind: ListKind::Ordered { counter: start },
+                    loose: loose_list,
+                    started: false,
                 });
             }
             Block::ListItem => {
-                self.ensure_newlines(1);
-                let depth = self.list_stack.len().saturating_sub(1);
-                let mut marker = "  ".repeat(depth);
+                // A nested list's indent is not written here: the enclosing
+                // item's continuation prefix (its content column) is, by the
+                // sink.
+                let loose = self.list_stack.last().is_some_and(|ctx| ctx.loose);
+                let started = self.list_stack.last().is_some_and(|ctx| ctx.started);
+                self.ensure_newlines(if loose { 2 } else { 1 });
+                if loose && started {
+                    self.sink.loose_item_separator();
+                }
+                let mut marker = String::new();
                 if let Some(ctx) = self.list_stack.last_mut() {
+                    ctx.started = true;
                     match &mut ctx.kind {
                         ListKind::Unordered => marker.push_str("- "),
                         ListKind::Ordered { counter } => {
@@ -306,7 +324,8 @@ impl MarkdownRenderer {
                         }
                     }
                 }
-                self.sink.markup_closed(&marker);
+                self.close_distributed_link();
+                self.sink.item_marker(&marker, !loose);
             }
             Block::Quote => {
                 self.begin_block();
@@ -469,11 +488,17 @@ impl MarkdownRenderer {
             Block::Heading(_) | Block::Paragraph => self.end_block(),
             Block::UnorderedList | Block::OrderedList => {
                 self.list_stack.pop();
-                if self.list_stack.is_empty() {
-                    self.end_block();
-                }
+                // A nested list ending inside an item is a block boundary too:
+                // content after it must not continue the sublist's last item.
+                // Inside a tight item the sink keeps this to one newline.
+                self.end_block();
             }
-            Block::ListItem => self.ensure_newlines(1),
+            Block::ListItem => {
+                // End a link run before the item's prefix goes away.
+                self.close_distributed_link();
+                self.sink.leave_item();
+                self.ensure_newlines(1);
+            }
             Block::Quote => {
                 // End a link run before the quote's prefix goes away.
                 self.close_distributed_link();
