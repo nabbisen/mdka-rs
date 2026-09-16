@@ -354,9 +354,10 @@ text run.
 |---|---|---|---|
 | 025 | Markdown output-validity harness | **P0** | M |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M |
+| 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S |
 | 010 | Escaping & text-processing correctness audit | P0 | M |
 | 008 | GFM table support | P1 | L |
-| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`) | P2 | M |
+| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M |
 
 **Reordered by the 2026-08-31 audit.** Tables were the largest *known* gap; the
 audit found the larger *unknown* one. `mdka` produces invalid Markdown for
@@ -376,9 +377,62 @@ renderer's output is not Markdown.
 from a blank survey.
 
 **Exit criteria.** Every construct in the composition matrix round-trips through
-a CommonMark parser to the structure mdka intended; tables round-trip to GFM pipe
+a CommonMark parser to the structure mdka intended, **in both directions —
+inline-inside-container and block-inside-inline**; tables round-trip to GFM pipe
 syntax including alignment and header rows; each rule in
 `docs/src/api/text-processing.md` is confirmed or corrected against a test.
+
+#### Field report from bekoedit, 2026-09-16
+
+A downstream consumer building paste-as-Markdown reported nine measured gaps.
+**All nine reproduced exactly**; assessment in
+`.git-exclude/reviewed/upstream-bekoedit-2026-09-16/README.md`, reply drafted in
+`.git-exclude/upstream/bekoedit/send/draft/`.
+
+Three were already scheduled (tables → RFC 008; the `\1.` escape → RFC 010;
+strikethrough → RFC 009). The rest are new:
+
+| Item | Disposition |
+|---|---|
+| Emphasis wrapping block content emits stray `**` | **RFC 028**, above |
+| Task-list checkboxes dropped | added to RFC 009's scope |
+| Inline-`style` emphasis ignored; `data:` URI option; `emit_id_anchors` independent of mode; backslash hard-break option | **candidate options RFC** — see below |
+
+**Two things this report changed beyond its own items.**
+
+RFC 025's composition matrix had only one direction. Every cell put an inline
+construct inside a container; none put a block inside an inline, which is where
+RFC 028's defect lives. **The 56-finding external audit missed it too.** The
+matrix is amended and the exit criterion above now names both directions.
+
+And bekoedit offered a corpus of real clipboard HTML — browsers, Google Docs,
+Word, LibreOffice. **Accept it.** It is the input this project cannot generate
+for itself: our fixtures are composed from our model of what HTML looks like, and
+RFC 028 is the proof that the model has gaps. Recorded as a required input to
+RFC 025.
+
+**Noted, not acted on:** bekoedit ranks tables the highest-impact item, as the
+audit did. That is now two independent voices. M3 still sequences correctness
+ahead of tables — wrong output for HTML we already claim to handle is worse than
+missing support for HTML we do not — but the owner should see the ranking rather
+than have it buried in a sequencing decision the architect made alone.
+
+#### Candidate — conversion options for real-world HTML
+
+**Not scheduled. Needs owner appetite before an RFC is drafted.**
+
+Four additive options requested by bekoedit, listed so they are not lost:
+
+| Option | Why |
+|---|---|
+| `emit_id_anchors`, independent of mode | `preserve_ids` conflates keeping `id` information with emitting raw HTML to carry it. A caller wanting Balanced's other choices without raw HTML in the output has no way to say so. **A gap RFC 005 created.** |
+| Drop or alt-only `data:` URI images | A pasted screenshot puts megabytes of base64 into the output |
+| Read inline `style` for emphasis (opt-in) | Google Docs and some editors express bold/italic only through `style` |
+| Backslash hard-break instead of two trailing spaces | Editors that strip trailing whitespace silently remove the break |
+
+RFC 005 and RFC 006 spent a milestone making the option surface honest. **Adding
+four options needs deliberate appetite, not accumulation** — which is why this is
+a candidate rather than a plan.
 
 ### M4 · Durability → `2.4.0` (minor)
 

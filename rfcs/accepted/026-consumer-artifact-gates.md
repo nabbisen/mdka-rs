@@ -63,7 +63,7 @@ not resemble the one it protects — generalised from the pipeline to the produc
 
 ## Required gates
 
-### 1 · npm — owned by [RFC 020](./020-npm-distribution-repair.md)
+### 1 · npm — owned by [RFC 020](../done/020-npm-distribution-repair.md)
 
 `npm pack` → install the tarball in a clean directory outside the workspace →
 `require()` → convert one string. Specified there because it blocks that fix;

@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | Milestone | Priority |
+|----|-------|-----------|----------|
+| 028 | [Emphasis wrapping block content](./proposed/028-emphasis-around-block-content.md) | M3 → `2.3.0` | **P0** |
+
+RFC 028 arises from the bekoedit field report of 2026-09-16. Awaiting owner
+acceptance.
 
 ## Accepted
 

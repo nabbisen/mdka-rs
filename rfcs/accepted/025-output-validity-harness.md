@@ -78,6 +78,35 @@ Each cell: convert, parse, assert the structure is what the HTML meant. Cells
 that are known-unsupported get an explicit `#[ignore]` with the RFC that owns
 them — visible as unfinished rather than absent.
 
+### ⚠ The matrix needs the other direction too — amended 2026-09-16
+
+Every cell above puts an **inline construct inside a container**. That is one
+direction, and as first specified the matrix had no cell for the inverse: a
+**block inside an inline**.
+
+A downstream consumer found a defect living exactly there —
+`<strong><p>x</p></strong>` emits `**` around the blocks, producing stray
+delimiter lines on essentially every Google Docs paste (RFC 028). The
+56-finding external audit missed it too. The matrix had a direction and the
+defect was on the other side of it.
+
+Add the inverse rows: `<p>`, `<ul>`/`<li>`, `<blockquote>`, `<pre>` and a heading,
+each inside `<strong>`, `<em>`, `<a>` and `<code>`.
+
+Most of those combinations are invalid HTML, which is exactly why they need
+covering: real clipboard HTML is full of invalid markup, and a converter meets it
+far more often than a fixture author imagines.
+
+### Real-world corpus
+
+bekoedit has offered a corpus of real clipboard HTML from browsers, Google Docs,
+Word and LibreOffice.
+
+**Use it.** It is the input this project cannot generate for itself — the
+fixtures here are composed from our model of what HTML looks like, and RFC 028 is
+the proof that the model has gaps. Where the corpus and the hand-written matrix
+disagree about what is worth testing, the corpus wins.
+
 ### 3 · The escaping round-trip property
 
 For text content: whatever mdka escapes must parse back to the **original
@@ -128,6 +157,9 @@ Tests only. No API change, no runtime dependency.
 1. `pulldown-cmark` is a dev-dependency and absent from `cargo tree -e normal`.
 2. The composition matrix exists, every cell either asserting or `#[ignore]`d
    with an owning RFC.
+2b. **Both directions are covered** — inline-inside-container *and*
+   block-inside-inline. A matrix with only the first direction is incomplete; see
+   the 2026-09-16 amendment.
 3. The escaping round-trip property test exists.
 4. Assertions are on parsed structure, not on output bytes.
 5. The review request lists **every failing or ignored cell** — this inventory is
