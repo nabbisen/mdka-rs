@@ -11,6 +11,8 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-09-16
+
 ### Added
 
 - **`mdka --version`.** It previously failed with

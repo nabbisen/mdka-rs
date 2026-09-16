@@ -1,10 +1,10 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.2.2 (released 2026-09-16)
-**Milestone progress.** M1, M1b, M2 and M2b complete. `2.2.1` shipped RFC 020;
-`2.2.2` shipped RFC 007, 021, 022, 023, 026 and 027. **M2c proposed** — repair of
-what the first consumer pass found. Then M3.
+**Current version.** 2.2.3 (released 2026-09-16)
+**Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
+022, 023, 026 and 027; `2.2.3` shipped RFC 029.
+**Milestone progress.** M1, M1b, M2, M2b and **M2c complete**. **M3 is next.**
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -383,7 +383,7 @@ These gates narrow what the consumer pass has to catch; they do not replace it.
 **Do not describe this set as complete coverage.** Four green checkmarks mean
 the Linux artifacts install and the documented examples resolve — nothing more.
 
-### M2c · Published-surface repair → `2.2.3` (patch) — ⏳ PROPOSED
+### M2c · Published-surface repair → `2.2.3` (patch) — ✅ COMPLETE
 
 From the **first consumer pass** (RFC 027 Rule 1), run against published `2.2.2`
 by a session with no history of this project. Disposition:

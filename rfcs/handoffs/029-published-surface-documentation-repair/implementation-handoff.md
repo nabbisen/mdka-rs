@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 029 · Published-surface documentation repair
 
-**Governing RFC.** [RFC 029](../../accepted/029-published-surface-documentation-repair.md)
+**Governing RFC.** [RFC 029](../../done/029-published-surface-documentation-repair.md)
 **Source.** `2.2.2` consumer pass — RFC 027 Rule 1's first run. Disposition: `.git-exclude/reviewed/2.2.2-consumer-pass/README.md`; the raw pass is `.git-exclude/review-request/2.2.2-consumer-pass/README.md`, 26 findings.
 **Milestone.** M2c → `2.2.3` (patch)
 **Prepared.** 2026-09-16

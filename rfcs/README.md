@@ -19,15 +19,11 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 029 | [Published-surface documentation repair](./accepted/029-published-surface-documentation-repair.md) — [handoff](./handoffs/029-published-surface-documentation-repair/implementation-handoff.md) | M2c → `2.2.3` | **P0** |
 | 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 
-**RFC 029 is M2c and comes first** — the README's Node Quick Start does not
-parse on four registries. The other three are M3.
-
-**Sequencing within M3: 025 precedes 024, and 028 follows both** — the
+All three are M3. **Sequencing: 025 precedes 024, and 028 follows both** — the
 harness must be able to observe the defects before the fixes claim to have
 removed them, and RFC 028's mechanism choice depends on RFC 024's shape.
 
@@ -58,6 +54,7 @@ preconditions, which are not yet met.
 | 023 | [Getting-started documentation reconciliation](./done/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | 2.2.2 |
 | 026 | [Consumer-artifact verification gates](./done/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | 2.2.2 |
 | 027 | [Verification discipline: the consumer pass](./done/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | 2.2.2 |
+| 029 | [Published-surface documentation repair](./done/029-published-surface-documentation-repair.md) — [handoff](./handoffs/029-published-surface-documentation-repair/implementation-handoff.md) | 2.2.3 |
 
 ## Archive
 
