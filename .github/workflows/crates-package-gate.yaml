@@ -71,10 +71,28 @@ jobs:
       - name: cargo package --workspace
         run: cargo package --workspace --locked
 
+      # Scoped to the workspace's current version, and asserts there are four
+      # of them. target/ is restored from the cache, so an unfiltered glob
+      # lists every version packaged since the cache was last cold -- twelve
+      # .crate files across three versions, at the time of writing -- which
+      # reads as though this run produced them all. The count check also turns
+      # the listing from decoration into an assertion that every member was
+      # packaged.
       - name: Show what each package actually contains
         run: |
           set -euo pipefail
-          for crate in target/package/*.crate; do
+          version=$(cargo metadata --format-version 1 --no-deps \
+                    | python3 -c 'import json,sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"] == "mdka"))')
+          echo "workspace version: $version"
+
+          mapfile -t crates < <(ls target/package/*-"$version".crate)
+          if [ "${#crates[@]}" -ne 4 ]; then
+            echo "::error::expected 4 .crate files at $version, found ${#crates[@]}"
+            printf '  %s\n' "${crates[@]}"
+            exit 1
+          fi
+
+          for crate in "${crates[@]}"; do
             echo "=== $crate"
             tar -tzf "$crate" | sed 's/^/    /'
           done
