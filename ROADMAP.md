@@ -1,10 +1,9 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.2.1 (released 2026-09-01)
-**Milestone progress.** M1, M1b and M2 complete. **M2b in progress** — remediation
-of the independent audit of 2026-08-31. `2.2.1` shipped RFC 020; `2.2.2` carries
-the rest. Then M3.
+**Current version.** 2.2.2 (released 2026-09-16)
+**Milestone progress.** M1, M1b, M2 and **M2b complete**. `2.2.1` shipped RFC 020;
+`2.2.2` shipped RFC 007, 021, 022, 023, 026 and 027. **M3 is next.**
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -280,7 +279,7 @@ unwrap status, so output alone cannot distinguish the two cases. The source-leve
 evidence is what settles it.
 
 
-### M2b · Audit remediation → `2.2.1` + `2.2.2` (patches) — ⏳ IN PROGRESS
+### M2b · Audit remediation → `2.2.1` + `2.2.2` (patches) — ✅ COMPLETE
 
 Arising from the independent audit of 2026-08-31
 (`.git-exclude/reviewed/audit-2026-08-31/`, architect response in
@@ -331,10 +330,13 @@ the gate is observed failing against the broken package and passing after. A gat
 that has only ever been seen green proves nothing — the lesson from `verify-ci`
 in M1b, now applied to the artifact rather than the pipeline.
 
-**M2b status, 2026-09-16.** RFC 007, 020, 021, 022, 023 and 026 are all
-approved. RFC 027's release checklist is built; **its consumer pass is the only
-outstanding item, and it runs after the release by construction.** `2.2.2` is
-ready to cut, against the checklist RFC 027 just produced — its first use.
+**M2b closed 2026-09-16 with `2.2.2`.** All seven RFCs shipped. **One item is
+deferred by construction:** RFC 027's first consumer pass runs *after*
+publication, by someone who did not implement the release — tracked in the
+`2.2.2` release record.
+
+`2.2.2` was the first release cut against
+`.git-exclude/release/RELEASE-CHECKLIST.md`.
 
 The consumer pass runs against **`2.2.2`**, not `2.2.1`: by the time it could
 run, `2.2.2` had replaced `usage-cli.md`, the CLI `--help` and the

@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 007 · English-only public surface
 
-**Governing RFC.** [RFC 007](../../accepted/007-english-only-public-surface.md)
+**Governing RFC.** [RFC 007](../../done/007-english-only-public-surface.md)
 **Rule.** `.git-exclude/rules/project-instructions-general-common.md` — *"Use **English** for all documentation and code comments."*
 **Review that produced it.** `.git-exclude/reviewed/rules-compliance-2026-09-16/README.md`
 **Milestone.** M2b → `2.2.2`

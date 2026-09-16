@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 022 · deprecate `alloc_counter` instead of removing it
 
-**Governing RFC.** [RFC 022](../../accepted/022-cli-allocator-and-jemalloc.md), § Correction
+**Governing RFC.** [RFC 022](../../done/022-cli-allocator-and-jemalloc.md), § Correction
 **Corrects.** Part of `d5d0551`, already on `main`
 **Milestone.** M2b → `2.2.2`
 **Follows.** [`.git-exclude/reviewed/022-alloc-counter-removal-decision/README.md`](../../../.git-exclude/reviewed/022-alloc-counter-removal-decision/README.md) — owner ruling

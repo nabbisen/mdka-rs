@@ -1,6 +1,6 @@
 # RFC 022 — Remove the counting allocator from the shipped CLI; settle `jemalloc`
 
-**Status.** Accepted 2026-08-31 — implementer may start
+**Status.** Implemented (2.2.2)
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P1
 **Touches.** `cli/src/main.rs`, `Cargo.toml`, `src/alloc_counter.rs` visibility, CI test step.

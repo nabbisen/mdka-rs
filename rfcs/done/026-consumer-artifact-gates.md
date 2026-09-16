@@ -1,6 +1,6 @@
 # RFC 026 — Consumer-artifact verification gates
 
-**Status.** Accepted 2026-08-31 — implementer may start
+**Status.** Implemented (2.2.2)
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P0 — this is the control, not the symptom
 **Touches.** `.github/workflows/ci.yaml`, a new release-time job.

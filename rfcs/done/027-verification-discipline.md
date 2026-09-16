@@ -1,11 +1,21 @@
 # RFC 027 — Verification discipline: the consumer pass and scope completeness
 
-**Status.** Accepted 2026-08-31 — implementer may start
+**Status.** Implemented (2.2.2) — **with one deferred item**, below
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P1
 **Touches.** `.git-exclude/` governance artifacts (handoff template, review-request format, release checklist), `ROADMAP.md`.
 **Source.** Architect analysis of the 2026-08-31 audit. This RFC is about **why we did not find these ourselves**.
 **Prepared.** 2026-08-31
+
+> **Deferred at release, per RFC 000 § Granularity of transitions.** The rules
+> and the release checklist shipped in `2.2.2`. **The first consumer pass has not
+> yet run**, and cannot have: Rule 1 requires it be performed against a published
+> release by someone who did not implement it, so the earliest possible moment is
+> after this release is on the registries. It is tracked in the `2.2.2` release
+> record, not lost.
+>
+> Keeping this RFC out of `done/` until then would be circular — the pass can only
+> run after the release that contains the RFC.
 
 ## Summary
 

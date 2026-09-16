@@ -11,7 +11,40 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-09-16
+
+### Fixed
+
+- **Bulk conversion no longer silently destroys files whose output names
+  collide.** Converting two inputs that map to the same output — two
+  `index.html` files from different directories, the most common case on the
+  web — wrote one file and reported success for both, so one document's
+  content was lost with no indication. Which one survived was a race between
+  worker threads. Now the **first input in order wins**, deterministically, and
+  every later collider returns an error naming both source paths and the
+  contested destination. Nothing is written for a rejected input, and the
+  process exits non-zero.
+
+  **Not detected:** two paths differing only in case (`Index.html` vs
+  `index.html`) on a case-insensitive filesystem. They are still treated as
+  distinct.
+
 ### Changed
+
+- **The CLI's `--help` output, the Rust API documentation, the TypeScript type
+  definitions and the Python package docstring are now in English.** They were
+  previously Japanese, which made the published reference unreadable for most
+  users of a library whose documentation is otherwise English.
+
+- **`mdka` no longer claims to ship type information for Python.** The
+  documentation previously stated that a `py.typed` marker (PEP 561) was
+  included. It was not, and adding a bare marker would have been worse than
+  the gap: every symbol comes from a compiled extension module with no stubs,
+  so a type checker would report *"Success: no issues found"* while treating
+  every value as `Any` — turning an honest "I cannot check this" into a false
+  "everything is fine". The page now states plainly that no type information
+  ships, quotes the warning a user will see, and names typed stubs as the real
+  fix.
 
 - **The CLI no longer installs a counting allocator as its global allocator.**
   It existed to measure heap allocation for benchmarking, but every allocation
@@ -20,6 +53,7 @@ confidence, that is stated explicitly rather than guessed.
   8% faster on a 400-file, 1 MB-each bulk conversion (400 MB total, 32 cores,
   release build): ~356ms before, ~327ms after (medians of 5 runs). Output is
   byte-identical.
+
 ### Deprecated
 
 - **`mdka::alloc_counter` is deprecated and will be removed in `2.4.0`.** It
