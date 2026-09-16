@@ -87,12 +87,24 @@ that did not say what the HTML said to Markdown that does.
 - **`<pre>` without a `<code>` child produces a balanced code block.** Only the
   closing fence was written, so everything after it became code:
   `<pre>plain</pre><p>After</p>` gave `` plain\n```\n\nAfter ``; it now gives
-  `` ```\nplain\n```\n\nAfter ``. `<pre><code>` output is unchanged.
-- **Code holds text only.** Inside a `<pre>` without a `<code>` child, or an
-  inline `<code>`, bold, italic, links and images contribute their text, with
-  no Markdown syntax:
-  `<code><strong>b</strong></code>` gave `` `**b**` `` and now gives `` `b` ``.
+  `` ```\nplain\n```\n\nAfter ``.
+- **Code holds text only.** Inside any code — `<pre>`, `<pre><code>` or an
+  inline `<code>` — bold, italic and links contribute their text, with no
+  Markdown syntax, and an image contributes nothing:
+
+  | HTML | Before | Now |
+  |---|---|---|
+  | `<code><strong>b</strong></code>` | `` `**b**` `` | `` `b` `` |
+  | `<pre><code><b>kw</b> fn</code></pre>` | `**kw** fn` in the code block | `kw fn` |
+  | `<pre><code><a href="/x">t</a></code></pre>` | `t[](/x)` in the code block | `t` |
+  | `<pre><code><img src="i.png" alt="pic"></code></pre>` | `![pic](i.png)` in the code block | an empty code block |
+
   An inline code span with no text is no longer emitted as a stray ` `` `.
+- **A `<pre>` is one code block.** Several `<code>` elements, or text beside
+  them, used to write extra fences into the content:
+  `<pre><code>a</code><code>b</code></pre>` gave a block containing
+  `` a```\nb ``; it now gives one block containing `ab`. The language comes from
+  the first `<code>`. Other `<pre><code>` output is unchanged.
 - **A blockquote that begins with bold, italic, code, a link or an image keeps
   its `>`.** `<blockquote><strong>b</strong> rest</blockquote>` gave
   `**b** rest`, with no quote at all; it now gives `> **b** rest`.

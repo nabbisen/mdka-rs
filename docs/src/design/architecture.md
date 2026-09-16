@@ -74,11 +74,12 @@ handler cannot write around it:
   alike. Nested blockquotes get the correct number of `>` however many block
   elements intervene.
 
-Inside an inline `<code>`, and a `<pre>` without a `<code>` child, child
-elements contribute text only: Markdown has no emphasis, links or images inside
-code. A `<pre>` opens its own fence, so a `<pre>` without a `<code>` child
-still produces a balanced code block. Inside `<pre><code>`, output is kept
-exactly as in 2.2.3.
+Inside code -- an inline `<code>`, or a `<pre>` with or without `<code>` --
+child elements contribute text only: Markdown has no emphasis, links or images
+inside code, so an image there contributes nothing. A `<pre>` owns its fence
+and produces exactly one code block, holding the text of everything inside it
+in order; a `<pre>` without a `<code>` child still produces a balanced block,
+and the language comes from a `<code>` that opens the block.
 
 ## Language Bindings
 
