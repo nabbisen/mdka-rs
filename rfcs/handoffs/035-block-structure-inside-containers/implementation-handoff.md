@@ -44,12 +44,13 @@ RFC 024 and 028 change the renderer before you start; **re-derive these** and st
 | `two_p_in_nested_blockquote` | `> > a\n\n> > b` |
 | `multiline_pre_in_li_in_blockquote` | ``> - \n\n> ```\nx\ny\n``` `` |
 | `tight_list_control` | `- a\n- b` — correct |
+| `indented_code_in_pre_in_blockquote` | ```` > ```\n    x\n```\n\nafter ```` — the content line loses `> `, and the orphaned fence swallows `after` (added 2026-09-17, after RFC 024c's whitespace rule) |
 
-**Expect 14 of 16 to fail today.** Confirm with the harness, not by reading this table.
+**Expect 15 of 17 to fail today.** Confirm with the harness, not by reading this table.
 
 ## 3. Order of work
 
-1. **Harness first.** Add a `Rfc035` owner. Add the 16 cells from RFC 035 §4 — in a new
+1. **Harness first.** Add a `Rfc035` owner. Add the 17 cells from RFC 035 §4 — in a new
    `tests/output_validity/block_in_container.rs` — **with the expectations exactly as written in the RFC**.
    Run against the base commit; mark every failing cell `known_defect(Rfc035, <harness reason>)`. Commit.
    If an expectation looks wrong to you, **stop and report** — do not adjust it to match output.
@@ -83,7 +84,7 @@ RFC 024 and 028 change the renderer before you start; **re-derive these** and st
 Per RFC 027 Rule 3, label what each ran against.
 
 1. §2 table re-derived before; after, for every cell.
-2. All 16 cells passing under CommonMark and GFM, all five modes; list which were marked and which passed from the start.
+2. All 17 cells passing under CommonMark and GFM, all five modes; list which were marked and which passed from the start.
 3. **No other harness cell changes state.**
 4. **Tight-list byte identity**: every existing test and runner fixture with a list — outputs before and after; any change listed and justified by §3.1.
 5. Prefix-stack balance assertion present, and shown to fire on a deliberately unbalanced push (in a test, not left in).
@@ -108,10 +109,10 @@ fix changes another RFC's cells.
 
 - [ ] §0 honoured
 - [ ] §2 re-derived; what moved stated
-- [ ] 16 cells added first, exactly as written; failing ones marked at the base commit
+- [ ] 17 cells added first, exactly as written; failing ones marked at the base commit
 - [ ] Container prefix stack in the sink; every line prefixed, incl. blank and code lines
 - [ ] §3.1 tight/loose rule via RFC 028's mechanism
-- [ ] All 16 cells passing, both readings, five modes
+- [ ] All 17 cells passing, both readings, five modes
 - [ ] No other cell changed state; tight lists byte-identical
 - [ ] Balance assertion shown to fire
 - [ ] elements.md rule; docs gate green; CHANGELOG

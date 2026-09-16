@@ -7,7 +7,7 @@
 
 ---
 
-## 0. 🛑 QUEUED — do not start until RFC 024 is approved
+## 0. Preconditions — met (2026-09-17)
 
 | Precondition | Status |
 |---|---|
@@ -15,10 +15,9 @@
 | Slice `025c` approved | ✅ met 2026-09-16 |
 | RFC 024 approved | ✅ met 2026-09-17 (`1de7f2c`) — the sink exists; `src/renderer.rs` line numbers have all moved |
 | Slice `024b` approved | ✅ met 2026-09-17 |
-| **Slice `024c` approved** | **pending** — fence placement in the same files |
+| Slice `024c` approved | ✅ met 2026-09-17 — RFC 024 complete |
 
-**Start when** `.git-exclude/reviewed/024c-fence-at-line-start/README.md` exists
-with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated
+**All preconditions are met. This handoff is an instruction to start.** **Once handed over, this file is frozen**; changes arrive as dated
 addenda.
 
 ## 1. Purpose
@@ -137,7 +136,7 @@ RFC 025 marks these cells UNOWNED; the owner has assigned them to this RFC. **Be
   `blockquote_in_a`, `pre_in_a`, `heading_in_a`, `p_in_code`, `ul_in_code`,
   `blockquote_in_code`, `pre_in_code`, `heading_in_code` (names as of `7338b17`; the
   harness is authoritative if they have moved);
-- the single-paragraph Google Docs cell `025c` adds — and **replace its "pending the owner's decision" comment**: the owner accepted RFC 028's style amendment on 2026-09-16.
+- `field_reports::google_docs_bold_wrapper_inline` — the single-paragraph Google Docs cell — and **replace the "pending the owner's decision" wording in its reason**: the owner accepted RFC 028's style amendment on 2026-09-16.
 
 After re-labelling, RFC 028 owns **22** cells. Confirm the count.
 
