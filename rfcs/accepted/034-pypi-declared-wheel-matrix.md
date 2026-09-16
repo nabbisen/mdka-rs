@@ -1,11 +1,11 @@
 # RFC 034 — PyPI: a declared wheel matrix, built on purpose and checked where it is published
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-16, owner) — floor 3.10, raised only on the §6.1 triggers; no free-threaded or PyPy wheels
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — **must land before `2.3.0` is cut** (§8)
 **Source.** RFC 032 review §6 — `.git-exclude/reviewed/032-gates-report-everything/README.md`
-**Owner decisions.** §6 — 2 and 3 **decided** 2026-09-16; 1 narrowed to a recommendation awaiting confirmation.
+**Owner decisions.** §6 — all three decided 2026-09-16 (1 by accepting the §6.1 recommendation).
 
 ---
 

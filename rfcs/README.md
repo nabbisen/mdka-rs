@@ -10,14 +10,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-Awaiting the owner's decision.
-
-- [034 — PyPI: a declared wheel matrix, built on purpose and checked where it is published](./proposed/034-pypi-declared-wheel-matrix.md)
-  — 2.2.3's wheel coverage is whatever each runner image had: no Python 3.8 wheel
-  on glibc x86_64 despite `>=3.8`, nothing below 3.10 on Windows or 3.11 on macOS.
-  Nothing checks the set before or after the irreversible upload. Free-threaded
-  and PyPy wheels: **not declared** (owner, 2026-09-16). Python floor:
-  **recommended 3.10, raised only on a trigger** — awaiting confirmation.
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
@@ -32,9 +25,10 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
 | 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved (031, 031b); D6 open (owner); moves to `done/` at `2.3.0` prep |
 | 032 | [Gates report every failure, and execute Python and TypeScript examples](./accepted/032-gates-report-everything-and-execute-examples.md) — [handoff](./handoffs/032-gates-report-everything-and-execute-examples/implementation-handoff.md) | M3 → `2.3.0` | **P2** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 033 | [Published docs: the source is what the reader gets](./accepted/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — **next**; 032 approved |
+| 033 | [Published docs: the source is what the reader gets](./accepted/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
+| 034 | [PyPI: a declared wheel matrix, built on purpose and checked where it is published](./accepted/034-pypi-declared-wheel-matrix.md) — [handoff](./handoffs/034-pypi-declared-wheel-matrix/implementation-handoff.md) | M3 → `2.3.0` | **P1** — **next**; must land before the cut |
 
-All seven are M3. **Sequencing: 030 ✅, 031 ✅, 032 ✅, then 033, then 025, then 024, then 028.**
+All eight are M3. **Sequencing: 030 ✅, 031 ✅, 032 ✅, 033 ✅, then 034, then 025, then 024, then 028.** 034 has no file overlap with the engine RFCs and must land before `2.3.0` is cut.
 
 - **030 and 031 go first** and are independent of the engine work. Both are
   control repairs: each fixes a gate that was passing something the consumer's
