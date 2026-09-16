@@ -221,3 +221,9 @@ the language hint comes from the first `<code>` child only. Slice `024b`.
 
 **Not in scope, clarified.** "Element coverage — A-06, A-07, A-08, RFC 009" was wrong about their nature:
 they are validity defects. **RFC 035, accepted for `2.3.0` by the owner on 2026-09-17.**
+
+**Amendment, 2026-09-17 (review of `024b`).** Rule 6: whitespace inside `<pre>` and outside `<code>` is part of the code
+block's text; **the fence is always written at the start of its line**, never after held whitespace. Criterion 4 is relaxed
+for whitespace before `<code>`, whose 2.2.3 bytes put a four-space-indented fence where CommonMark reads an indented code
+block — destroying the rest of the document. Rule 4 restated: language from the first `<code>` child when only whitespace
+precedes it. Slice `024c`.

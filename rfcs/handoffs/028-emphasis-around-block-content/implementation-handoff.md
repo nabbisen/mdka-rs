@@ -14,9 +14,10 @@
 | RFC 025 harness landed | ✅ `7338b17` |
 | Slice `025c` approved | ✅ met 2026-09-16 |
 | RFC 024 approved | ✅ met 2026-09-17 (`1de7f2c`) — the sink exists; `src/renderer.rs` line numbers have all moved |
-| **Slice `024b` approved** | **pending** — it changes the fence and code-context handling in the same files |
+| Slice `024b` approved | ✅ met 2026-09-17 |
+| **Slice `024c` approved** | **pending** — fence placement in the same files |
 
-**Start when** `.git-exclude/reviewed/024b-code-holds-text-only/README.md` exists
+**Start when** `.git-exclude/reviewed/024c-fence-at-line-start/README.md` exists
 with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated
 addenda.
 
