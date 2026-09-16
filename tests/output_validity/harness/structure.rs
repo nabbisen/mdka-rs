@@ -1,12 +1,52 @@
-//! The parsed structure of a Markdown string, as a compact tree.
+//! The parsed structure of a Markdown string, as a compact tree, under each
+//! reading a consumer may apply.
 
 use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag};
 
-/// The parser reads plain CommonMark: no GFM extensions. mdka does not emit
-/// tables, strikethrough or task lists today, and a harness that enabled them
-/// would accept syntax CommonMark readers render as text.
-pub(super) fn parser(md: &str) -> Parser<'_> {
-    Parser::new_ext(md, Options::empty())
+/// How a consumer reads the Markdown. Every tree assertion and every property
+/// runs under both; a cell passes only if both readings are right.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Reading {
+    /// Plain CommonMark: no extensions.
+    CommonMark,
+    /// GitHub Flavored Markdown as pulldown-cmark 0.13.4 offers it: tables,
+    /// footnotes, strikethrough, task lists, and `ENABLE_GFM` (blockquote
+    /// alerts such as `> [!NOTE]`). Not enabled, because GFM does not have
+    /// them: smart punctuation, heading attributes, metadata blocks, math,
+    /// definition lists, super/subscript, wikilinks. Not available in the
+    /// parser at all: GFM's extended autolinks (`www.example.com`) and its
+    /// disallowed-raw-HTML filter.
+    Gfm,
+}
+
+pub const READINGS: [Reading; 2] = [Reading::CommonMark, Reading::Gfm];
+
+impl Reading {
+    fn options(self) -> Options {
+        match self {
+            Reading::CommonMark => Options::empty(),
+            Reading::Gfm => {
+                Options::ENABLE_TABLES
+                    | Options::ENABLE_FOOTNOTES
+                    | Options::ENABLE_STRIKETHROUGH
+                    | Options::ENABLE_TASKLISTS
+                    | Options::ENABLE_GFM
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for Reading {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Reading::CommonMark => "commonmark",
+            Reading::Gfm => "gfm",
+        })
+    }
+}
+
+pub(super) fn parser(md: &str, reading: Reading) -> Parser<'_> {
+    Parser::new_ext(md, reading.options())
 }
 
 struct Frame {
@@ -25,7 +65,8 @@ pub(super) fn tag_name(tag: &Tag<'_>) -> (String, bool) {
     match tag {
         Tag::Paragraph => ("para".into(), true),
         Tag::Heading { level, .. } => (format!("{level:?}").to_lowercase(), true),
-        Tag::BlockQuote(_) => ("quote".into(), true),
+        Tag::BlockQuote(None) => ("quote".into(), true),
+        Tag::BlockQuote(Some(kind)) => (format!("quote[{kind:?}]").to_lowercase(), true),
         Tag::CodeBlock(CodeBlockKind::Fenced(info)) if !info.is_empty() => {
             (format!("codeblock[{info}]"), true)
         }
@@ -36,6 +77,7 @@ pub(super) fn tag_name(tag: &Tag<'_>) -> (String, bool) {
         Tag::Item => ("li".into(), true),
         Tag::Emphasis => ("em".into(), false),
         Tag::Strong => ("strong".into(), false),
+        Tag::Strikethrough => ("del".into(), false),
         Tag::Link {
             dest_url, title, ..
         } if title.is_empty() => (format!("link[{dest_url}]"), false),
@@ -48,8 +90,20 @@ pub(super) fn tag_name(tag: &Tag<'_>) -> (String, bool) {
         Tag::Image {
             dest_url, title, ..
         } => (format!("image[{dest_url} {title:?}]"), false),
+        Tag::Table(_) => ("table".into(), true),
+        Tag::TableHead => ("thead".into(), true),
+        Tag::TableRow => ("tr".into(), true),
+        Tag::TableCell => ("td".into(), true),
         other => (format!("{other:?}"), true),
     }
+}
+
+/// Whether an inline HTML event is the id anchor mdka emits for an element
+/// with an `id` when `preserve_ids` is on (RFC 005 Slice B1): `<a id="…">`.
+pub(super) fn is_id_anchor_open(html: &str) -> bool {
+    html.strip_prefix("<a id=\"")
+        .and_then(|rest| rest.strip_suffix("\">"))
+        .is_some_and(|id| !id.contains('"'))
 }
 
 fn push_text(children: &mut Vec<Child>, s: &str) {
@@ -108,18 +162,23 @@ fn collapse(s: &str) -> String {
     out
 }
 
-/// The parsed structure of `md`, as a compact string:
+/// The parsed structure of `md` under `reading`, as a compact string:
 /// `para(link[/out](image[i.png]("pic")))`.
 ///
 /// Text is whitespace-collapsed and trimmed at block edges; code block and
 /// code span text is kept exactly (minus a code block's final newline).
-pub fn structure(md: &str) -> String {
+///
+/// `skip_id_anchors`: omit the `<a id="…"></a>` pairs `preserve_ids` emits.
+/// They are a documented option's output, not part of what the HTML's content
+/// means, so a mode with the option on is held to the same tree.
+pub fn structure(md: &str, reading: Reading, skip_id_anchors: bool) -> String {
     let mut stack = vec![Frame {
         name: String::new(),
         block: true,
         children: Vec::new(),
     }];
-    for event in parser(md) {
+    let mut skip_close = false;
+    for event in parser(md, reading) {
         let top = stack.last_mut().expect("root frame");
         match event {
             Event::Start(tag) => {
@@ -143,10 +202,18 @@ pub fn structure(md: &str) -> String {
             Event::SoftBreak => push_text(&mut top.children, " "),
             Event::HardBreak => top.children.push(Child::Node("br".into())),
             Event::Code(c) => top.children.push(Child::Node(format!("code({:?})", &*c))),
+            Event::InlineHtml(h) if skip_id_anchors && is_id_anchor_open(&h) => skip_close = true,
+            Event::InlineHtml(h) if skip_close && &*h == "</a>" => skip_close = false,
             Event::Html(h) | Event::InlineHtml(h) => top
                 .children
                 .push(Child::Node(format!("html({:?})", h.trim_end()))),
             Event::Rule => top.children.push(Child::Node("rule".into())),
+            Event::TaskListMarker(done) => top
+                .children
+                .push(Child::Node(if done { "task[x]" } else { "task[ ]" }.into())),
+            Event::FootnoteReference(label) => top
+                .children
+                .push(Child::Node(format!("footnote_ref[{label}]"))),
             other => top.children.push(Child::Node(format!("{other:?}"))),
         }
     }

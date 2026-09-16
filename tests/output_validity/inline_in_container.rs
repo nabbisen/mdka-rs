@@ -55,18 +55,18 @@ cells! {
 cells! {
     img_in_code: r#"<code><img src="i.png" alt="pic"></code>"#
         => undecided("Q3: inline markup, links and images inside inline <code>"),
-        defect(Unowned, "image syntax emitted inside the code span: reads as literal `![pic](i.png)`");
+        defect(Rfc024, "image syntax emitted inside the code span: reads as literal `![pic](i.png)`; a code span holds text only (RFC 025 review Q3)");
     strong_in_code: r#"<code><strong>b</strong></code>"#
         => undecided("Q3"),
-        defect(Unowned, "`**` emitted inside the code span: reads as literal `**b**`");
+        defect(Rfc024, "`**` emitted inside the code span: reads as literal `**b**`; a code span holds text only (RFC 025 review Q3)");
     em_in_code: r#"<code><em>e</em></code>"#
         => undecided("Q3"),
-        defect(Unowned, "`*` emitted inside the code span: reads as literal `*e*`");
+        defect(Rfc024, "`*` emitted inside the code span: reads as literal `*e*`; a code span holds text only (RFC 025 review Q3)");
     code_in_code: r#"<code><code>c</code></code>"#
         => tree(r#"para(code("c"))"#);
     a_in_code: r#"<code><a href="/in">t</a></code>"#
         => undecided("Q3"),
-        defect(Unowned, "link syntax emitted inside the code span: reads as literal `[t](/in)`, link lost");
+        defect(Rfc024, "link syntax emitted inside the code span: reads as literal `[t](/in)`, link lost; a code span holds text only (RFC 025 review Q3)");
     text_in_code: r#"<code>a_b *c* [d] (e)</code>"#
         => tree(r#"para(code("a_b *c* [d] (e)"))"#),
         defect(Rfc010Planned, "escaping applied inside the code span, where CommonMark does not honour it: literal backslashes (audit A-03)");
@@ -94,19 +94,19 @@ cells! {
 cells! {
     img_in_blockquote: r#"<blockquote><img src="i.png" alt="pic"></blockquote>"#
         => tree(r#"quote(para(image[i.png]("pic")))"#),
-        defect(Unowned, "blockquote whose content starts with an inline element loses its `>` prefix entirely");
+        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
     strong_in_blockquote: r#"<blockquote><strong>b</strong></blockquote>"#
         => tree(r#"quote(para(strong("b")))"#),
-        defect(Unowned, "blockquote whose content starts with an inline element loses its `>` prefix entirely");
+        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
     em_in_blockquote: r#"<blockquote><em>e</em></blockquote>"#
         => tree(r#"quote(para(em("e")))"#),
-        defect(Unowned, "blockquote whose content starts with an inline element loses its `>` prefix entirely");
+        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
     code_in_blockquote: r#"<blockquote><code>c</code></blockquote>"#
         => tree(r#"quote(para(code("c")))"#),
-        defect(Unowned, "blockquote whose content starts with an inline element loses its `>` prefix entirely");
+        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
     a_in_blockquote: r#"<blockquote><a href="/in">t</a></blockquote>"#
         => tree(r#"quote(para(link[/in]("t")))"#),
-        defect(Unowned, "blockquote whose content starts with an inline element loses its `>` prefix entirely");
+        defect(Rfc024, "blockquote loses its `>` prefix: the inline arm writes to the output without emit_pending_prefix(), cancelling the pending `> ` (RFC 025 review Q7)");
     text_in_blockquote: r#"<blockquote>a_b *c* [d] (e)</blockquote>"#
         => tree(r#"quote(para("a_b *c* [d] (e)"))"#);
 }

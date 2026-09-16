@@ -10,7 +10,9 @@
 //! - `inline_in_container`, `block_in_inline`: the composition matrix, both
 //!   directions.
 //! - `escaping`, `well_formedness`: §6.1 and §6.2 cells.
-//! - `real_world`: minimal reproductions from field reports.
+//! - `field_reports`: minimal reproductions from field reports and public
+//!   issue reports.
+//! - `gfm`: text that must stay text when read as GitHub Flavored Markdown.
 //! - `corpus`: a directory runner that needs no per-file expectations.
 //! - `proofs`: the helper and the properties shown failing.
 //!
@@ -48,7 +50,8 @@ mod harness;
 mod block_in_inline;
 mod corpus;
 mod escaping;
+mod field_reports;
+mod gfm;
 mod inline_in_container;
 mod proofs;
-mod real_world;
 mod well_formedness;

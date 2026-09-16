@@ -12,7 +12,7 @@ mod properties;
 mod structure;
 
 pub use properties::properties;
-pub use structure::structure;
+pub use structure::{READINGS, Reading, structure};
 
 /// Every mode. A cell is evaluated in each, so a fix that lands in one mode
 /// only is visible as a partial result rather than a silent pass.
@@ -55,7 +55,8 @@ pub const fn undecided(question: &'static str) -> Expect {
 /// Who fixes a known defect.
 #[derive(Clone, Copy, Debug)]
 pub enum Owner {
-    /// Inline composition: inline elements inside links, bare `<pre>`.
+    /// Inline composition: inline elements inside links and code spans,
+    /// inline writers bypassing the blockquote prefix, bare `<pre>`.
     Rfc024,
     /// Emphasis (or another inline) around block content.
     Rfc028,
@@ -118,17 +119,24 @@ pub fn evaluate(convert: Convert, html: &str, expect: Expect, mode: ConversionMo
             };
         }
     };
+    // Every assertion under every reading; each problem names its reading.
     let checked = catch_unwind(AssertUnwindSafe(|| {
         let mut problems = Vec::new();
-        if let Expect::Tree(want) = expect {
-            let got = structure(&md);
-            if got != want {
-                problems.push(format!(
-                    "[structure] expected {want}\n              got      {got}"
-                ));
+        for reading in READINGS {
+            if let Expect::Tree(want) = expect {
+                let got = structure(&md, reading, opts.preserve_ids);
+                if got != want {
+                    problems.push(format!(
+                        "({reading}) [structure] expected {want}\n                           got      {got}"
+                    ));
+                }
             }
+            problems.extend(
+                properties(html, &md, &opts, reading)
+                    .into_iter()
+                    .map(|p| format!("({reading}) {p}")),
+            );
         }
-        problems.extend(properties(html, &md, &opts));
         problems
     }));
     let result = match checked {

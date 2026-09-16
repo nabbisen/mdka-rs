@@ -6,7 +6,7 @@ use mdka::options::ConversionOptions;
 use pulldown_cmark::{Event, Tag, TagEnd};
 use scraper::{Html, Node};
 
-use super::structure::{parser, tag_name};
+use super::structure::{Reading, parser, tag_name};
 
 /// Elements whose content a browser never renders as text.
 const INVISIBLE: &[&str] = &[
@@ -87,13 +87,32 @@ fn words(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// What one link holds: its destination, its words, and the inline elements
+/// inside it in order (`strong`, `em`, `code`, `image[src]`).
+#[derive(Debug, PartialEq, Eq)]
+pub struct LinkContent {
+    pub dest: String,
+    pub text: String,
+    pub inline: Vec<String>,
+}
+
+impl LinkContent {
+    fn show(&self) -> String {
+        format!("text {:?} inline [{}]", self.text, self.inline.join(", "))
+    }
+}
+
 /// What the HTML says, read from the same parse mdka performs.
 pub struct HtmlFacts {
     /// Visible text, and alt text of images outside code, with a space at
     /// every block edge.
     pub text: String,
-    /// `href` of every `<a>` outside `<pre>`/`<code>`.
+    /// `href` of every `<a>` outside `<pre>`/`<code>` that holds text or an
+    /// image. An empty link is exempt: RFC 025 review Q1 directs that a link
+    /// with no text and no image emits nothing.
     pub links: Vec<String>,
+    /// The content of each of those links.
+    pub link_contents: Vec<LinkContent>,
     /// `src` of every `<img>` outside `<pre>`/`<code>`.
     pub images: Vec<String>,
     /// Text content of every outermost `<pre>`.
@@ -107,10 +126,13 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
     let mut facts = HtmlFacts {
         text: String::new(),
         links: Vec::new(),
+        link_contents: Vec::new(),
         images: Vec::new(),
         pres: Vec::new(),
         skeleton: Vec::new(),
     };
+    // (depth, href, text offset, inline elements) for each open link.
+    let mut anchors: Vec<(usize, String, usize, Vec<String>)> = Vec::new();
     let mut hidden = 0usize;
     let mut code = 0usize;
     let mut pre: Option<(usize, String)> = None;
@@ -141,17 +163,38 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                             open.push((depth, facts.skeleton.len(), facts.text.len()));
                             facts.skeleton.push((kind, String::new()));
                         }
+                        let in_code = code > 0 || pre.is_some();
+                        let inline_kind = match name {
+                            "strong" | "b" => Some("strong".to_string()),
+                            "em" | "i" => Some("em".to_string()),
+                            "code" => Some("code".to_string()),
+                            "img" => e
+                                .attr("src")
+                                .filter(|s| !s.is_empty())
+                                .map(|s| format!("image[{s}]")),
+                            _ => None,
+                        };
+                        if let (Some(kind), Some(anchor), false) =
+                            (inline_kind, anchors.last_mut(), in_code)
+                        {
+                            anchor.3.push(kind);
+                        }
                         match name {
                             "pre" if pre.is_none() => pre = Some((depth, String::new())),
                             "code" | "pre" => code += 1,
-                            "a" if code == 0 && pre.is_none() => {
+                            "a" if !in_code => {
                                 if let Some(h) = e.attr("href").filter(|h| !h.is_empty()) {
-                                    facts.links.push(h.to_string());
+                                    anchors.push((
+                                        depth,
+                                        h.to_string(),
+                                        facts.text.len(),
+                                        Vec::new(),
+                                    ));
                                 }
                             }
                             // Alt text stands in for the image only where an
                             // image can exist; inside code it has no place.
-                            "img" if code == 0 && pre.is_none() => {
+                            "img" if !in_code => {
                                 if let Some(alt) = e.attr("alt") {
                                     facts.text.push_str(alt);
                                 }
@@ -184,6 +227,14 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                             let (_, i, from) = open.pop().expect("open skeleton element");
                             facts.skeleton[i].1 = words(&facts.text[from..]);
                         }
+                        if name == "a" && anchors.last().is_some_and(|(d, ..)| *d == depth) {
+                            let (_, dest, from, inline) = anchors.pop().expect("open link");
+                            let text = words(&facts.text[from..]);
+                            if !text.is_empty() || inline.iter().any(|k| k.starts_with("image[")) {
+                                facts.links.push(dest.clone());
+                                facts.link_contents.push(LinkContent { dest, text, inline });
+                            }
+                        }
                         match name {
                             "pre" if pre.as_ref().is_some_and(|(d, _)| *d == depth) => {
                                 let (_, buf) = pre.take().expect("open pre");
@@ -205,6 +256,7 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
 pub struct MarkdownFacts {
     pub text: String,
     pub links: Vec<String>,
+    pub link_contents: Vec<LinkContent>,
     pub images: Vec<String>,
     pub code_blocks: Vec<String>,
     pub skeleton: Skeleton,
@@ -222,10 +274,11 @@ fn markdown_skeleton_kind(tag: &Tag<'_>) -> Option<&'static str> {
     })
 }
 
-pub fn markdown_facts(md: &str) -> MarkdownFacts {
+pub fn markdown_facts(md: &str, reading: Reading) -> MarkdownFacts {
     let mut facts = MarkdownFacts {
         text: String::new(),
         links: Vec::new(),
+        link_contents: Vec::new(),
         images: Vec::new(),
         code_blocks: Vec::new(),
         skeleton: Vec::new(),
@@ -233,11 +286,26 @@ pub fn markdown_facts(md: &str) -> MarkdownFacts {
     let mut block: Option<String> = None;
     // (skeleton index, text offset) per open tag; None for tags outside it.
     let mut open: Vec<Option<(usize, usize)>> = Vec::new();
-    for event in parser(md) {
+    // (destination, text offset, inline elements) for each open link.
+    let mut links: Vec<(String, usize, Vec<String>)> = Vec::new();
+    for event in parser(md, reading) {
         match event {
             Event::Start(tag) => {
+                let kind = match &tag {
+                    Tag::Strong => Some("strong".to_string()),
+                    Tag::Emphasis => Some("em".to_string()),
+                    Tag::Strikethrough => Some("del".to_string()),
+                    Tag::Image { dest_url, .. } => Some(format!("image[{dest_url}]")),
+                    _ => None,
+                };
+                if let (Some(kind), Some(link)) = (kind, links.last_mut()) {
+                    link.2.push(kind);
+                }
                 match &tag {
-                    Tag::Link { dest_url, .. } => facts.links.push(dest_url.to_string()),
+                    Tag::Link { dest_url, .. } => {
+                        facts.links.push(dest_url.to_string());
+                        links.push((dest_url.to_string(), facts.text.len(), Vec::new()));
+                    }
                     Tag::Image { dest_url, .. } => facts.images.push(dest_url.to_string()),
                     Tag::CodeBlock(_) => block = Some(String::new()),
                     _ => {}
@@ -256,10 +324,20 @@ pub fn markdown_facts(md: &str) -> MarkdownFacts {
                 }
                 let inline = matches!(
                     end,
-                    TagEnd::Emphasis | TagEnd::Strong | TagEnd::Link | TagEnd::Image
+                    TagEnd::Emphasis
+                        | TagEnd::Strong
+                        | TagEnd::Strikethrough
+                        | TagEnd::Link
+                        | TagEnd::Image
                 );
                 if !inline {
                     facts.text.push(' ');
+                }
+                if matches!(end, TagEnd::Link)
+                    && let Some((dest, from, inline)) = links.pop()
+                {
+                    let text = words(&facts.text[from..]);
+                    facts.link_contents.push(LinkContent { dest, text, inline });
                 }
                 if let Some((i, from)) = open.pop().flatten() {
                     facts.skeleton[i].1 = words(&facts.text[from..]);
@@ -271,7 +349,12 @@ pub fn markdown_facts(md: &str) -> MarkdownFacts {
                     b.push_str(&t);
                 }
             }
-            Event::Code(c) => facts.text.push_str(&c),
+            Event::Code(c) => {
+                facts.text.push_str(&c);
+                if let Some(link) = links.last_mut() {
+                    link.2.push("code".to_string());
+                }
+            }
             Event::SoftBreak | Event::HardBreak | Event::Rule => facts.text.push(' '),
             _ => {}
         }
@@ -301,11 +384,11 @@ const SENTINEL: &str = "MDKA-HARNESS-SENTINEL";
 
 /// Whether a paragraph written after the output is read as a paragraph. A
 /// code fence or HTML block left open swallows it.
-fn terminated(md: &str) -> bool {
+fn terminated(md: &str, reading: Reading) -> bool {
     let probe = format!("{md}\n\n{SENTINEL}\n");
     let mut depth = 0usize;
     let mut last_top: Option<(bool, String)> = None;
-    for event in parser(&probe) {
+    for event in parser(&probe, reading) {
         match event {
             Event::Start(tag) => {
                 if depth == 0 {
@@ -330,11 +413,11 @@ fn show(skeleton: &Skeleton) -> String {
     format!("[{}]", parts.join(", "))
 }
 
-/// The intent-free properties (handoff §6, plus `blocks` and `unterminated`).
-/// Each violation names its property.
-pub fn properties(html: &str, md: &str, opts: &ConversionOptions) -> Vec<String> {
+/// The intent-free properties (handoff §6, plus `blocks`, `unterminated` and
+/// `link-content`), read under `reading`. Each violation names its property.
+pub fn properties(html: &str, md: &str, opts: &ConversionOptions, reading: Reading) -> Vec<String> {
     let h = html_facts(html, opts);
-    let m = markdown_facts(md);
+    let m = markdown_facts(md, reading);
     let mut out = Vec::new();
 
     // 6.3 No stray delimiter text: more of a delimiter character in the parsed
@@ -377,6 +460,23 @@ pub fn properties(html: &str, md: &str, opts: &ConversionOptions) -> Vec<String>
         out.push(format!("[image-lost] no parsed image with source {lost:?}"));
     }
 
+    // 025c (review Q10): each link still holds what the HTML put inside it --
+    // its words and its inline elements, images included. Only links whose
+    // destination was found; a lost destination is reported above.
+    let mut have: Vec<&LinkContent> = m.link_contents.iter().collect();
+    for want in &h.link_contents {
+        if let Some(i) = have.iter().position(|c| *c == want) {
+            have.remove(i);
+        } else if let Some(got) = have.iter().find(|c| c.dest == want.dest) {
+            out.push(format!(
+                "[link-content] link {:?}: HTML holds {} vs parsed {}",
+                want.dest,
+                want.show(),
+                got.show()
+            ));
+        }
+    }
+
     // 6.2 Every <pre> is one code block holding exactly its text: a fence too
     // short for its content fails here.
     let want: Vec<String> = h
@@ -408,7 +508,7 @@ pub fn properties(html: &str, md: &str, opts: &ConversionOptions) -> Vec<String>
 
     // Beyond §6: nothing is left open. An unmatched fence turns the rest of
     // any document the output is placed in into code.
-    if !terminated(md) {
+    if !terminated(md, reading) {
         out.push(
             "[unterminated] a paragraph appended after the output is swallowed (open fence or HTML block)"
                 .to_string(),

@@ -2,8 +2,11 @@
 
 use mdka::options::{ConversionMode, ConversionOptions};
 
-use crate::corpus::{corpus_dir, run_dir};
-use crate::harness::{Owner, known_defect_with, mdka_convert, properties, tree};
+use crate::corpus::{harness_dir, run_dir};
+use crate::harness::{
+    ModeResult, Owner, Reading, evaluate, known_defect_with, mdka_convert, properties, structure,
+    tree,
+};
 
 const STRONG_IN_A: &str = r#"<a href="/out"><strong>b</strong></a>"#;
 const STRONG_IN_A_TREE: &str = r#"para(link[/out](strong("b")))"#;
@@ -88,12 +91,18 @@ fn balanced() -> ConversionOptions {
 }
 
 fn assert_property(name: &str, html: &str, broken_md: &str, correct_md: &str) {
-    let broken = properties(html, broken_md, &balanced());
+    for reading in crate::harness::READINGS {
+        assert_property_in(reading, name, html, broken_md, correct_md);
+    }
+}
+
+fn assert_property_in(reading: Reading, name: &str, html: &str, broken_md: &str, correct_md: &str) {
+    let broken = properties(html, broken_md, &balanced(), reading);
     assert!(
         broken.iter().any(|v| v.starts_with(name)),
         "{name} did not fire on {broken_md:?}: {broken:?}"
     );
-    let correct = properties(html, correct_md, &balanced());
+    let correct = properties(html, correct_md, &balanced(), reading);
     assert!(
         correct.is_empty(),
         "{correct_md:?} should hold every property: {correct:?}"
@@ -160,6 +169,83 @@ fn property_unterminated_fires() {
     );
 }
 
+#[test]
+fn property_link_content_fires() {
+    assert_property(
+        "[link-content]",
+        r#"<a href="/out"><img src="i.png" alt="pic"></a>"#,
+        "![pic](i.png)[](/out)\n",
+        "[![pic](i.png)](/out)\n",
+    );
+    assert_property(
+        "[link-content]",
+        r#"<a href="/out">Read <strong>more</strong></a>"#,
+        "[Read more](/out)\n",
+        "[Read **more**](/out)\n",
+    );
+}
+
+#[test]
+fn empty_link_is_exempt_from_link_properties() {
+    // RFC 025 review Q1: a link with no text and no image emits nothing.
+    let html = r#"<a href="/x"></a><p>t</p>"#;
+    for reading in crate::harness::READINGS {
+        assert!(properties(html, "t\n", &balanced(), reading).is_empty());
+    }
+}
+
+// ── both readings ──────────────────────────────────────────────────────────
+
+fn strikethrough_unescaped(_: &str, _: &ConversionOptions) -> String {
+    "~~x~~\n".to_string()
+}
+
+#[test]
+fn gfm_reading_fails_where_commonmark_passes_and_says_which() {
+    let html = "<p>~~x~~</p>";
+    let e = evaluate(
+        strikethrough_unescaped,
+        html,
+        tree(r#"para("~~x~~")"#),
+        ConversionMode::Balanced,
+    );
+    let ModeResult::Mismatch(problems) = e.result else {
+        panic!("expected a mismatch, got {:?}", e.result);
+    };
+    assert!(
+        problems.iter().all(|p| p.starts_with("(gfm) ")),
+        "{problems:#?}"
+    );
+    assert!(
+        problems.iter().any(|p| p.starts_with("(gfm) [structure]")),
+        "{problems:#?}"
+    );
+    assert!(
+        problems.iter().any(|p| p.starts_with("(gfm) [text]")),
+        "{problems:#?}"
+    );
+}
+
+#[test]
+fn id_anchor_is_skipped_only_when_preserve_ids_is_on() {
+    let md = "**<a id=\"docs-internal-guid-x\"></a>Hello world**\n";
+    for reading in crate::harness::READINGS {
+        assert_eq!(
+            structure(md, reading, true),
+            r#"para(strong("Hello world"))"#
+        );
+        assert_eq!(
+            structure(md, reading, false),
+            r#"para(strong(html("<a id=\"docs-internal-guid-x\">"), html("</a>"), "Hello world"))"#
+        );
+    }
+    // Any other inline HTML is kept even with the option on.
+    assert_eq!(
+        structure("a <b>x</b>\n", Reading::CommonMark, true),
+        r#"para("a ", html("<b>"), "x", html("</b>"))"#
+    );
+}
+
 // ── which modes drop content (§6.3: "check which; do not assume") ───────────
 
 #[test]
@@ -175,8 +261,8 @@ fn only_minimal_drops_shell_content() {
     }
     // The properties follow the documented option rather than exempting a mode.
     let minimal = ConversionOptions::for_mode(ConversionMode::Minimal);
-    assert!(properties(html, "content\n", &minimal).is_empty());
-    let found = properties(html, "content\n", &balanced());
+    assert!(properties(html, "content\n", &minimal, Reading::CommonMark).is_empty());
+    let found = properties(html, "content\n", &balanced(), Reading::CommonMark);
     assert!(found.iter().any(|v| v.starts_with("[text]")), "{found:?}");
     assert!(
         found.iter().any(|v| v.starts_with("[link-lost]")),
@@ -187,20 +273,31 @@ fn only_minimal_drops_shell_content() {
 // ── §7.2 the directory runner ──────────────────────────────────────────────
 
 #[test]
-fn runner_reports_the_violating_file_and_only_it() {
-    let (files, violations) = run_dir(&corpus_dir("corpus_proof")).expect("proof directory");
-    assert_eq!(files, ["valid.html", "violating.html"]);
-    assert!(!violations.is_empty());
+fn runner_reports_the_violating_files_and_only_them() {
+    let (files, violations) = run_dir(&harness_dir("corpus_proof")).expect("proof directory");
+    assert_eq!(
+        files,
+        ["linked_inline.html", "valid.html", "violating.html"]
+    );
     assert!(
-        violations.iter().all(|v| v.starts_with("violating.html (")),
+        !violations.iter().any(|v| v.starts_with("valid.html (")),
         "{violations:#?}"
     );
     for mode in ["balanced", "strict", "minimal", "semantic", "preserve"] {
-        let prefix = format!("violating.html ({mode}): [unterminated]");
-        assert!(
-            violations.iter().any(|v| v.starts_with(&prefix)),
-            "{prefix} missing: {violations:#?}"
-        );
+        for reading in ["commonmark", "gfm"] {
+            let has = |prefix: String| violations.iter().any(|v| v.starts_with(&prefix));
+            let unterminated = format!("violating.html ({mode}, {reading}): [unterminated]");
+            assert!(
+                has(unterminated.clone()),
+                "{unterminated} missing: {violations:#?}"
+            );
+            for dest in ["/logo", "/more"] {
+                let content = format!(
+                    "linked_inline.html ({mode}, {reading}): [link-content] link \"{dest}\""
+                );
+                assert!(has(content.clone()), "{content} missing: {violations:#?}");
+            }
+        }
     }
     println!("{}", violations.join("\n"));
 }
