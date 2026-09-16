@@ -8,8 +8,9 @@ is how output samples are written -- is ignored.
 A block that is deliberately a fragment is marked by adding `fragment` to the
 info string (```rust,fragment). The marker is what excludes it: there is no
 list of exceptions maintained elsewhere that can drift out of step with the
-documents. Rust's own `ignore` and `no_run` are honoured too, since rustdoc
-already gives them this meaning.
+documents. Rust's own `ignore` is honoured too, since rustdoc gives it this
+meaning. `no_run` is NOT a skip: it means "compile but do not run", so such a
+block is still compiled.
 
 `D-12` and `D-13` were examples that failed on their first line while the
 documentation presented them as runnable. This is the control for that.
@@ -222,8 +223,13 @@ def check_rust(blocks, workdir):
         (proj / "src" / "bin" / f"{name}.rs").write_text(
             "#![allow(unused, deprecated)]\n" + code, encoding="utf-8"
         )
+    # --keep-going: without it cargo stops scheduling after the first failing
+    # bin, so how many failures are reported depends on how many were already
+    # compiling -- five on a 32-core machine, one on a CI runner, for the same
+    # documents (RFC 031). The gate still went red either way, but a reader
+    # fixing the one reported example would go red again, one per round trip.
     r = subprocess.run(
-        ["cargo", "build", "--message-format=json"],
+        ["cargo", "build", "--keep-going", "--message-format=json"],
         cwd=proj,
         capture_output=True,
         text=True,
@@ -342,15 +348,64 @@ def check_python(blocks, workdir, python):
     return fails
 
 
-def check_js(blocks, workdir):
+# The only files any JS example reads. Checked when this was written: six of
+# the eight JS blocks read none, the other two read these. An example that
+# reads a file not listed here fails -- which is a loud false positive, never a
+# silent pass, so the list cannot hide a defect by being incomplete.
+JS_FIXTURES = ("page.html", "a.html", "b.html", "c.html")
+
+
+def check_js(blocks, workdir, binding_dir):
+    """Parse each example, then EXECUTE it as a consumer would.
+
+    `node --check` is a syntax check, and it is not what a consumer does. RFC
+    031: it passed a block that failed at load with ERR_AMBIGUOUS_MODULE_SYNTAX
+    (`require()` plus top-level `await`) and would then have hit undefined
+    variables. Neither is a syntax error, so the check could not see either.
+
+    Execution runs against the real built binding, installed as
+    `node_modules/mdka` in a fresh sandbox per example, so one example's output
+    files cannot affect another's result.
+    """
+    binding = Path(binding_dir)
+    have_binding = (binding / "index.js").exists() and any(binding.glob("*.node"))
     fails = []
     for n, b in enumerate(blocks):
         ext = "mjs" if "import " in b.code else "js"
-        f = workdir / f"ex_js{n}.{ext}"
+        box = workdir / f"js{n}"
+        box.mkdir(parents=True, exist_ok=True)
+        f = box / f"example.{ext}"
         f.write_text(b.code, encoding="utf-8")
+
         r = subprocess.run(["node", "--check", str(f)], capture_output=True, text=True)
         if r.returncode != 0:
             fails.append((b, r.stderr.strip()))
+            continue
+        if not have_binding:
+            fails.append((b, f"cannot execute: no built binding in {binding} "
+                             "(run `npm run build` in node/ first)"))
+            continue
+
+        mod = box / "node_modules" / "mdka"
+        mod.mkdir(parents=True, exist_ok=True)
+        for src in [binding / "index.js", binding / "index.d.ts", *binding.glob("*.node")]:
+            if src.exists():
+                (mod / src.name).write_bytes(src.read_bytes())
+        (mod / "package.json").write_text(
+            json.dumps({"name": "mdka", "main": "index.js", "types": "index.d.ts"}),
+            encoding="utf-8",
+        )
+        for name in JS_FIXTURES:
+            (box / name).write_text(f"<h1>{name}</h1>", encoding="utf-8")
+
+        try:
+            r = subprocess.run(["node", f.name], cwd=box,
+                               capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            fails.append((b, "timed out after 60s"))
+            continue
+        if r.returncode != 0:
+            fails.append((b, (r.stderr or r.stdout).strip()[-2000:]))
     return fails
 
 
@@ -401,7 +456,8 @@ def main():
     ap.add_argument("--root", action="append", default=None,
                     help="file or directory to scan; repeatable "
                          "(default: docs/src and README.md)")
-    ap.add_argument("--types", default="node", help="dir holding the generated index.d.ts")
+    ap.add_argument("--types", default="node",
+                    help="dir holding the built binding: index.js, index.d.ts and the .node")
     ap.add_argument("--python", default="", help="interpreter with mdka installed; enables symbol resolution")
     ap.add_argument("--list", action="store_true", help="list blocks and exit")
     args = ap.parse_args()
@@ -437,7 +493,7 @@ def main():
         wd = Path(td)
         failures += check_rust(by.get("rust", []), wd)
         failures += check_python(by.get("python", []), wd, args.python)
-        failures += check_js(by.get("js", []), wd)
+        failures += check_js(by.get("js", []), wd, args.types)
         failures += check_ts(by.get("ts", []), wd, args.types)
 
     link_problems = check_readme_links("README.md")

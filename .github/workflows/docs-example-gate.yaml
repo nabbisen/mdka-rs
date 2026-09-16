@@ -60,9 +60,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-docs-gate-
 
-      # The TypeScript examples are checked against the generated
-      # declarations, so those must exist and be current.
-      - name: Generate the TypeScript declarations
+      # Builds the native binding as well as the declarations, and BOTH are
+      # used: TypeScript examples type-check against index.d.ts, and JavaScript
+      # examples are EXECUTED against the built binding (RFC 031) -- a syntax
+      # check alone passed an example that failed at load. Without this step
+      # every JS example is reported as a failure ("no built binding"), so the
+      # gate goes red rather than quietly skipping execution.
+      - name: Build the Node binding and its TypeScript declarations
         working-directory: node
         run: |
           npm ci
@@ -88,7 +92,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/docs-venv"
           "$RUNNER_TEMP/docs-venv/bin/pip" install --no-index "$RUNNER_TEMP"/wheels/mdka-*.whl
 
-      - name: Check every runnable example in docs/src/
+      - name: Check every runnable example in docs/src/ and README.md
         run: |
           python .github/workflows/scripts/check-docs-examples.py \
             --python "$RUNNER_TEMP/docs-venv/bin/python"
