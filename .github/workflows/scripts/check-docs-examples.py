@@ -87,6 +87,42 @@ def extract(roots):
     return blocks
 
 
+LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)")
+
+
+def check_readme_links(path):
+    """Assert README.md carries no relative or root-absolute Markdown link.
+
+    Deliberately a grep, not a link checker: nothing is resolved, followed or
+    crawled. README.md is published inside the npm tarball (four files) and
+    rendered on npmjs.com and the PyPI project page, where a relative path
+    resolves against the registry rather than the repository. `./CHANGELOG.md`,
+    `./docs/` and a root-absolute logo path were all live and broken on both
+    registries at 2.2.2.
+
+    Scoped to README.md alone. `docs/src/` is rendered by mdbook, where
+    relative links are correct and expected.
+    """
+    p = Path(path)
+    if not p.exists():
+        return []
+    # Strip fenced blocks: a `](` inside a code sample is not a link.
+    text, fenced = [], False
+    for line in p.read_text(encoding="utf-8").splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        text.append("" if fenced else line)
+
+    bad = []
+    for n, line in enumerate(text, 1):
+        for target in LINK.findall(line):
+            if target.startswith("#") or "://" in target or target.startswith("mailto:"):
+                continue
+            bad.append(f"{p}:{n}: relative or root-absolute link: {target}")
+    return bad
+
+
 def runnable(blocks):
     out = []
     for b in blocks:
@@ -356,9 +392,22 @@ def main():
         failures += check_js(by.get("js", []), wd)
         failures += check_ts(by.get("ts", []), wd, args.types)
 
-    if not failures:
-        print("\nAll runnable examples OK.")
+    link_problems = check_readme_links("README.md")
+    if link_problems:
+        print(f"\n{len(link_problems)} README link problem(s):\n")
+        for msg in link_problems:
+            print("  " + msg)
+        print(
+            "\nREADME.md ships inside the npm tarball and renders on npmjs.com\n"
+            "and the PyPI project page, where a relative path resolves against the\n"
+            "registry rather than the repository. Use an absolute URL."
+        )
+
+    if not failures and not link_problems:
+        print("\nAll runnable examples OK. README links OK.")
         return 0
+    if not failures:
+        return 1
 
     print(f"\n{len(failures)} failing example(s):\n")
     for b, err in failures:

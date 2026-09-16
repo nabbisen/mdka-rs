@@ -11,6 +11,57 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Added
+
+- **`mdka --version`.** It previously failed with
+  `error: IO error: No such file or directory`, because an unrecognised
+  `-`-prefixed argument was treated as a filename. `-V` works too.
+
+### Changed
+
+- **The CLI now rejects unknown options instead of treating them as
+  filenames.** `mdka --drop-shel page.html` used to exit 0 having converted
+  nothing; it now prints `error: unknown option '--drop-shel'` with the usage
+  text and exits 1.
+
+  **This can break an existing invocation.** A file whose name begins with `-`
+  was previously converted and is now rejected. Put `--` before it:
+
+  ```
+  mdka -- -weird.html
+  ```
+
+  A bare `-` is still passed through as a path, unchanged.
+
+### Fixed
+
+- **The README's Node.js Quick Start did not parse.** It declared `const md`
+  twice, called `htmlToMarkdownWithAsync` without importing it, referenced an
+  undefined `html`, and used top-level `await` in a CommonJS example. Its Rust
+  and Python examples also used an undefined `html`. All of them now run as
+  written. This is the file rendered on GitHub, crates.io, npmjs.com and PyPI.
+- **README links and the logo now resolve outside GitHub.** The logo path was
+  root-absolute and `./docs/`, `./CHANGELOG.md` and `./ROADMAP.md` are not in
+  the published npm tarball, so all four were broken on npmjs.com and the PyPI
+  project page. They are absolute URLs now, and CI fails if a relative link is
+  reintroduced.
+- **The Python and Node.js guides documented two options that do not exist.**
+  `preserve_unknown_attrs` and `drop_presentation_attrs` are fields of the Rust
+  `ConversionOptions` but are not exposed by either binding: Python raises
+  `TypeError`, TypeScript reports `TS2353`. Three of the five deprecated
+  attribute options are reachable from the bindings, and the pages now say
+  which.
+- **`mdka --help` no longer shows a multi-file example that fails.**
+  `mdka --mode minimal --drop-shell *.html` needs `-o` for more than one input,
+  two lines below the rule saying so. Fixed in `--help` and in the README.
+- **`installation.md` no longer tells you to run `npm run build` on
+  unsupported platforms.** The published npm package contains four files and no
+  Rust source, so that could never work. It now names the three platforms with
+  prebuilt bindings and what is actually possible elsewhere.
+- **The README now carries two caveats it previously omitted**: that
+  `Balanced`, `Strict` and `Preserve` currently produce identical output, and
+  that tables are not yet converted.
+
 ## [2.2.2] - 2026-09-16
 
 ### Fixed
