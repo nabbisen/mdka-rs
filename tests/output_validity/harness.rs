@@ -1,0 +1,236 @@
+//! The harness: HTML → mdka → Markdown → pulldown-cmark → events → assertions.
+//!
+//! Nothing here compares Markdown bytes. Every check reads the parsed event
+//! stream, either as a structure tree (`structure`) or through the intent-free
+//! properties (`properties`).
+
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+use mdka::options::{ConversionMode, ConversionOptions};
+
+mod properties;
+mod structure;
+
+pub use properties::properties;
+pub use structure::structure;
+
+/// Every mode. A cell is evaluated in each, so a fix that lands in one mode
+/// only is visible as a partial result rather than a silent pass.
+pub const MODES: [ConversionMode; 5] = [
+    ConversionMode::Balanced,
+    ConversionMode::Strict,
+    ConversionMode::Minimal,
+    ConversionMode::Semantic,
+    ConversionMode::Preserve,
+];
+
+/// A converter under test. Real cells use [`mdka_convert`]; the helper proofs
+/// substitute stubs.
+pub type Convert = fn(&str, &ConversionOptions) -> String;
+
+pub fn mdka_convert(html: &str, opts: &ConversionOptions) -> String {
+    mdka::html_to_markdown_with(html, opts)
+}
+
+// ─── Expectations and owners ───────────────────────────────────────────────
+
+/// What a cell asserts beyond the properties.
+#[derive(Clone, Copy)]
+pub enum Expect {
+    /// The parsed structure, in `structure` notation, must equal this.
+    Tree(&'static str),
+    /// The intended structure is a recorded question, not a decision. Only
+    /// the intent-free properties are asserted.
+    Undecided(&'static str),
+}
+
+pub const fn tree(s: &'static str) -> Expect {
+    Expect::Tree(s)
+}
+
+pub const fn undecided(question: &'static str) -> Expect {
+    Expect::Undecided(question)
+}
+
+/// Who fixes a known defect.
+#[derive(Clone, Copy, Debug)]
+pub enum Owner {
+    /// Inline composition: inline elements inside links, bare `<pre>`.
+    Rfc024,
+    /// Emphasis (or another inline) around block content.
+    Rfc028,
+    /// Escaping, destinations, fences. A ROADMAP row; no RFC file yet.
+    Rfc010Planned,
+    /// Nobody. Listed in the review request.
+    Unowned,
+}
+
+impl std::fmt::Display for Owner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Owner::Rfc024 => "RFC 024",
+            Owner::Rfc028 => "RFC 028",
+            Owner::Rfc010Planned => "RFC 010 (planned)",
+            Owner::Unowned => "UNOWNED",
+        })
+    }
+}
+
+// ─── Evaluation ────────────────────────────────────────────────────────────
+
+/// The result of one cell in one mode.
+#[derive(Debug)]
+pub enum ModeResult {
+    /// Structure and properties as intended.
+    Pass,
+    /// Evaluated, and the output is not what the HTML meant.
+    Mismatch(Vec<String>),
+    /// Could not be evaluated: the conversion or the harness panicked. Never
+    /// counts as "still defective".
+    Error(String),
+}
+
+pub struct Evaluation {
+    pub mode: ConversionMode,
+    pub markdown: Option<String>,
+    pub result: ModeResult,
+}
+
+fn panic_message(p: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = p.downcast_ref::<&str>() {
+        (*s).to_string()
+    } else if let Some(s) = p.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "non-string panic payload".to_string()
+    }
+}
+
+pub fn evaluate(convert: Convert, html: &str, expect: Expect, mode: ConversionMode) -> Evaluation {
+    let opts = ConversionOptions::for_mode(mode);
+    let md = match catch_unwind(AssertUnwindSafe(|| convert(html, &opts))) {
+        Ok(md) => md,
+        Err(p) => {
+            return Evaluation {
+                mode,
+                markdown: None,
+                result: ModeResult::Error(format!("conversion panicked: {}", panic_message(p))),
+            };
+        }
+    };
+    let checked = catch_unwind(AssertUnwindSafe(|| {
+        let mut problems = Vec::new();
+        if let Expect::Tree(want) = expect {
+            let got = structure(&md);
+            if got != want {
+                problems.push(format!(
+                    "[structure] expected {want}\n              got      {got}"
+                ));
+            }
+        }
+        problems.extend(properties(html, &md, &opts));
+        problems
+    }));
+    let result = match checked {
+        Ok(p) if p.is_empty() => ModeResult::Pass,
+        Ok(p) => ModeResult::Mismatch(p),
+        Err(p) => ModeResult::Error(format!("harness panicked: {}", panic_message(p))),
+    };
+    Evaluation {
+        mode,
+        markdown: Some(md),
+        result,
+    }
+}
+
+fn question(expect: Expect) -> String {
+    match expect {
+        Expect::Tree(_) => String::new(),
+        Expect::Undecided(q) => format!("\n  structure undecided: {q}"),
+    }
+}
+
+fn describe(e: &Evaluation) -> String {
+    let md = e
+        .markdown
+        .as_deref()
+        .map_or("<none>".to_string(), |m| format!("{m:?}"));
+    let body = match &e.result {
+        ModeResult::Pass => "pass".to_string(),
+        ModeResult::Mismatch(p) => p.join("\n    "),
+        ModeResult::Error(err) => format!("ERROR: {err}"),
+    };
+    format!("  mode {}: markdown {md}\n    {body}", e.mode)
+}
+
+/// Asserts the cell is correct in every mode.
+pub fn check(html: &str, expect: Expect) {
+    let evals: Vec<_> = MODES
+        .iter()
+        .map(|&m| evaluate(mdka_convert, html, expect, m))
+        .collect();
+    if evals.iter().any(|e| !matches!(e.result, ModeResult::Pass)) {
+        let report: Vec<_> = evals
+            .iter()
+            .filter(|e| !matches!(e.result, ModeResult::Pass))
+            .map(describe)
+            .collect();
+        panic!(
+            "cell failed\n  html {html:?}{}\n{}",
+            question(expect),
+            report.join("\n")
+        );
+    }
+}
+
+/// A strict expected failure. `Ok` only while the defect is present, as
+/// recorded, in every mode. Fixed in any mode, or not evaluable in any mode:
+/// `Err`.
+pub fn known_defect_with(
+    convert: Convert,
+    owner: Owner,
+    reason: &str,
+    html: &str,
+    expect: Expect,
+) -> Result<String, String> {
+    let evals: Vec<_> = MODES
+        .iter()
+        .map(|&m| evaluate(convert, html, expect, m))
+        .collect();
+    let errors: Vec<_> = evals
+        .iter()
+        .filter(|e| matches!(e.result, ModeResult::Error(_)))
+        .map(describe)
+        .collect();
+    if !errors.is_empty() {
+        return Err(format!(
+            "known defect could not be evaluated -- this is not \"still defective\" (owner: {owner})\n  html {html:?}\n{}",
+            errors.join("\n")
+        ));
+    }
+    let passing: Vec<_> = evals
+        .iter()
+        .filter(|e| matches!(e.result, ModeResult::Pass))
+        .map(|e| e.mode.to_string())
+        .collect();
+    if !passing.is_empty() {
+        return Err(format!(
+            "known defect now passes -- remove the known_defect marker (owner: {owner}); passing modes: {}\n  html {html:?}\n  recorded reason: {reason}",
+            passing.join(", ")
+        ));
+    }
+    let report: Vec<_> = evals.iter().map(describe).collect();
+    Ok(format!(
+        "KNOWN DEFECT (owner: {owner}): {reason}\n  html {html:?}{}\n{}",
+        question(expect),
+        report.join("\n")
+    ))
+}
+
+pub fn known_defect(owner: Owner, reason: &str, html: &str, expect: Expect) {
+    match known_defect_with(mdka_convert, owner, reason, html, expect) {
+        // Printed for the inventory capture (`-- --nocapture`); silent otherwise.
+        Ok(report) => println!("{report}"),
+        Err(e) => panic!("{e}"),
+    }
+}

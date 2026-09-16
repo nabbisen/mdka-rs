@@ -53,6 +53,10 @@ ego-tree = "0.11"
 rayon = { version = "1", optional = true }
 
 [dev-dependencies]
+# RFC 025 output-validity harness (tests/output_validity/). The harness models
+# THIS parser's reading of CommonMark: an upgrade can change which cells pass,
+# so the pin moves only as a reviewed change, re-running the whole harness.
+pulldown-cmark = { version = "=0.13.4", default-features = false }
 criterion = { version = "0.8", features = ["html_reports"] }
 rand = "0.10"
 
