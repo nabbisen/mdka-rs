@@ -38,10 +38,30 @@ class Block:
         return f"{self.path}:{self.line}"
 
 
-def extract(root):
-    """Yield every fenced block under `root`, in document order."""
+def markdown_files(roots):
+    """Every markdown file under each root. A root may be a file or a directory.
+
+    README.md is a root in its own right, not something reachable from
+    `docs/src`. It renders on GitHub, crates.io, npmjs.com and PyPI, and it was
+    invisible to this gate until RFC 029 -- the gate built to catch broken
+    examples was pointed at a directory that excluded the most-read file in the
+    project.
+    """
+    seen, out = set(), []
+    for root in roots:
+        p = Path(root)
+        found = sorted(p.rglob("*.md")) if p.is_dir() else [p]
+        for md in found:
+            if md.resolve() not in seen:
+                seen.add(md.resolve())
+                out.append(md)
+    return out
+
+
+def extract(roots):
+    """Yield every fenced block under `roots`, in document order."""
     blocks = []
-    for md in sorted(Path(root).rglob("*.md")):
+    for md in markdown_files(roots):
         lines = md.read_text(encoding="utf-8").splitlines()
         i = 0
         while i < len(lines):
@@ -172,21 +192,63 @@ def check_python(blocks, workdir, python):
         except SyntaxError:
             continue
         names = set()
+        imported = set()
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "mdka":
                 names.update(a.name for a in node.names)
+                imported.update(a.asname or a.name for a in node.names)
             elif (
                 isinstance(node, ast.Attribute)
                 and isinstance(node.value, ast.Name)
                 and node.value.id == "mdka"
             ):
                 names.add(node.attr)
-        if not names:
+
+        # Keyword arguments, not just symbols. `html_to_markdown_with` resolves
+        # whether or not `preserve_unknown_attrs=True` is a real parameter --
+        # and it is not; it raises TypeError. Documenting a call that raises is
+        # worse than documenting nothing, so bind the documented kwargs against
+        # the installed signature (RFC 029 §4.2).
+        calls = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not node.keywords:
+                continue
+            fn = node.func
+            if isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name) and fn.value.id == "mdka":
+                target = fn.attr
+            elif isinstance(fn, ast.Name) and fn.id in imported:
+                target = fn.id
+            else:
+                continue
+            kws = [k.arg for k in node.keywords if k.arg]
+            if kws:
+                calls.append((target, kws))
+
+        if not names and not calls:
             continue
         probe = (
-            "import mdka, sys\n"
+            "import inspect, mdka, sys\n"
             f"missing = [n for n in {sorted(names)!r} if not hasattr(mdka, n)]\n"
-            "sys.exit('missing from installed mdka: ' + ', '.join(missing)) if missing else None\n"
+            "if missing:\n"
+            "    sys.exit('missing from installed mdka: ' + ', '.join(missing))\n"
+            f"problems = []\n"
+            f"for fname, kws in {calls!r}:\n"
+            "    fn = getattr(mdka, fname, None)\n"
+            "    if fn is None:\n"
+            "        problems.append(fname + ': not in installed mdka'); continue\n"
+            "    try:\n"
+            "        sig = inspect.signature(fn)\n"
+            "    except (TypeError, ValueError):\n"
+            "        continue\n"
+            "    params = sig.parameters\n"
+            "    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):\n"
+            "        continue\n"
+            "    bad = [k for k in kws if k not in params]\n"
+            "    if bad:\n"
+            "        problems.append(fname + '() rejects: ' + ', '.join(bad))\n"
+            "if problems:\n"
+            "    sys.exit('documented call does not match the installed signature -- '\n"
+            "             + '; '.join(problems))\n"
         )
         pf = workdir / f"probe{n}.py"
         pf.write_text(probe, encoding="utf-8")
@@ -252,7 +314,9 @@ def check_ts(blocks, workdir, types_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default="docs/src")
+    ap.add_argument("--root", action="append", default=None,
+                    help="file or directory to scan; repeatable "
+                         "(default: docs/src and README.md)")
     ap.add_argument("--types", default="node", help="dir holding the generated index.d.ts")
     ap.add_argument("--python", default="", help="interpreter with mdka installed; enables symbol resolution")
     ap.add_argument("--list", action="store_true", help="list blocks and exit")
@@ -265,7 +329,8 @@ def main():
         print(f"error: --python {args.python} does not exist", file=sys.stderr)
         return 2
 
-    blocks = extract(args.root)
+    roots = args.root or ["docs/src", "README.md"]
+    blocks = extract(roots)
     run = runnable(blocks)
 
     if args.list:
