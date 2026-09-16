@@ -215,3 +215,18 @@ to enforce and to review than a rule with exemptions.
 fence are the five RFC 031 blocks, three lines each. No fragment uses them.
 
 This is stricter than the accepted text, never looser.
+
+## Amendment — from RFC 032 review, 2026-09-16: pin TypeScript to `latest`
+
+RFC 032 pinned the docs gate's TypeScript to `typescript@5.9.3` and compiles with
+that version's `tsc --init` options. `npm view typescript dist-tags` shows
+`latest: 7.0.2` — what a reader starting a project today installs.
+
+§4's pinning policy applies to both pins alike: **pin exactly, state what is
+modelled, and re-derive the model when the pin moves.** Move `TYPESCRIPT` to
+`typescript@7.0.2`.
+
+Checked by the architect before amending: `tsc --init` in 7.0.2 writes the same
+compile-relevant options as 5.9.3; the corrected `usage-nodejs.md` example
+compiles under 7.0.2; the pre-fix example fails with the same two TS1484 errors.
+The move loses no strictness on the one TypeScript example.

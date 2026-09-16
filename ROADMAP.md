@@ -436,8 +436,9 @@ text run.
 |---|---|---|---|---|
 | 030 | Crates package gate: verify the workspace, not the registry | P1 | S | ✅ implemented & approved |
 | 031 | Docs example gate must compile what mdBook publishes | P1 | M | ✅ implemented & approved; D6 → RFC 033 |
-| 032 | Gates report every failure; execute Python/TS examples | P2 | S | **next** — before 025 |
-| 033 | Published docs: the source is what the reader gets | P1 | S | accepted — **queued behind 032** (same gate script) |
+| 032 | Gates report every failure; execute Python/TS examples | P2 | S | ✅ implemented & approved |
+| 033 | Published docs: the source is what the reader gets | P1 | S | **next** |
+| 034 | PyPI: declared wheel matrix, checked where published | P1 | M | *proposed* — owner decisions; must land before `2.3.0` is cut |
 | 025 | Markdown output-validity harness | **P0** | M | before 024 |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
@@ -454,7 +455,8 @@ rediscovered at the checkpoint:
   regardless of when it is merged.
 - Review the `[Unreleased]` CHANGELOG entries for RFC 031, written by the
   architect during review rather than by the implementer.
-- Move RFC 030, 031 and 032 to `done/`.
+- Move RFC 030, 031, 032 and 033 to `done/`.
+- **RFC 034 must be implemented before the cut** — the upload is irreversible.
 - ~~D6 and the hidden-lines browser check (owner)~~ — superseded by RFC 033, which removes both dependencies instead of verifying them once.
 
 **Reordered by the 2026-08-31 audit.** Tables were the largest *known* gap; the

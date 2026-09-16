@@ -86,12 +86,17 @@ Mirror RFC 031's JS approach:
 Same rule as RFC 031's JS fixtures: an example reading a file not in the fixture
 set must **fail loudly**, never pass.
 
-### 3.3 Not urgent — stated honestly
+### 3.3 ~~Not urgent~~ — corrected at review
 
-The 2.2.3 consumer pass executed every Python and TS example and all passed. This
-closes a gap for *future* examples; it repairs nothing currently broken. That is
-why it is P2 on its own merits and only moves early because it shares an RFC with
-§2.
+> **Corrected 2026-09-16.** This section originally said the 2.2.3 consumer pass
+> "executed every Python and TS example and all passed", and on that basis called
+> §3 a fix for nothing currently broken. **The report does not say that** — it
+> says *"Python — all claims passed"*, meaning the behavioural claims. The
+> architect paraphrased it into something stronger.
+>
+> Implementing §3 found **two live defects** the old gate passed:
+> `usage-python.md:28` raised `NameError`, and `usage-nodejs.md:166` failed TS1484
+> under `tsc --init` settings.
 
 ## 4. §6 statement required
 

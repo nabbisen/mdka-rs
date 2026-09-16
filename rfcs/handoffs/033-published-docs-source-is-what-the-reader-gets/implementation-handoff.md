@@ -8,20 +8,14 @@
 
 ---
 
-## 🛑 0. Do not start until RFC 032 is approved
+## 0. Preconditions — met
 
-**RFC 032 and RFC 033 both edit `.github/workflows/scripts/check-docs-examples.py`.**
-Working them in parallel means one of them rebases the other's gate changes, and
-a gate changed twice without review in between is how a rule quietly goes
-missing.
+~~Do not start until RFC 032 is approved.~~ **RFC 032 approved 2026-09-16**
+(`.git-exclude/reviewed/032-gates-report-everything/README.md`).
+**This handoff is now an instruction to start.**
 
-**Start when** `.git-exclude/reviewed/032-gates-report-everything/README.md`
-exists with an approved verdict. Until then this handoff is **queued, not
-dispatched**, per the rule recorded at RFC 028: a handoff present in
-`rfcs/handoffs/` is otherwise an instruction to start.
-
-When you do start, **rebase your reading on the post-032 gate** — line numbers
-below are from `d73b1be` and will have moved.
+RFC 032 changed `check-docs-examples.py` substantially (+328/−109). **Every line
+number below is from `d73b1be`, before that change — re-derive all of them.**
 
 ## 1. Why
 
@@ -132,7 +126,7 @@ allowed.
 - **Green:** a `docs/src/` page with an in-page anchor is unaffected.
 - Restore, confirm clean.
 
-## 4. Part C — pin mdBook
+## 4. Part C — pins: mdBook and TypeScript
 
 `.github/workflows/docs.yaml:35`: `--vers "^0.5"` → `--vers "=0.5.4"`.
 
@@ -144,6 +138,22 @@ one and say so.
 In the gate's module docstring, next to the wrapping and hidden-line rules, state
 the modelled version and that an mdBook upgrade must re-check both rules and the
 copy-button behaviour (RFC 033 §2.2) before the pin moves.
+
+### C.2 TypeScript — amendment from the RFC 032 review
+
+`TYPESCRIPT = "typescript@5.9.3"` → **`"typescript@7.0.2"`** — `npm view
+typescript dist-tags` shows it as `latest`.
+
+1. Run `npx --yes --package typescript@7.0.2 tsc --init` in a scratch directory
+   and **diff its compile-relevant options against `TSC_INIT_OPTIONS`**. The
+   architect found them identical; confirm rather than trust. If they differ,
+   take 7.0.2's.
+2. Update the comment above `TSC_INIT_OPTIONS` so it names 7.0.2.
+3. **Prove strictness is kept:** the pre-fix `usage-nodejs.md:166` example
+   (value imports of `JsConversionOptions`, `ConvertResult`) must fail TS1484
+   under the new pin; the current example must pass.
+4. State the upgrade policy in the comment, in the same words as mdBook's:
+   pin exactly, re-derive `tsc --init` when the pin moves.
 
 ## 5. CHANGELOG
 
@@ -160,14 +170,15 @@ as code that compiles. Mention the README links in the same section.
 
 ## 7. Acceptance checklist
 
-- [ ] §0 honoured — started only after RFC 032's approval; line numbers re-derived
+- [ ] §0 — line numbers re-derived against the post-032 script
 - [ ] A.1 scan re-run at start; result stated
 - [ ] A.2 every hidden-line block rewritten as a visible program; each diff scaffolding-only
 - [ ] A.3 rejection over **every** `rust` fence, before skip markers apply; shared detection helper
 - [ ] A.4 red ×3 (runnable, fragment, ignore) with file:line; attributes green; invariant asserted
 - [ ] B.1 links replaced; URL fetched first
 - [ ] B.2/B.3 fragment rejection red on reintroduction; `docs/src/` anchors unaffected
-- [ ] C pinned to the version CI actually resolved; modelled version in the docstring
+- [ ] C mdBook pinned to the version CI actually resolved; modelled version in the docstring
+- [ ] C.2 TypeScript pinned to 7.0.2; `tsc --init` options re-derived; pre-fix example still fails TS1484
 - [ ] §5 CHANGELOG corrected
 - [ ] Docs gate runnable count unchanged; all six workflows green
 - [ ] **Deployed-site check, no browser needed:** after merge, fetch each of the five pages and confirm `class="boring"` count is **0**
