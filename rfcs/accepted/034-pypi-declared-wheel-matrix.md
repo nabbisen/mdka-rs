@@ -90,10 +90,20 @@ Read from the vendored `pyo3-0.28.3` / `pyo3-build-config-0.28.3` sources:
 - **Free-threaded CPython, PyPy and GraalPy do not support abi3**
   (`impl_.rs`: *"PyPy, GraalPy, and the free-threaded build don't support abi3"*).
   Those need version-specific wheels, one per interpreter version.
-- `python/src/lib.rs:329` is a plain `#[pymodule]` — **no `gil_used = false`**.
-  Per PyO3's documented default, importing it on a free-threaded interpreter
-  re-enables the GIL. So the free-threaded wheels shipped today deliver no
-  free-threading. *Implementer to confirm by import on a `3.14t` interpreter.*
+- `python/src/lib.rs:329` is a plain `#[pymodule]` with no `gil_used` option.
+
+> **Corrected at review, 2026-09-16.** This bullet originally said that such a
+> module re-enables the GIL on a free-threaded interpreter, "per PyO3's documented
+> default". **In PyO3 0.28 the default is the opposite:**
+> `pyo3-macros-backend-0.28.3/src/module.rs:392` —
+> `options.gil_used.is_some_and(|op| op.value.value)`, i.e. `false` when absent,
+> so the module declares itself GIL-free. The implementer showed it on the
+> published 2.2.3 `cp314t` wheel under CPython 3.14.7t: `sys._is_gil_enabled()`
+> stays `False` after import. The architect wrote the original from memory.
+>
+> Consequence: 2.2.3's free-threaded wheels ran without the GIL, unreviewed. After
+> 2.3.0 no such wheel is published, but the sdist is — see slice `034b`, which
+> declares `gil_used = true` explicitly.
 
 ## 4. Design
 
@@ -303,3 +313,15 @@ File overlap: `release-pypi.yaml`, `python/Cargo.toml`, `pyproject.toml`,
 RFC 033** (docs gate script, `docs.yaml`, three Rust doc pages, `README.md`) or
 with the engine RFCs' test and `src/` files. It can therefore follow RFC 033
 directly, or interleave with the engine work; it should not wait until after it.
+
+---
+
+## Addendum — slice `034b` (2026-09-16, review of slice 034)
+
+Declare `#[pymodule(gil_used = true)]` explicitly in `python/src/lib.rs`, so a
+source build on free-threaded CPython — which the installation page directs users
+to — requires the GIL rather than inheriting PyO3 0.28's unreviewed GIL-free
+default. Consistent with the owner's decision that free-threaded CPython is not
+supported. A `src/` change of one attribute; no effect on regular CPython.
+
+Handoff: [`followup-034b.md`](../handoffs/034-pypi-declared-wheel-matrix/followup-034b.md).

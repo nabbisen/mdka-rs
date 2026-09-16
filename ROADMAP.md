@@ -438,7 +438,7 @@ text run.
 | 031 | Docs example gate must compile what mdBook publishes | P1 | M | ✅ implemented & approved; D6 → RFC 033 |
 | 032 | Gates report every failure; execute Python/TS examples | P2 | S | ✅ implemented & approved |
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
-| 034 | PyPI: declared wheel matrix, checked where published | P1 | M | **next** — floor 3.10 (trigger-raised); no free-threaded/PyPy wheels; before the cut |
+| 034 | PyPI: declared wheel matrix, checked where published | P1 | M | slice 034 ✅; **034b next** (explicit `gil_used = true`); before the cut |
 | 025 | Markdown output-validity harness | **P0** | M | before 024 |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
