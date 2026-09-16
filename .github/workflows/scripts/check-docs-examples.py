@@ -272,18 +272,53 @@ def check_rust(blocks, workdir):
     return [(names.get(k), v) for k, v in failed.items()]
 
 
-def check_python(blocks, workdir, python):
-    """Syntax-check each example, then resolve every `mdka` symbol it names.
+# The only files any Python example reads, listed explicitly -- see JS_FIXTURES.
+#
+# `missing.html` is deliberately ABSENT. usage-python.md's Error Handling example
+# reads it on purpose and catches mdka.MdkaError. A fixture set built from "every
+# filename any example mentions" would create it; the example would then convert
+# successfully, never enter its `except` branch, exit 0, and pass without
+# exercising the thing it documents.
+PY_FIXTURES = ("page.html", "a.html", "b.html", "c.html")
 
-    Executing them outright is not possible -- several convert files that do
-    not exist here, so the run would assert on the fixture rather than on the
-    example. Resolving the symbols against the *installed* package is the part
-    that catches a documented function which does not exist, which syntax
-    alone would pass.
+# One targeted output check, not a general output-matching mechanism: an example
+# that names this file exists to show the error path, and exit 0 is also what a
+# broken error path produces. If no example names it any more, the gate fails
+# rather than letting the check silently stop applying.
+PY_ERROR_PATH = ("missing.html", "Conversion failed:")
+
+
+def check_python(blocks, workdir, python):
+    """Syntax-check, resolve symbols and kwargs, then EXECUTE each example.
+
+    Resolution first, because its messages are specific: a documented function
+    or keyword argument that the installed package does not have. Then each
+    example runs with the `--python` interpreter, in a fresh temporary directory
+    holding PY_FIXTURES, with a timeout -- as a reader running the page would.
+    RFC 032: resolution alone passed usage-python.md:28, which raises NameError.
+
+    SUBSTITUTIONS, per RFC 031 section 6:
+      - It runs a wheel built from this tree, not the package on PyPI.
+        Packaging defects in that wheel are the `pypi wheel gate`'s; what is
+        actually published is checked by neither gate, only by the release
+        consumer pass.
+      - Fixtures are one-line files, not real documents.
+      - Exit 0 is the pass condition, plus the one PY_ERROR_PATH output check.
+
+    NOT PARITY WITH check_js. There, an example reading a file outside the
+    fixtures fails loudly. Here, reading an unknown file raises MdkaError: loud
+    (exit 1) if uncaught, but an example that catches it exits 0 and passes.
+    PY_ERROR_PATH covers the one example written that way today; a new one
+    would need its own check.
     """
     import ast
 
+    if not python:
+        return [(b, "cannot execute: no --python interpreter with mdka installed")
+                for b in blocks]
+
     fails = []
+    error_path_seen = False
     for n, b in enumerate(blocks):
         f = workdir / f"ex{n}.py"
         f.write_text(b.code, encoding="utf-8")
@@ -293,77 +328,114 @@ def check_python(blocks, workdir, python):
         if r.returncode != 0:
             fails.append((b, r.stderr.strip()))
             continue
-        if not python:
+        resolution = _python_resolution(b, n, workdir, python)
+        if resolution:
+            fails.append((b, resolution))
             continue
+
+        box = workdir / f"py{n}"
+        box.mkdir(parents=True, exist_ok=True)
+        for name in PY_FIXTURES:
+            (box / name).write_text(f"<h1>{name}</h1>", encoding="utf-8")
+        (box / "example.py").write_text(b.code, encoding="utf-8")
         try:
-            tree = ast.parse(b.code)
-        except SyntaxError:
+            r = subprocess.run([python, "example.py"], cwd=box,
+                               capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            fails.append((b, "timed out after 60s"))
             continue
-        names = set()
-        imported = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "mdka":
-                names.update(a.name for a in node.names)
-                imported.update(a.asname or a.name for a in node.names)
-            elif (
-                isinstance(node, ast.Attribute)
-                and isinstance(node.value, ast.Name)
-                and node.value.id == "mdka"
-            ):
-                names.add(node.attr)
-
-        # Keyword arguments, not just symbols. `html_to_markdown_with` resolves
-        # whether or not `preserve_unknown_attrs=True` is a real parameter --
-        # and it is not; it raises TypeError. Documenting a call that raises is
-        # worse than documenting nothing, so bind the documented kwargs against
-        # the installed signature (RFC 029 §4.2).
-        calls = []
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call) or not node.keywords:
-                continue
-            fn = node.func
-            if isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name) and fn.value.id == "mdka":
-                target = fn.attr
-            elif isinstance(fn, ast.Name) and fn.id in imported:
-                target = fn.id
-            else:
-                continue
-            kws = [k.arg for k in node.keywords if k.arg]
-            if kws:
-                calls.append((target, kws))
-
-        if not names and not calls:
+        if r.returncode != 0:
+            fails.append((b, (r.stderr or r.stdout).strip()[-2000:]))
             continue
-        probe = (
-            "import inspect, mdka, sys\n"
-            f"missing = [n for n in {sorted(names)!r} if not hasattr(mdka, n)]\n"
-            "if missing:\n"
-            "    sys.exit('missing from installed mdka: ' + ', '.join(missing))\n"
-            f"problems = []\n"
-            f"for fname, kws in {calls!r}:\n"
-            "    fn = getattr(mdka, fname, None)\n"
-            "    if fn is None:\n"
-            "        problems.append(fname + ': not in installed mdka'); continue\n"
-            "    try:\n"
-            "        sig = inspect.signature(fn)\n"
-            "    except (TypeError, ValueError):\n"
-            "        continue\n"
-            "    params = sig.parameters\n"
-            "    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):\n"
-            "        continue\n"
-            "    bad = [k for k in kws if k not in params]\n"
-            "    if bad:\n"
-            "        problems.append(fname + '() rejects: ' + ', '.join(bad))\n"
-            "if problems:\n"
-            "    sys.exit('documented call does not match the installed signature -- '\n"
-            "             + '; '.join(problems))\n"
-        )
-        pf = workdir / f"probe{n}.py"
-        pf.write_text(probe, encoding="utf-8")
-        pr = subprocess.run([python, str(pf)], capture_output=True, text=True)
-        if pr.returncode != 0:
-            fails.append((b, (pr.stdout + pr.stderr).strip()))
+
+        name, expected = PY_ERROR_PATH
+        if name in b.code:
+            error_path_seen = True
+            if expected not in r.stdout:
+                fails.append((b, f"exited 0 but did not print {expected!r}: the "
+                                 "error path it documents was not exercised\n"
+                                 f"stdout: {r.stdout.strip()!r}"))
+
+    if blocks and not error_path_seen:
+        fails.append((blocks[0], f"no Python example names {PY_ERROR_PATH[0]!r} any more; "
+                                 "the error-path output check no longer applies -- "
+                                 "update PY_ERROR_PATH"))
     return fails
+
+
+def _python_resolution(b, n, workdir, python):
+    """Return an error message if a documented symbol or kwarg does not resolve."""
+    import ast
+
+    try:
+        tree = ast.parse(b.code)
+    except SyntaxError:
+        return None
+    names = set()
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "mdka":
+            names.update(a.name for a in node.names)
+            imported.update(a.asname or a.name for a in node.names)
+        elif (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "mdka"
+        ):
+            names.add(node.attr)
+
+    # Keyword arguments, not just symbols. `html_to_markdown_with` resolves
+    # whether or not `preserve_unknown_attrs=True` is a real parameter --
+    # and it is not; it raises TypeError. Documenting a call that raises is
+    # worse than documenting nothing, so bind the documented kwargs against
+    # the installed signature (RFC 029 §4.2).
+    calls = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not node.keywords:
+            continue
+        fn = node.func
+        if isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name) and fn.value.id == "mdka":
+            target = fn.attr
+        elif isinstance(fn, ast.Name) and fn.id in imported:
+            target = fn.id
+        else:
+            continue
+        kws = [k.arg for k in node.keywords if k.arg]
+        if kws:
+            calls.append((target, kws))
+
+    if not names and not calls:
+        return None
+    probe = (
+        "import inspect, mdka, sys\n"
+        f"missing = [n for n in {sorted(names)!r} if not hasattr(mdka, n)]\n"
+        "if missing:\n"
+        "    sys.exit('missing from installed mdka: ' + ', '.join(missing))\n"
+        f"problems = []\n"
+        f"for fname, kws in {calls!r}:\n"
+        "    fn = getattr(mdka, fname, None)\n"
+        "    if fn is None:\n"
+        "        problems.append(fname + ': not in installed mdka'); continue\n"
+        "    try:\n"
+        "        sig = inspect.signature(fn)\n"
+        "    except (TypeError, ValueError):\n"
+        "        continue\n"
+        "    params = sig.parameters\n"
+        "    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):\n"
+        "        continue\n"
+        "    bad = [k for k in kws if k not in params]\n"
+        "    if bad:\n"
+        "        problems.append(fname + '() rejects: ' + ', '.join(bad))\n"
+        "if problems:\n"
+        "    sys.exit('documented call does not match the installed signature -- '\n"
+        "             + '; '.join(problems))\n"
+    )
+    pf = workdir / f"probe{n}.py"
+    pf.write_text(probe, encoding="utf-8")
+    pr = subprocess.run([python, str(pf)], capture_output=True, text=True)
+    if pr.returncode != 0:
+        return (pr.stdout + pr.stderr).strip()
+    return None
 
 
 # The only files any JS example reads. Checked when this was written: six of
@@ -444,45 +516,95 @@ def check_js(blocks, workdir, binding_dir):
     return fails
 
 
-def check_ts(blocks, workdir, types_dir):
-    """Type-check TypeScript examples against the real generated index.d.ts.
+# TypeScript is pinned so the gate is reproducible, and compiled with the options
+# `tsc --init` writes in that version. That is what a reader starting a project
+# the standard way and pasting the page's example has. RFC 032: the gate used to
+# compile with looser, hand-picked flags; under these, usage-nodejs.md's
+# example failed with TS1484 (`verbatimModuleSyntax`) while the gate was green.
+TYPESCRIPT = "typescript@5.9.3"
+TSC_INIT_OPTIONS = {
+    # Written by `tsc --init` in TypeScript 5.9.3, except output-only options
+    # (sourceMap, declaration, declarationMap, jsx) which cannot affect whether
+    # the example compiles or runs.
+    "module": "nodenext",
+    "target": "esnext",
+    "types": [],
+    "noUncheckedIndexedAccess": True,
+    "exactOptionalPropertyTypes": True,
+    "strict": True,
+    "verbatimModuleSyntax": True,
+    "isolatedModules": True,
+    "noUncheckedSideEffectImports": True,
+    "moduleDetection": "force",
+    "skipLibCheck": True,
+}
 
-    `node --check` cannot parse TypeScript, so it would reject these for their
-    annotations rather than for anything real. `D-13` was a TS example
-    importing a type the bindings never exported -- only a type-checker that
-    resolves `mdka` to the shipped declarations can catch that.
+
+def check_ts(blocks, workdir, binding_dir):
+    """Type-check, emit and EXECUTE each TypeScript example as a consumer would.
+
+    Each example gets a fresh sandbox: a `"type": "module"` package, the built
+    binding and its index.d.ts installed as `node_modules/mdka`, and a
+    tsconfig.json holding TSC_INIT_OPTIONS. `tsc -p .` then emits JavaScript,
+    which runs with `node`. D-13 -- a type the bindings never exported -- is a
+    compile error here; an example that compiles but throws at load or run is an
+    execution error.
+
+    Other plausible settings, checked when this was written: CommonJS output
+    (`--module commonjs`, no `"type"`) compiled and ran the same example; ESM
+    without `verbatimModuleSyntax` did too. Neither is used, because the stricter
+    `tsc --init` default is the one a new project gets.
+
+    SUBSTITUTIONS, per RFC 031 section 6:
+      - It runs the locally built binding, not the published npm package; a
+        package-resolution defect (RFC 020's class) is the `npm install gate`'s.
+        When this was written, the example under ESM `nodenext` without
+        `verbatimModuleSyntax` also compiled and ran against mdka@2.2.3 installed
+        from the registry, matching the local binding.
+      - Exit 0 is the pass condition; output is not compared.
     """
     if not blocks:
         return []
-    proj = workdir / "tscheck"
-    (proj / "node_modules" / "mdka").mkdir(parents=True, exist_ok=True)
-    dts = Path(types_dir) / "index.d.ts"
-    if not dts.exists():
-        return [(blocks[0], f"cannot type-check: {dts} not found")]
-    (proj / "node_modules" / "mdka" / "index.d.ts").write_text(
-        dts.read_text(encoding="utf-8"), encoding="utf-8"
-    )
-    (proj / "node_modules" / "mdka" / "package.json").write_text(
-        json.dumps({"name": "mdka", "version": "0.0.0", "types": "index.d.ts"}),
-        encoding="utf-8",
-    )
+    binding = Path(binding_dir)
+    have_binding = (binding / "index.js").exists() and (binding / "index.d.ts").exists() \
+        and any(binding.glob("*.node"))
+    if not have_binding:
+        return [(b, f"cannot type-check or execute: no built binding in {binding} "
+                    "(run `npm run build` in node/ first)") for b in blocks]
+
     fails = []
     for n, b in enumerate(blocks):
-        f = proj / f"ex_ts{n}.ts"
-        f.write_text(b.code, encoding="utf-8")
+        box = workdir / f"ts{n}"
+        mod = box / "node_modules" / "mdka"
+        mod.mkdir(parents=True, exist_ok=True)
+        for src in [binding / "index.js", binding / "index.d.ts", *binding.glob("*.node")]:
+            (mod / src.name).write_bytes(src.read_bytes())
+        (mod / "package.json").write_text(
+            json.dumps({"name": "mdka", "main": "index.js", "types": "index.d.ts"}),
+            encoding="utf-8",
+        )
+        (box / "package.json").write_text(json.dumps({"type": "module"}), encoding="utf-8")
+        (box / "tsconfig.json").write_text(
+            json.dumps({"compilerOptions": TSC_INIT_OPTIONS, "files": ["example.ts"]}),
+            encoding="utf-8",
+        )
+        (box / "example.ts").write_text(b.code, encoding="utf-8")
+
         r = subprocess.run(
-            [
-                "npx", "--yes", "--package", "typescript@5", "tsc",
-                "--noEmit", "--skipLibCheck", "--target", "es2022",
-                "--module", "esnext", "--moduleResolution", "node",
-                str(f),
-            ],
-            cwd=proj,
-            capture_output=True,
-            text=True,
+            ["npx", "--yes", "--package", TYPESCRIPT, "tsc", "-p", "."],
+            cwd=box, capture_output=True, text=True,
         )
         if r.returncode != 0:
             fails.append((b, (r.stdout + r.stderr).strip()))
+            continue
+        try:
+            r = subprocess.run(["node", "example.js"], cwd=box,
+                               capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            fails.append((b, "timed out after 60s"))
+            continue
+        if r.returncode != 0:
+            fails.append((b, (r.stderr or r.stdout).strip()[-2000:]))
     return fails
 
 
