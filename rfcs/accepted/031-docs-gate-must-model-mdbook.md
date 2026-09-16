@@ -202,3 +202,28 @@ nobody was obliged to justify, and it could not have been justified.
 - [ ] D6 checked in a browser on all three registries; outcome recorded either way
 - [ ] D9 `project_urls` added
 - [ ] §7: stated whether the JS path should have caught D2, and why it did not
+
+---
+
+## Addendum — slice `031b` (2026-09-16, review of slice 031)
+
+Slice 031 was approved. Its review added a follow-up slice before this RFC closes:
+
+1. **Run buttons.** The Rust playground does not carry `mdka` (not among the 488
+   crates at `play.rust-lang.org/meta/crates`), so 20 of 32 `rust` examples show
+   a Run button that can only fail. Set `[output.html.playground] runnable =
+   false`. The gate is unaffected.
+2. **Scope extension, authorized by the architect:** remove `see RFC 005` from
+   user-facing deprecation text in `node/src/lib.rs`, `python/src/lib.rs` and
+   `src/options.rs` — string literals only, same class as D4/D5. §8's `src/`
+   exclusion is lifted for exactly these strings. The message prefix
+   `` mdka: `<field>` `` must not change, because the D7 suppressions published
+   in slice 031 match on it; it becomes a tested contract.
+3. **Two substitutions stated**, per §6: `check_js` runs a locally built binding
+   (published-package resolution is the `npm install gate`'s job), and
+   `check_rust`'s `allow(deprecated)` means the gate cannot verify deprecation
+   claims.
+
+Handoff: [`followup-031b.md`](../handoffs/031-docs-gate-must-model-mdbook/followup-031b.md).
+
+**D6** remains open pending a browser check by the owner.

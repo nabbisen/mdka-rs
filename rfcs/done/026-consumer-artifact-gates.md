@@ -208,3 +208,21 @@ These gates verify **that the artifact loads and its symbols resolve**. They do
 not verify **that the documented call is valid** or that documentation outside
 one directory exists at all. That ceiling is now in `ROADMAP.md` alongside the
 platform gap — and it is why RFC 027's consumer pass is not redundant with them.
+
+## Correction — `no_run` was a skip marker, found by RFC 031, 2026-09-16
+
+The docs example gate listed `no_run` in `SKIP_MARKERS`, so a block marked
+`rust,no_run` was **removed from the gate entirely**. A type error marked
+`no_run` passed as `0 runnable of 1`, exit 0.
+
+`no_run` means *compile, but do not run*. This gate only compiles, so a `no_run`
+block must still be built. RFC 031 removed it from the skip set; only markers
+meaning *do not compile* (`fragment`, `ignore`, `text`, `compile_fail`) remain.
+
+**Near-miss worth recording.** RFC 031's handoff advised marking the D1 examples
+`no_run`, reasoning that "the gate only builds, so `no_run` does not weaken it".
+That was true of the intent and false of the code. Followed unchecked, the fix
+would have repaired the published examples and deleted their control in the same
+commit. The implementer checked the skip list first.
+
+Approved at this RFC's review without the skip set being questioned.

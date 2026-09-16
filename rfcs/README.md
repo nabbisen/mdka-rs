@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+Awaiting the owner's decision.
+
+- [032 — Gates report every failure, and execute Python and TypeScript examples](./proposed/032-gates-report-everything-and-execute-examples.md)
+  — from the RFC 031 review. `cargo test` in `ci.yaml` stops at the first failing
+  test binary, which matters most for RFC 025's harness; the Python and TS doc
+  paths never run their examples. Recommended before RFC 025.
 
 ## Accepted
 
@@ -23,7 +28,7 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 028 | [Emphasis wrapping block content](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** |
 | 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** |
+| 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — slice 031 ✅ approved; **031b next**; D6 open (owner) |
 
 All five are M3. **Sequencing: 030 ✅, then 031, then 025, then 024, then 028.**
 

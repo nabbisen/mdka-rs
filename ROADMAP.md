@@ -435,7 +435,8 @@ text run.
 | RFC | Title | Priority | Size | Order |
 |---|---|---|---|---|
 | 030 | Crates package gate: verify the workspace, not the registry | P1 | S | ✅ implemented & approved |
-| 031 | Docs example gate must compile what mdBook publishes | P1 | M | **next** — before the engine work |
+| 031 | Docs example gate must compile what mdBook publishes | P1 | M | slice 031 ✅; **031b next**; D6 open (owner) |
+| 032 | Gates report every failure; execute Python/TS examples | P2 | S | *proposed* — recommended before 025 |
 | 025 | Markdown output-validity harness | **P0** | M | before 024 |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 |
