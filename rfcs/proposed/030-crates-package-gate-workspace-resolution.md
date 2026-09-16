@@ -1,0 +1,158 @@
+# RFC 030 — Crates package gate: verify the workspace, not the registry
+
+**Status.** Proposed
+**Author.** Architect
+**Created.** 2026-09-16
+**Milestone.** M3 (control repair; should land before `2.3.0`)
+**Supersedes.** Nothing. Repairs the gate introduced by RFC 026 §4.2.
+**Related.** RFC 026 (consumer-artifact gates), RFC 027 (verification discipline)
+
+---
+
+## 1. Summary
+
+The `crates package gate` has failed on **every release since it was
+introduced**, for a reason that has nothing to do with the code it inspects, and
+in failing it **skips the two crates nobody else checks**. Replace its four
+sequential per-crate `cargo package` steps with a single
+`cargo package --workspace`, which resolves workspace members against each other
+instead of against crates.io.
+
+## 2. The problem
+
+The gate runs, in order:
+
+```
+cargo package -p mdka          # passes
+cargo package -p mdka-cli      # FAILS
+cargo package -p mdka-node     # skipped
+cargo package -p mdka-python   # skipped
+```
+
+The failure is always the same:
+
+```
+failed to select a version for the requirement `mdka = "^2.2.3"`
+candidate versions found which didn't match: 2.2.2, 2.2.1, 2.2.0, ...
+location searched: crates.io index
+```
+
+`cargo package` verifies a crate by building the **extracted tarball**, where
+path dependencies have been stripped and `mdka` must come from the registry. On
+`main`, the workspace version is by definition the *next* version — the one this
+release will publish. So it cannot be on crates.io yet, and the three dependent
+crates cannot resolve it.
+
+**This is not a flaky failure. It is guaranteed, at every commit, forever.**
+
+### 2.1 Why it matters more than "a red we explain"
+
+Two compounding harms:
+
+1. **It skips `mdka-node` and `mdka-python` entirely.** GitHub Actions stops the
+   job at the first failed step. Across `2.2.2` and `2.2.3`, *nothing* has
+   verified that those two crates package and build standalone — which is the
+   single thing the gate exists to check. The gate's red is not merely noise; it
+   is **masking its own coverage**.
+2. **A permanently-red gate stops being read.** The release checklist §1 asks
+   for "green, or each red one is explained", and the explanation is now
+   boilerplate written twice. A check that always fails for a known reason
+   trains its readers to skip it, and the next failure — a real one — arrives
+   wearing the same colour.
+
+Harm 2 is the one RFC 027 exists to prevent, and we have walked into it.
+
+### 2.2 The tell: its colour tracks the calendar, not the code
+
+Immediately after `2.2.3` published, the workspace version `2.2.3` *became*
+resolvable on crates.io. So the gate will now go **green on `main`** — with no
+code change whatsoever — and stay green until the next version bump flips it
+red again, also with no code change.
+
+**A check whose result is determined by what we published this morning rather
+than by what is in the tree is not measuring the tree.** Anyone reading a green
+crates package gate between now and the next bump is reading an artifact of
+release timing. That is worse than the red, because red at least announced
+itself.
+
+## 3. The fix
+
+```yaml
+- name: cargo package --workspace
+  run: cargo package --workspace --locked
+```
+
+Cargo builds a **temporary local registry** from the packaged members and
+resolves the dependents against it, so the unpublished version is found.
+
+### 3.1 Verified, not assumed
+
+Run at `98dcf1f` in a throwaway worktree, with all four manifests and the
+`[workspace.dependencies]` entry bumped to **2.2.4 — a version that does not
+exist on crates.io**, so registry resolution could not possibly succeed:
+
+| Command | Result |
+|---|---|
+| `cargo package -p mdka` | success |
+| `cargo package -p mdka-cli` | **fails** — `failed to select a version for the requirement mdka = "^2.2.4"` |
+| **`cargo package --workspace`** | **exit 0** |
+
+Artifacts produced by the `--workspace` run:
+
+```
+target/package/mdka-2.2.4.crate          target/package/mdka-2.2.4/
+target/package/mdka-cli-2.2.4.crate      target/package/mdka-cli-2.2.4/
+target/package/mdka-node-2.2.4.crate     target/package/mdka-node-2.2.4/
+target/package/mdka-python-2.2.4.crate   target/package/mdka-python-2.2.4/
+target/package/tmp-registry/
+```
+
+The **extracted directories** are the point: each crate was unpacked and
+compiled, not merely tarred. `tmp-registry/` is cargo's temporary registry, the
+mechanism that makes it work.
+
+`--no-verify` appears nowhere, preserving RFC 026's requirement that the gate
+build what it packs.
+
+### 3.2 Independent corroboration from this release
+
+`2.2.3` published `mdka-cli`, `mdka-node` and `mdka-python` to crates.io without
+incident, immediately after the gate said they could not be packaged. That is
+direct evidence the red was an artifact of resolution order and not a defect —
+and equally, evidence that the gate told us nothing either way.
+
+## 4. What this does not fix
+
+**The gate still cannot catch a dependent that breaks against the *published*
+`mdka`**, because it now builds against the locally packaged one. In a
+single-version-lockstep workspace like ours — all four crates share a version
+and release together — that distinction is theoretical. It would stop being
+theoretical if the crates ever version independently. Recorded here so the next
+reader does not have to rediscover the limit.
+
+## 5. Acceptance criteria
+
+- [ ] `crates-package-gate.yaml` uses a single `cargo package --workspace --locked`.
+- [ ] No `--no-verify`.
+- [ ] The "show what each package contains" step still runs and still lists all
+      four `.crate` files.
+- [ ] The workflow comment explains *why* `--workspace` rather than four steps,
+      naming the unpublished-version problem, so nobody "simplifies" it back.
+- [ ] **The gate is observed green on `main`** — at a commit whose workspace
+      version is not on crates.io, which on `main` is every commit. Per RFC 026,
+      a gate is not trusted until it has been seen doing its job.
+- [ ] **The gate is observed red for a real defect.** Break one crate
+      deliberately in a scratch branch or worktree — e.g. remove a file its
+      `include` needs — confirm the gate fails on *that*, and record the output.
+      This is the step that distinguishes a working gate from a green light.
+- [ ] Release checklist §1 no longer carries a standing explanation for this
+      gate.
+
+## 6. Risks
+
+| Risk | Assessment |
+|---|---|
+| `--workspace` masks a per-crate failure | No — it fails the job on any member, and now reports *all four* rather than stopping at the second |
+| Longer runtime | Slightly; one dependency graph is built once rather than four times, which may be faster in practice |
+| Cargo version dependence | The temporary-registry behaviour is long-standing and present well before our MSRV 1.88; the gate runs on stable |
+| We stop noticing the gate | §5's two observation requirements exist for exactly this |

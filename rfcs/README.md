@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+Awaiting the owner's decision.
+
+- [030 — Crates package gate: verify the workspace, not the registry](./proposed/030-crates-package-gate-workspace-resolution.md)
+  — the gate has been red at every release since RFC 026 introduced it, and its
+  red skips `mdka-node` and `mdka-python` entirely. Fix verified against an
+  unpublished version.
 
 ## Accepted
 
