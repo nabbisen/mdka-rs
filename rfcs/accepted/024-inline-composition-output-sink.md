@@ -206,3 +206,18 @@ the same reason criterion 8 is: fixed by accident is fixed until someone refacto
 
 RFC 025 cells now owned by this RFC: **19** (10 original, 4 code-span markup, 5
 blockquote prefix).
+
+---
+
+## Amendment — RFC 024 review, 2026-09-17
+
+Reasoning: `.git-exclude/reviewed/024-inline-composition-output-sink/README.md` §3–§4.
+
+**Criterion 4, relaxed for one case.** `<pre><code>` output stays byte-identical to 2.2.3 **except** where
+the code contains inline markup elements, a second `<code>`, or text outside the `<code>`. Those follow the
+text-only rule (criterion 3/9): **code holds text only — `<pre><code>` included**; an image inside code
+contributes nothing; one `<pre>` produces one code block with the text of everything inside it in order;
+the language hint comes from the first `<code>` child only. Slice `024b`.
+
+**Not in scope, clarified.** "Element coverage — A-06, A-07, A-08, RFC 009" was wrong about their nature:
+they are validity defects. Proposed as RFC 035 for `2.3.0`, pending the owner.

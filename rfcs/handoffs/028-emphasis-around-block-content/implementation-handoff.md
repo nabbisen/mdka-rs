@@ -13,9 +13,10 @@
 |---|---|
 | RFC 025 harness landed | ✅ `7338b17` |
 | Slice `025c` approved | ✅ met 2026-09-16 |
-| **RFC 024 approved** | **pending** — the mechanism choice (§4) depends on the sink RFC 024 builds, and RFC 024 changes `src/renderer.rs` line numbers throughout |
+| RFC 024 approved | ✅ met 2026-09-17 (`1de7f2c`) — the sink exists; `src/renderer.rs` line numbers have all moved |
+| **Slice `024b` approved** | **pending** — it changes the fence and code-context handling in the same files |
 
-**Start when** `.git-exclude/reviewed/024-inline-composition-output-sink/README.md` exists
+**Start when** `.git-exclude/reviewed/024b-code-holds-text-only/README.md` exists
 with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated
 addenda.
 
@@ -45,13 +46,20 @@ a single-paragraph paste comes out entirely bold.
 | `<b style="font-weight:normal"><p>one</p><p>two</p></b>` | `**\n\none\n\ntwo\n\n**` |
 | `<b style="font-weight:normal;" id="docs-internal-guid-x"><span style="font-weight:400">Hello world</span></b>` | `**Hello world**` — **entirely bold** |
 
-**`<a>` and `<code>` around blocks:**
+**`<a>` and `<code>` around blocks — outputs changed by RFC 024's sink** (re-derived at `1de7f2c`). The
+sink now routes a block's line breaks **into** the link or code capture:
 
-| Input | Output today |
-|---|---|
-| `<a href="/x"><h2>Title</h2></a>` | `## \n\n[Title](/x)` — heading emptied |
-| `<a href="/out"><p>x</p><p>y</p></a>` | paragraphs collapse into one link `xy` |
-| `<code><p>x</p><p>y</p></code>` | lone backtick lines |
+| Input | 2.2.3 | After RFC 024 |
+|---|---|---|
+| `<a href="/x"><h2>Title</h2></a>` | `## \n\n[Title](/x)` | `[## Title\n\n](/x)` |
+| `<a href="/out"><p>x</p><p>y</p></a>` | `[xy](/out)` | `[x\n\ny\n\n](/out)` — **no longer parses as a link** |
+| `<code><p>x</p><p>y</p></code>` | `` `\n\nx\n\ny\n\n` `` | `` `x\n\ny\n\n` `` |
+
+All still known defects, correctly marked. **Do not adopt the "collapse block breaks to a space inside a
+capture" rule** RFC 024's implementer measured (`[x y](/out)`, `` `x y` ``): it contradicts this RFC's
+accepted designs — link each block's content, and code around blocks keeps the blocks. The interim
+regression in the second row is accepted only because **`2.3.0` cannot be cut with RFC 024 and without this
+RFC**.
 
 **Key on block classification, not on `p`.** A fix written against `<p>` alone passes the
 first case and leaves `div`, `ul` and headings broken.

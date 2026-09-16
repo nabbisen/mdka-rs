@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, the RFC 025 harness and `025c` done; 024 (in progress), 028, 010 remain.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024b`, 028, 010 remain — and RFC 035 if accepted.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -445,9 +445,10 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M | **in progress** — 19 harness cells, incl. blockquote-loses-`>` |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ approved (`1de7f2c`, 37 direct writes → 0); **`024b` next** (code holds text only, incl. `<pre><code>`) |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | after 024 — scope extended 2026-09-16 (`<a>`, `<code>` around blocks; negated `font-weight`/`font-style`) |
-| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 24 harness cells, content-destroying; after 028 |
+| 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ⚠ ***proposed*** — owner decision; corrects the M3 reshape, which left these validity defects in RFC 009 / `2.4.0` |
+| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after 028 (and 035 if accepted) |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
@@ -473,6 +474,7 @@ rediscovered at the checkpoint:
 - Move RFC 030, 031, 032, 033 and 034 to `done/`.
 - **bekoedit reply:** rewrite its corpus section before sending — the corpus was requested separately on 2026-09-16, and bekoedit replied that it **does not exist yet**. Confirm the nine vendored reproductions are Apache-2.0.
 - ~~RFC 034 must be implemented before the cut~~ — done.
+- **Release gate: do not cut `2.3.0` with RFC 024 and without RFC 028.** RFC 024's sink turned `<a><p>x</p><p>y</p></a>` from a link with joined words into no link at all — both known defects, fixed by RFC 028, but the interim state must not reach users.
 - Docs gate: give `##` escape lines their own rejection message, and tell authors of multi-line strings containing `# ` lines to use a single-line string with `\n` (RFC 033 review §3).
 - ~~D6 and the hidden-lines browser check (owner)~~ — superseded by RFC 033, which removes both dependencies instead of verifying them once.
 
