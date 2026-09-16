@@ -68,6 +68,11 @@ jobs:
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
       # the distinction this whole milestone is about.
+      #
+      # No --keep-going either, deliberately (RFC 032). cargo package --help
+      # lists it, but it changed nothing when tested: package verifies members
+      # one after another, and the flag only continues within a single build.
+      # A second broken crate is still reported only after the first is fixed.
       - name: cargo package --workspace
         run: cargo package --workspace --locked
 

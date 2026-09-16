@@ -46,14 +46,20 @@ jobs:
       - name: cargo fmt --check
         run: cargo fmt --check
 
+      # --keep-going (RFC 032): report every crate's lint failures, not just the
+      # first crate's. clippy --help does not list it, but clippy passes it to
+      # cargo check and it was seen to change the output. Keep it before `--`.
       - name: cargo clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features --keep-going -- -D warnings
 
+      # --no-fail-fast (RFC 032): without it the first failing test binary stops
+      # the rest, so a failure in one binary hides failures in all later ones.
       - name: cargo test
-        run: cargo test --workspace --all-features --locked
+        run: cargo test --workspace --all-features --locked --no-fail-fast
 
+      # --keep-going (RFC 032): report every target that fails to compile.
       - name: cargo build
-        run: cargo build --workspace --locked
+        run: cargo build --workspace --locked --keep-going
 
   msrv:
     runs-on: ubuntu-latest
@@ -87,8 +93,10 @@ jobs:
       # --all-targets is deliberately omitted: bench dev-dependencies require a
       # newer toolchain and are advisory only, not part of the published MSRV.
       # --locked verifies the same dependency set the `rust` job saw.
+      # --keep-going (RFC 032): report every crate that fails to check on the
+      # MSRV toolchain, not just the first. Verified on 1.88.
       - name: cargo check
-        run: cargo check --workspace --locked
+        run: cargo check --workspace --locked --keep-going
 
   node:
     runs-on: ubuntu-latest
