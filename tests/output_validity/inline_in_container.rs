@@ -28,15 +28,15 @@ cells! {
 
 cells! {
     img_in_pre: r#"<pre><img src="i.png" alt="pic"></pre>"#
-        => undecided("Q2: inline markup, links and images inside <pre> without <code>");
+        => tree(r#"codeblock()"#);
     strong_in_pre: r#"<pre><strong>b</strong></pre>"#
-        => undecided("Q2");
+        => tree(r#"codeblock("b")"#);
     em_in_pre: r#"<pre><em>e</em></pre>"#
-        => undecided("Q2");
+        => tree(r#"codeblock("e")"#);
     code_in_pre: r#"<pre><code>c</code></pre>"#
         => tree(r#"codeblock("c")"#);
     a_in_pre: r#"<pre><a href="/in">t</a></pre>"#
-        => undecided("Q2");
+        => tree(r#"codeblock("t")"#);
     text_in_pre: r#"<pre>a_b *c* [d] (e)</pre>"#
         => tree(r#"codeblock("a_b *c* [d] (e)")"#);
 }
@@ -45,15 +45,15 @@ cells! {
 
 cells! {
     img_in_code: r#"<code><img src="i.png" alt="pic"></code>"#
-        => undecided("Q3: inline markup, links and images inside inline <code>");
+        => tree(r#""#);
     strong_in_code: r#"<code><strong>b</strong></code>"#
-        => undecided("Q3");
+        => tree(r#"para(code("b"))"#);
     em_in_code: r#"<code><em>e</em></code>"#
-        => undecided("Q3");
+        => tree(r#"para(code("e"))"#);
     code_in_code: r#"<code><code>c</code></code>"#
         => tree(r#"para(code("c"))"#);
     a_in_code: r#"<code><a href="/in">t</a></code>"#
-        => undecided("Q3");
+        => tree(r#"para(code("t"))"#);
     text_in_code: r#"<code>a_b *c* [d] (e)</code>"#
         => tree(r#"para(code("a_b *c* [d] (e)"))"#),
         defect(Rfc010Planned, "escaping applied inside the code span, where CommonMark does not honour it: literal backslashes (audit A-03)");
