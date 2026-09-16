@@ -12,7 +12,7 @@
 | Precondition | Status |
 |---|---|
 | RFC 025 harness landed | ✅ `7338b17` |
-| Slice `025c` approved | pending — it adds the Google Docs inline cell and GFM parsing |
+| Slice `025c` approved | ✅ met 2026-09-16 |
 | **RFC 024 approved** | **pending** — the mechanism choice (§4) depends on the sink RFC 024 builds, and RFC 024 changes `src/renderer.rs` line numbers throughout |
 
 **Start when** `.git-exclude/reviewed/024-inline-composition-output-sink/README.md` exists
@@ -131,6 +131,21 @@ RFC 025 marks these cells UNOWNED; the owner has assigned them to this RFC. **Be
 - the single-paragraph Google Docs cell `025c` adds — and **replace its "pending the owner's decision" comment**: the owner accepted RFC 028's style amendment on 2026-09-16.
 
 After re-labelling, RFC 028 owns **22** cells. Confirm the count.
+
+**Also in this first commit — the harness's model of negated emphasis.** The harness's
+`[link-content]` property counts every `<b>`/`<strong>` as `strong` and every `<i>`/`<em>` as
+`em` (`tests/output_validity/harness/properties.rs`, around line 168). After this RFC, a
+`<b style="font-weight:normal">` inside a link correctly emits no emphasis, and the property
+would flag it. Update the HTML-side model so an element whose **own** style negates its
+emphasis — by §3.2's rule — is not counted.
+
+- **Implement it in the harness from §3.2's written rule. Do not call mdka's parser for it.**
+  A harness that reuses the code it checks cannot catch that code being wrong.
+- Prove it both ways: a link holding `<b style="font-weight:normal">x</b>` expects no `strong`;
+  a link holding `<b>x</b>` still expects `strong`.
+- `[link-content]` is the only property that maps these elements to an inline kind (checked
+  at `d5d64cd`). If that is no longer true, cover the others the same way.
+- **No expectation edits.** This is a model change, reviewed as part of this RFC.
 
 ## 6. Scope boundary, per RFC 027 Rule 2
 

@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034 and the RFC 025 harness done; 025c, 024, 028, 010 remain.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, the RFC 025 harness and `025c` done; 024 (in progress), 028, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -444,8 +444,8 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 032 | Gates report every failure; execute Python/TS examples | P2 | S | ✅ implemented & approved |
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
-| 025 | Markdown output-validity harness | **P0** | M | ✅ harness approved (`7338b17`, 104 cells, 64 known defects); **`025c` next**; corpus slice `025b` unscheduled |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M | after `025c` — 19 harness cells, incl. blockquote-loses-`>` |
+| 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | **in progress** — 19 harness cells, incl. blockquote-loses-`>` |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | after 024 — scope extended 2026-09-16 (`<a>`, `<code>` around blocks; negated `font-weight`/`font-style`) |
 | 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 24 harness cells, content-destroying; after 028 |
 

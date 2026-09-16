@@ -19,8 +19,8 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 
 | ID | Title | Milestone | Priority |
 |----|-------|-----------|----------|
-| 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md), [addendum 025c](./handoffs/025-output-validity-harness/addendum-025c.md) | M3 → `2.3.0` | **P0** — harness ✅ approved (`7338b17`); **025c next**; corpus `025b` unscheduled |
-| 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 025c; amended 2026-09-16 (19 cells) |
+| 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md), [addendum 025c](./handoffs/025-output-validity-harness/addendum-025c.md) | M3 → `2.3.0` | **P0** — ✅ harness (`7338b17`) and `025c` (`d5d64cd`) approved; corpus `025b` unscheduled |
+| 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** — **next, handed over 2026-09-16** (19 cells) |
 | 028 | [Inline elements around block content, and emphasis negated by its own style](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 024; scope amended 2026-09-16 (22 cells) |
 | 010 | [Escaping and text round-trip](./accepted/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) | M3 → `2.3.0` | **P0** — queued behind 028; accepted 2026-09-16 (24+ cells) |
 | 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
@@ -29,7 +29,7 @@ state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
 | 033 | [Published docs: the source is what the reader gets](./accepted/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
 | 034 | [PyPI: a declared wheel matrix, built on purpose and checked where it is published](./accepted/034-pypi-declared-wheel-matrix.md) — [handoff](./handoffs/034-pypi-declared-wheel-matrix/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved (034, 034b); moves to `done/` at `2.3.0` prep |
 
-All nine are M3 · Output validity → `2.3.0`. **Sequencing: 030–034 ✅, 025 ✅ → 025c → 024 → 028 → 010.**
+All nine are M3 · Output validity → `2.3.0`. **Sequencing: 030–034 ✅, 025 ✅, 025c ✅ → 024 → 028 → 010.**
 Tables (RFC 008) and element coverage (RFC 009) moved to M4 / `2.4.0` by owner decision on 2026-09-16; neither has a file yet.
 
 - **030 and 031 go first** and are independent of the engine work. Both are

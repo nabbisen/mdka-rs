@@ -106,6 +106,7 @@ At block start, escape what would otherwise open a construct:
 | `---`, `***`, `___` (thematic break) | thematic break | first character |
 | `<` followed by an HTML block start condition | HTML block | `\<` |
 | a line of `=` or `-` directly under a paragraph line | setext heading | first character |
+| **GFM:** a table delimiter row — cells of `-` with optional leading/trailing `:`, separated by `\|`, with or without outer pipes — directly under a line containing `\|` | GFM table | escape so the row is not a delimiter row (e.g. the first `-`, `:` or `\|`) — *added 2026-09-16 from `025c`* |
 
 Cells: `digit_period_at_line_start`, `digit_paren_at_line_start`,
 `digit_period_in_list_item`, `digit_period_in_blockquote`, `tilde_fence_text`,
@@ -122,7 +123,7 @@ Cells: `digit_period_at_line_start`, `digit_paren_at_line_start`,
 | `<` followed by a tag or autolink shape | raw HTML / autolink | `\<` |
 | `&` followed by an entity-reference shape | entity | `\&` |
 | `\` | escape | escape when followed by ASCII punctuation |
-| **GFM:** `~~`, `\|` in table-row shape | strikethrough, table | escape — as `025c`'s GFM cells report |
+| **GFM:** `~~` **and single `~`** around text | strikethrough | escape — `025c` found both |
 
 Cells: `autolink_like_text`, `entity_like_text`, plus the GFM cells `025c` adds.
 

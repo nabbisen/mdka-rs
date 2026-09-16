@@ -10,10 +10,9 @@
 ## 0. Preconditions
 
 1. **RFC 025 approved** — met (`7338b17`, review 2026-09-16).
-2. **Slice `025c` approved** — **not yet met.** `025c` re-labels nine cells to this
-   RFC; you need those markers in place to remove them. **Do not start until
-   `.git-exclude/reviewed/025c-harness-addendum/README.md` exists with an approved
-   verdict.** Until then this handoff is queued, not dispatched.
+2. **Slice `025c` approved** — ✅ met 2026-09-16
+   (`.git-exclude/reviewed/025c-harness-addendum/README.md`). The nine re-labelled
+   cells are in place at `d5d64cd`. **This handoff is an instruction to start.**
 
 **Once handed over, this file is frozen.** Later changes arrive as dated addenda.
 
@@ -85,7 +84,8 @@ Per RFC 027 Rule 2: **where bytes go**, and the bookkeeping that travels with th
 Per RFC 027 Rule 3, label what each ran against.
 
 1. §2's cases, before and after, on a release build.
-2. **Every RFC 024-owned `known_defect` marker removed and the cell passing** — list them.
+2. **Every RFC 024-owned `known_defect` marker removed and the cell passing — under both the
+   CommonMark and GFM readings, in all five modes** — list them.
    A marker you cannot remove is a finding, not a skip.
 3. **No other cell changes state.** Run the harness before and after; any cell outside
    RFC 024's that flips (either direction) is reported with its owner.
@@ -95,7 +95,7 @@ Per RFC 027 Rule 3, label what each ran against.
    with a written reason.
 6. Nested-link and empty-link behaviour tested.
 7. `cargo test --workspace --all-features --locked --no-fail-fast` green; count reconciled
-   against the post-`025c` baseline.
+   against **273** (the post-`025c` baseline at `d5d64cd`).
 8. fmt; clippy `--workspace --all-targets --all-features --keep-going -- -D warnings`.
 
 ## 7. Prohibited shortcuts

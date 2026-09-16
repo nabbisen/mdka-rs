@@ -13,7 +13,7 @@
 |---|---|
 | RFC 024 approved | escaping writes through the sink; block-start context (§3.6) comes from the sink's prefix state |
 | RFC 028 approved | it changes the same emphasis and link arms; working both at once means one rebases the other |
-| `025c` approved | GFM parsing and the GFM cells this RFC owns |
+| `025c` approved | ✅ met 2026-09-16 — GFM parsing and 4 GFM cells owned by this RFC |
 
 **Start when** `.git-exclude/reviewed/028-inline-around-blocks/README.md` exists with an
 approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
@@ -62,7 +62,8 @@ Implement **escaping chosen by the context being written**, replacing the single
 | Title (§3.4) | `"`-delimited with `"` and `\` escaped (or another delimiter that avoids escapes — state which) |
 | Link text / alt (§3.5) | brackets escaped only when they would unbalance |
 | Block start (§3.6) | escape what would open a construct: ordered-list **delimiter** (`1986\.`, `1\)`), bullet, ATX heading, `>`, fence openers incl. `~~~`, thematic break, HTML block start, setext underline — **after** any list/quote prefix |
-| Inline (§3.7) | `*`/`_` only where they could form a delimiter run (CommonMark §6.2 flanking; intraword `_` unescaped); `!` only before `[`; `<` before tag/autolink shapes; `&` before entity shapes; GFM `~~` and table-row `|` as the GFM cells require |
+| Inline (§3.7) | `*`/`_` only where they could form a delimiter run (CommonMark §6.2 flanking; intraword `_` unescaped); `!` only before `[`; `<` before tag/autolink shapes; `&` before entity shapes; GFM `~~` **and single `~`** |
+| GFM table delimiter row (§3.6) | a row of `-`/`:` cells separated by `\|`, under a line containing `\|` — **with or without outer pipes, with or without `:`**. Today only a line-leading `-` happens to be escaped, so `\| --- \|` and `:-- \| --:` become tables (`025c`) |
 | Adjacent emphasis (§3.8) | `**a***b*` must not form an ambiguous run — use `_` for one, or separate |
 
 **Minimal escaping is a requirement** (A-10). The harness guards the other side: an escape
@@ -70,8 +71,9 @@ removed wrongly turns a cell red.
 
 ## 4. Harness
 
-1. **Owned cells:** the 24 RFC 010 cells at `7338b17`, plus the GFM cells `025c` assigns to RFC
-   010. **Take the list from the harness at the time you start**; state the count.
+1. **Owned cells:** 28 at `d5d64cd` — the 24 original plus 4 GFM cells from `025c`
+   (`strikethrough_like_text`, `single_tilde_strikethrough_like_text`,
+   `table_like_lines_with_pipes`, `table_like_lines_with_alignment`). **Take the list from the harness at the time you start**; state the count.
 2. **Add cells before changing behaviour they would cover:** adjacent emphasis (§3.8 — strong/em,
    em/strong, strong/strong); `snake_case_here` with no escapes (A-10); `!` not before `[`; a
    setext-underline line; a thematic-break line of text; `1)` in a blockquote. Expectations from
