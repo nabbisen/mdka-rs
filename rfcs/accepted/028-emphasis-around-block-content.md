@@ -203,3 +203,25 @@ cites to reject option B, and criterion 6 would lock it in.
   candidate.
 - Criterion 6 becomes: *byte-identical to 2.2.1 unless the element's own style
   negates the emphasis.*
+
+### Proposed extension — also awaiting owner (RFC 025 review, 2026-09-16)
+
+The RFC 025 harness found the same defect class for **`<a>` and `<code>` wrapping
+blocks** — 10 cells, currently UNOWNED:
+
+```
+<a href="/x"><h2>Title</h2></a>   →  "## \n\n[Title](/x)"   heading emptied
+<code><p>x</p><p>y</p></code>     →  lone backtick lines
+```
+
+The block-children predicate this RFC builds decides all of them. Proposed: widen the
+RFC to **inline elements wrapping block content**:
+
+- `<strong>`/`<b>`, `<em>`/`<i>`: behaviour A, as accepted (plus the style amendment above,
+  if accepted).
+- `<code>`: **no delimiters, blocks kept** — the same as A.
+- `<a>`: **link the content of each block** — `## [Title](/x)`. Unlike emphasis there is
+  no producer for which distributing is wrong, and dropping the link loses a destination
+  the document meant.
+
+Reasoning: `.git-exclude/reviewed/025-output-validity-harness/README.md` §3 (Q4–Q6), §6.2.

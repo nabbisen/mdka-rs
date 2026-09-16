@@ -439,17 +439,24 @@ text run.
 | 032 | Gates report every failure; execute Python/TS examples | P2 | S | ✅ implemented & approved |
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
-| 025 | Markdown output-validity harness | **P0** | M | **next** — handoff revised 2026-09-16 (both matrix directions, strict expected failures); corpus **does not exist yet** (bekoedit, 2026-09-16) — slice `025b` unscheduled |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M | after 025 |
+| 025 | Markdown output-validity harness | **P0** | M | ✅ harness approved (`7338b17`, 104 cells, 64 known defects); **`025c` next**; corpus slice `025b` unscheduled |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | after `025c` — 19 harness cells, incl. blockquote-loses-`>` |
 | 028 | Emphasis wrapping block content emits stray delimiters | **P0** | S | after 025 **and** 024 — ⚠ **proposed scope amendment awaiting owner** (negated inline `style`; single-paragraph Google Docs pastes stay fully bold otherwise) |
-| 010 | Escaping & text-processing correctness audit | P0 | M | after 024 |
-| 008 | GFM table support | P1 | L | — |
-| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M | after 008 |
+| 010 | Escaping and text round-trip | **P0** | L | *proposed* — 24 harness cells, content-destroying; after 024 |
+| 008 | GFM table support | P1 | L | ⚠ **owner decision:** move to M4 / `2.4.0` (RFC 025 review §6.1) |
+| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, **task-list checkboxes**) | P2 | M | ⚠ **owner decision:** move to M4 / `2.4.0` with 008 |
 
-**Handoff hygiene rule, recorded 2026-09-16.** An amendment to an RFC that has an
-outstanding handoff **updates that handoff in the same commit**. RFC 025 was
-amended to require both matrix directions, and its handoff still specified one —
-found only because the handoff was re-derived before dispatch.
+**Handoff hygiene rules, recorded 2026-09-16.**
+
+1. **Before dispatch:** an amendment to an RFC that has an undispatched handoff
+   updates that handoff in the same commit. (RFC 025 was amended to require both
+   matrix directions while its handoff still specified one.)
+2. **After dispatch — supersedes rule 1 for dispatched handoffs:** a handoff named to
+   the owner as ready is **frozen**. Later changes go in a **new dated addendum file**
+   beside it, named to the owner as a separate handoff; the original gains only a
+   pointer line. The RFC 025 handoff was edited in place three times after it was
+   ready, and the dev team built from an earlier version — a silent edit to a file
+   someone is working from is not a notification.
 
 **Before `2.3.0` is cut** — prep items recorded during M3 so they are not
 rediscovered at the checkpoint:

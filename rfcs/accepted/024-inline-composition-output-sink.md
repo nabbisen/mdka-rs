@@ -171,3 +171,38 @@ is an explicit criterion**: fixed by accident is fixed until someone refactors.
    Assert the paragraph control case alongside it: *"delimiters in the right
    place"* and *"the text is intact"* are different claims and need separate
    assertions.
+
+---
+
+## Amendment — RFC 025 review, 2026-09-16
+
+The harness (`7338b17`) gave this RFC an inventory; its review settled four questions.
+Reasoning: `.git-exclude/reviewed/025-output-validity-harness/README.md` §3.
+
+**Criterion 3, clarified (Q2).** A bare `<pre>`'s code block holds **text only**.
+Inline markup, links and images inside it contribute their text; no `**`, no
+destinations. Markdown has no markup inside code.
+
+**Criterion 6, reworded.** RFC 025 uses strict expected failures, not `#[ignore]`.
+Read: *the RFC 025 cells owned by RFC 024 have their `known_defect` markers removed
+and pass.*
+
+**Criterion 7, direction (Q1).** html5ever turns `<a><a>t</a></a>` into an empty outer
+link and an inner link. **A link with no text and no image emits nothing** — `[](/x)`
+renders as nothing and is noise in the source.
+
+**Criterion 9 — new (Q3).** An inline `<code>` span holds **text only**: `<strong>`,
+`<em>`, `<img>` and `<a>` inside it contribute their text, with no delimiters or link
+syntax. How that text is escaped inside a code span (it should not be) remains
+RFC 010's.
+
+**Criterion 10 — new (Q7).** **A blockquote whose content begins with an inline
+element keeps its `>` prefix.** Mechanism, verified at `src/renderer.rs:291–335`: the
+`strong`/`b`, `em`/`i`, `code` and `img` arms push delimiters straight to
+`self.output` and set `at_line_start = false` without calling `emit_pending_prefix()`,
+cancelling the pending `> `. This is **the sink's bookkeeping**, not A-08 blockquote
+continuity, so it is in scope here despite "Not in scope" above. It is explicit for
+the same reason criterion 8 is: fixed by accident is fixed until someone refactors.
+
+RFC 025 cells now owned by this RFC: **19** (10 original, 4 code-span markup, 5
+blockquote prefix).

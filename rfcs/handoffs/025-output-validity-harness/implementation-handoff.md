@@ -1,5 +1,7 @@
 # Developer Handoff — RFC 025 · Markdown output-validity harness
 
+> **Frozen 2026-09-16 — implemented at `7338b17`.** Later changes arrive as dated addenda, never as edits here: [`addendum-025c.md`](./addendum-025c.md).
+
 **Governing RFC.** [RFC 025](../../accepted/025-output-validity-harness.md) — including its 2026-09-16 amendments
 **Milestone.** M3 → `2.3.0`
 **Priority.** P0 — first of the engine work: **025 → 024 → 028**

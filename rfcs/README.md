@@ -10,7 +10,12 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+Awaiting the owner's decision.
+
+- [010 — Escaping and text round-trip](./proposed/010-escaping-and-text-round-trip.md)
+  — the RFC 025 harness assigns it 24 cells, including content-destroying defects
+  (`~~~` swallowing a document, `<div>` text vanishing, `1986.` in a list losing its
+  number). Escaping by context instead of one character table. After RFC 024.
 
 ## Accepted
 

@@ -194,3 +194,31 @@ also turns red when the recorded inventory stops being true.
 
 The risk-table row and acceptance criteria 2 and 6 above read `#[ignore]`; read
 them as "marked as a strict expected failure with the owner named".
+
+---
+
+## Amendment — review of the harness, 2026-09-16
+
+Reasoning: `.git-exclude/reviewed/025-output-validity-harness/README.md`.
+
+**Parse as GFM as well as CommonMark.** Most readers consumers use are GFM, where text
+mdka leaves unescaped can become syntax (`~~x~~`, `|`-tables). Every property and tree
+assertion runs under both option sets; a cell passes only if both readings are right.
+Slice `025c`.
+
+**Two properties beyond the original set are accepted:** `[blocks]` and
+`[unterminated]`. **One is added:** `[link-content]` — a link keeps the text and images
+the HTML put inside it. Slice `025c`.
+
+**Known gap, recorded:** the properties normalise whitespace to words, so NBSP collapse
+(audit A-14) is not caught.
+
+**Specification for slice `025b` (the corpus), not built now.** Real clipboard HTML will
+hit today's known defects, so the corpus cannot land green as data alone. Each corpus file
+may carry a sidecar listing its **expected violations, each with an owner**, under the same
+strict semantics as `known_defect`: a listed violation that no longer occurs **fails**
+("remove it"), and an unlisted violation **fails**. Each file also carries the capture
+metadata bekoedit described — application, version, operating system.
+
+**Directory rule.** `corpus/` holds captured input only. Hand-written runner fixtures live
+elsewhere, so the directory's provenance stays reliable.
