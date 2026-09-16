@@ -62,6 +62,8 @@ pub enum Owner {
     Rfc024,
     /// Emphasis (or another inline) around block content.
     Rfc028,
+    /// Block structure inside list items and blockquotes.
+    Rfc035,
     /// Escaping, destinations, fences. A ROADMAP row; no RFC file yet.
     Rfc010Planned,
     /// Nobody. Listed in the review request.
@@ -73,6 +75,7 @@ impl std::fmt::Display for Owner {
         f.write_str(match self {
             Owner::Rfc024 => "RFC 024",
             Owner::Rfc028 => "RFC 028",
+            Owner::Rfc035 => "RFC 035",
             Owner::Rfc010Planned => "RFC 010 (planned)",
             Owner::Unowned => "UNOWNED",
         })

@@ -47,6 +47,7 @@ macro_rules! cells {
 
 mod harness;
 
+mod block_in_container;
 mod block_in_inline;
 mod code_context;
 mod corpus;
