@@ -220,4 +220,4 @@ contributes nothing; one `<pre>` produces one code block with the text of everyt
 the language hint comes from the first `<code>` child only. Slice `024b`.
 
 **Not in scope, clarified.** "Element coverage — A-06, A-07, A-08, RFC 009" was wrong about their nature:
-they are validity defects. Proposed as RFC 035 for `2.3.0`, pending the owner.
+they are validity defects. **RFC 035, accepted for `2.3.0` by the owner on 2026-09-17.**

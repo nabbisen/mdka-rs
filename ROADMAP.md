@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024b`, 028, 010 remain — and RFC 035 if accepted.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024b`, 028, 035, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -447,8 +447,8 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ approved (`1de7f2c`, 37 direct writes → 0); **`024b` next** (code holds text only, incl. `<pre><code>`) |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | after 024 — scope extended 2026-09-16 (`<a>`, `<code>` around blocks; negated `font-weight`/`font-style`) |
-| 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ⚠ ***proposed*** — owner decision; corrects the M3 reshape, which left these validity defects in RFC 009 / `2.4.0` |
-| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after 028 (and 035 if accepted) |
+| 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | accepted 2026-09-17 — corrects the M3 reshape, which had left these validity defects in RFC 009 / `2.4.0`; after 028 |
+| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after 035 |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 

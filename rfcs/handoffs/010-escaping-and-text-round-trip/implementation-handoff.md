@@ -13,11 +13,11 @@
 |---|---|
 | RFC 024 approved | escaping writes through the sink; block-start context (§3.6) comes from the sink's prefix state |
 | RFC 028 approved | it changes the same emphasis and link arms; working both at once means one rebases the other |
-| **RFC 035 approved — if the owner accepts it** | block-start escaping (§3.6) needs correct list-item and quote structure to know where a block starts; RFC 035 fixes that structure. If RFC 035 is not accepted, this row does not apply |
+| **RFC 035 approved** | accepted by the owner 2026-09-17 — block-start escaping (§3.6) needs correct list-item and quote structure to know where a block starts; RFC 035 fixes that structure |
 | `025c` approved | ✅ met 2026-09-16 — GFM parsing and 4 GFM cells owned by this RFC |
 
-**Start when** the last applicable approval above exists — `.git-exclude/reviewed/035-block-structure-inside-containers/README.md`
-if RFC 035 was accepted, otherwise `.git-exclude/reviewed/028-inline-around-blocks/README.md`. **Once handed over, this file is frozen**; changes arrive as dated addenda.
+**Start when** `.git-exclude/reviewed/035-block-structure-inside-containers/README.md` exists with an
+approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
 

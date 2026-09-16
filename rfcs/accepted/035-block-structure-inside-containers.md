@@ -1,9 +1,9 @@
 # RFC 035 — Block structure inside containers: list items and blockquotes
 
-**Status.** Proposed
+**Status.** Accepted (2026-09-17, owner)
 **Author.** Architect
 **Created.** 2026-09-17
-**Milestone.** M3 · Output validity → `2.3.0`, if the owner accepts (RFC 024 review §6)
+**Milestone.** M3 · Output validity → `2.3.0` (owner, 2026-09-17)
 **Sequencing.** After RFC 028, before RFC 010 — RFC 010's block-start escaping needs correct list and quote structure.
 **Source.** Audit A-06, A-07, A-08 — parked in RFC 009's scope, which moved to `2.4.0`; found still present at `1de7f2c`.
 **Touches.** `src/renderer.rs`, `src/renderer/sink.rs`, `tests/output_validity/`.
@@ -19,6 +19,7 @@ Block content inside a list item or a blockquote does not stay inside it:
 | A-06 | `<ul><li><p>para</p></li></ul>` | `- \n\npara` | an empty bullet, content outside the list |
 | A-06 | `<ul><li><p>a</p><p>b</p></li></ul>` | `- \n\na\n\nb` | same |
 | A-07 | `<ol><li>one<ol><li>inner</li></ol></li></ol>` | `1. one\n  1. inner` | not a sublist — a lazy continuation |
+| A-07 | `<ol><li>one<ul><li>inner</li></ul></li></ol>` | `1. one\n  - inner` | not nested either — found at handoff, 2026-09-17: any sublist under an ordered parent, not only an ordered one |
 | A-08 | `<blockquote><p>one</p><p>two</p></blockquote>` | `> one\n\n> two` | two quotes |
 | A-08 | `<blockquote><pre><code>l1\nl2</code></pre></blockquote>` | ``> ```\nl1\nl2\n``` `` | the code escapes the quote after line 1 |
 
