@@ -87,6 +87,43 @@ fn words(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Whether an emphasis element's **own** `style` says it is not emphasis, by
+/// RFC 028 Amendment 1's written rule -- implemented here from that text, not
+/// by calling mdka, so the harness cannot share a defect with the code it
+/// checks.
+///
+/// `<b>`/`<strong>`: `font-weight` is `normal` or a number <= 500.
+/// `<i>`/`<em>`: `font-style` is `normal`. Declarations split on `;`; name and
+/// value trimmed and case-folded; `!important` stripped; the last declaration
+/// of the property wins; nothing else is read.
+pub fn emphasis_negated_by_own_style(name: &str, style: Option<&str>) -> bool {
+    let property = match name {
+        "b" | "strong" => "font-weight",
+        "i" | "em" => "font-style",
+        _ => return false,
+    };
+    let Some(style) = style else { return false };
+    let mut last: Option<String> = None;
+    for declaration in style.split(';') {
+        let Some((key, value)) = declaration.split_once(':') else {
+            continue;
+        };
+        if key.trim().to_ascii_lowercase() != property {
+            continue;
+        }
+        let mut value = value.trim().to_ascii_lowercase();
+        if let Some(stripped) = value.strip_suffix("!important") {
+            value = stripped.trim().to_string();
+        }
+        last = Some(value);
+    }
+    let Some(value) = last else { return false };
+    match property {
+        "font-weight" => value == "normal" || value.parse::<f64>().is_ok_and(|n| n <= 500.0),
+        _ => value == "normal",
+    }
+}
+
 /// What one link holds: its destination, its words, and the inline elements
 /// inside it in order (`strong`, `em`, `code`, `image[src]`).
 #[derive(Debug, PartialEq, Eq)]
@@ -164,9 +201,10 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                             facts.skeleton.push((kind, String::new()));
                         }
                         let in_code = code > 0 || pre.is_some();
+                        let negated = emphasis_negated_by_own_style(name, e.attr("style"));
                         let inline_kind = match name {
-                            "strong" | "b" => Some("strong".to_string()),
-                            "em" | "i" => Some("em".to_string()),
+                            "strong" | "b" if !negated => Some("strong".to_string()),
+                            "em" | "i" if !negated => Some("em".to_string()),
                             "code" => Some("code".to_string()),
                             "img" => e
                                 .attr("src")

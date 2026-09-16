@@ -21,11 +21,11 @@ cells! {
     // issue reports quoting clipboard captures: ProseMirror #459 (2016),
     // MarkText #4688 (2026). The single-paragraph shape: the wrapper around
     // inline content. Written for this harness in that form; no third-party
-    // HTML is copied. UNOWNED pending the owner's decision on RFC 028's
-    // proposed style amendment -- relabelled by that decision, not here.
+    // HTML is copied. RFC 028's style amendment (accepted by the owner,
+    // 2026-09-16) makes the wrapper's own font-weight:normal drop the `**`.
     google_docs_bold_wrapper_inline: r#"<b style="font-weight:normal;" id="docs-internal-guid-x"><span style="font-weight:400">Hello world</span></b>"#
         => tree(r#"para("Hello world")"#),
-        defect(Unowned, "the non-bold wrapper is emitted as `**`: the whole paragraph becomes bold; pending the owner's decision on RFC 028's style amendment");
+        defect(Rfc028, "the non-bold wrapper is emitted as `**`: the whole paragraph becomes bold, although the wrapper's own style says font-weight:normal (RFC 028 Amendment 1)");
     // 2.2.2 consumer pass (RFC 024 addendum): a space lost inside a link only.
     space_around_inline_in_link: r#"<a href="/x">Read <strong>more</strong> now</a>"#
         => tree(r#"para(link[/x]("Read ", strong("more"), " now"))"#);

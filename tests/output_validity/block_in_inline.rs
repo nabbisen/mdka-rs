@@ -6,9 +6,9 @@
 //!
 //! `<strong>`/`<em>` cells assert RFC 028's accepted behaviour A: when the
 //! children are blocks, the emphasis delimiters are dropped and the blocks
-//! kept. `<a>` and `<code>` around blocks are outside RFC 028's stated scope
-//! (`strong`/`b`, `em`/`i`); their intended structure is a question (Q4, Q5)
-//! and their owner is recorded as UNOWNED (Q6).
+//! kept. `<a>` and `<code>` around blocks joined RFC 028 by its Amendment 2
+//! (owner, 2026-09-16); their cells still assert only the intent-free
+//! properties (Q4, Q5).
 
 use crate::harness::{tree, undecided};
 
@@ -57,19 +57,19 @@ cells! {
 cells! {
     p_in_a: r#"<a href="/out"><p>x</p><p>y</p></a>"#
         => undecided("Q4: block content inside <a> (valid HTML5): where does the link go?"),
-        defect(Unowned, "the paragraphs collapse into one link text `xy`: the paragraph break and the space are lost");
+        defect(Rfc028, "the paragraphs collapse into one link text `xy`: the paragraph break and the space are lost");
     ul_in_a: r#"<a href="/out"><ul><li>x</li><li>y</li></ul></a>"#
         => undecided("Q4"),
-        defect(Unowned, "the list items are emptied and their text moves into one link `xy` after the list");
+        defect(Rfc028, "the list items are emptied and their text moves into one link `xy` after the list");
     blockquote_in_a: r#"<a href="/out"><blockquote><p>x</p></blockquote></a>"#
         => undecided("Q4"),
-        defect(Unowned, "the quote disappears; only a link with its text remains");
+        defect(Rfc028, "the quote disappears; only a link with its text remains");
     pre_in_a: r#"<a href="/out"><pre>x</pre></a>"#
         => undecided("Q4"),
-        defect(Unowned, "bare <pre> inside <a>: no opening fence, and the link lands in an unterminated code block");
+        defect(Rfc028, "bare <pre> inside <a>: no opening fence, and the link lands in an unterminated code block");
     heading_in_a: r#"<a href="/out"><h2>x</h2></a>"#
         => undecided("Q4"),
-        defect(Unowned, "the heading is emptied; its text becomes a link paragraph after it");
+        defect(Rfc028, "the heading is emptied; its text becomes a link paragraph after it");
 }
 
 // ── in <code> ──────────────────────────────────────────────────────────────
@@ -77,17 +77,17 @@ cells! {
 cells! {
     p_in_code: "<code><p>x</p><p>y</p></code>"
         => undecided("Q5: block content inside inline <code>"),
-        defect(Unowned, "lone backtick lines around the paragraphs: stray backticks, no code span");
+        defect(Rfc028, "lone backtick lines around the paragraphs: stray backticks, no code span");
     ul_in_code: "<code><ul><li>x</li><li>y</li></ul></code>"
         => undecided("Q5"),
-        defect(Unowned, "lone backtick lines around the list: stray backticks");
+        defect(Rfc028, "lone backtick lines around the list: stray backticks");
     blockquote_in_code: "<code><blockquote><p>x</p></blockquote></code>"
         => undecided("Q5"),
-        defect(Unowned, "lone backtick lines around the quote: stray backticks");
+        defect(Rfc028, "lone backtick lines around the quote: stray backticks");
     pre_in_code: "<code><pre>x</pre></code>"
         => undecided("Q5"),
-        defect(Unowned, "stray backtick, plus bare <pre>: unterminated code block");
+        defect(Rfc028, "stray backtick, plus bare <pre>: unterminated code block");
     heading_in_code: "<code><h2>x</h2></code>"
         => undecided("Q5"),
-        defect(Unowned, "lone backtick lines around the heading: stray backticks");
+        defect(Rfc028, "lone backtick lines around the heading: stray backticks");
 }

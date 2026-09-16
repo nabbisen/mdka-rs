@@ -203,6 +203,58 @@ fn empty_link_is_exempt_from_link_properties() {
     }
 }
 
+#[test]
+fn link_content_does_not_expect_emphasis_negated_by_its_own_style() {
+    // RFC 028 Amendment 1 in the harness's HTML model: a <b> whose own style
+    // says font-weight:normal is not strong, so a link holding it expects none.
+    assert_property(
+        "[link-content]",
+        r#"<a href="/l"><b style="font-weight:normal">x</b></a>"#,
+        "[**x**](/l)\n",
+        "[x](/l)\n",
+    );
+    // A plain <b> still expects strong.
+    assert_property(
+        "[link-content]",
+        r#"<a href="/l"><b>x</b></a>"#,
+        "[x](/l)\n",
+        "[**x**](/l)\n",
+    );
+    // And <i> by font-style.
+    assert_property(
+        "[link-content]",
+        r#"<a href="/l"><i style="font-style: normal">x</i></a>"#,
+        "[*x*](/l)\n",
+        "[x](/l)\n",
+    );
+}
+
+#[test]
+fn harness_style_rule_edge_cases() {
+    use crate::harness::emphasis_negated_by_own_style as negated;
+    assert!(negated("b", Some("font-weight:normal")));
+    assert!(negated("strong", Some("FONT-WEIGHT : Normal")));
+    assert!(negated("b", Some("font-weight: normal !important")));
+    assert!(negated("b", Some("font-weight:500")));
+    assert!(!negated("b", Some("font-weight:600")));
+    assert!(negated("b", Some("font-weight:400.5")));
+    assert!(!negated("b", Some("font-weight:bold")));
+    assert!(!negated("b", Some("font-weight:lighter")));
+    assert!(!negated("b", Some("font-weight:bolder")));
+    assert!(negated("b", Some("font-weight:700; font-weight:400")));
+    assert!(!negated("b", Some("font-weight:400; font-weight:700")));
+    assert!(negated(
+        "b",
+        Some("color:red; font-weight:normal; font-style:italic")
+    ));
+    assert!(!negated("b", Some("font-style:normal")));
+    assert!(negated("i", Some("font-style:normal")));
+    assert!(!negated("em", Some("font-style:italic")));
+    assert!(!negated("em", Some("font-weight:normal")));
+    assert!(!negated("span", Some("font-weight:normal")));
+    assert!(!negated("b", None));
+}
+
 // ── both readings ──────────────────────────────────────────────────────────
 
 fn strikethrough_unescaped(_: &str, _: &ConversionOptions) -> String {

@@ -11,7 +11,7 @@ use mdka::options::{ConversionMode, ConversionOptions};
 mod properties;
 mod structure;
 
-pub use properties::properties;
+pub use properties::{emphasis_negated_by_own_style, properties};
 pub use structure::{READINGS, Reading, structure};
 
 /// Every mode. A cell is evaluated in each, so a fix that lands in one mode
