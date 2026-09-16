@@ -16,7 +16,7 @@ Markdown it produces. Elements not listed are either silently removed
 | `<ol>` | `1. ` list | Respects `start` attribute |
 | `<li>` | List item | |
 | `<hr>` | `---` | |
-| `<div>`, `<span>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
+| `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
 | `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
 
 ## Inline Elements
@@ -29,6 +29,37 @@ Markdown it produces. Elements not listed are either silently removed
 | `<a href="…">` | `[text](url)` | `title` attribute → `[text](url "title")` |
 | `<img src="…" alt="…">` | `![alt](src)` | `title` attribute → `![alt](src "title")` |
 | `<br>` | `  \n` (trailing two spaces + newline) | |
+
+`<span>` is **not** in either table, and that is deliberate: it produces no
+output of its own and no break. `<span>A</span><span>B</span>` converts to
+`AB`, with the children passed straight through.
+
+## Not Yet Supported
+
+These elements are **not** converted to their Markdown equivalent. Their text
+content still appears — children are kept as plain text — so the output is not
+empty, but the structure or emphasis they carry is lost.
+
+| HTML | Current behaviour | Tracked by |
+|---|---|---|
+| `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>` | Cell text is emitted as plain text; no GFM table is produced and the row/column structure is lost | RFC 008 |
+| `<dl>`, `<dt>`, `<dd>` | Term and description text run together as plain text | RFC 009 |
+| `<del>`, `<s>` | Text kept, strike-through (`~~text~~`) not emitted | RFC 009 |
+| `<sup>`, `<sub>` | Text kept inline, with no indication it was raised or lowered | RFC 009 |
+| `<video>`, `<audio>` | No output for the media element itself | `A-13` |
+
+**Tables are the largest gap**, and the cell text is not merely unstructured —
+it is run together without separators:
+
+```html
+<table><thead><tr><th>H1</th><th>H2</th></tr></thead>
+<tbody><tr><td>a</td><td>b</td></tr></tbody></table>
+```
+
+converts to `H1H2ab`. If your input is table-heavy, the converted Markdown
+will read as runs of joined text where the table was. See
+[`ROADMAP.md`](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) for
+scheduling.
 
 ## Code Blocks and Language Hints
 

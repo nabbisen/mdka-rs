@@ -41,6 +41,8 @@ const results = await Promise.all(pages.map(p => htmlToMarkdownAsync(p.html)))
 ```js
 const { htmlToMarkdownWith, htmlToMarkdownWithAsync } = require('mdka')
 
+const html = '<nav>menu</nav><h1>Title</h1><p>Body</p>'
+
 // Strip nav/header/footer — useful for content extraction
 const md = htmlToMarkdownWith(html, {
   mode: 'minimal',
@@ -48,7 +50,11 @@ const md = htmlToMarkdownWith(html, {
 })
 
 // Async version
-const md = await htmlToMarkdownWithAsync(html, { mode: 'semantic' })
+async function main() {
+  const mdAsync = await htmlToMarkdownWithAsync(html, { mode: 'semantic' })
+  console.log(mdAsync)
+}
+main()
 ```
 
 Available mode strings: `"balanced"` (default), `"strict"`, `"minimal"`,
@@ -59,40 +65,54 @@ Available mode strings: `"balanced"` (default), `"strict"`, `"minimal"`,
 ```js
 const { htmlFileToMarkdown, htmlFileToMarkdownWith } = require('mdka')
 
-// Output to same directory: page.html → page.md
-const result = await htmlFileToMarkdown('page.html')
-console.log(`${result.src} → ${result.dest}`)
+async function main() {
+  // Output to same directory: page.html → page.md
+  const sameDir = await htmlFileToMarkdown('page.html')
+  console.log(`${sameDir.src} → ${sameDir.dest}`)
 
-// Output to specific directory
-const result = await htmlFileToMarkdown('page.html', 'out/')
+  // Output to specific directory
+  const outDir = await htmlFileToMarkdown('page.html', 'out/')
 
-// With options
-const result = await htmlFileToMarkdownWith('page.html', 'out/', {
-  mode: 'minimal',
-  dropInteractiveShell: true,
-})
+  // With options
+  const withOpts = await htmlFileToMarkdownWith('page.html', 'out/', {
+    mode: 'minimal',
+    dropInteractiveShell: true,
+  })
+}
+main()
 ```
 
 ## Bulk Parallel Conversion
 
 ```js
 const { htmlFilesToMarkdown, htmlFilesToMarkdownWith } = require('mdka')
-const path = require('path')
 
 const files = ['a.html', 'b.html', 'c.html']
-const results = await htmlFilesToMarkdown(files, 'out/')
 
-for (const r of results) {
-  if (r.error) console.error(`${r.src}: ${r.error}`)
-  else         console.log(`${r.src} → ${r.dest}`)
+async function main() {
+  const results = await htmlFilesToMarkdown(files, 'out/')
+
+  for (const r of results) {
+    if (r.error) console.error(`${r.src}: ${r.error}`)
+    else         console.log(`${r.src} → ${r.dest}`)
+  }
+
+  // With options
+  const withOpts = await htmlFilesToMarkdownWith(files, 'out/', {
+    mode: 'semantic',
+  })
 }
-
-// With options
-const results = await htmlFilesToMarkdownWith(files, 'out/', {
-  mode: 'semantic',
-  preserveAriaAttrs: true,
-})
+main()
 ```
+
+Two inputs whose output names collide — `a/index.html` and `b/index.html` both
+becoming `out/index.md` — are not both converted. The first in the array wins
+and each later one comes back with `error` set, rather than silently
+overwriting.
+
+`preserveAriaAttrs`, `preserveClasses`, `preserveDataAttrs`,
+`preserveUnknownAttrs` and `dropPresentationAttrs` are accepted but have **no
+effect**: Markdown has no attribute syntax to carry them into. Use `mode`.
 
 ## TypeScript
 
@@ -105,13 +125,19 @@ import {
   htmlToMarkdownAsync,
   htmlFileToMarkdown,
   htmlFilesToMarkdown,
-  ConversionOptions,
+  JsConversionOptions,
   ConvertResult,
 } from 'mdka'
 
-const opts: ConversionOptions = {
+const html: string = '<h1>Title</h1>'
+
+const opts: JsConversionOptions = {
   mode: 'minimal',
   dropInteractiveShell: true,
 }
 const md: string = htmlToMarkdownWith(html, opts)
 ```
+
+The options type is exported as **`JsConversionOptions`**, not
+`ConversionOptions` — the name comes from the napi-rs binding rather than from
+the Rust `ConversionOptions` it mirrors.

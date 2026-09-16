@@ -41,15 +41,24 @@ mdka --mode preserve -o archive/ *.html      # maximum fidelity
 
 ## All Options
 
+This table mirrors `mdka --help`. If the two ever disagree, `--help` is the
+truth — it is generated from the binary you are running.
+
 | Flag | Description |
 |---|---|
-| `-o, --output <DIR>` | Output directory (default: same as input) |
-| `-m, --mode <MODE>` | `balanced` · `strict` · `minimal` · `semantic` · `preserve` |
+| `-o, --output <DIR>` | Output directory (defaults to the input's directory) |
+| `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `strict` · `minimal` · `semantic` · `preserve` |
 | `--preserve-ids` | Keep `id` attributes |
-| `--preserve-classes` | Keep `class` attributes |
-| `--preserve-data` | Keep `data-*` attributes |
-| `--preserve-aria` | Keep `aria-*` attributes |
-| `--drop-shell` | Remove `nav`, `header`, `footer`, `aside` |
-| `-h, --help` | Show help |
+| `--preserve-classes` | **Deprecated, no effect.** Markdown has no attribute syntax |
+| `--preserve-data` | **Deprecated, no effect.** Same reason |
+| `--preserve-aria` | **Deprecated, no effect.** Same reason |
+| `--drop-shell` | Drop `nav`, `header`, `footer`, `aside` |
+| `--unwrap-wrappers` | Unwrap `div`, `span`, `section`, `article`, `main` that carry no meaning |
+| `-h, --help` | Show this help |
+
+The three deprecated flags are still accepted, so existing command lines keep
+working, but they change nothing about the output. They are documented here
+only so that you can recognise them; do not reach for them expecting an
+effect. See [`ConversionOptions`](../api/options.md).
 
 For full mode descriptions see [Conversion Modes](../api/modes.md).

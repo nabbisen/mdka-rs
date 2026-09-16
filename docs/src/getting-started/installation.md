@@ -18,8 +18,8 @@ That is the only step. mdka has no system dependencies.
 Build from source using the `mdka-cli` crate in the workspace:
 
 ```bash
-git clone https://github.com/example/mdka
-cd mdka
+git clone https://github.com/nabbisen/mdka-rs
+cd mdka-rs
 cargo build --release -p mdka-cli
 # Binary: ./target/release/mdka
 ```

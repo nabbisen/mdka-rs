@@ -35,13 +35,17 @@ md = mdka.html_to_markdown_with(
     drop_interactive_shell=True,
 )
 
-# Preserve ARIA attributes for accessibility-aware output
+# Favour semantic structure — for SPAs and accessibility-aware output
 md = mdka.html_to_markdown_with(
     html,
     mode=mdka.ConversionMode.Semantic,
-    preserve_aria_attrs=True,
 )
 ```
+
+`preserve_aria_attrs`, `preserve_classes`, `preserve_data_attrs`,
+`preserve_unknown_attrs` and `drop_presentation_attrs` are accepted but have
+**no effect**: Markdown has no attribute syntax to carry them into. They are
+kept so existing calls keep working. Use `mode` to influence the output.
 
 Available modes: `ConversionMode.Balanced` (default), `Strict`, `Minimal`,
 `Semantic`, `Preserve`.
@@ -113,9 +117,25 @@ never raise exceptions regardless of input quality.
 
 ## Type Annotations
 
-mdka ships with a `py.typed` marker (PEP 561). All public symbols are annotated:
+**mdka does not ship type information.** There is no `py.typed` marker and no
+`.pyi` stubs, so a type checker treats every symbol below as `Any`. mypy will
+say so directly:
 
-```python
+```
+error: Skipping analyzing "mdka": module is installed, but missing library
+stubs or py.typed marker  [import-untyped]
+```
+
+That message is accurate, and it is better than the alternative. Every public
+symbol is implemented in Rust and exposed through a compiled extension module,
+which a type checker cannot read signatures from. Shipping a bare `py.typed`
+would silence the warning without providing anything to check — the symbols
+would still resolve as `Any`, and a genuinely wrong annotation would then pass
+silently. Typed stubs are the real fix and are not written yet.
+
+Until then, the signatures are:
+
+```python,fragment
 from mdka import (
     html_to_markdown,          # (html: str) -> str
     html_to_markdown_with,     # (html: str, mode=..., **flags) -> str

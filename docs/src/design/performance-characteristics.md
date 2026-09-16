@@ -52,7 +52,7 @@ These libraries do not share the same design and do have different approach and 
 | medium | 1.3040 ms | 2.2866 ms | 1.5266 ms | **887.59 µs** | 1.0562 ms | 1.1660 ms | 3.3999 ms | 2.7643 ms |
 | large | 12.336 ms | 75.751 ms | 12.455 ms | **7.0399 ms** | 7.7896 ms | 9.6825 ms | 29.854 ms | 26.062 ms |
 | deep_nest | 32.620 ms | 373.10 ms | 36.834 ms | **5.9868 ms** | 72.481 ms | 96.744 ms | 30.903 ms | 29.408 ms |
-| flat | 5.6253 ms | 24.817 ms | 6.7911 ms | **4.2114 ms** | 5.5321 ms | 4.6975 ms | 14.023 ms | 29.408 ms |
+| flat | 5.6253 ms | 24.817 ms | 6.7911 ms | **4.2114 ms** | 5.5321 ms | 4.6975 ms | 14.023 ms | — |
 | malformed | **31.712 µs** | 40.178 µs | 71.778 µs | 52.948 µs | 62.302 µs | 41.109 µs | 96.822 µs | 5.6401 ms |
 
 mdka v2 is clearly ahead of mdka v1 in this run. The gain is small on the smallest input, but it becomes much more visible as the input gets larger or structurally harder: around 1.75× faster on medium, 6.1× on large, 11.4× on deep_nest, and 4.4× on flat. On malformed input, v2 is also faster than v1 and the fastest.

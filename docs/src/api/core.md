@@ -100,7 +100,7 @@ where
 Converts multiple HTML files in parallel using [rayon](https://crates.io/crates/rayon).
 
 **`paths`:** Slice of paths to input HTML files.  
-**`out_dir`:** Directory for all output `.md` files. Must exist before calling (unlike single-file variants which create it automatically).  
+**`out_dir`:** Directory for all output `.md` files. Created automatically if it does not exist, as with the single-file variants.  
 **Returns:** A `Vec` of `(input_path, Result<output_path, error>)` pairs in the **same order** as `paths`. Each element represents the outcome for one file independently.
 
 ```rust
