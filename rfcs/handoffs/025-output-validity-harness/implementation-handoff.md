@@ -20,7 +20,7 @@ The original said *"Do not start until M2b has shipped."* M2b (2.2.2) and M2c
 | 2 | Baseline **139** tests, not 136 | re-derived 2026-09-16: `cargo test --workspace --all-features --locked --no-fail-fast` → 139 passed, 0 ignored |
 | 3 | Known-defect cells are **strict expected failures**, not `#[ignore]` | §5 — an ignored cell never runs, so it cannot tell RFC 024/028 when their fix has landed; RFC 025 amended to match |
 | 4 | Owners named precisely: **RFC 024, 028 (accepted); RFC 010 (planned — ROADMAP row, no file yet)** | an owner must be something a reader can find |
-| 5 | bekoedit's reproductions become cells now; the **corpus** is a later slice | §7 — the corpus has not been received |
+| 5 | bekoedit's reproductions become cells now; the **corpus** is a later slice | §7 — requested 2026-09-16, not yet received |
 | 6 | Verification commands match CI as it now runs | RFC 032 |
 
 ## 1. Purpose
@@ -188,9 +188,9 @@ the output is valid Markdown that loses structure. Not this harness. Items 4, 7,
 
 ### 7.2 Later — the corpus: slice `025b`
 
-RFC 025 says to use bekoedit's clipboard corpus. **It has not been received.**
-Whether to request it before `2.3.0` is an owner decision in flight. Do not wait
-for it.
+RFC 025 says to use bekoedit's clipboard corpus. **Requested 2026-09-16** — the
+owner sent the request early so the corpus can reach this work during M3. **It
+has not been received.** Do not wait for it.
 
 **Build the runner so a directory of `.html` files can be run through §6's
 properties with no per-file expectations.** Prove it with two or three
