@@ -9,7 +9,7 @@ cells! {
     // vendored with their permission.
     bekoedit_digit_period_escape: "<p>1. not a list</p>"
         => tree(r#"para("1. not a list")"#),
-        defect(Rfc010Planned, "the backslash goes before the digit: literal `\\1.` (bekoedit item 2, audit A-09)");
+        defect(Rfc010, "the backslash goes before the digit: literal `\\1.` (bekoedit item 2, audit A-09)");
     // bekoedit, letter of 2026-09-16, item 3. Hand-written by bekoedit and
     // vendored with their permission. The multi-paragraph shape of the Google
     // Docs clipboard wrapper; RFC 028 behaviour A.

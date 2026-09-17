@@ -64,8 +64,9 @@ pub enum Owner {
     Rfc028,
     /// Block structure inside list items and blockquotes.
     Rfc035,
-    /// Escaping, destinations, fences. A ROADMAP row; no RFC file yet.
-    Rfc010Planned,
+    /// Escaping and text round-trip: prose, code spans, fences, destinations,
+    /// titles.
+    Rfc010,
     /// Nobody. Listed in the review request.
     Unowned,
 }
@@ -76,7 +77,7 @@ impl std::fmt::Display for Owner {
             Owner::Rfc024 => "RFC 024",
             Owner::Rfc028 => "RFC 028",
             Owner::Rfc035 => "RFC 035",
-            Owner::Rfc010Planned => "RFC 010 (planned)",
+            Owner::Rfc010 => "RFC 010",
             Owner::Unowned => "UNOWNED",
         })
     }
