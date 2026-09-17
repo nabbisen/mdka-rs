@@ -621,3 +621,20 @@ fn a_title_reads_the_same_however_it_is_delimited() {
         assert_eq!(structure("[x](/x 'a \"b\"')\n", reading, false), escaped);
     }
 }
+
+#[test]
+fn property_code_span_fires() {
+    // RFC 010 §3.1: a code span holds its text verbatim.
+    assert_property(
+        "[code-span]",
+        "<p><code>snake_case</code></p>",
+        "`snake\\_case`\n",
+        "`snake_case`\n",
+    );
+    assert_property(
+        "[code-span]",
+        "<p><code>a`b</code></p>",
+        "`a\\`b`\n",
+        "``a`b``\n",
+    );
+}

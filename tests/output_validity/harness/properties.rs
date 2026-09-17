@@ -187,6 +187,10 @@ pub struct HtmlFacts {
     pub images: Vec<String>,
     /// Text content of every outermost `<pre>`.
     pub pres: Vec<String>,
+    /// Text content of every outermost inline `<code>` that holds text and no
+    /// block, whitespace collapsed: each is one code span holding exactly that
+    /// text, with no escapes (RFC 010 §3.1; `<br>` is a space, RFC 024 rule 8).
+    pub code_spans: Vec<String>,
     /// Headings, quotes, lists, items and preformatted blocks, in document order.
     pub skeleton: Skeleton,
 }
@@ -200,8 +204,12 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
         link_wraps_blocks: Vec::new(),
         images: Vec::new(),
         pres: Vec::new(),
+        code_spans: Vec::new(),
         skeleton: Vec::new(),
     };
+    // The inline `<code>` being read: its depth, its text, and whether a block
+    // starts inside it (then it is not a code span, RFC 028).
+    let mut code_span: Option<(usize, String, bool)> = None;
     let mut anchors: Vec<OpenAnchor> = Vec::new();
     let mut hidden = 0usize;
     let mut code = 0usize;
@@ -230,6 +238,15 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                         }
                         if HTML_BLOCKS.contains(&name) {
                             facts.text.push(' ');
+                        }
+                        if let Some((_, text, has_block)) = code_span.as_mut() {
+                            if starts_markdown_block(name, opts) {
+                                *has_block = true;
+                            } else if name == "br" {
+                                text.push(' ');
+                            }
+                        } else if name == "code" && code == 0 && pre.is_none() {
+                            code_span = Some((depth, String::new(), false));
                         }
                         // Rule 7: inside a <pre> -- including a nested one --
                         // a block element is text only, not a Markdown block.
@@ -306,6 +323,9 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                     }
                     Node::Text(t) if hidden == 0 => {
                         facts.text.push_str(t);
+                        if let Some((_, text, _)) = code_span.as_mut() {
+                            text.push_str(t);
+                        }
                         if let Some((_, buf)) = pre.as_mut() {
                             push_pre_text(buf, &mut pre_break, t);
                         }
@@ -325,6 +345,14 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                         if open.last().is_some_and(|(d, _, _)| *d == depth) {
                             let (_, i, from) = open.pop().expect("open skeleton element");
                             facts.skeleton[i].1 = words(&facts.text[from..]);
+                        }
+                        if name == "code" && code_span.as_ref().is_some_and(|(d, _, _)| *d == depth)
+                        {
+                            let (_, text, has_block) = code_span.take().expect("open code");
+                            let text = words(&text);
+                            if !has_block && !text.is_empty() {
+                                facts.code_spans.push(text);
+                            }
                         }
                         let closes_pre =
                             name == "pre" && pre.as_ref().is_some_and(|(d, _)| *d == depth);
@@ -385,6 +413,8 @@ pub struct MarkdownFacts {
     pub link_contents: Vec<LinkContent>,
     pub images: Vec<String>,
     pub code_blocks: Vec<String>,
+    /// Every code span's content, whitespace collapsed.
+    pub code_spans: Vec<String>,
     pub skeleton: Skeleton,
 }
 
@@ -407,6 +437,7 @@ pub fn markdown_facts(md: &str, reading: Reading) -> MarkdownFacts {
         link_contents: Vec::new(),
         images: Vec::new(),
         code_blocks: Vec::new(),
+        code_spans: Vec::new(),
         skeleton: Vec::new(),
     };
     let mut block: Option<String> = None;
@@ -477,6 +508,7 @@ pub fn markdown_facts(md: &str, reading: Reading) -> MarkdownFacts {
             }
             Event::Code(c) => {
                 facts.text.push_str(&c);
+                facts.code_spans.push(words(&c));
                 if let Some(link) = links.last_mut() {
                     link.2.push("code".to_string());
                 }
@@ -660,6 +692,15 @@ pub fn properties(html: &str, md: &str, opts: &ConversionOptions, reading: Readi
     for lost in missing(&want, &have) {
         out.push(format!(
             "[code-block] no parsed code block with content {lost:?}"
+        ));
+    }
+
+    // Beyond §6 (RFC 010 §3.1): every inline <code> is one code span holding
+    // exactly its text -- no backslash escapes, and a backtick in the content
+    // does not end it early.
+    for lost in missing(&h.code_spans, &m.code_spans) {
+        out.push(format!(
+            "[code-span] no parsed code span with content {lost:?}"
         ));
     }
 
