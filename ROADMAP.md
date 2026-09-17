@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; 010 (in progress) remains — the last RFC before the `2.3.0` cut.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; all RFCs implemented; RFC 010's performance cost awaits the owner, then `2.3.0` prep.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -451,7 +451,7 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); slices `024b`–`024e` ✅ (`e6d39ff`) — code holds text, fence at line start, blocks and `<br>` in code are text |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ implemented & approved (`b91aafb`, `cb5e351`) — tree-query pre-pass, style negation, links distributed over blocks |
 | 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ✅ implemented & approved (`a90307d`) — container prefix stack; loose/tight rule |
-| 010 | Escaping and text round-trip | **P0** | L | **in progress** (handed over 2026-09-17) — 28 harness cells, content-destroying; last in `2.3.0` |
+| 010 | Escaping and text round-trip | **P0** | L | ✅ implemented (`a8f5c7e`); ⚠ **owner decision: accept +6–13% text-heavy conversion cost vs 2.2.3** (criterion 7) |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
