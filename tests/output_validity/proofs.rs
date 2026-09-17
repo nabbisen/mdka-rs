@@ -306,6 +306,18 @@ fn blocks_inside_pre_are_expected_as_text_with_one_line_break() {
 }
 
 #[test]
+fn br_inside_pre_is_expected_as_one_line_break() {
+    // RFC 024 rule 8: inside a <pre>, <br> is one line break of the code text.
+    // The code-block property fires on a Markdown hard break written for it.
+    assert_property(
+        "[code-block]",
+        "<pre>line1<br>line2</pre>",
+        "```\nline1  \nline2\n```\n",
+        "```\nline1\nline2\n```\n",
+    );
+}
+
+#[test]
 fn pre_inside_a_link_is_not_link_content() {
     // A code block holds text only (RFC 024 criterion 3), so a <pre> inside an
     // <a> is not linked; a link holding only a <pre> is an empty link.

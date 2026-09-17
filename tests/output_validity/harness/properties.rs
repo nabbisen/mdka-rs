@@ -237,6 +237,15 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                         if inside_pre && starts_markdown_block(name, opts) {
                             pre_break = true;
                         }
+                        // Rule 8: inside a <pre>, a <br> is one line break of
+                        // the code's text. (Inside an inline <code> it is one
+                        // space: `br` is in HTML_BLOCKS, so the word text above
+                        // already separates there.)
+                        if name == "br"
+                            && let Some((_, buf)) = pre.as_mut()
+                        {
+                            push_pre_text(buf, &mut pre_break, "\n");
+                        }
                         if let Some(kind) = skeleton_kind(name).filter(|_| !inside_pre) {
                             open.push((depth, facts.skeleton.len(), facts.text.len()));
                             facts.skeleton.push((kind, String::new()));
@@ -298,14 +307,7 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                     Node::Text(t) if hidden == 0 => {
                         facts.text.push_str(t);
                         if let Some((_, buf)) = pre.as_mut() {
-                            if std::mem::take(&mut pre_break)
-                                && !buf.is_empty()
-                                && !t.starts_with('\n')
-                                && !buf.ends_with('\n')
-                            {
-                                buf.push('\n');
-                            }
-                            buf.push_str(t);
+                            push_pre_text(buf, &mut pre_break, t);
                         }
                     }
                     _ => {}
@@ -520,6 +522,17 @@ fn missing(want: &[String], have: &[String]) -> Vec<String> {
         }
     }
     lost
+}
+
+/// Appends text to a `<pre>`'s code text. A block boundary pending since the
+/// last text is one line break (RFC 024 rule 7), unless the text on either side
+/// already provides one; none before the first text.
+fn push_pre_text(buf: &mut String, pre_break: &mut bool, t: &str) {
+    if std::mem::take(pre_break) && !buf.is_empty() && !t.starts_with('\n') && !buf.ends_with('\n')
+    {
+        buf.push('\n');
+    }
+    buf.push_str(t);
 }
 
 fn strip_one_newline(s: &str) -> &str {

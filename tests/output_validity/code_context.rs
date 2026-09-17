@@ -1,9 +1,10 @@
 //! Code holds text only (RFC 024 amendment of 2026-09-17, slice 024b):
 //! inline markup inside `<pre><code>`, several `<code>` children in one
 //! `<pre>`, and text beside them, and whitespace around `<code>` (024c, rule 6),
-//! and block elements inside `<pre>` (024d, rule 7).
+//! block elements inside `<pre>` (024d, rule 7), and `<br>` inside code (024e,
+//! rule 8).
 //! Expectations were written by the architect from the rules in the 024b,
-//! 024c and 024d addenda, not from output; the two container cells at the end
+//! 024c, 024d and 024e addenda, not from output; the two container cells at the end
 //! enter the structures 024d §3 states.
 
 use crate::harness::tree;
@@ -60,4 +61,20 @@ cells! {
         => tree(r#"ul(li(codeblock("a\nb")))"#);
     pre_blocks_in_blockquote: "<blockquote><pre><p>a</p><p>b</p></pre></blockquote>"
         => tree(r#"quote(codeblock("a\nb"))"#);
+}
+
+// ── <br> inside code (024e, rule 8); the pretty-printed reading of rule 7 ──
+
+cells! {
+    br_in_pre: "<pre>line1<br>line2<br>line3</pre>"
+        => tree(r#"codeblock("line1\nline2\nline3")"#),
+        defect(Rfc024, "the <br> is written as a Markdown hard break: two trailing spaces added to every code line");
+    br_in_pre_code: "<pre><code>x<br>y</code></pre>"
+        => tree(r#"codeblock("x\ny")"#),
+        defect(Rfc024, "the <br> is written as a Markdown hard break: trailing spaces added to the code line");
+    br_in_code_span: "<p><code>a<br>b</code></p>"
+        => tree(r#"para(code("a b"))"#),
+        defect(Rfc024, "the <br> is written as a Markdown hard break inside the code span: three spaces instead of one");
+    pretty_printed_blocks_in_pre: "<pre>\n  <p>a</p>\n  <p>b</p>\n</pre><p>after</p>"
+        => tree(r#"codeblock("  \na\n  \nb"), para("after")"#);
 }
