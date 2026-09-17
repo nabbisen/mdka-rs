@@ -61,6 +61,11 @@ pub struct MarkdownRenderer {
     /// Open `<pre>` elements. A `<pre>` nested in another opens no second
     /// fence and must not close the first.
     pre_depth: usize,
+    /// Inside a `<pre>`: a block element began or ended since the last text,
+    /// so the next text starts a new line (RFC 024 rule 7).
+    pre_block_break: bool,
+    /// Inside a `<pre>`: text has been written into the code block.
+    pre_has_text: bool,
     fence: Fence,
     /// Per open `<a>`.
     links: Vec<LinkState>,
@@ -78,6 +83,8 @@ impl MarkdownRenderer {
             list_stack: Vec::with_capacity(8),
             in_pre: false,
             pre_depth: 0,
+            pre_block_break: false,
+            pre_has_text: false,
             fence: Fence::None,
             links: Vec::new(),
             code_captures: Vec::new(),
@@ -184,10 +191,33 @@ impl MarkdownRenderer {
         if self.in_pre {
             if let Fence::Pending { held } = &mut self.fence {
                 if text.trim().is_empty() {
+                    // Held whitespace is the code block's text too (rule 6).
+                    if std::mem::take(&mut self.pre_block_break)
+                        && !held.is_empty()
+                        && !text.starts_with('\n')
+                        && !held.ends_with('\n')
+                    {
+                        held.push('\n');
+                    }
+                    if !text.is_empty() {
+                        self.pre_has_text = true;
+                    }
                     held.push_str(text);
                     return;
                 }
                 self.open_fence("");
+            }
+            // A block boundary inside the <pre> is one line break, unless the
+            // text already provides one; none before the first text.
+            if std::mem::take(&mut self.pre_block_break)
+                && self.pre_has_text
+                && !text.starts_with('\n')
+                && !self.sink.ends_with_newline()
+            {
+                self.sink.code_block_content("\n");
+            }
+            if !text.is_empty() {
+                self.pre_has_text = true;
             }
             self.sink.code_block_content(text);
             return;
@@ -269,6 +299,15 @@ impl MarkdownRenderer {
     }
 
     fn enter_block(&mut self, block: Block, elem: &scraper::node::Element, loose_list: bool) {
+        // Inside a <pre>, a block element -- a nested <pre> too -- contributes
+        // its text only: no container, prefix, marker or blank line, and its
+        // boundaries are line breaks (RFC 024 rule 7).
+        if self.in_pre {
+            self.pre_block_break = true;
+            if block != Block::Pre {
+                return;
+            }
+        }
         match block {
             Block::Heading(level) => {
                 self.begin_block();
@@ -484,6 +523,12 @@ impl MarkdownRenderer {
     }
 
     fn leave_block(&mut self, block: Block) {
+        if self.in_pre && (block != Block::Pre || self.pre_depth > 1) {
+            self.pre_block_break = true;
+            if block != Block::Pre {
+                return;
+            }
+        }
         match block {
             Block::Heading(_) | Block::Paragraph => self.end_block(),
             Block::UnorderedList | Block::OrderedList => {
@@ -517,6 +562,8 @@ impl MarkdownRenderer {
                 }
                 self.sink.code_block_content("```");
                 self.in_pre = false;
+                self.pre_block_break = false;
+                self.pre_has_text = false;
                 self.fence = Fence::None;
                 self.end_block();
             }

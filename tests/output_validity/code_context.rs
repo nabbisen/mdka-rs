@@ -1,10 +1,7 @@
 //! Code holds text only (RFC 024 amendment of 2026-09-17, slice 024b):
 //! inline markup inside `<pre><code>`, several `<code>` children in one
 //! `<pre>`, and text beside them, and whitespace around `<code>` (024c, rule 6),
-//! and block elements inside `<pre>` (024d, rule 7). `div_in_pre` and
-//! `div_in_pre_code` carry no marker: at `a90307d` they failed in Balanced,
-//! Strict and Preserve only (Minimal and Semantic unwrap the `<div>`), and a
-//! marker is strict in every mode.
+//! and block elements inside `<pre>` (024d, rule 7).
 //! Expectations were written by the architect from the rules in the 024b,
 //! 024c and 024d addenda, not from output; the two container cells at the end
 //! enter the structures 024d §3 states.
@@ -46,11 +43,9 @@ cells! {
 
 cells! {
     blockquote_and_ul_in_pre: "<pre><blockquote><p>q</p></blockquote><ul><li>a</li></ul></pre><p>after</p>"
-        => tree(r#"codeblock("q\na"), para("after")"#),
-        defect(Rfc024, "the quote and list push their prefix and marker into the code block; the fence closes outside the quote and swallows what follows");
+        => tree(r#"codeblock("q\na"), para("after")"#);
     p_in_pre: "<pre><p>one</p><p>two</p></pre><p>after</p>"
-        => tree(r#"codeblock("one\ntwo"), para("after")"#),
-        defect(Rfc024, "each paragraph inside the pre writes a blank line into the code");
+        => tree(r#"codeblock("one\ntwo"), para("after")"#);
     div_in_pre: "<pre><div>x</div></pre><p>after</p>"
         => tree(r#"codeblock("x"), para("after")"#);
     div_in_pre_code: "<pre><code><div>x</div></code></pre><p>after</p>"
@@ -62,9 +57,7 @@ cells! {
 
 cells! {
     pre_blocks_in_li: "<ul><li><pre><p>a</p><p>b</p></pre></li></ul>"
-        => tree(r#"ul(li(codeblock("a\nb")))"#),
-        defect(Rfc024, "the paragraphs inside the pre write line breaks into the code: a trailing blank line");
+        => tree(r#"ul(li(codeblock("a\nb")))"#);
     pre_blocks_in_blockquote: "<blockquote><pre><p>a</p><p>b</p></pre></blockquote>"
-        => tree(r#"quote(codeblock("a\nb"))"#),
-        defect(Rfc024, "the paragraphs inside the pre write blank lines into the code");
+        => tree(r#"quote(codeblock("a\nb"))"#);
 }
