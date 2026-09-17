@@ -9,8 +9,9 @@ mdka/
 │   ├── options.rs         ConversionMode, ConversionOptions
 │   ├── traversal.rs       Markdown conversion traversal
 │   ├── renderer.rs        MarkdownRenderer state machine
-│   │   └── sink.rs            The output sink: the only writer of Markdown
-│   ├── utils.rs           Whitespace normalisation + escaping
+│   │   ├── sink.rs            The output sink: the only writer of Markdown
+│   │   └── escape.rs          Escaping by context (RFC 010)
+│   ├── utils.rs           Tag classification helpers
 │   └── alloc_counter.rs   Custom allocator for benchmarks (deprecated since 2.2.2, removed in 2.4.0)
 ├── tests/             integration test modules
 ├── cli/               mdka-cli binary crate
@@ -78,6 +79,15 @@ handler cannot write around it:
   line carries the prefix of exactly the containers still open across it.
   Whether a list is tight or loose is decided before rendering, by the same
   one pass over the document that finds inline elements around blocks.
+- **Escaping by context** (`renderer/escape.rs`). Text is escaped as the sink
+  writes it, from the line it is on -- a list item's or quote's content starts
+  a block after its prefix -- and the character before it. An escape that
+  depends on the character *after* it (`1986.` is a list marker only before a
+  space; `!` opens an image only before `[`) waits, and is settled when the
+  destination's next byte is written, by whatever writes it: text, markup or a
+  line break. A backslash is then inserted in front of the waiting character.
+  Code-span captures are not escaped, and a fenced block's opening fence is
+  lengthened when it closes if its content holds a longer backtick run.
 
 Inside code -- an inline `<code>`, or a `<pre>` with or without `<code>` --
 child elements contribute text only: Markdown has no emphasis, links or images

@@ -118,6 +118,38 @@ that did not say what the HTML said to Markdown that does.
   The whitespace is now part of the code, as a browser shows it, so the
   two-space shape, which parsed correctly before, also changes: its spaces move
   inside the block. Other `<pre><code>` output is unchanged.
+- **Escaping now depends on where text is written, so text reads back as it
+  was.** The output bytes of most documents change: backslashes are removed
+  where nothing needed them, moved to the character that needed them, and
+  added where text was being read as Markdown. Several of the old outputs
+  destroyed content:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<ul><li>1986. A great year</li></ul>` | `- 1986. A great year` — a nested list; the number is lost | `- 1986\. A great year` |
+  | `<p>1986. A great year</p>` | `\1986. A great year` — the backslash shows | `1986\. A great year` |
+  | `<p>~~~</p><p>after</p>` | `~~~` — opens a code block that swallows the rest | `\~\~\~` |
+  | `<p>&lt;div&gt; hidden</p>` | `<div> hidden` — an HTML block; the text disappears | `\<div> hidden` |
+  | `<p>&amp;copy; 2024</p>` | `&copy; 2024` — renders as `© 2024` | `\&copy; 2024` |
+  | `<p>~~not struck~~</p>` | `~~not struck~~` — struck through on GitHub | `\~\~not struck\~\~` |
+  | `<a href="/a b.html">x</a>` | `[x](/a b.html)` — not a link | `[x](</a b.html>)` |
+  | `<a href="/x" title='say "hi"'>x</a>` | `[x](/x "say "hi"")` — not a link | `[x](/x 'say "hi"')` |
+  | `<img src="i.png" alt="a]b">` | `![a]b](i.png)` — not an image | `![a\]b](i.png)` |
+
+  Code is no longer escaped at all, and its delimiters grow instead:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `` <p><code>snake_case</code> and <code>a`b</code></p> `` | `` `snake\_case` and `a\`b` `` — backslashes in the code, and the second span broken | ```` `snake_case` and ``a`b`` ```` |
+  | ```` <pre><code>a\n```\nb</code></pre> ```` | the ```` ``` ```` line closes the block early | a four-backtick fence |
+
+  Plain text keeps fewer backslashes: `<p>snake_case and 2 * 3!</p>` gave
+  `snake\_case and 2 \* 3\!` and now gives `snake_case and 2 * 3!`.
+  Two touching bold or italic runs, `<strong>a</strong><strong>b</strong>`,
+  gave `**a****b**`, which renders as literal asterisks; one of them is now
+  written with underscores: `__a__**b**`. The rules are on the
+  [Text Processing](https://nabbisen.github.io/mdka-rs/api/text-processing.html#markdown-escaping)
+  page.
 - **A line break (`<br>`) inside code no longer adds spaces to the code.** It
   was written as a Markdown hard break, two spaces and a newline, which inside
   code are literal characters: code copied from the output gained trailing
