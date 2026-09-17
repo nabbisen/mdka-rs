@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use crate::utils::{self, Block};
 
+mod escape;
 mod sink;
 
 use sink::{Capture, Sink};
@@ -176,11 +177,10 @@ impl MarkdownRenderer {
     /// block that swallows the rest of the document.
     fn open_fence(&mut self, lang: &str) {
         if let Fence::Pending { held } = std::mem::replace(&mut self.fence, Fence::Open) {
-            let mut line = String::with_capacity(lang.len() + 4);
-            line.push_str("```");
-            line.push_str(lang);
-            line.push('\n');
-            self.sink.fence_line(&line);
+            // An info string cannot hold a backtick: the hint is dropped
+            // rather than break the fence (RFC 010 §3.2).
+            let lang = if lang.contains('`') { "" } else { lang };
+            self.sink.open_fence(lang);
             self.sink.code_block_content(&held);
         }
     }
@@ -313,7 +313,7 @@ impl MarkdownRenderer {
                 self.begin_block();
                 let mut marker = "#".repeat(level);
                 marker.push(' ');
-                self.sink.markup_closed(&marker);
+                self.sink.heading_marker(&marker);
             }
             Block::Paragraph => self.begin_block(),
             Block::UnorderedList => {
@@ -424,12 +424,12 @@ impl MarkdownRenderer {
                 let write = !self.in_code()
                     && !wraps_blocks
                     && !utils::emphasis_negated_by_style(tag, elem.attr("style"));
-                if write {
+                let written = write.then(|| {
                     let _ = self.open_distributed_link();
                     self.sink.flush_space();
-                    self.sink.markup(delimiter);
-                }
-                self.emphasis.push(write.then_some(delimiter));
+                    self.sink.emphasis_open(delimiter)
+                });
+                self.emphasis.push(written);
             }
             "a" => {
                 let href = elem.attr("href").unwrap_or("").to_string();
@@ -450,19 +450,11 @@ impl MarkdownRenderer {
                 self.links.push(state);
             }
             "img" if !self.in_code() => {
-                let src = elem.attr("src").unwrap_or("");
-                let alt = elem.attr("alt").unwrap_or("");
-                let mut image = String::with_capacity(src.len() + alt.len() + 8);
-                image.push_str("![");
-                image.push_str(alt);
-                image.push_str("](");
-                image.push_str(src);
-                if let Some(t) = elem.attr("title") {
-                    image.push_str(" \"");
-                    image.push_str(t);
-                    image.push('"');
-                }
-                image.push(')');
+                let image = Sink::image_syntax(
+                    elem.attr("alt").unwrap_or(""),
+                    elem.attr("src").unwrap_or(""),
+                    elem.attr("title"),
+                );
                 let _ = self.open_distributed_link();
                 self.sink.flush_space();
                 self.sink.markup_closed(&image);
@@ -494,13 +486,13 @@ impl MarkdownRenderer {
                     && let Some((_, content, trailing)) = self.sink.end_capture()
                 {
                     // A code span with no content writes nothing.
-                    let rendered = (!content.is_empty()).then(|| format!("`{content}`"));
+                    let rendered = (!content.is_empty()).then(|| escape::code_span(&content));
                     self.sink.splice(rendered.as_deref(), trailing);
                 }
             }
             "strong" | "b" | "em" | "i" => {
                 if let Some(Some(delimiter)) = self.emphasis.pop() {
-                    self.sink.markup(delimiter);
+                    self.sink.emphasis_close(delimiter);
                 }
             }
             "a" => match self.links.pop() {
@@ -565,7 +557,7 @@ impl MarkdownRenderer {
                 if !self.sink.ends_with_newline() {
                     self.sink.code_block_content("\n");
                 }
-                self.sink.code_block_content("```");
+                self.sink.close_fence();
                 self.in_pre = false;
                 self.pre_block_break = false;
                 self.pre_has_text = false;
@@ -581,18 +573,18 @@ impl MarkdownRenderer {
     }
 }
 
-/// `[text](href "title")`. Destinations and titles are written as given;
-/// escaping them is RFC 010's.
+/// `[text](href "title")`. `text` was escaped as it was captured; the
+/// destination and title are escaped here (RFC 010 §3.3, §3.4).
 fn link_syntax(text: &str, href: &str, title: Option<&str>) -> String {
-    let mut link = String::with_capacity(text.len() + href.len() + 4);
+    let destination = escape::destination(href);
+    let mut link = String::with_capacity(text.len() + destination.len() + 4);
     link.push('[');
     link.push_str(text);
     link.push_str("](");
-    link.push_str(href);
+    link.push_str(&destination);
     if let Some(t) = title {
-        link.push_str(" \"");
-        link.push_str(t);
-        link.push('"');
+        link.push(' ');
+        link.push_str(&escape::title(t));
     }
     link.push(')');
     link

@@ -55,8 +55,7 @@ cells! {
     a_in_code: r#"<code><a href="/in">t</a></code>"#
         => tree(r#"para(code("t"))"#);
     text_in_code: r#"<code>a_b *c* [d] (e)</code>"#
-        => tree(r#"para(code("a_b *c* [d] (e)"))"#),
-        defect(Rfc010, "escaping applied inside the code span, where CommonMark does not honour it: literal backslashes (audit A-03)");
+        => tree(r#"para(code("a_b *c* [d] (e)"))"#);
 }
 
 // ── in <li> ────────────────────────────────────────────────────────────────

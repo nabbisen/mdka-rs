@@ -93,7 +93,9 @@ async function run(name, fn) {
   })
 
   await run('htmlToMarkdown: markdown escape', () => {
-    const md = htmlToMarkdown('<p>2 * 3</p>')
+    // RFC 010: `*` is escaped only where it could open or close emphasis.
+    assert.strictEqual(htmlToMarkdown('<p>2 * 3</p>'), '2 * 3\n')
+    const md = htmlToMarkdown('<p>2 *3*</p>')
     assert.ok(md.includes('\\*'), `expected escape, got: ${md}`)
   })
 

@@ -241,6 +241,10 @@ pub fn known_defect_with(
     ))
 }
 
+// Reached only through `cells!` when a cell carries a marker; with none marked,
+// the helper stays for the next regression (its behaviour is proven in
+// `proofs.rs` through `known_defect_with`).
+#[allow(dead_code)]
 pub fn known_defect(owner: Owner, reason: &str, html: &str, expect: Expect) {
     match known_defect_with(mdka_convert, owner, reason, html, expect) {
         // Printed for the inventory capture (`-- --nocapture`); silent otherwise.

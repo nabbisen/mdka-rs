@@ -161,8 +161,9 @@ def test_pre_preserves_whitespace():
 # ─── html_to_markdown: エスケープ ────────────────────────────────────────────
 
 def test_escape_asterisk():
-    md = html_to_markdown("<p>2 * 3</p>")
-    assert r"\*" in md
+    # RFC 010: `*` is escaped only where it could open or close emphasis.
+    assert html_to_markdown("<p>2 * 3</p>") == "2 * 3\n"
+    assert r"\*" in html_to_markdown("<p>2 *3*</p>")
 
 def test_escape_hash_at_line_start():
     md = html_to_markdown("<p># not a heading</p>")

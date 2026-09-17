@@ -119,8 +119,38 @@ fn pre_without_code_child() {
 
 #[test]
 fn escape_asterisk_in_text() {
-    let md = conv("<p>2 * 3</p>");
+    // RFC 010 §3.7: `*` is escaped only where it could open or close emphasis.
+    // Between two spaces it cannot, and the old `2 \* 3` was noise (A-10).
+    assert_eq!(conv("<p>2 * 3</p>"), "2 * 3\n");
+    let md = conv("<p>2 *3*</p>");
     assert!(md.contains("\\*"), "escape missing: {md}");
+}
+
+#[test]
+fn text_that_cannot_form_markdown_is_not_escaped() {
+    // RFC 010 criterion 5 and audit A-10: escapes only where the text would
+    // otherwise parse as something else. The harness reads parsed events, so
+    // the bytes are pinned here.
+    for text in [
+        "snake_case_here",
+        "Wow! Really!",
+        "C# rocks",
+        "-5 degrees",
+        "1.5 million",
+        "a < b & c > d",
+        "path\\to\\file",
+    ] {
+        assert_eq!(
+            conv(&format!("<p>{}</p>", html_escape(text))),
+            format!("{text}\n")
+        );
+    }
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 #[test]

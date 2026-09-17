@@ -24,13 +24,20 @@
 //! Inside a capture there is no line to prefix -- the captured content is
 //! spliced into the document as a unit, and the prefix is written then.
 //!
+//! **Escaping by context (RFC 010).** Prose goes through
+//! [`escape::decide`], with the line state and the character before it; an
+//! escape that depends on the character after it waits, and is settled when
+//! the destination's next byte is written, by whatever writes it. Code-span
+//! captures are not escaped, and fenced blocks are sized to their content.
+//! Every write to a destination therefore goes through [`Dest::put`].
+//!
 //! **Line breaks are written lazily.** A block boundary records how many
 //! newlines it needs; they are written when the next content arrives, so a
 //! blank line gets the prefix of the containers that stayed open across it,
 //! and a container that closed in between leaves no `>` on the blank line
 //! after it.
 
-use crate::utils;
+use super::escape::{self, Decision, FenceScan, Head, Line, Wait};
 
 #[cfg(test)]
 mod tests;
@@ -47,6 +54,18 @@ struct Dest {
     /// The number of trailing newlines a block boundary asked for and that
     /// are not yet written; written before the next content.
     pending_newlines: usize,
+    /// The current line, for escaping.
+    line: Line,
+    /// A written character whose escape waits on the next byte: its offset in
+    /// `buf` and what it waits for.
+    wait: Option<(usize, Wait)>,
+    /// A link's text or an image's alt: it follows `[`, and `]` ends it.
+    link_text: bool,
+    /// Offsets of the emphasis delimiters opened and not yet closed.
+    emphasis_opens: Vec<usize>,
+    /// The emphasis span closed last: its opening offset, delimiter length
+    /// and end offset (RFC 010 §3.8).
+    last_emphasis: Option<(usize, usize, usize)>,
 }
 
 impl Dest {
@@ -57,6 +76,118 @@ impl Dest {
             at_line_start,
             last_was_space: false,
             pending_newlines: 0,
+            line: if at_line_start {
+                Line::START
+            } else {
+                Line::INLINE
+            },
+            wait: None,
+            link_text: false,
+            emphasis_opens: Vec::new(),
+            last_emphasis: None,
+        }
+    }
+
+    /// Settles the waiting escape, now that the byte after it is known
+    /// (`None`: nothing follows in this destination).
+    fn settle(&mut self, next: Option<char>) {
+        if let Some((at, wait)) = self.wait.take()
+            && wait.escapes(next)
+        {
+            self.buf.insert(at, '\\');
+        }
+    }
+
+    /// Every write to `buf` goes through here: the waiting escape is settled
+    /// against the first character, and a line break starts a new line -- a
+    /// block boundary's; a hard break says otherwise afterwards.
+    fn put(&mut self, s: &str) {
+        let Some(first) = s.chars().next() else {
+            return;
+        };
+        self.settle(Some(first));
+        self.buf.push_str(s);
+        if s.contains('|') {
+            self.line.pipe_here = true;
+        }
+        if s.contains('\n') {
+            self.line.newline(false);
+            self.last_emphasis = None;
+        }
+    }
+
+    /// The character before the next one written: the end of `buf`, or `[`
+    /// at the start of a link's text.
+    fn prev_char(&self) -> Option<char> {
+        self.buf
+            .chars()
+            .next_back()
+            .or(if self.link_text { Some('[') } else { None })
+    }
+
+    /// Text: whitespace collapsed, and escaped by context unless `escape` is
+    /// false (a code span, whose content is verbatim).
+    fn write_text(&mut self, text: &str, escape: bool) {
+        // Whitespace at the start of a line is dropped until the first
+        // character; inside, a run of whitespace is one space, written only
+        // before the next character.
+        let mut line_start = self.at_line_start;
+        for c in text.chars() {
+            if c.is_ascii_whitespace() || c == '\u{a0}' {
+                if !line_start {
+                    self.last_was_space = true;
+                }
+                continue;
+            }
+            if self.last_was_space && !line_start {
+                self.put_char(' ');
+            }
+            self.last_was_space = false;
+            line_start = false;
+            self.at_line_start = false;
+            // Past the start of the line, a character that no context escapes
+            // (nor `|`, which the line state notes) is written as it is: the
+            // common case, kept cheap.
+            if !escape {
+                self.line.head = Head::Inline;
+                self.put_char(c);
+            } else if self.line.head == Head::Inline && !escape::may_escape(c) && c != '|' {
+                if self.wait.is_some() {
+                    self.settle(Some(c));
+                }
+                self.buf.push(c);
+            } else {
+                self.write_escaped(c);
+            }
+        }
+    }
+
+    /// A character that may need escaping, decided by context. Kept out of
+    /// [`write_text`](Self::write_text)'s loop, which it would otherwise bloat
+    /// for the rare characters that reach it.
+    #[inline(never)]
+    fn write_escaped(&mut self, c: char) {
+        match escape::decide(c, self.prev_char(), &mut self.line, self.link_text) {
+            Decision::Plain => self.put_char(c),
+            Decision::Escape => {
+                self.put_char('\\');
+                self.put_char(c);
+            }
+            Decision::Wait(wait) => {
+                self.put_char(c);
+                self.wait = Some((self.buf.len() - c.len_utf8(), wait));
+            }
+        }
+    }
+
+    /// [`put`](Self::put) for one character that is not a line break.
+    fn put_char(&mut self, c: char) {
+        if self.wait.is_some() {
+            self.settle(Some(c));
+        }
+        self.buf.push(c);
+        if c == '|' {
+            self.line.pipe_here = true;
         }
     }
 
@@ -65,7 +196,7 @@ impl Dest {
         if s.is_empty() {
             return;
         }
-        self.buf.push_str(s);
+        self.put(s);
         let trailing = s.bytes().rev().take_while(|&b| b == b'\n').count();
         if trailing > 0 {
             self.newlines_emitted = trailing;
@@ -111,6 +242,9 @@ pub(super) struct Sink {
     /// The fewest containers open since content was last written: blank
     /// lines written before the next content belong to these.
     min_depth: usize,
+    /// The open fenced block in the document: the offset just after its
+    /// opening backticks, and its content scanned so far (RFC 010 §3.2).
+    fence: Option<(usize, FenceScan)>,
 }
 
 impl Sink {
@@ -121,6 +255,7 @@ impl Sink {
             containers: Vec::new(),
             only_markers: false,
             min_depth: 0,
+            fence: None,
         }
     }
 
@@ -189,7 +324,7 @@ impl Sink {
     pub(super) fn enter_blockquote(&mut self) {
         // On a line holding only an item marker, the quote starts on it.
         if self.only_markers && !self.document.at_line_start && !self.is_capturing() {
-            self.document.buf.push_str("> ");
+            self.document.put("> ");
         }
         self.containers.push(Container::Quote);
     }
@@ -205,7 +340,9 @@ impl Sink {
         self.flush_newlines();
         self.emit_pending_prefix();
         let dest = self.dest();
-        dest.buf.push_str(marker);
+        // Like a container prefix, a marker leaves the line at its start: the
+        // item's content begins a block.
+        dest.put(marker);
         dest.newlines_emitted = 0;
         dest.at_line_start = false;
         dest.last_was_space = false;
@@ -251,9 +388,9 @@ impl Sink {
         if dest.pending_newlines > dest.newlines_emitted {
             for i in dest.newlines_emitted..dest.pending_newlines {
                 if i >= 1 {
-                    dest.buf.push_str(&blank);
+                    dest.put(&blank);
                 }
-                dest.buf.push('\n');
+                dest.put("\n");
             }
             dest.newlines_emitted = dest.pending_newlines;
         }
@@ -270,7 +407,7 @@ impl Sink {
         self.min_depth = self.containers.len();
         if self.document.at_line_start && !self.containers.is_empty() {
             let prefix = self.prefix(self.containers.len());
-            self.document.buf.push_str(&prefix);
+            self.document.put(&prefix);
             self.document.at_line_start = false;
         }
     }
@@ -323,7 +460,7 @@ impl Sink {
     pub(super) fn flush_space(&mut self) {
         let dest = self.dest();
         if dest.last_was_space && !dest.at_line_start {
-            dest.buf.push(' ');
+            dest.put(" ");
             dest.last_was_space = false;
         }
     }
@@ -335,7 +472,8 @@ impl Sink {
     pub(super) fn markup(&mut self, s: &str) {
         self.begin_content();
         let dest = self.dest();
-        dest.buf.push_str(s);
+        dest.put(s);
+        dest.line.head = Head::Inline;
         dest.newlines_emitted = 0;
         dest.at_line_start = false;
     }
@@ -346,14 +484,102 @@ impl Sink {
         self.dest().last_was_space = false;
     }
 
-    /// A code fence line (ends with `\n`). Emits the pending prefix first; the
-    /// next byte is at a line start.
-    pub(super) fn fence_line(&mut self, s: &str) {
+    /// An ATX heading's marker (`## `). Its content is inline, and a trailing
+    /// `#` run in it would be read as the closing sequence.
+    pub(super) fn heading_marker(&mut self, marker: &str) {
+        self.markup_closed(marker);
+        self.dest().line.heading = true;
+    }
+
+    /// Opens emphasis with `delimiter` (`*` or `**`) and returns the delimiter
+    /// written, which the closing run must repeat.
+    ///
+    /// When the emphasis closed last ends exactly here with a `*` run, its
+    /// closing run would touch this opening run, and CommonMark would resolve
+    /// the joined run by its own rules (RFC 010 §3.8: `*a**b*` is not two
+    /// emphases). One of the two spans is written with `_` instead:
+    ///
+    /// - the earlier span, if `_` can still open where it starts -- after
+    ///   whitespace, punctuation or nothing -- and no `_` touches its runs;
+    ///   its closing run is followed by this `*`, so it can close;
+    /// - otherwise this span: its opening run follows the earlier `*` run, so
+    ///   it can open; it can close unless a letter or digit follows it.
+    ///
+    /// Between two letters or digits (`x*a**b*y`) neither can: delimiters
+    /// cannot express that, and it is left as it is.
+    pub(super) fn emphasis_open(&mut self, delimiter: &'static str) -> &'static str {
         self.begin_content();
         let dest = self.dest();
-        dest.buf.push_str(s);
+        let mut written = delimiter;
+        if let Some((open, len, end)) = dest.last_emphasis
+            && end == dest.buf.len()
+            && dest.buf[end - len..end].starts_with('*')
+        {
+            let before = dest.buf[..open].chars().next_back();
+            let first = dest.buf[open + len..].chars().next();
+            let last = dest.buf[..end - len].chars().next_back();
+            if escape::class(before) != escape::Class::Word
+                && ![before, first, last].contains(&Some('_'))
+            {
+                let run = "_".repeat(len);
+                dest.buf.replace_range(open..open + len, &run);
+                dest.buf.replace_range(end - len..end, &run);
+            } else if escape::class(before) != escape::Class::Word {
+                written = if delimiter.len() == 2 { "__" } else { "_" };
+            }
+        }
+        dest.put(written);
+        dest.line.head = Head::Inline;
+        dest.newlines_emitted = 0;
+        dest.at_line_start = false;
+        dest.emphasis_opens.push(dest.buf.len() - written.len());
+        written
+    }
+
+    /// Closes the innermost emphasis with `delimiter`.
+    pub(super) fn emphasis_close(&mut self, delimiter: &str) {
+        self.markup(delimiter);
+        let dest = self.dest();
+        dest.last_emphasis = dest
+            .emphasis_opens
+            .pop()
+            .map(|open| (open, delimiter.len(), dest.buf.len()));
+    }
+
+    /// The opening fence of a code block, with its info string. Emits the
+    /// pending prefix first; the next byte is at a line start. The fence is
+    /// three backticks for now: [`close_fence`](Self::close_fence) lengthens
+    /// it if the content needs more.
+    pub(super) fn open_fence(&mut self, info: &str) {
+        self.begin_content();
+        let capturing = self.is_capturing();
+        let dest = self.dest();
+        dest.put("```");
+        let at = dest.buf.len();
+        dest.put(info);
+        dest.put("\n");
         dest.newlines_emitted = 0;
         dest.at_line_start = true;
+        if !capturing {
+            self.fence = Some((at, FenceScan::NEW));
+        }
+    }
+
+    /// The closing fence: one backtick longer than the longest backtick run at
+    /// the start of a content line, at least three, with the opening fence
+    /// lengthened to match (RFC 010 §3.2).
+    pub(super) fn close_fence(&mut self) {
+        let len = match self.fence.take() {
+            Some((at, scan)) => {
+                let len = scan.fence_len();
+                if len > 3 {
+                    self.document.buf.insert_str(at, &"`".repeat(len - 3));
+                }
+                len
+            }
+            None => 3,
+        };
+        self.code_block_content(&"`".repeat(len));
     }
 
     /// A block-level literal (a thematic break, an id anchor). Emits the
@@ -368,7 +594,9 @@ impl Sink {
     pub(super) fn id_anchor(&mut self, anchor: &str) {
         self.begin_content();
         self.flush_space();
-        self.dest().push_raw(anchor);
+        let dest = self.dest();
+        dest.push_raw(anchor);
+        dest.line.head = Head::Inline;
     }
 
     /// Code block content, written verbatim. Every line inside a container
@@ -384,15 +612,18 @@ impl Sink {
             self.dest().push_raw(s);
             return;
         }
+        if let Some((_, scan)) = &mut self.fence {
+            scan.feed(s);
+        }
         self.only_markers = false;
         self.min_depth = self.containers.len();
         for line in s.split_inclusive('\n') {
             if self.document.at_line_start && !self.containers.is_empty() {
                 let prefix = self.prefix(self.containers.len());
                 if line == "\n" {
-                    self.document.buf.push_str(prefix.trim_end());
+                    self.document.put(prefix.trim_end());
                 } else {
-                    self.document.buf.push_str(&prefix);
+                    self.document.put(&prefix);
                 }
             }
             self.document.push_raw(line);
@@ -406,30 +637,57 @@ impl Sink {
             self.only_markers = false;
         }
         let dest = self.dest();
-        dest.buf.push_str("  \n");
+        let pipe = dest.line.pipe_here;
+        dest.put("  \n");
+        // The paragraph continues on the next line.
+        dest.line.pipe_here = pipe;
+        dest.line.newline(true);
         dest.newlines_emitted = 1;
         dest.at_line_start = true;
         dest.last_was_space = false;
     }
 
-    /// Text: whitespace collapsed and Markdown-escaped (`utils::write_normalised`).
+    /// Text: whitespace collapsed, and escaped by context -- not at all inside
+    /// a code span.
     pub(super) fn text(&mut self, text: &str) {
         let has_content = !text.trim().is_empty();
         if has_content {
             self.begin_content();
         }
-        let dest = self.dest();
-        let at_block = dest.at_line_start;
-        utils::write_normalised(
-            text,
-            &mut dest.buf,
-            &mut dest.last_was_space,
-            at_block,
-            &mut dest.at_line_start,
+        let escape = !matches!(
+            self.captures.last(),
+            Some(Open {
+                kind: Capture::CodeSpan,
+                ..
+            })
         );
+        let dest = self.dest();
+        dest.write_text(text, escape);
         if has_content {
             dest.newlines_emitted = 0;
         }
+    }
+
+    /// `![alt](src "title")`, with the alt text escaped as a link's text and
+    /// the destination and title by their own rules (RFC 010 §3.3–3.5).
+    pub(super) fn image_syntax(alt: &str, src: &str, title: Option<&str>) -> String {
+        let mut text = Dest::new(alt.len(), true);
+        text.line = Line::INLINE;
+        text.link_text = true;
+        text.write_text(alt, true);
+        text.settle(Some(']'));
+        let destination = escape::destination(src);
+        let mut image = String::with_capacity(text.buf.len() + destination.len() + 8);
+        image.push_str("![");
+        image.push_str(&text.buf);
+        image.push_str("](");
+        image.push_str(&destination);
+        if let Some(t) = title {
+            image.push(' ');
+            image.push_str(&escape::title(t));
+        }
+        image.push(')');
+        image
     }
 
     // ─── Captures ──────────────────────────────────────────────────────────
@@ -437,17 +695,19 @@ impl Sink {
     /// Starts collecting into a new buffer. Whitespace pending in the current
     /// destination stays pending there until the capture closes.
     pub(super) fn begin_capture(&mut self, kind: Capture) {
-        self.captures.push(Open {
-            kind,
-            dest: Dest::new(0, false),
-        });
+        let mut dest = Dest::new(0, false);
+        dest.link_text = matches!(kind, Capture::Link { .. });
+        self.captures.push(Open { kind, dest });
     }
 
     /// Closes the innermost capture and returns what it collected, after
     /// restoring the destination it opened in. The caller decides what to
     /// write with [`splice`](Self::splice).
     pub(super) fn end_capture(&mut self) -> Option<(Capture, String, bool)> {
-        let open = self.captures.pop()?;
+        let mut open = self.captures.pop()?;
+        // A link's text is followed by `]`.
+        let next = matches!(open.kind, Capture::Link { .. }).then_some(']');
+        open.dest.settle(next);
         Some((open.kind, open.dest.buf, open.dest.last_was_space))
     }
 
@@ -479,7 +739,9 @@ impl Sink {
             "container prefix stack unbalanced at document end: {:?}",
             self.containers
         );
-        let mut out = self.document.buf;
+        let mut document = self.document;
+        document.settle(None);
+        let mut out = document.buf;
         let end = out.trim_end().len();
         out.truncate(end);
         if !out.is_empty() {
