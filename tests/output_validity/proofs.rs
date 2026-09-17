@@ -286,6 +286,26 @@ fn inline_link_split_in_two_is_still_a_violation() {
 }
 
 #[test]
+fn blocks_inside_pre_are_expected_as_text_with_one_line_break() {
+    // RFC 024 rule 7: inside a <pre>, a block element is text only and a block
+    // boundary is one line break. The code-block property still fires on a
+    // blank line written for it, and the blocks property on a container
+    // written around the code.
+    assert_property(
+        "[code-block]",
+        "<pre><p>one</p><p>two</p></pre>",
+        "```\none\n\ntwo\n```\n",
+        "```\none\ntwo\n```\n",
+    );
+    assert_property(
+        "[blocks]",
+        "<pre><blockquote><p>q</p></blockquote></pre>",
+        "> ```\n> q\n> ```\n",
+        "```\nq\n```\n",
+    );
+}
+
+#[test]
 fn pre_inside_a_link_is_not_link_content() {
     // A code block holds text only (RFC 024 criterion 3), so a <pre> inside an
     // <a> is not linked; a link holding only a <pre> is an empty link.

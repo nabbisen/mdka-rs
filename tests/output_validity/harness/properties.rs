@@ -206,6 +206,9 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
     let mut hidden = 0usize;
     let mut code = 0usize;
     let mut pre: Option<(usize, String)> = None;
+    // Inside a <pre>, a block element began or ended since the last text:
+    // RFC 024 rule 7 makes that boundary one line break in the code.
+    let mut pre_break = false;
     let mut depth = 0usize;
     // (depth, skeleton index, text offset) for each open skeleton element.
     let mut open: Vec<(usize, usize, usize)> = Vec::new();
@@ -228,8 +231,13 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                         if HTML_BLOCKS.contains(&name) {
                             facts.text.push(' ');
                         }
-                        let nested_pre = name == "pre" && pre.is_some();
-                        if let Some(kind) = skeleton_kind(name).filter(|_| !nested_pre) {
+                        // Rule 7: inside a <pre> -- including a nested one --
+                        // a block element is text only, not a Markdown block.
+                        let inside_pre = pre.is_some();
+                        if inside_pre && starts_markdown_block(name, opts) {
+                            pre_break = true;
+                        }
+                        if let Some(kind) = skeleton_kind(name).filter(|_| !inside_pre) {
                             open.push((depth, facts.skeleton.len(), facts.text.len()));
                             facts.skeleton.push((kind, String::new()));
                         }
@@ -290,6 +298,13 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                     Node::Text(t) if hidden == 0 => {
                         facts.text.push_str(t);
                         if let Some((_, buf)) = pre.as_mut() {
+                            if std::mem::take(&mut pre_break)
+                                && !buf.is_empty()
+                                && !t.starts_with('\n')
+                                && !buf.ends_with('\n')
+                            {
+                                buf.push('\n');
+                            }
                             buf.push_str(t);
                         }
                     }
@@ -309,7 +324,13 @@ pub fn html_facts(html: &str, opts: &ConversionOptions) -> HtmlFacts {
                             let (_, i, from) = open.pop().expect("open skeleton element");
                             facts.skeleton[i].1 = words(&facts.text[from..]);
                         }
-                        if name == "pre" && pre.as_ref().is_some_and(|(d, _)| *d == depth) {
+                        let closes_pre =
+                            name == "pre" && pre.as_ref().is_some_and(|(d, _)| *d == depth);
+                        if pre.is_some() && !closes_pre && starts_markdown_block(name, opts) {
+                            pre_break = true;
+                        }
+                        if closes_pre {
+                            pre_break = false;
                             for anchor in anchors.iter_mut() {
                                 if let Some(start) = anchor.pre_from.take() {
                                     anchor.unlinked.push((start, facts.text.len()));
