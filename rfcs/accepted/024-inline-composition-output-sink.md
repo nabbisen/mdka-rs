@@ -227,3 +227,7 @@ block's text; **the fence is always written at the start of its line**, never af
 for whitespace before `<code>`, whose 2.2.3 bytes put a four-space-indented fence where CommonMark reads an indented code
 block — destroying the rest of the document. Rule 4 restated: language from the first `<code>` child when only whitespace
 precedes it. Slice `024c`.
+
+**Amendment, 2026-09-17 (review of RFC 035).** Rule 7: inside a code context (`<pre>`, including `<pre><code>`), **block elements contribute
+their text only**; each block boundary is one line break, with no container, prefix, marker or blank line. Without it, a blockquote and a
+list inside `<pre>` pushed RFC 035's containers into the code block and the orphaned fence swallowed the rest of the document. Slice `024d`.

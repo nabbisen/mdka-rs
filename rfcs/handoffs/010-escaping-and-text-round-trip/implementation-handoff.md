@@ -16,8 +16,10 @@
 | **RFC 035 approved** | accepted by the owner 2026-09-17 — block-start escaping (§3.6) needs correct list-item and quote structure to know where a block starts; RFC 035 fixes that structure |
 | `025c` approved | ✅ met 2026-09-16 — GFM parsing and 4 GFM cells owned by this RFC |
 
-**Start when** `.git-exclude/reviewed/035-block-structure-inside-containers/README.md` exists with an
-approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
+| RFC 035 approved | ✅ met 2026-09-17 (`a90307d`) |
+| **Slice `024d` approved** | **pending** — code-context rendering in the same renderer |
+
+**Start when** `.git-exclude/reviewed/024d-blocks-in-code-are-text/README.md` exists with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
 
@@ -37,6 +39,10 @@ time you read this. **Re-derive each fact** and state what moved.
   `at_line_start` is false so nothing is escaped (`1986.` becomes a list); the same table runs
   inside code (`snake\_case` in a code span).
 - Destinations and titles are written **raw** by the `<a>`/`<img>` arms.
+- **Block-start context after RFC 035** — the sink now holds a container stack (`containers: Vec<Container>`, list items and quotes),
+  flushes pending newlines with the prefix of exactly the containers still open, and tracks when a line holds **only markers**
+  (`only_markers`) after `- `, `1. ` or `> `. That state is precisely §3.6's "block start after any prefix". Use it; do not rebuild it.
+  Verify these names when you start.
 - Nothing handles `<`, `&`, `~~~`, or code-span delimiter length.
 - Examples, current output:
 

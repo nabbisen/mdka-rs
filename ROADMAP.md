@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; 035 (in progress), 010 remain.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024d`, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -448,10 +448,10 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`) — sink, code holds text only, fence at line start |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); **`024d` next** — blocks inside `<pre>` swallowed the document |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ implemented & approved (`b91aafb`, `cb5e351`) — tree-query pre-pass, style negation, links distributed over blocks |
-| 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | **in progress** (handed over 2026-09-17, 18 cells) — corrects the M3 reshape, which had left these validity defects in RFC 009 / `2.4.0` |
-| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after 035 |
+| 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ✅ implemented & approved (`a90307d`) — container prefix stack; loose/tight rule |
+| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after `024d` |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
