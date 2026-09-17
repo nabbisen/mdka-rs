@@ -4,7 +4,7 @@
 **Current version.** 2.2.3 (released 2026-09-16)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024d`, 010 remain.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 (output validity → `2.3.0`) in progress** — control repairs 030–034, RFC 025 (+`025c`) and RFC 024 done; `024e`, 010 remain.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -448,10 +448,10 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 033 | Published docs: the source is what the reader gets | P1 | S | ✅ implemented & approved |
 | 034 | PyPI: declared wheel matrix, checked where published | P1 | M | ✅ implemented & approved (034, 034b) |
 | 025 | Markdown output-validity harness | **P0** | M | ✅ harness and `025c` approved (`d5d64cd`: 115 cells, 69 known defects, CommonMark + GFM); corpus slice `025b` unscheduled |
-| 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); **`024d` next** — blocks inside `<pre>` swallowed the document |
+| 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); `024d` ✅ (`e317a72`, blocks inside `<pre>`); **`024e` next** — `<br>` inside code added trailing spaces |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ implemented & approved (`b91aafb`, `cb5e351`) — tree-query pre-pass, style negation, links distributed over blocks |
 | 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ✅ implemented & approved (`a90307d`) — container prefix stack; loose/tight rule |
-| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after `024d` |
+| 010 | Escaping and text round-trip | **P0** | L | accepted 2026-09-16 — 28 harness cells, content-destroying; after `024e` |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
@@ -601,6 +601,13 @@ Four additive options requested by bekoedit, listed so they are not lost:
 | Drop or alt-only `data:` URI images | A pasted screenshot puts megabytes of base64 into the output |
 | Read inline `style` for emphasis (opt-in) | Google Docs and some editors express bold/italic only through `style` |
 | Backslash hard-break instead of two trailing spaces | Editors that strip trailing whitespace silently remove the break |
+
+**Harness limitations recorded, 2026-09-17 (RFC 024 review of `024d`):**
+
+- `known_defect` is strict in **every** mode, so a defect present in only some modes (e.g. one a mode's unwrapping hides) cannot be
+  marked; such a cell must stay unmarked until fixed. A per-mode marker is a candidate if this recurs.
+- The `[text]` word check splits words at HTML block tags regardless of `unwrap_unknown_wrappers`, so it disagrees with Minimal and
+  Semantic joining unwrapped `<div>`s (documented behaviour).
 
 **Evidence for `emit_id_anchors`, 2026-09-16:** in Balanced mode every Google Docs
 paste emits Google's internal clipboard GUID as a raw anchor —

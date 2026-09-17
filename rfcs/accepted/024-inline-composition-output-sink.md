@@ -231,3 +231,7 @@ precedes it. Slice `024c`.
 **Amendment, 2026-09-17 (review of RFC 035).** Rule 7: inside a code context (`<pre>`, including `<pre><code>`), **block elements contribute
 their text only**; each block boundary is one line break, with no container, prefix, marker or blank line. Without it, a blockquote and a
 list inside `<pre>` pushed RFC 035's containers into the code block and the orphaned fence swallowed the rest of the document. Slice `024d`.
+
+**Amendment, 2026-09-17 (review of `024d`).** Rule 8: inside a code context, `<br>` is text — one line break in a `<pre>`, one space in an
+inline code span. It had been written as a Markdown hard break, which inside a code block adds two literal trailing spaces to every line.
+Slice `024e`.

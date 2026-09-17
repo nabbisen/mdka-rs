@@ -17,9 +17,10 @@
 | `025c` approved | ✅ met 2026-09-16 — GFM parsing and 4 GFM cells owned by this RFC |
 
 | RFC 035 approved | ✅ met 2026-09-17 (`a90307d`) |
-| **Slice `024d` approved** | **pending** — code-context rendering in the same renderer |
+| Slice `024d` approved | ✅ met 2026-09-17 (`e317a72`) |
+| **Slice `024e` approved** | **pending** — code-context rendering in the same renderer |
 
-**Start when** `.git-exclude/reviewed/024d-blocks-in-code-are-text/README.md` exists with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
+**Start when** `.git-exclude/reviewed/024e-br-in-code-is-text/README.md` exists with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
 
