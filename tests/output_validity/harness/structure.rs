@@ -83,13 +83,13 @@ pub(super) fn tag_name(tag: &Tag<'_>) -> (String, bool) {
         } if title.is_empty() => (format!("link[{dest_url}]"), false),
         Tag::Link {
             dest_url, title, ..
-        } => (format!("link[{dest_url} {title:?}]"), false),
+        } => (format!("link[{dest_url} {:?}]", title.as_ref()), false),
         Tag::Image {
             dest_url, title, ..
         } if title.is_empty() => (format!("image[{dest_url}]"), false),
         Tag::Image {
             dest_url, title, ..
-        } => (format!("image[{dest_url} {title:?}]"), false),
+        } => (format!("image[{dest_url} {:?}]", title.as_ref()), false),
         Tag::Table(_) => ("table".into(), true),
         Tag::TableHead => ("thead".into(), true),
         Tag::TableRow => ("tr".into(), true),

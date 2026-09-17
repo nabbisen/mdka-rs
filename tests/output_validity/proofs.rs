@@ -605,3 +605,19 @@ fn runner_refuses_an_empty_directory() {
             .contains("nothing was checked")
     );
 }
+
+#[test]
+fn a_title_reads_the_same_however_it_is_delimited() {
+    // The tree notation shows a title's text. A title the parser had to
+    // unescape or re-delimit must not read differently from a plain one.
+    for reading in crate::harness::READINGS {
+        let plain = structure("[x](/x \"a b\")\n", reading, false);
+        assert_eq!(plain, r#"para(link[/x "a b"]("x"))"#);
+        for md in ["[x](/x 'a b')\n", "[x](/x (a b))\n"] {
+            assert_eq!(structure(md, reading, false), plain, "{md:?}");
+        }
+        let escaped = structure("[x](/x \"a \\\"b\\\"\")\n", reading, false);
+        assert_eq!(escaped, r#"para(link[/x "a \"b\""]("x"))"#);
+        assert_eq!(structure("[x](/x 'a \"b\"')\n", reading, false), escaped);
+    }
+}
