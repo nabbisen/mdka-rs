@@ -118,6 +118,18 @@ that did not say what the HTML said to Markdown that does.
   The whitespace is now part of the code, as a browser shows it, so the
   two-space shape, which parsed correctly before, also changes: its spaces move
   inside the block. Other `<pre><code>` output is unchanged.
+- **A line break (`<br>`) inside code no longer adds spaces to the code.** It
+  was written as a Markdown hard break, two spaces and a newline, which inside
+  code are literal characters: code copied from the output gained trailing
+  spaces that the HTML never had. Inside a code block `<br>` is now a plain line
+  break, and inside inline code a single space:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<pre><code>x<br>y</code></pre>` | `` ```\nx␣␣\ny\n``` `` — the code line is `x␣␣` | `` ```\nx\ny\n``` `` |
+  | `<p><code>a<br>b</code></p>` | `` `a␣␣\nb` `` — the code reads `a␣␣␣b` | `` `a b` `` |
+
+  `<br>` outside code is unchanged.
 - **Paragraphs, quotes, lists and other blocks inside `<pre>` are code
   text.** `<pre>` is meant to hold text, but pages put blocks in it. Their
   markup was written into the code block, with only a closing fence, so the
