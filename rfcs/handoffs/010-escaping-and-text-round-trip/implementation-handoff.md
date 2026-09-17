@@ -7,7 +7,7 @@
 
 ---
 
-## 0. 🛑 QUEUED — do not start until RFC 028 is approved
+## 0. Preconditions — met (2026-09-17)
 
 | Precondition | Why |
 |---|---|
@@ -18,9 +18,10 @@
 
 | RFC 035 approved | ✅ met 2026-09-17 (`a90307d`) |
 | Slice `024d` approved | ✅ met 2026-09-17 (`e317a72`) |
-| **Slice `024e` approved** | **pending** — code-context rendering in the same renderer |
+| Slice `024e` approved | ✅ met 2026-09-17 (`e6d39ff`) — RFC 024 complete |
 
-**Start when** `.git-exclude/reviewed/024e-br-in-code-is-text/README.md` exists with an approved verdict. **Once handed over, this file is frozen**; changes arrive as dated addenda.
+**All preconditions are met. This handoff is an instruction to start.** §2 was re-derived on a release build of `e6d39ff`
+before handover: every example reproduces exactly. Baseline test count: **370**. **Once handed over, this file is frozen**; changes arrive as dated addenda.
 
 ## 1. Purpose
 
