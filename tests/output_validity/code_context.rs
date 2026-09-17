@@ -67,14 +67,11 @@ cells! {
 
 cells! {
     br_in_pre: "<pre>line1<br>line2<br>line3</pre>"
-        => tree(r#"codeblock("line1\nline2\nline3")"#),
-        defect(Rfc024, "the <br> is written as a Markdown hard break: two trailing spaces added to every code line");
+        => tree(r#"codeblock("line1\nline2\nline3")"#);
     br_in_pre_code: "<pre><code>x<br>y</code></pre>"
-        => tree(r#"codeblock("x\ny")"#),
-        defect(Rfc024, "the <br> is written as a Markdown hard break: trailing spaces added to the code line");
+        => tree(r#"codeblock("x\ny")"#);
     br_in_code_span: "<p><code>a<br>b</code></p>"
-        => tree(r#"para(code("a b"))"#),
-        defect(Rfc024, "the <br> is written as a Markdown hard break inside the code span: three spaces instead of one");
+        => tree(r#"para(code("a b"))"#);
     pretty_printed_blocks_in_pre: "<pre>\n  <p>a</p>\n  <p>b</p>\n</pre><p>after</p>"
         => tree(r#"codeblock("  \na\n  \nb"), para("after")"#);
 }

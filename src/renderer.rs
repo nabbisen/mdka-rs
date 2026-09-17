@@ -467,6 +467,11 @@ impl MarkdownRenderer {
                 self.sink.flush_space();
                 self.sink.markup_closed(&image);
             }
+            // Inside code a <br> is text, not a Markdown hard break, whose
+            // trailing spaces would become code (RFC 024 rule 8): one line
+            // break in a <pre>, one space in a code span.
+            "br" if self.in_pre => self.process_text("\n"),
+            "br" if self.sink.in_code_span() => self.sink.text(" "),
             "br" => {
                 // The next content line gets the blockquote prefix, if any.
                 self.sink.hard_break();
