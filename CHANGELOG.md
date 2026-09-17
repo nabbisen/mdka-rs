@@ -118,6 +118,18 @@ that did not say what the HTML said to Markdown that does.
   The whitespace is now part of the code, as a browser shows it, so the
   two-space shape, which parsed correctly before, also changes: its spaces move
   inside the block. Other `<pre><code>` output is unchanged.
+- **Paragraphs, quotes, lists and other blocks inside `<pre>` are code
+  text.** `<pre>` is meant to hold text, but pages put blocks in it. Their
+  markup was written into the code block, with only a closing fence, so the
+  rest of the document became code. Now each block contributes its text, and a
+  line break separates one block from the next:
+
+  | HTML | 2.2.3 | Now |
+  |---|---|---|
+  | `<pre><p>one</p><p>two</p></pre><p>after</p>` | ``one\n\ntwo\n\n```\n\nafter`` — `after` is inside code | `` ```\none\ntwo\n```\n\nafter `` |
+  | `<pre><blockquote><p>q</p></blockquote><ul><li>a</li></ul></pre><p>after</p>` | ``q\n\n- a\n\n```\n\nafter`` — `after` is inside code | `` ```\nq\na\n```\n\nafter `` |
+  | `<ul><li><pre><p>a</p><p>b</p></pre></li></ul>` | ``- \n\na\n\nb\n\n``` `` | `` - ```\n␣␣a\n␣␣b\n␣␣``` `` |
+
 - **A blockquote that begins with bold, italic, code, a link or an image keeps
   its `>`.** `<blockquote><strong>b</strong> rest</blockquote>` gave
   `**b** rest`, with no quote at all; it now gives `> **b** rest`.
