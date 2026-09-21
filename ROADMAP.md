@@ -451,7 +451,7 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); slices `024b`–`024e` ✅ (`e6d39ff`) — code holds text, fence at line start, blocks and `<br>` in code are text |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ implemented & approved (`b91aafb`, `cb5e351`) — tree-query pre-pass, style negation, links distributed over blocks |
 | 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ✅ implemented & approved (`a90307d`) — container prefix stack; loose/tight rule |
-| 010 | Escaping and text round-trip | **P0** | L | ✅ implemented (`a8f5c7e`); ⚠ **owner decision: accept +6–13% text-heavy conversion cost vs 2.2.3** (criterion 7) |
+| 010 | Escaping and text round-trip | **P0** | L | ✅ implemented (`a8f5c7e`); ⚠ **owner decision: accept ~+9–14% text-heavy cost vs 2.2.3, cumulative** (criterion 7) |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
@@ -475,6 +475,9 @@ rediscovered at the checkpoint:
 - Review the `[Unreleased]` CHANGELOG entries for RFC 031, written by the
   architect during review rather than by the implementer.
 - Move RFC 030, 031, 032, 033 and 034 to `done/`.
+- **Performance claims** (under option A): one dated note on `docs/src/design/performance-characteristics.md` covering all three stale
+  statements — the 2.0.0 table, the small-input claim, the malformed-input claim — and the owner's decision on `README.md:19`
+  (*"without sacrificing speed or memory"*), which ships to crates.io, npm and PyPI.
 - **bekoedit reply:** rewrite its corpus section before sending — the corpus was requested separately on 2026-09-16, and bekoedit replied that it **does not exist yet**. Confirm the nine vendored reproductions are Apache-2.0.
 - ~~RFC 034 must be implemented before the cut~~ — done.
 - ~~**Release gate: do not cut `2.3.0` with RFC 024 and without RFC 028.**~~ **Satisfied 2026-09-17** — RFC 028 landed (`b91aafb`). RFC 024's sink turned `<a><p>x</p><p>y</p></a>` from a link with joined words into no link at all — both known defects, fixed by RFC 028, but the interim state must not reach users.
@@ -625,8 +628,14 @@ a candidate rather than a plan.
 | 008 | GFM table support — **moved from M3, 2026-09-16** | P1 | L |
 | 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, task-list checkboxes) — **moved from M3 with 008** | P2 | M |
 | 011 | Robustness: fuzzing + `MdkaError::Io` error-path tests | P2 | M |
-| 012 | Benchmark hardening + regenerate published performance claims | P2 | M |
+| 012 | Benchmark hardening + regenerate published performance claims | **P1** | M |
 | 013 | Internal comment migration to English | P2 | L |
+
+**RFC 012's target, set 2026-09-22.** `2.3.0` converts text-heavy HTML about **9–14% slower than 2.2.3** (small +13.7%, medium +13.0%,
+large +10.9%, flat +8.8%, deep_nest −1.1%; three independent runs). The recovery target is **cumulative against 2.2.3**, not per-RFC:
+roughly a third to a half of the cost is RFC 024's single-writer bookkeeping, RFC 028's and RFC 035's pre-passes and container stack —
+they are **not** "already paid for". RFC 012 also regenerates the published performance page, whose table is from 2.0.0 and whose
+small-input and malformed-input claims no longer hold. Raised to P1: the page ships stale claims until it lands.
 
 **RFC 013's scope is measured, 2026-09-16.** The published `2.2.1` sdist carries
 Japanese in 22 files, ~304 lines — the private modules in `src/`, plus `tests/`,
