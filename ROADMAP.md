@@ -648,7 +648,10 @@ they are **not** "already paid for". **Where the cost sits, measured 2026-09-22 
 prefix stack and list bookkeeping dominate on list-heavy input (+13.2% for 024/028/035 alone on 100k list items), per-character
 escaping dominates on punctuation-dense prose (+7.9% for RFC 010), and plain prose in few elements costs least (+4.4% total).
 Recovery routes: bulk-scan runs of ordinary characters; cache each container depth's prefix string; skip the pre-scan for documents
-with no inline wrapper and no list. RFC 012 also regenerates the published performance page, whose table is from 2.0.0 and whose
+with no inline wrapper and no list. **Allocation evidence, 2026-09-22 (prep review):** peak memory is unchanged (+0.8% to +1.5%,
+re-measured by the architect) but the **allocation count rose 59% to 91%** on the benchmark documents, +200% on 15,000 nested quotes,
+and 56 → 30,058 on 30,000 list items — about **one extra allocation per line inside a list or quote**. That is the prefix being rebuilt
+as a fresh `String` per line, and it makes the "cache the prefix" route measurable rather than speculative. RFC 012 also regenerates the published performance page, whose table is from 2.0.0 and whose
 small-input and malformed-input claims no longer hold. Raised to P1: the page ships stale claims until it lands.
 
 **RFC 013's scope is measured, 2026-09-16.** The published `2.2.1` sdist carries
