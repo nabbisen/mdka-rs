@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 010 · Escaping and text round-trip
 
-**Governing RFC.** [RFC 010](../../accepted/010-escaping-and-text-round-trip.md) — **§3 is the specification**
+**Governing RFC.** [RFC 010](../../done/010-escaping-and-text-round-trip.md) — **§3 is the specification**
 **Milestone.** M3 · Output validity → `2.3.0`
 **Priority.** P0
 **Prepared.** 2026-09-16

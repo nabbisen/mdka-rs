@@ -429,7 +429,10 @@ shared with bekoedit's item 8, not a defect.
 no wrapper, in 2.2.3's renderer and RFC 028's alike — pre-existing, likely html5ever's formatting-element handling. Not
 investigated.
 
-### M3 · Output validity → `2.3.0` (minor)
+### M3 · Output validity → `2.3.0` (minor) — 🔜 PREP
+
+**All ten RFCs implemented and approved, 2026-09-22.** The owner accepted RFC 010's criterion 7 the same day: ship the
+correctness work, recover the speed in RFC 012. What remains is release prep — the list below — then the pre-tag checkpoint.
 
 **Reshaped by owner decision, 2026-09-16.** M3 was "conversion fidelity", with tables
 (RFC 008) and element coverage (RFC 009) in it. The RFC 025 harness then measured the
@@ -451,7 +454,7 @@ GFM parsing the harness gains in `025c`. Reasoning:
 | 024 | Inline composition: route every writer through the output sink | **P0** | M | ✅ implemented & approved (`1de7f2c`, `467ebf1`, `8d03b0c`); slices `024b`–`024e` ✅ (`e6d39ff`) — code holds text, fence at line start, blocks and `<br>` in code are text |
 | 028 | Inline elements around block content; emphasis negated by its own style | **P0** | M | ✅ implemented & approved (`b91aafb`, `cb5e351`) — tree-query pre-pass, style negation, links distributed over blocks |
 | 035 | Block structure inside containers — loose list items, ordered nesting, blockquote continuity (A-06/07/08) | **P0** | M | ✅ implemented & approved (`a90307d`) — container prefix stack; loose/tight rule |
-| 010 | Escaping and text round-trip | **P0** | L | ✅ implemented (`a8f5c7e`); ⚠ **owner decision: accept ~+9–14% text-heavy cost vs 2.2.3, cumulative** (criterion 7) |
+| 010 | Escaping and text round-trip | **P0** | L | ✅ implemented & approved (`a8f5c7e`); criterion 7 — **cost accepted by the owner 2026-09-22** (~+9–14% text-heavy, cumulative vs 2.2.3) |
 
 **Handoff hygiene rules, recorded 2026-09-16.**
 
@@ -468,18 +471,25 @@ GFM parsing the harness gains in `025c`. Reasoning:
 **Before `2.3.0` is cut** — prep items recorded during M3 so they are not
 rediscovered at the checkpoint:
 
+**Dispatched to the dev team 2026-09-22:** `.git-exclude/release/2.3.0/prep-handoff.md` — items 1 to 5 below. The architect
+holds the RFC moves, the index, this file and the version bump.
+
 - Remove internal RFC IDs from two docs.rs-visible doc comments:
-  `src/options.rs:87` ("RFC 005 Slice B1") and `src/lib.rs:177` ("RFC 021").
-  docs.rs builds from the published crate, so this lands with the release
-  regardless of when it is merged.
+  `src/options.rs:87` (`pub preserve_ids`, "RFC 005 Slice B1") and `src/lib.rs:177`
+  (`pub fn html_files_to_markdown_with`, "RFC 021"). Confirmed 2026-09-22 as the only two on
+  **public** items; `src/lib.rs:246` is a private fn, `alloc_counter.rs` is `#[doc(hidden)]` and
+  removed at 2.4.0, and the private modules are not rendered.
+- **CHANGELOG: add the performance entry** — cumulative vs 2.2.3, about +9% to +14% on text-heavy
+  input, no per-RFC attribution, with what it buys and that RFC 012 recovers it.
 - Review the `[Unreleased]` CHANGELOG entries for RFC 031, written by the
   architect during review rather than by the implementer.
-- Move RFC 030, 031, 032, 033 and 034 to `done/`.
+- ~~Move RFC 030, 031, 032, 033 and 034 to `done/`~~ — **done 2026-09-22**: all ten M3 RFCs moved, statuses set to *Implemented (2.3.0)*, `rfcs/README.md` updated and 19 files' references swept.
 - **Performance claims** (under option A): one dated note on `docs/src/design/performance-characteristics.md` covering all three stale
   statements — the 2.0.0 table, the small-input claim, the malformed-input claim — and the owner's decision on `README.md:19`
   (*"without sacrificing speed or memory"*), which ships to crates.io, npm and PyPI.
 - **bekoedit reply:** rewrite its corpus section before sending — the corpus was requested separately on 2026-09-16, and bekoedit replied that it **does not exist yet**. Confirm the nine vendored reproductions are Apache-2.0.
 - ~~RFC 034 must be implemented before the cut~~ — done.
+- **Version bump to 2.3.0** (architect, after the prep handoff lands): `version.sh`, CHANGELOG date, this file, then the pre-tag checkpoint to the owner.
 - ~~**Release gate: do not cut `2.3.0` with RFC 024 and without RFC 028.**~~ **Satisfied 2026-09-17** — RFC 028 landed (`b91aafb`). RFC 024's sink turned `<a><p>x</p><p>y</p></a>` from a link with joined words into no link at all — both known defects, fixed by RFC 028, but the interim state must not reach users.
 - Docs gate: give `##` escape lines their own rejection message, and tell authors of multi-line strings containing `# ` lines to use a single-line string with `\n` (RFC 033 review §3).
 - ~~D6 and the hidden-lines browser check (owner)~~ — superseded by RFC 033, which removes both dependencies instead of verifying them once.

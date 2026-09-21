@@ -1,6 +1,6 @@
 # RFC 035 — Block structure inside containers: list items and blockquotes
 
-**Status.** Accepted (2026-09-17, owner)
+**Status.** Implemented (2.3.0)
 **Author.** Architect
 **Created.** 2026-09-17
 **Milestone.** M3 · Output validity → `2.3.0` (owner, 2026-09-17)

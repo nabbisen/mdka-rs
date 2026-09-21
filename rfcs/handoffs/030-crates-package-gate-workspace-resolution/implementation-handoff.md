@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/030-crates-package-gate-workspace-resolution.md`](../../accepted/030-crates-package-gate-workspace-resolution.md) — **Accepted 2026-09-16 by the owner**
+**RFC.** [`rfcs/done/030-crates-package-gate-workspace-resolution.md`](../../done/030-crates-package-gate-workspace-resolution.md) — **Accepted 2026-09-16 by the owner**
 **Milestone.** M3, and **first in the M3 order** — 030, then 025, then 024, then 028.
 **Target release.** `2.3.0`
 **Size.** Small. One workflow file, one checklist line. The verification is larger than the change, deliberately.

@@ -3,7 +3,7 @@
 **To.** Implementer (mid-capability model)
 **From.** Architect
 **Date.** 2026-09-17
-**RFC.** [RFC 028](../../accepted/028-emphasis-around-block-content.md)
+**RFC.** [RFC 028](../../done/028-emphasis-around-block-content.md)
 **Base.** `b91aafb`, approved: `.git-exclude/reviewed/028-inline-around-blocks/README.md`
 **Size.** Small. **Tests only** — no `src/` change.
 

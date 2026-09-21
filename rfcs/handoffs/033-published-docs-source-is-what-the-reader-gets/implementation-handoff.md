@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/033-published-docs-source-is-what-the-reader-gets.md`](../../accepted/033-published-docs-source-is-what-the-reader-gets.md) — **Accepted 2026-09-16 by the owner**, with the handoff-time amendment at its end
+**RFC.** [`rfcs/done/033-published-docs-source-is-what-the-reader-gets.md`](../../done/033-published-docs-source-is-what-the-reader-gets.md) — **Accepted 2026-09-16 by the owner**, with the handoff-time amendment at its end
 **Milestone.** M3. **Order: 030 ✅ → 031 ✅ → 032 → 033 → 025 → 024 → 028.**
 **Size.** Small. Five doc blocks, two README links, two gate rules, one version pin.
 

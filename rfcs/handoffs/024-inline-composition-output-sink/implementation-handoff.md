@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 024 · Inline composition: the output sink
 
-**Governing RFC.** [RFC 024](../../accepted/024-inline-composition-output-sink.md) — including its 2026-09-16 amendment
+**Governing RFC.** [RFC 024](../../done/024-inline-composition-output-sink.md) — including its 2026-09-16 amendment
 **Milestone.** M3 → `2.3.0`
 **Priority.** P0
 **Prepared.** 2026-08-31. **Revised 2026-09-16, before dispatch** — §0.

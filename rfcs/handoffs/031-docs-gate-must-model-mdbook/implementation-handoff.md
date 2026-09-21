@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/031-docs-gate-must-model-mdbook.md`](../../accepted/031-docs-gate-must-model-mdbook.md) — **Accepted 2026-09-16 by the owner**
+**RFC.** [`rfcs/done/031-docs-gate-must-model-mdbook.md`](../../done/031-docs-gate-must-model-mdbook.md) — **Accepted 2026-09-16 by the owner**
 **Source.** 2.2.3 consumer pass — `.git-exclude/reviewed/2.2.3-consumer-pass/` (`report.md` is the performer's full report; `README.md` is my disposition)
 **Milestone.** M3. **Order: 030 ✅ → 031 → 025 → 024 → 028.**
 **Target.** Docs fixes publish on merge to `main` (`docs.yaml`). Only §6 (PyPI metadata) waits for `2.3.0`.

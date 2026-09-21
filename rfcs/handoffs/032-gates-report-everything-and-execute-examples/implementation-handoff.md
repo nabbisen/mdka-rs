@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/032-gates-report-everything-and-execute-examples.md`](../../accepted/032-gates-report-everything-and-execute-examples.md) — **Accepted 2026-09-16 by the owner**, unsplit
+**RFC.** [`rfcs/done/032-gates-report-everything-and-execute-examples.md`](../../done/032-gates-report-everything-and-execute-examples.md) — **Accepted 2026-09-16 by the owner**, unsplit
 **Milestone.** M3. **Order: 030 ✅ → 031 ✅ → 032 → 025 → 024 → 028.**
 **Size.** Small–medium. CI-only; no `src/` change.
 

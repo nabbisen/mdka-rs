@@ -14,42 +14,8 @@ None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
-Review complete; the implementer may start. Folder is the source of truth for
-state, per [RFC 000](./done/000-rfc-lifecycle-policy.md).
-
-| ID | Title | Milestone | Priority |
-|----|-------|-----------|----------|
-| 025 | [Markdown output-validity harness](./accepted/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md), [addendum 025c](./handoffs/025-output-validity-harness/addendum-025c.md) | M3 → `2.3.0` | **P0** — ✅ harness (`7338b17`) and `025c` (`d5d64cd`) approved; corpus `025b` unscheduled |
-| 024 | [Inline composition: the output sink](./accepted/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) | M3 → `2.3.0` | **P0** — ✅ implemented & approved (024, 024b, 024c); slices b–e ✅ (`e6d39ff`); moves to `done/` at `2.3.0` prep |
-| 028 | [Inline elements around block content, and emphasis negated by its own style](./accepted/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) | M3 → `2.3.0` | **P0** — ✅ implemented & approved (028 `b91aafb`, 028b `cb5e351`); moves to `done/` at `2.3.0` prep |
-| 035 | [Block structure inside containers: list items and blockquotes](./accepted/035-block-structure-inside-containers.md) — [handoff](./handoffs/035-block-structure-inside-containers/implementation-handoff.md) | M3 → `2.3.0` | **P0** — ✅ implemented & approved (`a90307d`); moves to `done/` at `2.3.0` prep |
-| 010 | [Escaping and text round-trip](./accepted/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) | M3 → `2.3.0` | **P0** — ✅ implemented & approved on correctness (`a8f5c7e`, 48 cells); **criterion 7 (performance) awaiting owner** |
-| 030 | [Crates package gate: verify the workspace, not the registry](./accepted/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 031 | [Docs example gate must compile what mdBook publishes](./accepted/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md), [follow-up 031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved (031, 031b); D6 open (owner); moves to `done/` at `2.3.0` prep |
-| 032 | [Gates report every failure, and execute Python and TypeScript examples](./accepted/032-gates-report-everything-and-execute-examples.md) — [handoff](./handoffs/032-gates-report-everything-and-execute-examples/implementation-handoff.md) | M3 → `2.3.0` | **P2** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 033 | [Published docs: the source is what the reader gets](./accepted/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | M3 → `2.3.0` (docs publish on merge) | **P1** — ✅ implemented & approved; moves to `done/` at `2.3.0` prep |
-| 034 | [PyPI: a declared wheel matrix, built on purpose and checked where it is published](./accepted/034-pypi-declared-wheel-matrix.md) — [handoff](./handoffs/034-pypi-declared-wheel-matrix/implementation-handoff.md) | M3 → `2.3.0` | **P1** — ✅ implemented & approved (034, 034b); moves to `done/` at `2.3.0` prep |
-
-All ten are M3 · Output validity → `2.3.0`. **Sequencing: 030–034 ✅, 025 ✅ (+025c), 024 ✅ (+024b, 024c), 028 ✅ (+028b), 035 ✅, 024d ✅, 024e ✅, 010 ✅ (performance decision pending) → `2.3.0` prep.**
-Tables (RFC 008) and element coverage (RFC 009) moved to M4 / `2.4.0` by owner decision on 2026-09-16; neither has a file yet.
-
-- **030 and 031 go first** and are independent of the engine work. Both are
-  control repairs: each fixes a gate that was passing something the consumer's
-  artifact fails. Fixing the instruments before taking the measurements.
-- **032 precedes 025** because `cargo test` without `--no-fail-fast` would show
-  only the first failing binary of a harness built to show many failures.
-- **033 follows 032, not in parallel with it.** Both edit the docs gate script;
-  its handoff opens with a stop block until 032 is approved.
-- **025 precedes 024**, and **028 follows both** — the harness must be able to
-  observe the defects before the fixes claim to have removed them, and RFC 028's
-  mechanism choice depends on RFC 024's shape.
-
-- **028 and 010 follow 024, one at a time.** All three change `src/renderer.rs`;
-  each handoff opens with a stop block naming the approval it waits for.
-
-**Handoffs for 024, 028 and 010 are queued, not dispatched** — each §0 states its
-precondition. **Handoffs are frozen once named ready**; later changes arrive as dated
-addenda.
+None. Everything accepted has shipped — see below. New work begins with M4
+(`ROADMAP.md`): RFC 012 (benchmark hardening, raised to P1), 008, 009, 011, 013.
 
 ## Implemented
 
@@ -76,6 +42,16 @@ addenda.
 | 026 | [Consumer-artifact verification gates](./done/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | 2.2.2 |
 | 027 | [Verification discipline: the consumer pass](./done/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | 2.2.2 |
 | 029 | [Published-surface documentation repair](./done/029-published-surface-documentation-repair.md) — [handoff](./handoffs/029-published-surface-documentation-repair/implementation-handoff.md) | 2.2.3 |
+| 030 | [Crates package gate: verify the workspace, not the registry](./done/030-crates-package-gate-workspace-resolution.md) — [handoff](./handoffs/030-crates-package-gate-workspace-resolution/implementation-handoff.md) | 2.3.0 |
+| 031 | [Docs example gate must compile what mdBook publishes](./done/031-docs-gate-must-model-mdbook.md) — [handoff](./handoffs/031-docs-gate-must-model-mdbook/implementation-handoff.md) · [031b](./handoffs/031-docs-gate-must-model-mdbook/followup-031b.md) | 2.3.0 |
+| 032 | [Gates report every failure; execute Python and TypeScript examples](./done/032-gates-report-everything-and-execute-examples.md) — [handoff](./handoffs/032-gates-report-everything-and-execute-examples/implementation-handoff.md) | 2.3.0 |
+| 033 | [Published docs: the source is what the reader gets](./done/033-published-docs-source-is-what-the-reader-gets.md) — [handoff](./handoffs/033-published-docs-source-is-what-the-reader-gets/implementation-handoff.md) | 2.3.0 |
+| 034 | [PyPI: a declared wheel matrix](./done/034-pypi-declared-wheel-matrix.md) — [handoff](./handoffs/034-pypi-declared-wheel-matrix/implementation-handoff.md) · [034b](./handoffs/034-pypi-declared-wheel-matrix/followup-034b.md) | 2.3.0 |
+| 025 | [Markdown output-validity harness](./done/025-output-validity-harness.md) — [handoff](./handoffs/025-output-validity-harness/implementation-handoff.md) · [025c](./handoffs/025-output-validity-harness/addendum-025c.md) · corpus slice `025b` unscheduled | 2.3.0 |
+| 024 | [Inline composition: the output sink](./done/024-inline-composition-output-sink.md) — [handoff](./handoffs/024-inline-composition-output-sink/implementation-handoff.md) · [024b](./handoffs/024-inline-composition-output-sink/addendum-024b.md) · [024c](./handoffs/024-inline-composition-output-sink/addendum-024c.md) · [024d](./handoffs/024-inline-composition-output-sink/addendum-024d.md) · [024e](./handoffs/024-inline-composition-output-sink/addendum-024e.md) | 2.3.0 |
+| 028 | [Inline elements around block content; emphasis negated by its own style](./done/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) · [028b](./handoffs/028-emphasis-around-block-content/addendum-028b.md) | 2.3.0 |
+| 035 | [Block structure inside containers](./done/035-block-structure-inside-containers.md) — [handoff](./handoffs/035-block-structure-inside-containers/implementation-handoff.md) | 2.3.0 |
+| 010 | [Escaping and text round-trip](./done/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) · closed M3 | 2.3.0 |
 
 ## Archive
 

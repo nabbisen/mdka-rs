@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/034-pypi-declared-wheel-matrix.md`](../../accepted/034-pypi-declared-wheel-matrix.md) — **Accepted 2026-09-16 by the owner**
+**RFC.** [`rfcs/done/034-pypi-declared-wheel-matrix.md`](../../done/034-pypi-declared-wheel-matrix.md) — **Accepted 2026-09-16 by the owner**
 **Owner decisions.** Floor **CPython 3.10**, raised **only** on the RFC's §6.1 triggers. **No** free-threaded wheels. **No** PyPy wheels. sdist still published.
 **Milestone.** M3. **Must land before `2.3.0` is cut** — the next PyPI upload is irreversible.
 **Size.** Medium. Release workflow, one new workflow, one shared script, manifests, CI job, one doc page.

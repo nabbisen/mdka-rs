@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/034-pypi-declared-wheel-matrix.md`](../../accepted/034-pypi-declared-wheel-matrix.md) — §3 correction and addendum
+**RFC.** [`rfcs/done/034-pypi-declared-wheel-matrix.md`](../../done/034-pypi-declared-wheel-matrix.md) — §3 correction and addendum
 **Review this follows.** `.git-exclude/reviewed/034-pypi-declared-wheel-matrix/README.md` §4
 **Size.** Small. One attribute, one comment, two doc sentences, one CHANGELOG line, one toml comment.
 **Closes.** RFC 034.

@@ -5,7 +5,7 @@
 > owner on 2026-09-16**; where they conflict with the body, **the amendments win**, and
 > the consolidated acceptance criteria at the end replace the list in the body.
 
-**Status.** Accepted 2026-09-16; scope amended and accepted 2026-09-16
+**Status.** Implemented (2.3.0)
 **Tracks.** M3 · Output validity → `2.3.0`
 **Priority.** P0
 **Sequencing.** After **RFC 025 and RFC 024**. Amended 2026-09-16 — see below.

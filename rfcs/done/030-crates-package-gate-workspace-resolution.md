@@ -1,6 +1,6 @@
 # RFC 030 — Crates package gate: verify the workspace, not the registry
 
-**Status.** Accepted (2026-09-16, owner)
+**Status.** Implemented (2.3.0)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 (control repair; should land before `2.3.0`)

@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 028 · Inline elements around block content, and emphasis negated by its own style
 
-**Governing RFC.** [RFC 028](../../accepted/028-emphasis-around-block-content.md) — **its two accepted amendments and the consolidated acceptance criteria at its end govern**
+**Governing RFC.** [RFC 028](../../done/028-emphasis-around-block-content.md) — **its two accepted amendments and the consolidated acceptance criteria at its end govern**
 **Milestone.** M3 · Output validity → `2.3.0`
 **Priority.** P0
 **Prepared.** 2026-09-16. **Rewritten 2026-09-16, before dispatch**, for the owner's scope decisions.

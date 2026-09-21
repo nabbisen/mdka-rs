@@ -1,6 +1,6 @@
 # RFC 010 — Escaping and text round-trip
 
-**Status.** Accepted (2026-09-16, owner)
+**Status.** Implemented (2.3.0)
 **Author.** Architect
 **Created.** 2026-09-16 (number reserved in `ROADMAP.md` since M1)
 **Milestone.** M3 · Output validity → `2.3.0` (M3 reshape accepted 2026-09-16)

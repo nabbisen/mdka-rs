@@ -3,7 +3,7 @@
 **To.** Implementer (mid-capability model)
 **From.** Architect
 **Date.** 2026-09-16
-**RFC.** [RFC 025](../../accepted/025-output-validity-harness.md)
+**RFC.** [RFC 025](../../done/025-output-validity-harness.md)
 **Base.** The harness at `7338b17`, approved: `.git-exclude/reviewed/025-output-validity-harness/README.md`
 **Size.** Small–medium. `tests/output_validity/**` only.
 

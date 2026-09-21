@@ -1,6 +1,6 @@
 # RFC 025 — Markdown output-validity harness
 
-**Status.** Accepted 2026-08-31 — implementer may start
+**Status.** Implemented (2.3.0)
 **Tracks.** M3 · Conversion fidelity → `2.3.0`
 **Priority.** P0 — **lands before RFC 024, 010 and 008**
 **Touches.** `tests/`, `Cargo.toml` dev-dependencies.

@@ -1,6 +1,6 @@
 # RFC 033 — Published docs: the source is what the reader gets
 
-**Status.** Accepted (2026-09-16, owner)
+**Status.** Implemented (2.3.0)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — after RFC 032, before RFC 025

@@ -3,7 +3,7 @@
 **To.** Implementer (mid-capability model)
 **From.** Architect
 **Date.** 2026-09-17
-**RFC.** [RFC 024](../../accepted/024-inline-composition-output-sink.md) — amendment of 2026-09-17 (rule 6)
+**RFC.** [RFC 024](../../done/024-inline-composition-output-sink.md) — amendment of 2026-09-17 (rule 6)
 **Base.** `467ebf1`, approved: `.git-exclude/reviewed/024b-code-holds-text-only/README.md`
 **Size.** Small.
 

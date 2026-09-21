@@ -2,7 +2,7 @@
 
 **To.** Implementer (mid-capability model)
 **From.** Architect
-**RFC.** [`rfcs/accepted/031-docs-gate-must-model-mdbook.md`](../../accepted/031-docs-gate-must-model-mdbook.md) — scope addendum recorded there
+**RFC.** [`rfcs/done/031-docs-gate-must-model-mdbook.md`](../../done/031-docs-gate-must-model-mdbook.md) — scope addendum recorded there
 **Review this follows.** `.git-exclude/reviewed/031-docs-gate-must-model-mdbook/README.md` (§4, §5)
 **Size.** Small. One config line, string literals in three files, two test assertions, three comments.
 **Closes.** RFC 031, except D6 (owner, needs a browser).

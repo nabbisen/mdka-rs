@@ -1,6 +1,6 @@
 # RFC 034 — PyPI: a declared wheel matrix, built on purpose and checked where it is published
 
-**Status.** Accepted (2026-09-16, owner) — floor 3.10, raised only on the §6.1 triggers; no free-threaded or PyPy wheels
+**Status.** Implemented (2.3.0)
 **Author.** Architect
 **Created.** 2026-09-16
 **Milestone.** M3 — **must land before `2.3.0` is cut** (§8)

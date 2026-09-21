@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 035 · Block structure inside containers
 
-**Governing RFC.** [RFC 035](../../accepted/035-block-structure-inside-containers.md) — §3 design, §3.1 loose/tight rule, §4 cells
+**Governing RFC.** [RFC 035](../../done/035-block-structure-inside-containers.md) — §3 design, §3.1 loose/tight rule, §4 cells
 **Milestone.** M3 · Output validity → `2.3.0`
 **Priority.** P0
 **Prepared.** 2026-09-17
