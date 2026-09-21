@@ -634,7 +634,11 @@ a candidate rather than a plan.
 **RFC 012's target, set 2026-09-22.** `2.3.0` converts text-heavy HTML about **9–14% slower than 2.2.3** (small +13.7%, medium +13.0%,
 large +10.9%, flat +8.8%, deep_nest −1.1%; three independent runs). The recovery target is **cumulative against 2.2.3**, not per-RFC:
 roughly a third to a half of the cost is RFC 024's single-writer bookkeeping, RFC 028's and RFC 035's pre-passes and container stack —
-they are **not** "already paid for". RFC 012 also regenerates the published performance page, whose table is from 2.0.0 and whose
+they are **not** "already paid for". **Where the cost sits, measured 2026-09-22 by input shape:** the container
+prefix stack and list bookkeeping dominate on list-heavy input (+13.2% for 024/028/035 alone on 100k list items), per-character
+escaping dominates on punctuation-dense prose (+7.9% for RFC 010), and plain prose in few elements costs least (+4.4% total).
+Recovery routes: bulk-scan runs of ordinary characters; cache each container depth's prefix string; skip the pre-scan for documents
+with no inline wrapper and no list. RFC 012 also regenerates the published performance page, whose table is from 2.0.0 and whose
 small-input and malformed-input claims no longer hold. Raised to P1: the page ships stale claims until it lands.
 
 **RFC 013's scope is measured, 2026-09-16.** The published `2.2.1` sdist carries
