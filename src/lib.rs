@@ -2,7 +2,7 @@
 //!
 //! Usage as CLI tool is in [`mdka-cli`](../mdka_cli/index.html).
 //!
-//! Full documentation: https://nabbisen.github.io/mdka-rs/
+//! Full documentation: <https://nabbisen.github.io/mdka-rs/>
 //!
 //! # Quick start
 //!
@@ -30,7 +30,8 @@ mod utils;
 #[deprecated(
     since = "2.2.2",
     note = "benchmark-only utility, never part of the conversion API; \
-            scheduled for removal in 2.4.0. See RFC 022."
+            scheduled for removal in 2.4.0. See \
+            https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md"
 )]
 pub mod alloc_counter;
 

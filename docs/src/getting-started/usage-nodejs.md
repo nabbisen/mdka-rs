@@ -125,8 +125,10 @@ effect**: `preserveClasses`, `preserveDataAttrs` and `preserveAriaAttrs`.
 Markdown has no attribute syntax to carry them into.
 
 Passing any of the three to a **synchronous** function emits a
-`DeprecationWarning`. By default the call still succeeds — but **under
-`node --throw-deprecation` it throws**. Remove the option; it changes nothing.
+`DeprecationWarning`. By default the call still succeeds. **Under
+`node --throw-deprecation` the call still returns, but the warning is thrown as
+an uncaught exception, which ends the process; a `try`/`catch` around the call
+does not see it.** Remove the option; it changes nothing.
 The `Async` functions cannot emit the warning at all, so silence from them is
 not evidence that no deprecated option is in use. While migrating, suppress
 mdka's notices narrowly:
@@ -146,7 +148,7 @@ const md = htmlToMarkdownWith('<p>x</p>', { preserveClasses: true })
 ```
 
 This still works under `--throw-deprecation`, and other deprecation warnings
-throw as before.
+are thrown as before.
 
 The other two — `preserveUnknownAttrs` and `dropPresentationAttrs` — exist on
 the Rust `ConversionOptions` but are **not fields of `JsConversionOptions`**,

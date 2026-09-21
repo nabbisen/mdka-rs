@@ -61,6 +61,11 @@ confidence, that is stated explicitly rather than guessed.
   the narrow suppressions shown in the Python and Node guides, keeps working.
   The prefix is now covered by a test in each binding.
 
+- **The `mdka::alloc_counter` deprecation warning now points to this
+  changelog instead of an internal design record.** It ended *"See RFC 022"*,
+  a reference a user could not follow; the 2.2.2 **Deprecated** entry below is
+  the explanation.
+
 - **Converting text-heavy HTML is about 9% to 14% slower than in 2.2.3.** On
   the project's benchmark documents, from a 12 KB page to a 1 MB one, a
   conversion takes 9% to 14% longer than it did in 2.2.3. Documents made
