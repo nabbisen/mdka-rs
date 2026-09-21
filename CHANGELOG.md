@@ -9,7 +9,7 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
-## [Unreleased]
+## [2.3.0] - 2026-09-22
 
 ### Added
 
