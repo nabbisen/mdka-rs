@@ -174,8 +174,8 @@ where
 ///
 /// When two inputs resolve to the same output path, only the first in input
 /// order is converted; every later collision returns an error without
-/// converting anything. RFC 021: leaving collisions undetected let whichever
-/// worker wrote last win, silently destroying the other inputs' content.
+/// converting anything. Without this check, whichever worker wrote last would
+/// win, silently destroying the other inputs' content.
 #[cfg(feature = "parallel")]
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],

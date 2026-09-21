@@ -242,13 +242,32 @@ def check_rust_hidden_lines(blocks):
             continue
         found = False
         for i, line in enumerate(b.code.split("\n")):
-            if mdbook_line_kind(line) in HIDDEN_KINDS:
-                found = True
-                # b.line is the opening fence; the first code line is b.line + 1.
+            kind = mdbook_line_kind(line)
+            if kind not in HIDDEN_KINDS:
+                continue
+            found = True
+            # b.line is the opening fence; the first code line is b.line + 1.
+            where = f"{b.path}:{b.line + 1 + i}"
+            if kind == "escape":
+                # `##` is not hidden: mdBook shows the line with one `#`
+                # removed and compiles it that way. The problem is that the
+                # source written here is not what the page shows and compiles,
+                # so the hidden-line advice would not fit.
+                shown = line.lstrip()[1:]
                 problems.append(
-                    f"{b.path}:{b.line + 1 + i}: mdBook hidden-line syntax "
-                    f"({line.strip()!r}). Make the code visible; mdBook's copy "
-                    "button omits hidden lines."
+                    f"{where}: mdBook escape syntax ({line.strip()!r}). mdBook "
+                    f"shows this line as {shown!r}, with one '#' removed, so the "
+                    "source written here is not what the page shows and "
+                    "compiles. If the line is inside a multi-line string, write "
+                    "the string on one line with \\n, so that no line starts "
+                    "with '#'."
+                )
+            else:
+                problems.append(
+                    f"{where}: mdBook hidden-line syntax ({line.strip()!r}). "
+                    "Make the code visible; mdBook's copy button omits hidden "
+                    "lines. If the line is inside a multi-line string, write "
+                    "the string on one line with \\n."
                 )
         if not found and mdbook_rust_source(b.code) != b.code:
             invariant.append(f"{b.where}: mdbook_rust_source() changed a block with no "

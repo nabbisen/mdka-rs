@@ -84,7 +84,10 @@ pub struct ConversionOptions {
     // ── Attribute-retention flags ──────────────────────────────────────────
     /// Whether to keep `id` attributes. When enabled, an
     /// `<a id="...">...</a>` anchor is emitted for an element carrying a
-    /// non-empty `id` (RFC 005 Slice B1).
+    /// non-empty `id`, as the element's leading content: after a heading
+    /// marker, a list marker or a quote prefix. Where the anchor goes for links
+    /// and code blocks is described on the
+    /// [options page](https://nabbisen.github.io/mdka-rs/api/options.html#preserve_ids).
     pub preserve_ids: bool,
     /// Inert. Markdown has no syntax for class attributes, so this has no effect.
     #[deprecated(
