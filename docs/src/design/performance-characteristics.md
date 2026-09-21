@@ -20,6 +20,23 @@ This rewrite resulted in a dramatic performance leap and a significantly reduced
 
 ## Benchmark Results (2026-04-15)
 
+> **Note (2026-09-22, for `2.3.0`).** The results below were measured on
+> **mdka 2.0.0** and have not been re-run for later releases. Two statements
+> drawn from them no longer hold:
+>
+> - *"The gain is small on the smallest input."* On the smallest input, mdka is
+>   now **behind** mdka 1.6.9.
+> - *"On malformed input, v2 is also faster than v1 and the fastest."* On
+>   malformed input mdka 1.6.9 was slightly ahead of mdka in our latest runs.
+>
+> Compared with `2.2.3`, `2.3.0` converts text-heavy HTML about **9% to 14%
+> slower**, cumulatively, in exchange for correct escaping and structure:
+> content that `2.2.3` could destroy is now kept (see the
+> [changelog](https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md)).
+> Recovering the speed is on the
+> [roadmap](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md), and the
+> tables on this page will be regenerated then, on a quiet machine.
+
 The following data demonstrates how the v2 architecture has improved our efficiency and how it aligns with our goal of "reasonable speed with minimal resource consumption."
 
 The figures below are wall-clock medians from Criterion. The log also records outliers for each run, so small differences should be read with some caution.

@@ -17,8 +17,9 @@ confidence, that is stated explicitly rather than guessed.
   sidebar links at all. The Python package now declares Homepage,
   Documentation, Source and Changelog URLs. The `mdka` and `mdka-cli` crates
   now set `homepage` to the user guide at
-  <https://nabbisen.github.io/mdka-rs/>; previously crates.io linked only the
-  API reference on docs.rs.
+  <https://nabbisen.github.io/mdka-rs/>; previously crates.io showed the
+  repository and, for `mdka`, the API reference on docs.rs, but no link to the
+  user guide.
 
 ### Changed
 
@@ -59,6 +60,24 @@ confidence, that is stated explicitly rather than guessed.
   `` mdka: `<option>` `` — so a filter written against that prefix, including
   the narrow suppressions shown in the Python and Node guides, keeps working.
   The prefix is now covered by a test in each binding.
+
+- **Converting text-heavy HTML is about 9% to 14% slower than in 2.2.3.** On
+  the project's benchmark documents, from a 12 KB page to a 1 MB one, a
+  conversion takes 9% to 14% longer than it did in 2.2.3. Documents made
+  almost entirely of list items or quotes can be a little slower still, up to
+  about 15%. Deeply nested documents are slightly faster, and peak memory use
+  is essentially unchanged: within about 3% on every input measured.
+
+  The time buys output that is valid Markdown. In 2.2.3, code containing a
+  fence line, a wrapper `<b>` around several paragraphs, a list item holding a
+  paragraph, or a line of `~~~` could destroy content or leave it outside the
+  list or quote it belongs to; the entries under **Fixed** list the cases.
+  Doing that right means tracking where every line sits in a list or quote,
+  and deciding character by character what would otherwise be read as
+  Markdown.
+
+  Recovering the speed is planned and is on the
+  [roadmap](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md).
 
 ### Fixed
 
@@ -266,8 +285,9 @@ from `main`; they are listed here so the release records them.
   GitHub, crates.io, npm and PyPI each generate heading ids their own way. They
   now link to the Conversion Modes page of the user guide.
 - **Rust examples no longer show a Run button.** The Rust Playground does not
-  provide `mdka`, so Run could only fail with an unresolved import, including
-  on correct examples.
+  provide `mdka`, so on the examples that use it, which is most of them, Run
+  could only fail with an unresolved import, even on correct code. The button
+  is now removed from every Rust example.
 - **The Node.js "Async Conversion" example did not run.** It mixed `require()`
   with top-level `await` and used undefined variables. It now runs as written.
 - **The Python "Conversion with Options" example did not run.** It used an
@@ -277,14 +297,22 @@ from `main`; they are listed here so the release records them.
   values, which `verbatimModuleSyntax` (on by default there) rejects with
   error TS1484. They are now type-only imports, which also compile under
   CommonJS and older ESM settings.
-- **The deprecation warning is now documented.** The options pages said the
-  no-op options "simply do nothing" and that existing calls "keep working". In
-  fact each emits a deprecation warning, which fails the build or the call
-  under `-D warnings`, `python -W error`, pytest `filterwarnings = error`, or
-  Node `--throw-deprecation`. The Rust, Python and Node guides now say so and
-  show a narrow suppression for use while migrating.
-- **The HTML-table example stated the wrong output.** The markup as printed
-  converts to `H1H2 ab`, not `H1H2ab`.
+- **The deprecation warning is now documented.** The options page said the
+  no-op options "simply do nothing", and the Python guide said existing calls
+  "keep working". In fact setting one emits a deprecation warning, and in a
+  strict setup that fails: a Rust build under `-D warnings` stops, and the
+  Python call raises under `python -W error` or pytest
+  `filterwarnings = error`. Under Node's `--throw-deprecation` the warning is
+  thrown as an uncaught exception, which ends the process; a `try`/`catch`
+  around the call does not see it. Node's `Async` functions cannot emit the
+  warning at all, so silence from them does not mean that no deprecated option
+  is in use. The options page (for Rust) and the Python and Node guides now say
+  so, and show a narrow suppression for use while migrating.
+- **The HTML-table example stated the wrong output.** It printed the markup
+  across two lines but gave the result for one line: written that way it
+  converts to `H1H2 ab`, not `H1H2ab`. The example now prints the markup on
+  one line, which does convert to `H1H2ab`, and says what the two-line form
+  gives.
 - **The "Not Yet Supported" table cited trackers a reader could not follow** —
   an internal finding ID and two RFC numbers with no corresponding document.
   It now links the roadmap.
