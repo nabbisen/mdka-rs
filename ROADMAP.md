@@ -682,6 +682,14 @@ a dependent then uses it, the removal waits and becomes 3.0 work.
 Also remove the `#[allow(deprecated)]` at the three benchmark and example use
 sites in the same change.
 
+#### Harness leftovers for M4's first slice
+
+- `a_in_a` (nested `<a>` inside `<a>`) is the one cell of 177 still asserting intent-free properties only. RFC 024's criterion 7 settled
+  the direction — a link with no text and no image emits nothing — but its tree was never written, the same leftover class corrected at
+  `024b` and `028b`. Tests only.
+- The `[text]` word check is not mode-aware for unwrapped wrappers; `known_defect` cannot mark a defect present in only some modes
+  (both recorded 2026-09-17).
+
 #### Carried-forward review findings
 
 Deferred here by owner decision on 2026-08-02 rather than reopening completed
