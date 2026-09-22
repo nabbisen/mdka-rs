@@ -164,6 +164,10 @@ pub fn starts_markdown_block(name: &str, _opts: &ConversionOptions) -> bool {
             | "td"
             | "th"
             | "caption"
+            // RFC 009: `<dt>`/`<dd>` are each their own paragraph-like block
+            // too (`utils::block_kind`), the same reason `tr`/`td`/`th` are.
+            | "dt"
+            | "dd"
     )
 }
 

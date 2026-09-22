@@ -75,6 +75,14 @@ pub(crate) fn block_kind(tag: &str) -> Option<Block> {
         // `<caption>` is content to keep, not lost silently (criterion 7);
         // as a paragraph it lands in the flow at its own document position.
         "tr" | "td" | "th" | "caption" => Block::Paragraph,
+        // RFC 009 §4.1: the last welding element in the codebase, fixed the
+        // same way -- `<dt>`/`<dd>` each become their own paragraph-like
+        // block, so a `<dl>` inherits container prefixes, `<pre>`
+        // suppression and RFC 008 F1's cell-flattening for free, the same
+        // as `tr`/`td`/`th` did. `<dl>` itself is not classified: it is a
+        // transparent container, not content of its own -- its `<dt>`/`<dd>`
+        // children already provide every separator needed.
+        "dt" | "dd" => Block::Paragraph,
         "ul" => Block::UnorderedList,
         "ol" => Block::OrderedList,
         "li" => Block::ListItem,
@@ -86,10 +94,15 @@ pub(crate) fn block_kind(tag: &str) -> Option<Block> {
 }
 
 /// Inline elements whose rendering changes when they wrap block content
-/// (RFC 028): emphasis, code spans and links.
+/// (RFC 028): emphasis, code spans and links. `<del>`/`<s>` (RFC 009 §4.2)
+/// join this set for the same reason -- GFM strikethrough is inline syntax,
+/// and `~~` around a block would be no more valid than `**` around one.
 #[inline]
 pub(crate) fn is_inline_wrapper(tag: &str) -> bool {
-    matches!(tag, "strong" | "b" | "em" | "i" | "code" | "a")
+    matches!(
+        tag,
+        "strong" | "b" | "em" | "i" | "code" | "a" | "del" | "s"
+    )
 }
 
 /// Whether an emphasis element's **own** inline `style` negates its emphasis
@@ -192,4 +205,87 @@ pub fn extract_code_lang(class: Option<&str>) -> Option<&str> {
         .split_whitespace()
         .find(|cls| cls.starts_with("language-"))
         .map(|cls| &cls["language-".len()..])
+}
+
+/// A `<sup>`'s character mapped to Unicode superscript, if it has one (RFC
+/// 009 §4.3): digits, `+ - = ( )`, and `n`/`i` -- the set with a superscript
+/// form in Unicode at all.
+#[inline]
+fn superscript_char(c: char) -> Option<char> {
+    Some(match c {
+        '0' => '⁰',
+        '1' => '¹',
+        '2' => '²',
+        '3' => '³',
+        '4' => '⁴',
+        '5' => '⁵',
+        '6' => '⁶',
+        '7' => '⁷',
+        '8' => '⁸',
+        '9' => '⁹',
+        '+' => '⁺',
+        '-' => '⁻',
+        '=' => '⁼',
+        '(' => '⁽',
+        ')' => '⁾',
+        'n' => 'ⁿ',
+        'i' => 'ⁱ',
+        _ => return None,
+    })
+}
+
+/// A `<sub>`'s character mapped to Unicode subscript, if it has one (RFC 009
+/// §4.3): digits, `+ - = ( )`, and the Latin letters Unicode gives a
+/// subscript form.
+#[inline]
+fn subscript_char(c: char) -> Option<char> {
+    Some(match c {
+        '0' => '₀',
+        '1' => '₁',
+        '2' => '₂',
+        '3' => '₃',
+        '4' => '₄',
+        '5' => '₅',
+        '6' => '₆',
+        '7' => '₇',
+        '8' => '₈',
+        '9' => '₉',
+        '+' => '₊',
+        '-' => '₋',
+        '=' => '₌',
+        '(' => '₍',
+        ')' => '₎',
+        'a' => 'ₐ',
+        'e' => 'ₑ',
+        'o' => 'ₒ',
+        'x' => 'ₓ',
+        'h' => 'ₕ',
+        'k' => 'ₖ',
+        'l' => 'ₗ',
+        'm' => 'ₘ',
+        'n' => 'ₙ',
+        'p' => 'ₚ',
+        's' => 'ₛ',
+        't' => 'ₜ',
+        _ => return None,
+    })
+}
+
+/// `<sup>`/`<sub>` content mapped to Unicode, only if **every** character
+/// maps (RFC 009 §4.3): `2<sup>7</sup>` is a different number if only some
+/// of it becomes superscript, so a partial map is not an improvement, it is
+/// a new defect. Empty content maps to `Some(String::new())` -- vacuously,
+/// every character (there are none) maps -- which the caller treats as
+/// "nothing to write", the same as an empty `<strong>` (RFC 037).
+pub(crate) fn map_script(content: &str, superscript: bool) -> Option<String> {
+    let mut out = String::with_capacity(content.len());
+    for c in content.chars() {
+        let mapped = if superscript {
+            superscript_char(c)
+        } else {
+            subscript_char(c)
+        };
+        out.push(mapped?);
+    }
+    Some(out)
 }

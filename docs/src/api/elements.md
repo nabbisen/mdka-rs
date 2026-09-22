@@ -15,7 +15,10 @@ Markdown it produces. Elements not listed are either silently removed
 | `<ul>` | `- ` list | Tight or loose, see [Lists](#lists-tight-and-loose) |
 | `<ol>` | `1. ` list | Respects `start` attribute. Tight or loose, see [Lists](#lists-tight-and-loose) |
 | `<li>` | List item | Everything inside it stays in the item: later lines are indented to the item's content column (`- ` → 2 spaces, `1. ` → 3, `10. ` → 4), including nested lists and code block lines |
+| `<li><input type="checkbox">…` | `- [ ] …` / `- [x] …` (checked) | Only when the checkbox is the item's own first content; any other `<input>`, or one anywhere else in the item, is not a task marker |
 | `<hr>` | `---` | |
+| `<dl>` | — | Not itself rendered; a transparent container. `<dt>`/`<dd>` do the work, below |
+| `<dt>`, `<dd>` | Block separator | Each its own paragraph-like block, in source order. A `<dl>` therefore reads as a run of paragraphs — Markdown has no definition-list syntax, and inventing one (bolding the term, a `- ` prefix) would assert a structure the source never had |
 | `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
 | `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
 | `<table>` | GFM table, or a non-welding fallback | See [Tables](#tables) |
@@ -26,14 +29,27 @@ Markdown it produces. Elements not listed are either silently removed
 |---|---|---|
 | `<strong>`, `<b>` | `**text**` | |
 | `<em>`, `<i>` | `*text*` | |
+| `<del>`, `<s>` | `~~text~~` | No delimiters at all if the element wraps a block, or is inside code — the same rule `<strong>`/`<em>` already follow |
 | `<code>` (inline) | `` `text` `` | Only when not inside `<pre>` |
 | `<a href="…">` | `[text](url)` | `title` attribute → `[text](url "title")` |
 | `<img src="…" alt="…">` | `![alt](src)` | `title` attribute → `![alt](src "title")` |
+| `<sup>` | Unicode superscript (`²`, `ⁿ`, …), or unchanged | Only when **every** character of the content maps (digits, `+ - = ( )`, `n`, `i`); otherwise the content is left exactly as it was, not partially converted. Most real-world `<sup>` is a citation marker (`<sup><a href="#c1">[1]</a></sup>`) that is already correct without any mapping — `[` and `]` do not map, so it is untouched either way |
+| `<sub>` | Unicode subscript (`₂`, `ₙ`, …), or unchanged | Same rule; mappable set is digits, `+ - = ( )`, and `a e o x h k l m n p s t` |
 | `<br>` | `  \n` (trailing two spaces + newline) | |
 
 `<span>` is **not** in either table, and that is deliberate: it produces no
 output of its own and no break. `<span>A</span><span>B</span>` converts to
 `AB`, with the children passed straight through.
+
+`<ins>` and `<u>` are also not in either table: their children are kept as
+plain text, with no markup at all. GFM has no insertion or underline syntax,
+and `~~` (the closest available delimiter) would say the opposite of what
+`<ins>` means, so nothing is emitted rather than something misleading.
+
+Also kept as plain text, permanently rather than pending: `<cite>`, `<abbr>`,
+`<q>`, `<kbd>`, `<small>`, `<time>`, `<mark>`. Markdown has no syntax for any
+of them, and inventing one — the way a bolded `<cite>` or a blockquoted
+`<q>` would — is the mistake this project does not make.
 
 ## Tables
 
@@ -186,20 +202,16 @@ the outer list tight.
 
 ## Not Yet Supported
 
-These elements are **not** converted to their Markdown equivalent. Their text
-content still appears — children are kept as plain text — so the output is not
-empty, but the structure or emphasis they carry is lost.
-
 | HTML | Current behaviour | Status |
 |---|---|---|
-| `<dl>`, `<dt>`, `<dd>` | Term and description text run together as plain text | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
-| `<del>`, `<s>` | Text kept, strike-through (`~~text~~`) not emitted | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
-| `<sup>`, `<sub>` | Text kept inline, with no indication it was raised or lowered | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 | `<video>`, `<audio>` | No output for the media element itself | Not yet scheduled |
 
 Tables were the largest gap here until they gained the treatment described in
 [Tables](#tables), above: an expressible table is real GFM; anything else at
-least never welds its cells together.
+least never welds its cells together. `<dl>`, `<del>`/`<s>`, checkbox list
+items and `<sup>`/`<sub>` closed the remaining ones — see their own rows in
+[Block Elements](#block-elements) and [Inline Elements](#inline-elements),
+above.
 
 ## Code Blocks and Language Hints
 

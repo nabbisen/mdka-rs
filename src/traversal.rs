@@ -36,6 +36,29 @@ enum Disposition {
     Render,
 }
 
+/// Whether `li`'s own first rendered child is an `<input type="checkbox">`
+/// (RFC 009 §4.2), and if so, whether it is checked. A plain lookahead at
+/// the `<li>` itself, not a hint the bottom-up pre-pass needs to compute:
+/// unlike `wraps_blocks`/`loose_lists`/`needs_disambiguation`, this never
+/// depends on anything below the checkbox itself, so there is nothing to
+/// aggregate. Whitespace-only text before it does not count against it
+/// (`<li>\n  <input ...>`); anything else does.
+fn task_checkbox(li: ego_tree::NodeRef<'_, scraper::Node>) -> Option<bool> {
+    for child in li.children() {
+        match child.value() {
+            scraper::Node::Text(text) if text.trim().is_empty() => continue,
+            scraper::Node::Element(elem) if elem.name() == "input" => {
+                return elem
+                    .attr("type")
+                    .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"))
+                    .then(|| elem.attr("checked").is_some());
+            }
+            _ => return None,
+        }
+    }
+    None
+}
+
 fn disposition(tag: &str, opts: &ConversionOptions) -> Disposition {
     if utils::is_skip_tag(tag) || (opts.drop_interactive_shell && utils::is_shell_tag(tag)) {
         Disposition::Skip
@@ -331,6 +354,7 @@ pub(crate) fn drive<'a>(
                         hints.wrappers.contains(&node.id()),
                         hints.loose_lists.contains(&node.id()),
                         hints.needs_disambiguation.contains(&node.id()),
+                        (tag == "li").then(|| task_checkbox(node)).flatten(),
                     );
 
                     // Leave イベントを先にスタックへ（子より後に処理される）

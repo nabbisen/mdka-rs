@@ -23,6 +23,9 @@
 //!   same-class emphasis collapses to one level (RFC 037).
 //! - `tables`: an expressible table becomes GFM; everything else falls back
 //!   to a shape that never welds cells (RFC 008 slice `008a`).
+//! - `elements`: `<dl>` no longer welds, `<del>`/`<s>`/checkbox lists become
+//!   real GFM, `<sup>`/`<sub>` become Unicode where every character maps
+//!   (RFC 009).
 //!
 //! A cell marked `defect(...)` is a strict expected failure: it passes while
 //! the recorded defect is present and FAILS once it is fixed, so the marker
@@ -59,6 +62,7 @@ mod block_in_container;
 mod block_in_inline;
 mod code_context;
 mod corpus;
+mod elements;
 mod emphasis_fidelity;
 mod escaping;
 mod field_reports;

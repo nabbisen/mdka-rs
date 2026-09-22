@@ -85,6 +85,12 @@ pub struct MarkdownRenderer {
     /// it wrote, so leaving can close it -- or, if it turns out empty,
     /// remove it instead (RFC 037).
     emphasis: Vec<Option<EmphasisFrame>>,
+    /// Per open `<del>`/`<s>` (RFC 009 §4.2): `None` if it wrote no `~~` at
+    /// all (inside code or around blocks -- the same two reasons emphasis
+    /// suppresses its own delimiters); `Some` records what
+    /// `Sink::strikethrough_open` wrote, so leaving can close it or, empty,
+    /// remove it instead.
+    strikethrough: Vec<Option<sink::StrikeMark>>,
     /// F1 (RFC 008 slice `008b`): a table cell's flattened list nesting --
     /// each open list's kind and next item number, indented two literal
     /// spaces per level, since a cell has no real lines for the
@@ -138,6 +144,7 @@ impl MarkdownRenderer {
             links: Vec::new(),
             code_captures: Vec::new(),
             emphasis: Vec::new(),
+            strikethrough: Vec::new(),
             cell_lists: Vec::new(),
             cell_after_marker: false,
             cell_pre: None,
@@ -436,7 +443,10 @@ impl MarkdownRenderer {
     /// `loose_list`: the element is a list that is loose (RFC 035 §3.1).
     /// `needs_disambiguation`: the element is a list whose own first item is
     /// empty, so entering it nested may need a blank line first (RFC 038).
-    /// All three are computed once per document by the traversal.
+    /// `checkbox`: the element is a `<li>` whose own first rendered child is
+    /// an `<input type="checkbox">` -- `Some(checked)` writes a task marker
+    /// instead of a plain one (RFC 009 §4.2); meaningless for anything else.
+    /// All four are computed once per document by the traversal.
     pub fn enter_element(
         &mut self,
         elem: &scraper::node::Element,
@@ -444,6 +454,7 @@ impl MarkdownRenderer {
         wraps_blocks: bool,
         loose_list: bool,
         needs_disambiguation: bool,
+        checkbox: Option<bool>,
     ) {
         let tag = elem.name();
         // Tags whose own arm opens a capture or a code block: anchor first.
@@ -454,7 +465,7 @@ impl MarkdownRenderer {
             self.emit_id_anchor(elem, preserve_ids);
         }
         if let Some(block) = utils::block_kind(tag) {
-            self.enter_block(block, elem, loose_list, needs_disambiguation);
+            self.enter_block(block, elem, loose_list, needs_disambiguation, checkbox);
         } else {
             self.enter_inline(tag, elem, wraps_blocks);
         }
@@ -469,13 +480,14 @@ impl MarkdownRenderer {
         elem: &scraper::node::Element,
         loose_list: bool,
         needs_disambiguation: bool,
+        checkbox: Option<bool>,
     ) {
         // A GFM cell holds inline content only (F1, RFC 008 `008b`): a block
         // that reaches here is flattened, never given the normal container/
         // prefix/blank-line treatment, which assumes real lines a cell does
         // not have.
         if self.in_table_cell() {
-            self.enter_cell_block(block, elem);
+            self.enter_cell_block(block, elem, checkbox);
             return;
         }
         // Inside a <pre>, a block element -- a nested <pre> too -- contributes
@@ -551,6 +563,14 @@ impl MarkdownRenderer {
                             marker.push_str(". ");
                         }
                     }
+                }
+                // A task marker (RFC 009 §4.2) follows the bullet/number
+                // exactly the way it would follow "- "/"N. " if typed by
+                // hand -- `checkbox` is only ever `Some` for a `<li>` whose
+                // own first rendered child was the checkbox, so this cannot
+                // fire on a later, unrelated one.
+                if let Some(checked) = checkbox {
+                    marker.push_str(if checked { "[x] " } else { "[ ] " });
                 }
                 self.close_distributed_link();
                 self.sink.item_marker(&marker, !loose);
@@ -673,6 +693,35 @@ impl MarkdownRenderer {
                 });
                 self.emphasis.push(frame);
             }
+            "del" | "s" => {
+                // No delimiters inside code or around blocks (RFC 009 §4.2),
+                // the same two reasons `strong`/`em` suppress theirs -- GFM
+                // strikethrough is inline syntax, and `~~` spanning a block
+                // boundary is no more valid than `**` would be. Nested
+                // `<del>`/`<s>` collapses to one level too (RFC 037 §3,
+                // review-found for this delimiter, 2026-09-23): unlike
+                // `**`/`*` there is only one `~~` class at all, so ANY
+                // already-open span -- `<del>` or `<s>`, RFC 037's own point
+                // that the rule is about the delimiter, not the tag --
+                // suppresses this one.
+                let write = !self.in_code() && !wraps_blocks;
+                let collapsed = write && self.strikethrough.iter().any(Option::is_some);
+                let frame = (write && !collapsed).then(|| {
+                    let _ = self.open_distributed_link();
+                    self.sink.strikethrough_open()
+                });
+                self.strikethrough.push(frame);
+            }
+            // A `<sup>`/`<sub>` inside code (a real `<pre>`, a cell's own
+            // flattened one, or an inline code span) contributes its text
+            // only, unmapped and undecorated -- the same rule any other
+            // markup suppresses inside code by (RFC 009 §4.3 has no mapping
+            // rule to apply there; the content is already verbatim).
+            "sup" | "sub" if self.in_code() => {}
+            "sup" | "sub" => {
+                let _ = self.open_distributed_link();
+                self.sink.begin_capture(Capture::SupSub);
+            }
             "a" => {
                 let href = elem.attr("href").unwrap_or("").to_string();
                 let title = elem.attr("title").map(str::to_string);
@@ -747,6 +796,28 @@ impl MarkdownRenderer {
             "strong" | "b" | "em" | "i" => {
                 if let Some(Some(frame)) = self.emphasis.pop() {
                     self.sink.emphasis_close_or_remove(frame.mark);
+                }
+            }
+            "del" | "s" => {
+                if let Some(Some(mark)) = self.strikethrough.pop() {
+                    self.sink.strikethrough_close_or_remove(mark);
+                }
+            }
+            "sup" | "sub" if self.in_code() => {}
+            "sup" | "sub" => {
+                if let Some((_, content, trailing)) = self.sink.end_capture() {
+                    // Empty content maps vacuously (RFC 037's own rule for
+                    // an empty `<strong>`: nothing to write). Otherwise,
+                    // every character mapping wins; falling short of that,
+                    // the captured content is spliced back exactly as
+                    // captured -- unchanged, the citation-marker case above
+                    // everything else here (RFC 009 §5.4).
+                    let rendered = if content.is_empty() {
+                        None
+                    } else {
+                        utils::map_script(&content, tag == "sup").or(Some(content))
+                    };
+                    self.sink.splice(rendered.as_deref(), trailing);
                 }
             }
             "a" => match self.links.pop() {
@@ -861,7 +932,12 @@ impl MarkdownRenderer {
     /// gives up only the structure (RFC 008 §4.1's own table): a nested
     /// `<table>` is not reachable here at all -- the pre-pass already sent
     /// the whole outer table to the fallback before any cell is rendered.
-    fn enter_cell_block(&mut self, block: Block, elem: &scraper::node::Element) {
+    fn enter_cell_block(
+        &mut self,
+        block: Block,
+        elem: &scraper::node::Element,
+        checkbox: Option<bool>,
+    ) {
         // Inside this cell's own flattened `<pre>`, a further block
         // contributes text only -- mirrors the outer `in_pre` guard in
         // `enter_block`, for the same reason: a fenced block's content is
@@ -873,7 +949,7 @@ impl MarkdownRenderer {
             Block::ListItem => {
                 self.cell_block_separator();
                 let indent = "  ".repeat(self.cell_lists.len().saturating_sub(1));
-                let marker = match self.cell_lists.last_mut() {
+                let mut marker = match self.cell_lists.last_mut() {
                     Some(CellList {
                         ordered: true,
                         counter,
@@ -887,6 +963,11 @@ impl MarkdownRenderer {
                     }
                     _ => "- ".to_string(),
                 };
+                // A task marker (RFC 009 §4.2) works the same way inside a
+                // flattened cell as it does in the main document.
+                if let Some(checked) = checkbox {
+                    marker.push_str(if checked { "[x] " } else { "[ ] " });
+                }
                 self.sink.markup(&format!("{indent}{marker}"));
                 self.cell_after_marker = true;
             }

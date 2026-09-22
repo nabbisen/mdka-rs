@@ -99,6 +99,18 @@ struct Dest {
     /// span" fixed; resolved the same way [`wait`](Self::wait) is, by
     /// whatever writes next.
     flank_guard: Option<(usize, usize)>,
+    /// RFC 009 addendum, 2026-09-23: the last `~~` span that closed with
+    /// real delimiters, and nothing written since -- its opening offset and
+    /// its closing offset (just past the closing `~~`). `~~` has no second
+    /// delimiter form to alternate to the way `**`/`__` do (RFC 037's own
+    /// answer for adjacent same-class emphasis), so two adjacent
+    /// `<del>`/`<s>` spans merge into one instead: [`Sink::strikethrough_open`]
+    /// checks this before opening a new span, and if it is still exactly
+    /// where the next span would start, removes the previous close and
+    /// continues that span rather than starting a second one -- the
+    /// alternative, `~~~~`, degrades to literal text mid-line and destroys
+    /// content outright at the start of one (a tilde code fence).
+    last_strike: Option<(usize, usize)>,
 }
 
 impl Dest {
@@ -119,6 +131,7 @@ impl Dest {
             emphasis_opens: Vec::new(),
             last_emphasis: None,
             flank_guard: None,
+            last_strike: None,
         }
     }
 
@@ -284,6 +297,12 @@ pub(super) enum Capture {
     /// the only point that sees the final text regardless of what produced
     /// it.
     Cell,
+    /// `<sup>`/`<sub>` (RFC 009 §4.3): the whole subtree's own rendering is
+    /// captured so the decision -- every character maps to a Unicode
+    /// super/subscript, or none of it changes at all -- can be made once,
+    /// against what it actually rendered to (a link's `[1](#c1)`, not just
+    /// its own text), not assumed from the source HTML.
+    SupSub,
 }
 
 /// What [`Sink::emphasis_open`] wrote, and enough of the destination's prior
@@ -334,6 +353,22 @@ impl EmphasisMark {
     pub(super) fn start(&self) -> usize {
         self.start
     }
+}
+
+/// What [`Sink::strikethrough_open`] wrote, and enough of the destination's
+/// prior state to undo it (RFC 009 §4.2): `EmphasisMark` without a delimiter
+/// field or the RFC 037 addendum's swap bookkeeping, neither of which a
+/// single-form delimiter like `~~` needs.
+pub(super) struct StrikeMark {
+    /// Buffer position before `strikethrough_open` did anything at all,
+    /// including its own `flush_space` -- the same reason `EmphasisMark`
+    /// keeps one (RFC 037 finding C).
+    pre_flush_start: usize,
+    flushed_space: bool,
+    start: usize,
+    at_line_start: bool,
+    newlines_emitted: usize,
+    line: Line,
 }
 
 struct Open {
@@ -880,6 +915,83 @@ impl Sink {
             }
         } else {
             self.emphasis_close(mark.delimiter, mark.intraword_candidate);
+        }
+    }
+
+    /// Opens a `~~` span (RFC 009 §4.2): unlike `**`/`*`, GFM strikethrough
+    /// has only one delimiter form, so none of [`emphasis_open`]'s
+    /// interchange bookkeeping (`emphasis_opens`, `last_emphasis`, the RFC
+    /// 037 addendum swap) applies -- reusing it here would risk that swap
+    /// firing off an unrelated `~~` open and writing `__` instead. This is
+    /// what `emphasis_open` would be without any of that: flush, remember
+    /// enough to undo, write.
+    pub(super) fn strikethrough_open(&mut self) -> StrikeMark {
+        self.begin_content();
+        self.end_leading_strip();
+        let pre_flush_start = self.dest().buf.len();
+        self.flush_space();
+        let dest = self.dest();
+        let now = dest.buf.len();
+        // RFC 009 addendum, 2026-09-23: touching the previous `~~` span's own
+        // close, with nothing written since -- merge into it instead of
+        // opening a second one. `~~~~` mid-line reads back as ONE span whose
+        // content includes the literal `~~~~` (RFC 037's collapse rule,
+        // uncaught for this delimiter until the review found it); at the
+        // start of a line it is a tilde code fence, destroying the content
+        // outright. Removing the previous close and continuing its span
+        // renders identically to the two adjacent sources and loses only
+        // the element boundary between them.
+        if let Some((open, end)) = dest.last_strike
+            && end == now
+        {
+            dest.last_strike = None;
+            dest.buf.truncate(end - 2);
+            return StrikeMark {
+                pre_flush_start,
+                flushed_space: dest.buf.len() != pre_flush_start,
+                start: open,
+                at_line_start: dest.at_line_start,
+                newlines_emitted: dest.newlines_emitted,
+                line: dest.line,
+            };
+        }
+        let flushed_space = now != pre_flush_start;
+        let mark = StrikeMark {
+            pre_flush_start,
+            flushed_space,
+            start: now,
+            at_line_start: dest.at_line_start,
+            newlines_emitted: dest.newlines_emitted,
+            line: dest.line,
+        };
+        dest.put("~~");
+        dest.line.head = Head::Inline;
+        dest.newlines_emitted = 0;
+        dest.at_line_start = false;
+        mark
+    }
+
+    /// Closes `mark`, or -- if nothing was written since it opened --
+    /// removes it instead: no delimiters for a `~~` span with no rendered
+    /// content, the same rule [`emphasis_close_or_remove`] applies to an
+    /// empty `<strong>`/`<em>` (RFC 037). A merged span (see
+    /// [`strikethrough_open`](Self::strikethrough_open)) can never reach the
+    /// empty branch -- `mark.start` is the first span's own start, and a
+    /// merge only happens once that span already has real content past it.
+    pub(super) fn strikethrough_close_or_remove(&mut self, mark: StrikeMark) {
+        if self.dest().buf.len() == mark.start + 2 {
+            let dest = self.dest();
+            dest.buf.truncate(mark.pre_flush_start);
+            dest.at_line_start = mark.at_line_start;
+            dest.newlines_emitted = mark.newlines_emitted;
+            dest.line = mark.line;
+            if mark.flushed_space {
+                dest.last_was_space = true;
+            }
+        } else {
+            self.markup("~~");
+            let dest = self.dest();
+            dest.last_strike = Some((mark.start, dest.buf.len()));
         }
     }
 
