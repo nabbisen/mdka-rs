@@ -5,7 +5,7 @@
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete** — all ten RFCs implemented and approved, prep done, version bumped; awaiting the pre-tag checkpoint. **M4 (`2.4.0`) is next**, starting with RFC 012.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete and `2.3.0` shipped** (2026-09-22, tag `bec40bf`) — all ten RFCs implemented and approved, all four registries verified, and the full consumer pass returned **no regressions**. **M4 (`2.4.0`) is open**, with RFC 036 and RFC 012 as its P1s.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -641,6 +641,50 @@ a candidate rather than a plan.
 | 011 | Robustness: fuzzing + `MdkaError::Io` error-path tests | P2 | M |
 | 012 | Benchmark hardening + regenerate published performance claims | **P1** | M |
 | 013 | Internal comment migration to English | P2 | L |
+| 036 | Whitespace and separators at block boundaries — ✅ **closed 2026-09-22** at `559e8ff` (`c6b2ea7`, `4ee6aaa`, `559e8ff`); 443 Rust / 39 Node / 80 Python tests green | **P1** | M |
+| 037 | Emphasis emission fidelity: empty and nested — **from the `2.3.0` consumer pass** | P2 | S |
+| 038 | Marker lines colliding with other CommonMark constructs — ✅ **closed 2026-09-22** at `190e266`; ten shapes, two failure modes, one mechanism | **P1** | S |
+
+#### From the `2.3.0` consumer pass, 2026-09-22
+
+The full consumer pass (fresh performer, no project history) returned twelve findings. **Eleven are not
+regressions** — each verified identical in `2.2.3` — and the worst is *less* damaging in `2.3.0` than it was
+before, so nothing warranted a hotfix. Disposition and the verification behind it:
+`.git-exclude/reviewed/2.3.0-consumer-pass/README.md`.
+
+**The twelfth is a `2.3.0` regression, found 2026-09-22.** Empty list items nested three or more deep emit
+`- - -`, which satisfies CommonMark's thematic-break grammar; with a non-empty sibling the content is
+destroyed into an indented code block. `2.2.3` was correct. **RFC 035's `only_markers` single-line idiom
+introduced it** — the milestone that fixed 64 validity defects shipped one, because the harness's agreement
+proofs did not cover degenerate nesting. Fixed by RFC 036 slice 4, approved 2026-09-22.
+
+| Finding | Home |
+|---|---|
+| `<li>` leading whitespace splits the list, flattens nesting, ejects code blocks; `#  Heading`; `<div>` unwrap drops the separator; empty nested lists emit `---` | **RFC 036** (P1) |
+| Empty emphasis emits literal `**`; nested italic becomes bold | **RFC 037** (P2, proposed) |
+| `<dl>`/`<dt>`/`<dd>` run together; `<sup>`/`<sub>` lost — *"2⁷"* reads as *"27"*, arithmetically wrong, not merely unstyled; `<u>`, `<mark>`, `<kbd>`, `<abbr>`, `<q>`, `<cite>`, `<time>` flattened | **RFC 009** — already its scope; the `<sup>`/`<sub>` wording at `docs/src/api/elements.md:105` understates the damage and the `<dl>` row at `:103` describes the worst case as if it were the only one |
+| CLI `--preserve-ids` is a no-op in 4 of 5 modes and there is **no off switch**: `--no-preserve-ids` is an unknown option, and `--help` calls it *"Keep id attributes"*, which both implies opt-in and misdescribes the effect (it emits anchors). Anchor volume is large — Wikipedia 1198 anchors to 5990 words | **New CLI slice, P2.** Needs an owner call: adding `--no-preserve-ids` is a surface addition |
+| README Node Quick Start showcases `htmlToMarkdownWithAsync`, the one path that cannot emit deprecation warnings, with no caveat. The **docs page is already correct** (`usage-nodejs.md:132`); the README is not | Docs slice, P3. Closes the async-Node warning gap carried from M2 as far as it can be closed — the limitation itself is a napi-rs constraint (`node/src/lib.rs:42–49`) |
+| Google Docs emphasis carried by `<span style="font-weight:700">` is silently lost; `api/elements.md`'s `<strong>, <b>` row does not mention that mdka reads `style` to *suppress* emphasis either | Docs, plus the standing candidate — see RFC 037 §5 |
+| README: *"They remain distinct API"* → *"APIs"*; two links use `api/modes.html` where the rest use `api/modes` | Docs slice, P3 |
+
+**The mode set collapses to two, 2026-09-22 (owner decision, RFC 036 §6 option C).** `unwrap_unknown_wrappers`'s
+only observable effect is deleting the paragraph separator — twelve probe shapes, four differ between Balanced and
+Semantic, every difference just the lost break. Fixing the weld therefore makes **Semantic byte-identical to
+Balanced**, extending the existing three-mode alias warning to four; only `Minimal` still differs, by
+`drop_interactive_shell`. The field is marked *no effect today* but **not deprecated** — unlike the five attribute
+fields it is inert only because `<div>` has no Markdown form, and a future raw-HTML-preserving mode revives it.
+Nothing is removed from the public surface. Slice `036d`.
+
+**The parser's depth cost is not ours to fix, 2026-09-22.** Conversion time is quadratic in nesting depth —
+depth 5 k→80 k costs 0.031s→6.65s, ×3.9 per doubling — while width is linear (3.1 MB of sibling `<p>` in
+0.114s). **Measured attribution:** at depth 80 000, `scraper::Html::parse_document` alone accounts for
+**6.60s of the 6.65s**. mdka's own conversion is ~0.05s. No optimisation RFC can recover this; it belongs to
+html5ever. What it *is* is an untrusted-input hazard — 860 kB of adversarial nesting costs 6.7s and yields
+5 bytes — so it needs a documented bound and guidance on the performance page. **Whether mdka should refuse
+or truncate past some depth is an owner decision** (recommendation: document, do not refuse — a depth limit
+is a breaking behaviour change for a library sold on robustness). This does **not** belong to RFC 012, whose
+target stays the `2.2.3` regression.
 
 **RFC 012's target, set 2026-09-22.** `2.3.0` converts text-heavy HTML about **9–14% slower than 2.2.3** (small +13.7%, medium +13.0%,
 large +10.9%, flat +8.8%, deep_nest −1.1%; three independent runs). The recovery target is **cumulative against 2.2.3**, not per-RFC:
@@ -689,6 +733,12 @@ sites in the same change.
   `024b` and `028b`. Tests only.
 - The `[text]` word check is not mode-aware for unwrapped wrappers; `known_defect` cannot mark a defect present in only some modes
   (both recorded 2026-09-17).
+- **A documented-intent category is missing** (recorded 2026-09-22, consumer pass §5.2). The agreement proof at
+  `tests/output_validity/proofs.rs:430` asserts the harness's block model agrees with what mdka renders, so when mdka stopped separating
+  unwrapped `<div>`s the proof concluded `div` is not a block in those modes and **passed** — the harness ratified the defect. That is
+  correct for an intent-free property and it is the design's boundary: *intent-free properties cannot catch a violation of documented
+  intent.* Promises made in `docs/src/api/elements.md` need assertions that state them, kept separate from the validity properties. RFC
+  036 adds the category with `<div>`; populating it from the rest of the page is its own slice.
 
 #### Carried-forward review findings
 
