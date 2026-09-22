@@ -1,6 +1,6 @@
 # Developer Handoff — RFC 037 · Emphasis emission fidelity
 
-**Governing RFC.** [RFC 037](../../accepted/037-emphasis-emission-fidelity.md) — §1 the shapes, §1.1 what re-derivation added, §3 design, §4 criteria
+**Governing RFC.** [RFC 037](../../done/037-emphasis-emission-fidelity.md) — §1 the shapes, §1.1 what re-derivation added, §3 design, §4 criteria
 **Milestone.** M4 · `2.4.0`
 **Priority.** P2
 **Prepared.** 2026-09-22

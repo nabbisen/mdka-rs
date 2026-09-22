@@ -1,6 +1,6 @@
 # RFC 037 — Emphasis emission fidelity: empty and nested
 
-**Status.** Accepted (owner, 2026-09-22)
+**Status.** Implemented (2.4.0) — closed 2026-09-23 at `81f0ec5`
 **Author.** Architect
 **Created.** 2026-09-22
 **Milestone.** M4 · Coverage and durability → `2.4.0` (owner, 2026-09-22)
@@ -9,6 +9,26 @@
 **Touches.** `src/renderer.rs`, `tests/output_validity/`.
 
 ---
+
+## 0. Closed, 2026-09-23 at `81f0ec5`
+
+Empty emphasis no longer writes delimiters around nothing: `a<b></b>b` → `ab`, and a paragraph containing
+only an empty emphasis emits **nothing at all** rather than `****`, which read as a thematic break. Nested
+same-class emphasis collapses, so `<em><em>x</em></em>` is italic again instead of bold.
+
+**§4 criterion 2 was relaxed mid-slice, and that was my error to fix.** Preserving nesting *order* is only
+possible where the delimiters can flank: intraword, `strong(em)` is **inexpressible in CommonMark** — I
+tested `***x***`, `**_x_**`, `__*x*__` and `*__x__*`, and only `em(strong)` parses. The first implementation
+swapped to `_` unconditionally and **lost the bold entirely** intraword, which was worse than the inverted
+order it replaced. The shipped rule: **never lose an emphasis level to gain ordering** — swap only when the
+surrounding characters are absent or non-alphanumeric, otherwise emit `***x***`.
+
+Implemented with a two-sided flanking check: the preceding character is already-written history and is
+checked at open time; what follows the whole nested span is not, so the swap is written provisionally and a
+deferred guard patches it back if the next character turns out alphanumeric. I probed it across block ends,
+punctuation, adjacent emphasis, code spans, images, `<br>`, **link captures** (correct both inside and
+outside), container prefixes and **non-ASCII** — `日本`, `é` and digits all correctly suppress the swap,
+where an ASCII-only check would have failed.
 
 ## 1. Summary
 

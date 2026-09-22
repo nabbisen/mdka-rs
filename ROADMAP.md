@@ -636,13 +636,13 @@ a candidate rather than a plan.
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
-| 008 | GFM table support — **moved from M3, 2026-09-16** | P1 | L |
+| 008 | GFM table support — ✅ **closed 2026-09-23** at `7e7cec2` (`008a` `02c56e7` + `008b`). **27% → 90%** of measured tables emit a real GFM table; Wikipedia 0/7 → 7/7. The one remaining is the row-header pattern, a §4.1 decision. **`2.4.0` promisable on tables** | **P1** | L |
 | 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, task-list checkboxes) — **moved from M3 with 008** | P2 | M |
 | 011 | Robustness: fuzzing + `MdkaError::Io` error-path tests | P2 | M |
 | 012 | Benchmark hardening + regenerate published performance claims | **P1** | M |
 | 013 | Internal comment migration to English | P2 | L |
 | 036 | Whitespace and separators at block boundaries — ✅ **closed 2026-09-22** at `559e8ff` (`c6b2ea7`, `4ee6aaa`, `559e8ff`); 443 Rust / 39 Node / 80 Python tests green | **P1** | M |
-| 037 | Emphasis emission fidelity: empty and nested — **accepted 2026-09-22**, handed over. Scope grew on re-derivation: `<p><b></b></p>` emits `****`, a thematic break | P2 | S |
+| 037 | Emphasis emission fidelity: empty and nested — ✅ **closed 2026-09-23** at `81f0ec5`. `<p><b></b></p>` no longer emits `****` (a thematic break); nested italic stays italic. Criterion 2 relaxed: order preserved only where the delimiters can flank, never at the cost of an emphasis level | P2 | S |
 | 038 | Marker lines colliding with other CommonMark constructs — ✅ **closed 2026-09-22** at `190e266`; ten shapes, two failure modes, one mechanism | **P1** | S |
 | 039 | Public API surface coherence — **authorized 2026-09-22**. Half A (additive parity: Python `_with` file forms, `many` in Rust/Node, unconditional bulk API, `version()`, `py.typed`, CLI fixes) handed over for `2.4.0`; Half B (one result type, Rust bulk uses it, an option surface showing only what works) specified, unscheduled, `3.0` | **P1** | M |
 
@@ -774,7 +774,7 @@ Japanese text remains in `src/`, `cli/`, `node/`, or `python/`.
 | 005 | `ConversionOptions` semantics | M2 | P0 | L | 001, 004 |
 | 006 | Option docs + binding parity | M2 | P1 | M | 005 |
 | 007 | English-only public surface | M2 | P1 | M | — |
-| 008 | GFM table support | M4 (moved from M3, 2026-09-16) | P1 | L | 001, 025 |
+| 008 | GFM table support — ✅ **closed 2026-09-23** at `7e7cec2` (`008a` `02c56e7` + `008b`). **27% → 90%** of measured tables emit a real GFM table; Wikipedia 0/7 → 7/7. The one remaining is the row-header pattern, a §4.1 decision. **`2.4.0` promisable on tables** | **P1** | L |
 | 009 | Element coverage extension | M4 (moved from M3, 2026-09-16) | P2 | M | 008 |
 | 010 | Escaping and text round-trip | M3 | P0 | L | 024, 025 |
 | 011 | Robustness: fuzzing + I/O error paths | M4 | P2 | M | 001 |
