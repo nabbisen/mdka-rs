@@ -104,6 +104,62 @@ pub fn html_to_markdown_with(html: &str, opts: &ConversionOptions) -> String {
     traversal::traverse(&document, opts)
 }
 
+/// Converts multiple HTML strings to Markdown (default mode: `balanced`),
+/// each independently.
+///
+/// # Example
+///
+/// ```rust
+/// let mds = mdka::html_to_markdown_many(&["<h1>A</h1>", "<h1>B</h1>"]);
+/// assert!(mds[0].contains("# A") && mds[1].contains("# B"));
+/// ```
+pub fn html_to_markdown_many<S>(htmls: &[S]) -> Vec<String>
+where
+    S: AsRef<str> + Sync,
+{
+    html_to_markdown_many_with(htmls, &ConversionOptions::default())
+}
+
+/// Converts multiple HTML strings to Markdown with the given
+/// [`ConversionOptions`], each independently. It cannot fail, so it returns
+/// plain strings, not a result type (RFC 039 §3 A2). Parallel across CPU
+/// cores when the `parallel` feature is on (the default); sequential
+/// otherwise -- this function exists either way, only *how* it runs changes
+/// (RFC 039 §2.4, §3 A2).
+pub fn html_to_markdown_many_with<S>(htmls: &[S], opts: &ConversionOptions) -> Vec<String>
+where
+    S: AsRef<str> + Sync,
+{
+    #[cfg(feature = "parallel")]
+    {
+        use rayon::prelude::*;
+        htmls
+            .par_iter()
+            .map(|h| html_to_markdown_with(h.as_ref(), opts))
+            .collect()
+    }
+    #[cfg(not(feature = "parallel"))]
+    {
+        htmls
+            .iter()
+            .map(|h| html_to_markdown_with(h.as_ref(), opts))
+            .collect()
+    }
+}
+
+/// The crate's version, as declared in `Cargo.toml`. Node and Python have
+/// long had their own; Rust callers had to reach for `CARGO_PKG_VERSION`
+/// themselves (RFC 039 §2.5, §3 A5).
+///
+/// # Example
+///
+/// ```rust
+/// assert!(!mdka::version().is_empty());
+/// ```
+pub fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
 // ── Single-file conversion API ─────────────────────────────────────────────
 
 /// Converts a single HTML file to Markdown (default mode: `balanced`).
@@ -151,11 +207,13 @@ pub fn html_file_to_markdown_with(
     })
 }
 
-// ── Bulk file conversion API (`parallel` feature) ──────────────────────────
+// ── Bulk file conversion API ────────────────────────────────────────────────
 
-/// Converts multiple HTML files in parallel with rayon, writing them to
-/// `out_dir` (default mode).
-#[cfg(feature = "parallel")]
+/// Converts multiple HTML files, writing them to `out_dir` (default mode).
+/// Parallel across CPU cores when the `parallel` feature is on (the
+/// default); sequential otherwise -- this function exists either way (RFC
+/// 039 §2.4, §3 A4): opting out of parallelism changes only how the work is
+/// done, never which functions are available.
 pub fn html_files_to_markdown<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -166,8 +224,9 @@ where
     html_files_to_markdown_with(paths, out_dir, &ConversionOptions::default())
 }
 
-/// Converts multiple HTML files in parallel with the given
-/// [`ConversionOptions`], writing them to `out_dir`.
+/// Converts multiple HTML files with the given [`ConversionOptions`],
+/// writing them to `out_dir`. Parallel when the `parallel` feature is on;
+/// sequential otherwise -- see [`html_files_to_markdown`].
 ///
 /// Important: Unlike single-file conversion,
 /// `out_dir` is **required** for bulk processing
@@ -176,8 +235,9 @@ where
 /// When two inputs resolve to the same output path, only the first in input
 /// order is converted; every later collision returns an error without
 /// converting anything. Without this check, whichever worker wrote last would
-/// win, silently destroying the other inputs' content.
-#[cfg(feature = "parallel")]
+/// win, silently destroying the other inputs' content -- a rule the
+/// sequential path honours identically, not merely as a side effect of
+/// running in order.
 pub fn html_files_to_markdown_with<'a, P>(
     paths: &'a [P],
     out_dir: &Path,
@@ -186,7 +246,6 @@ pub fn html_files_to_markdown_with<'a, P>(
 where
     P: AsRef<Path> + Sync,
 {
-    use rayon::prelude::*;
     use std::collections::HashMap;
     use std::collections::hash_map::Entry;
 
@@ -226,17 +285,35 @@ where
         })
         .collect();
 
-    paths
-        .par_iter()
-        .zip(rejections.into_par_iter())
-        .map(|(path, rejection)| {
-            let result = match rejection {
-                Some(err) => Err(err),
-                None => do_convert_file(path.as_ref(), out_dir, opts),
-            };
-            (path, result)
-        })
-        .collect()
+    #[cfg(feature = "parallel")]
+    {
+        use rayon::prelude::*;
+        paths
+            .par_iter()
+            .zip(rejections.into_par_iter())
+            .map(|(path, rejection)| {
+                let result = match rejection {
+                    Some(err) => Err(err),
+                    None => do_convert_file(path.as_ref(), out_dir, opts),
+                };
+                (path, result)
+            })
+            .collect()
+    }
+    #[cfg(not(feature = "parallel"))]
+    {
+        paths
+            .iter()
+            .zip(rejections)
+            .map(|(path, rejection)| {
+                let result = match rejection {
+                    Some(err) => Err(err),
+                    None => do_convert_file(path.as_ref(), out_dir, opts),
+                };
+                (path, result)
+            })
+            .collect()
+    }
 }
 
 // ── Shared core ────────────────────────────────────────────────────────────

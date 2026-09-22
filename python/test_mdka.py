@@ -20,8 +20,11 @@ from mdka import (
     html_to_markdown,
     html_to_markdown_with,
     html_to_markdown_many,
+    html_to_markdown_many_with,
     html_file_to_markdown,
+    html_file_to_markdown_with,
     html_files_to_markdown,
+    html_files_to_markdown_with,
     ConversionMode,
     ConvertResult,
     BulkConvertResult,
@@ -250,6 +253,30 @@ def test_many_large_batch():
     assert all("word" in r for r in results)
 
 
+# ─── html_to_markdown_many_with ───────────────────────────────────────────────
+
+def test_many_with_matches_mapping_html_to_markdown_with():
+    inputs = ["<h1>A</h1>", "<p>B</p>", "<ul><li>C</li></ul>"]
+    results = html_to_markdown_many_with(inputs, mode=ConversionMode.Minimal)
+    expected = [html_to_markdown_with(h, mode=ConversionMode.Minimal) for h in inputs]
+    assert results == expected
+
+def test_many_with_default_mode_matches_html_to_markdown_many():
+    inputs = ["<h1>A</h1>", "<p>B</p>"]
+    assert html_to_markdown_many_with(inputs) == html_to_markdown_many(inputs)
+
+def test_many_with_empty_list():
+    assert html_to_markdown_many_with([]) == []
+
+def test_many_with_drop_interactive_shell():
+    inputs = ['<nav><a href="/">Home</a></nav><main><p>Content</p></main>']
+    results = html_to_markdown_many_with(
+        inputs, mode=ConversionMode.Minimal, drop_interactive_shell=True
+    )
+    assert "Home" not in results[0]
+    assert "Content" in results[0]
+
+
 # ─── html_files_to_markdown ──────────────────────────────────────────────────
 
 def test_file_conversion_basic(tmp_path):
@@ -313,6 +340,43 @@ def test_file_conversion_mixed_results(tmp_path):
     error_results = [r for r in results if not r.ok]
     assert len(ok_results) == 1
     assert len(error_results) == 1
+
+
+# ─── html_files_to_markdown_with ──────────────────────────────────────────────
+
+def test_files_with_matches_html_files_to_markdown_default(tmp_path):
+    src = tmp_path / "page.html"
+    src.write_text("<h1>File Test</h1><p>Content here</p>")
+    out_a = tmp_path / "out_a"
+    out_b = tmp_path / "out_b"
+
+    r_with = html_files_to_markdown_with([str(src)], str(out_a))
+    r_plain = html_files_to_markdown([str(src)], str(out_b))
+
+    assert r_with[0].ok and r_plain[0].ok
+    assert Path(r_with[0].dest).read_text() == Path(r_plain[0].dest).read_text()
+
+def test_files_with_mode_option(tmp_path):
+    src = tmp_path / "spa.html"
+    src.write_text("<nav>nav</nav><h1>Title</h1><p>Body</p>")
+    out_dir = tmp_path / "out"
+
+    results = html_files_to_markdown_with(
+        [str(src)], str(out_dir),
+        mode=ConversionMode.Minimal, drop_interactive_shell=True,
+    )
+    assert results[0].ok
+    content = Path(results[0].dest).read_text()
+    assert "# Title" in content
+    assert "nav" not in content.lower()
+
+def test_files_with_error_result(tmp_path):
+    results = html_files_to_markdown_with(
+        [str(tmp_path / "ghost.html")], str(tmp_path)
+    )
+    assert len(results) == 1
+    assert not results[0].ok
+    assert results[0].error is not None
 
 
 # ─── BulkConvertResult ───────────────────────────────────────────────────────────
@@ -505,10 +569,13 @@ def test_unknown_mode_uses_balanced():
     assert "# Hi" in md
 
 def test_module_all_has_new_exports():
-    assert "ConversionMode"          in mdka.__all__
-    assert "html_to_markdown_with"   in mdka.__all__
-    assert "html_file_to_markdown"   in mdka.__all__
-    assert "BulkConvertResult"       in mdka.__all__
+    assert "ConversionMode"              in mdka.__all__
+    assert "html_to_markdown_with"       in mdka.__all__
+    assert "html_to_markdown_many_with"  in mdka.__all__
+    assert "html_file_to_markdown"       in mdka.__all__
+    assert "html_file_to_markdown_with"  in mdka.__all__
+    assert "html_files_to_markdown_with" in mdka.__all__
+    assert "BulkConvertResult"           in mdka.__all__
 
 
 # ─── html_file_to_markdown ────────────────────────────────────────────────────
@@ -597,3 +664,37 @@ def test_file_to_markdown_consistency_with_bulk(tmp_path):
     c1 = (out1 / "test.md").read_text()
     c2 = (out2 / "test.md").read_text()
     assert c1 == c2, f"single vs bulk mismatch:\n{c1!r}\nvs\n{c2!r}"
+
+
+# ─── html_file_to_markdown_with ────────────────────────────────────────────────
+
+def test_file_with_matches_html_file_to_markdown_default(tmp_path):
+    """RFC 039 §3 A1: html_file_to_markdown_with must exist and behave like
+    the plain function under its default options."""
+    src = tmp_path / "page.html"
+    src.write_text("<h1>Single File</h1><p>Content</p>")
+    out_a = tmp_path / "out_a"
+    out_b = tmp_path / "out_b"
+
+    r_with = html_file_to_markdown_with(str(src), str(out_a))
+    r_plain = html_file_to_markdown(str(src), str(out_b))
+
+    assert Path(r_with.dest).read_text() == Path(r_plain.dest).read_text()
+
+def test_file_with_mode_option(tmp_path):
+    src = tmp_path / "spa.html"
+    src.write_text("<nav>nav</nav><h1>Title</h1><p>Body</p>")
+
+    result = html_file_to_markdown_with(
+        str(src),
+        mode=ConversionMode.Minimal,
+        drop_interactive_shell=True,
+    )
+
+    content = (tmp_path / "spa.md").read_text()
+    assert "# Title" in content, f"got: {content}"
+    assert "nav" not in content.lower(), f"nav leaked: {content}"
+
+def test_file_with_nonexistent_raises():
+    with pytest.raises(MdkaError):
+        html_file_to_markdown_with("/no/such/file.html")

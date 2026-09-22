@@ -201,6 +201,44 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
     })
 }
 
+/// RFC 039 Half A: `html_to_markdown_many` had no way to pass options at all
+/// -- the only conversion function in the project that could not be
+/// configured. Same parallel-batch behaviour, with `_with`'s established
+/// keyword-argument shape.
+#[pyfunction]
+#[pyo3(signature = (html_list, mode=ConversionMode::Balanced, preserve_ids=None,
+    preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
+#[allow(clippy::too_many_arguments)]
+fn html_to_markdown_many_with(
+    py: Python<'_>,
+    html_list: Vec<String>,
+    mode: ConversionMode,
+    preserve_ids: Option<bool>,
+    preserve_classes: Option<bool>,
+    preserve_data_attrs: Option<bool>,
+    preserve_aria_attrs: Option<bool>,
+    drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<Vec<String>> {
+    let opts = build_opts(
+        py,
+        mode,
+        preserve_ids,
+        preserve_classes,
+        preserve_data_attrs,
+        preserve_aria_attrs,
+        drop_interactive_shell,
+        unwrap_unknown_wrappers,
+    )?;
+    Ok(py.detach(|| {
+        html_list
+            .par_iter()
+            .map(|h| ::mdka::html_to_markdown_with(h, &opts))
+            .collect()
+    }))
+}
+
 // ─── Single-file conversion API ──────────────────────────────────────────
 
 /// Converts a single HTML file to Markdown (default mode: balanced).
@@ -221,14 +259,8 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
 ///     >>> r = mdka.html_file_to_markdown("index.html")          # same directory
 ///     >>> r = mdka.html_file_to_markdown("index.html", "out/")  # another directory
 ///     >>> print(r.src, "->", r.dest)
-#[pyfunction]
-#[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
-    preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
-    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
-// This argument list is the published Python keyword-argument API; restructuring
-// it to satisfy clippy would break the published surface.
 #[allow(clippy::too_many_arguments)]
-fn html_file_to_markdown(
+fn html_file_to_markdown_impl(
     py: Python<'_>,
     path: String,
     out_dir: Option<String>,
@@ -262,16 +294,81 @@ fn html_file_to_markdown(
         .map_err(|e| MdkaError::new_err(e.to_string()))
 }
 
-// ─── Bulk file conversion API ────────────────────────────────────────────
-
 #[pyfunction]
-#[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
+#[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
     preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
     drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
 // This argument list is the published Python keyword-argument API; restructuring
 // it to satisfy clippy would break the published surface.
 #[allow(clippy::too_many_arguments)]
-fn html_files_to_markdown(
+fn html_file_to_markdown(
+    py: Python<'_>,
+    path: String,
+    out_dir: Option<String>,
+    mode: ConversionMode,
+    preserve_ids: Option<bool>,
+    preserve_classes: Option<bool>,
+    preserve_data_attrs: Option<bool>,
+    preserve_aria_attrs: Option<bool>,
+    drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<ConvertResult> {
+    html_file_to_markdown_impl(
+        py,
+        path,
+        out_dir,
+        mode,
+        preserve_ids,
+        preserve_classes,
+        preserve_data_attrs,
+        preserve_aria_attrs,
+        drop_interactive_shell,
+        unwrap_unknown_wrappers,
+    )
+}
+
+/// RFC 039 Half A: `html_to_markdown_with` exists, but the file-conversion
+/// equivalent was only ever `html_file_to_markdown` -- itself already
+/// configurable, just under a name that does not say so. A user who learns
+/// the `_with` convention from the string API and looks for it here finds
+/// nothing and concludes file conversion cannot be configured (RFC 039 §2.2).
+/// A thin wrapper over the same implementation; the plain name keeps
+/// accepting the same keyword arguments too, unchanged, for compatibility.
+#[pyfunction]
+#[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
+    preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
+#[allow(clippy::too_many_arguments)]
+fn html_file_to_markdown_with(
+    py: Python<'_>,
+    path: String,
+    out_dir: Option<String>,
+    mode: ConversionMode,
+    preserve_ids: Option<bool>,
+    preserve_classes: Option<bool>,
+    preserve_data_attrs: Option<bool>,
+    preserve_aria_attrs: Option<bool>,
+    drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<ConvertResult> {
+    html_file_to_markdown_impl(
+        py,
+        path,
+        out_dir,
+        mode,
+        preserve_ids,
+        preserve_classes,
+        preserve_data_attrs,
+        preserve_aria_attrs,
+        drop_interactive_shell,
+        unwrap_unknown_wrappers,
+    )
+}
+
+// ─── Bulk file conversion API ────────────────────────────────────────────
+
+#[allow(clippy::too_many_arguments)]
+fn html_files_to_markdown_impl(
     py: Python<'_>,
     paths: Vec<String>,
     out_dir: String,
@@ -320,6 +417,73 @@ fn html_files_to_markdown(
 }
 
 #[pyfunction]
+#[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
+    preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
+// This argument list is the published Python keyword-argument API; restructuring
+// it to satisfy clippy would break the published surface.
+#[allow(clippy::too_many_arguments)]
+fn html_files_to_markdown(
+    py: Python<'_>,
+    paths: Vec<String>,
+    out_dir: String,
+    mode: ConversionMode,
+    preserve_ids: Option<bool>,
+    preserve_classes: Option<bool>,
+    preserve_data_attrs: Option<bool>,
+    preserve_aria_attrs: Option<bool>,
+    drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<Vec<BulkConvertResult>> {
+    html_files_to_markdown_impl(
+        py,
+        paths,
+        out_dir,
+        mode,
+        preserve_ids,
+        preserve_classes,
+        preserve_data_attrs,
+        preserve_aria_attrs,
+        drop_interactive_shell,
+        unwrap_unknown_wrappers,
+    )
+}
+
+/// RFC 039 Half A: same gap as `html_file_to_markdown_with`, for the bulk
+/// path. A thin wrapper over the same implementation; the plain name keeps
+/// accepting the same keyword arguments too, unchanged, for compatibility.
+#[pyfunction]
+#[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
+    preserve_classes=None, preserve_data_attrs=None, preserve_aria_attrs=None,
+    drop_interactive_shell=None, unwrap_unknown_wrappers=None))]
+#[allow(clippy::too_many_arguments)]
+fn html_files_to_markdown_with(
+    py: Python<'_>,
+    paths: Vec<String>,
+    out_dir: String,
+    mode: ConversionMode,
+    preserve_ids: Option<bool>,
+    preserve_classes: Option<bool>,
+    preserve_data_attrs: Option<bool>,
+    preserve_aria_attrs: Option<bool>,
+    drop_interactive_shell: Option<bool>,
+    unwrap_unknown_wrappers: Option<bool>,
+) -> PyResult<Vec<BulkConvertResult>> {
+    html_files_to_markdown_impl(
+        py,
+        paths,
+        out_dir,
+        mode,
+        preserve_ids,
+        preserve_classes,
+        preserve_data_attrs,
+        preserve_aria_attrs,
+        drop_interactive_shell,
+        unwrap_unknown_wrappers,
+    )
+}
+
+#[pyfunction]
 fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
@@ -341,8 +505,11 @@ fn mdka_python(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(html_to_markdown, m)?)?;
     m.add_function(wrap_pyfunction!(html_to_markdown_with, m)?)?;
     m.add_function(wrap_pyfunction!(html_to_markdown_many, m)?)?;
+    m.add_function(wrap_pyfunction!(html_to_markdown_many_with, m)?)?;
     m.add_function(wrap_pyfunction!(html_file_to_markdown, m)?)?;
+    m.add_function(wrap_pyfunction!(html_file_to_markdown_with, m)?)?;
     m.add_function(wrap_pyfunction!(html_files_to_markdown, m)?)?;
+    m.add_function(wrap_pyfunction!(html_files_to_markdown_with, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }

@@ -9,6 +9,20 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [Unreleased]
+
+### Changed
+
+- **CLI: deprecation notices and per-file conversion progress now go to
+  stderr, not stdout.** Until now, a deprecated flag's warning and the
+  `in.html -> in.md` progress line both wrote to stdout alongside single-file
+  stdin-to-stdout conversion. `mdka page.html > out.md` was fine, but `echo
+  '<h1>Hi</h1>' | mdka --preserve-classes > out.md` silently mixed the
+  deprecation notice into `out.md`, and any script piping `mdka`'s stdout
+  further downstream could pick up progress noise it never asked for. Both
+  now go to stderr; stdout carries only the converted Markdown (RFC 039 §3
+  A7).
+
 ## [2.3.0] - 2026-09-22
 
 ### Added

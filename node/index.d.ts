@@ -37,6 +37,18 @@ export declare function htmlToMarkdown(html: string): string
 
 export declare function htmlToMarkdownAsync(html: string): Promise<string>
 
+/**
+ * Converts multiple HTML strings to Markdown, each independently. Cannot
+ * fail, so it returns plain strings, not a result type (RFC 039 §3 A2). One
+ * function, not four: `options` is optional the same way
+ * `htmlToMarkdownWith`'s is, rather than a separate with/without pair, and
+ * there is no async twin -- the underlying Rust call is CPU-bound and
+ * already parallel across cores internally (via rayon) when the `parallel`
+ * feature is on, so a `spawn_blocking` wrapper here would add a thread hop
+ * without shortening the work.
+ */
+export declare function htmlToMarkdownMany(htmls: Array<string>, options?: JsConversionOptions | undefined | null): Array<string>
+
 export declare function htmlToMarkdownWith(html: string, options?: JsConversionOptions | undefined | null): string
 
 export declare function htmlToMarkdownWithAsync(html: string, options?: JsConversionOptions | undefined | null): Promise<string>

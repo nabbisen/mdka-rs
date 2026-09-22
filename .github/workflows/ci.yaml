@@ -57,6 +57,17 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --all-features --locked --no-fail-fast
 
+      # RFC 039 §3 A4 / §5 criterion 2: `parallel` off must change only how
+      # bulk conversion runs, never which functions exist -- pinned here so
+      # a feature-gated function set cannot silently regress.
+      # --manifest-path (not -p mdka): the crate name alone is ambiguous once
+      # any dependency in the lockfile also happens to be named `mdka`; the
+      # manifest path selects this crate unambiguously and, without
+      # --workspace, runs only it -- the other members have no `parallel`
+      # feature of their own to disable.
+      - name: cargo test (mdka, no default features)
+        run: cargo test --manifest-path Cargo.toml --no-default-features --locked --no-fail-fast
+
       # --keep-going (RFC 032): report every target that fails to compile.
       - name: cargo build
         run: cargo build --workspace --locked --keep-going

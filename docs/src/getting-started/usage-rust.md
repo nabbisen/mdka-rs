@@ -63,6 +63,25 @@ assert!(!md.contains("Home"));       // nav removed
 assert!(!md.contains("Copyright"));  // footer removed
 ```
 
+## Converting Multiple Strings
+
+```rust
+use mdka::{html_to_markdown_many, html_to_markdown_many_with};
+use mdka::options::{ConversionMode, ConversionOptions};
+
+let pages = vec!["<h1>A</h1>", "<p>B</p>", "<ul><li>C</li></ul>"];
+let results = html_to_markdown_many(&pages);
+assert_eq!(results, vec!["# A\n", "B\n", "- C\n"]);
+
+let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+let results = html_to_markdown_many_with(&pages, &opts);
+```
+
+Each input is converted independently and the results keep the input order.
+When the `parallel` feature is on (the default), the conversions run across
+CPU cores via [rayon](https://crates.io/crates/rayon); with the feature off,
+the same functions run sequentially instead.
+
 ## Converting a Single File
 
 ```rust,no_run
@@ -141,3 +160,11 @@ match html_file_to_markdown("missing.html", None::<&str>) {
 `MdkaError` currently has one variant: `Io`, wrapping `std::io::Error`.
 `html_to_markdown` and `html_to_markdown_with` are infallible — they always
 return a `String` and never panic on any input, no matter how malformed.
+
+## Crate Version
+
+```rust
+println!("{}", mdka::version()); // e.g. "2.3.0"
+```
+
+Returns the crate's version as declared in `Cargo.toml`.

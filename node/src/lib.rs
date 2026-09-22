@@ -153,6 +153,24 @@ pub async fn html_to_markdown_with_async(
         .map_err(|e| Error::from_reason(format!("task panicked: {e}")))
 }
 
+/// Converts multiple HTML strings to Markdown, each independently. Cannot
+/// fail, so it returns plain strings, not a result type (RFC 039 §3 A2). One
+/// function, not four: `options` is optional the same way
+/// `htmlToMarkdownWith`'s is, rather than a separate with/without pair, and
+/// there is no async twin -- the underlying Rust call is CPU-bound and
+/// already parallel across cores internally (via rayon) when the `parallel`
+/// feature is on, so a `spawn_blocking` wrapper here would add a thread hop
+/// without shortening the work.
+#[napi]
+pub fn html_to_markdown_many(
+    htmls: Vec<String>,
+    options: Option<JsConversionOptions>,
+    env: Env,
+) -> Result<Vec<String>> {
+    let opts = to_rust_opts(Some(&env), options)?;
+    Ok(mdka::html_to_markdown_many_with(&htmls, &opts))
+}
+
 // ─── Single-file conversion API ──────────────────────────────────────────
 
 /// Converts a single HTML file (default mode).

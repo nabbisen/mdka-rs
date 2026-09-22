@@ -70,6 +70,21 @@ main()
 Available mode strings: `"balanced"` (default), `"strict"`, `"minimal"`,
 `"semantic"`, `"preserve"`.
 
+## Converting Multiple Strings
+
+```js
+const { htmlToMarkdownMany } = require('mdka')
+
+const pages = ['<h1>A</h1>', '<p>B</p>', '<ul><li>C</li></ul>']
+const results = htmlToMarkdownMany(pages)
+// ['# A\n', 'B\n', '- C\n']
+
+// With options — the same shape as htmlToMarkdownWith's
+const withOpts = htmlToMarkdownMany(pages, { mode: 'minimal' })
+```
+
+Each input is converted independently and the results keep the input order.
+
 ## Single File Conversion
 
 ```js
@@ -161,6 +176,13 @@ TS2353: Object literal may only specify known properties, and
 
 Use `mode`.
 
+## Package Version
+
+```js
+const { version } = require('mdka')
+console.log(version()) // e.g. "2.3.0"
+```
+
 ## TypeScript
 
 Type definitions are bundled. No `@types/` package is needed:
@@ -170,6 +192,7 @@ import {
   htmlToMarkdown,
   htmlToMarkdownWith,
   htmlToMarkdownAsync,
+  htmlToMarkdownMany,
   htmlFileToMarkdown,
   htmlFilesToMarkdown,
   type JsConversionOptions,

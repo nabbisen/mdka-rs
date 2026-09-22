@@ -197,7 +197,8 @@ async function run(name, fn) {
   // ── ConversionOptions / モード別テスト ───────────────────────────────────
   ; (async () => {
     const {
-      htmlToMarkdownWith, htmlToMarkdownWithAsync, htmlFilesToMarkdownWith
+      htmlToMarkdownWith, htmlToMarkdownWithAsync, htmlFilesToMarkdownWith,
+      htmlToMarkdownMany
     } = require('./index')
     const fs = require('fs'), path = require('path'), os = require('os')
 
@@ -332,6 +333,23 @@ async function run(name, fn) {
       const content = fs.readFileSync(results[0].dest, 'utf8')
       assert.ok(content.includes('# Title'), `title missing: ${content}`)
       fs.rmSync(tmp, { recursive: true })
+    })
+
+    await run('htmlToMarkdownMany: matches mapping htmlToMarkdown over the inputs', () => {
+      const inputs = ['<h1>A</h1>', '<p>B</p>', '<em>C</em>']
+      const many = htmlToMarkdownMany(inputs)
+      assert.deepEqual(many, inputs.map((h) => htmlToMarkdown(h)))
+    })
+
+    await run('htmlToMarkdownMany: options apply the same as htmlToMarkdownWith', () => {
+      const inputs = ['<nav><a href="/">Home</a></nav><main><p>Content</p></main>']
+      const opts = { mode: 'minimal', dropInteractiveShell: true }
+      const many = htmlToMarkdownMany(inputs, opts)
+      assert.deepEqual(many, inputs.map((h) => htmlToMarkdownWith(h, opts)))
+    })
+
+    await run('htmlToMarkdownMany: empty input returns empty array', () => {
+      assert.deepEqual(htmlToMarkdownMany([]), [])
     })
 
     await run('ConversionOptions: unknown mode falls back to balanced', () => {

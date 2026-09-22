@@ -10,7 +10,8 @@
 //! Options:
 //!   -o, --output <DIR>   Output directory (defaults to the input's directory)
 //!   -m, --mode <MODE>    balanced(default)|strict|minimal|semantic|preserve
-//!       --preserve-ids   Keep id attributes
+//!       --preserve-ids   Emit <a id="…"></a> anchors for elements with an id (on by default except in minimal)
+//!       --no-preserve-ids  Turn anchor emission off, in any mode
 //!       --preserve-classes  [deprecated, no effect] Keep class attributes
 //!       --preserve-data  [deprecated, no effect] Keep data-* attributes
 //!       --preserve-aria  [deprecated, no effect] Keep aria-* attributes
@@ -20,6 +21,10 @@
 //!   -V, --version        Show the version
 //!       --               End of options; everything after is a path
 //! ```
+//!
+//! Deprecation notices and per-file progress (`in.html -> in.md`) are written
+//! to stderr, not stdout: `mdka page.html > out.md` must leave `out.md`
+//! holding only the conversion (RFC 039 §3 A7).
 
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -35,7 +40,9 @@ Usage:
 Options:
   -o, --output <DIR>      Output directory (defaults to the input's directory)
   -m, --mode <MODE>       Conversion mode: balanced(default) | strict | minimal | semantic | preserve
-      --preserve-ids      Keep id attributes
+      --preserve-ids      Emit <a id=\"…\"></a> anchors for elements with an id.
+                          On by default in every mode except minimal
+      --no-preserve-ids   Turn anchor emission off, in any mode
       --preserve-classes  [deprecated, no effect] Keep class attributes (Markdown has no attribute syntax)
       --preserve-data     [deprecated, no effect] Keep data-* attributes (same reason)
       --preserve-aria     [deprecated, no effect] Keep aria-* attributes (same reason)
@@ -55,6 +62,9 @@ Modes:
 Output:
   Without -o, a single file is written beside its input as .md
   -o is required when converting multiple files
+  Deprecation notices and per-file progress (in.html -> in.md) go to stderr,
+  never stdout -- `mdka page.html > out.md` leaves out.md holding only the
+  conversion
 
 Examples:
   echo '<h1>Hello</h1>' | mdka
@@ -62,7 +72,21 @@ Examples:
   mdka -o out/ index.html                 # → out/index.md
   mdka --mode minimal --drop-shell -o out/ *.html  # drop nav/header/footer
   mdka --mode preserve -o archive/ *.html # retain as much as possible
+  mdka --no-preserve-ids -o out/ index.html # anchors off, any mode
 ";
+
+/// Matches Node's and Python's own deprecation-warning wording exactly (see
+/// `node/src/lib.rs`'s and `python/src/lib.rs`'s `warn_deprecated_field`) --
+/// one message, three surfaces, so a user moving between bindings does not
+/// find a different story on each.
+fn warn_deprecated_flag(flag: &str) {
+    eprintln!(
+        "warning: mdka: `{flag}` has no effect and is deprecated (see \
+         https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has \
+         no attribute syntax, so this option was never expressible in the \
+         output."
+    );
+}
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -80,7 +104,12 @@ fn main() {
     // ── Argument parsing ──────────────────────────────────────────────
     let mut out_dir: Option<PathBuf> = None;
     let mut mode = ConversionMode::Balanced;
-    let mut preserve_ids = false;
+    // `--preserve-ids` was write-only: on by default in 4 of 5 modes, with
+    // no way to turn it off short of switching modes (which also drops the
+    // shell and unwraps wrappers). `Option<bool>` lets an explicit
+    // `--no-preserve-ids` override the mode's default the same way
+    // `--preserve-ids` already could (RFC 039 §2.5, §3 A7).
+    let mut preserve_ids_override: Option<bool> = None;
     let mut preserve_classes = false;
     let mut preserve_data = false;
     let mut preserve_aria_override: Option<bool> = None;
@@ -116,7 +145,8 @@ fn main() {
                     process::exit(1);
                 });
             }
-            "--preserve-ids" => preserve_ids = true,
+            "--preserve-ids" => preserve_ids_override = Some(true),
+            "--no-preserve-ids" => preserve_ids_override = Some(false),
             "--preserve-classes" => preserve_classes = true,
             "--preserve-data" => preserve_data = true,
             "--preserve-aria" => preserve_aria_override = Some(true),
@@ -137,21 +167,29 @@ fn main() {
 
     // CLI flags override the mode's defaults
     let mut opts = ConversionOptions::for_mode(mode);
-    if preserve_ids {
-        opts.preserve_ids = true;
+    if let Some(v) = preserve_ids_override {
+        opts.preserve_ids = v;
     }
     // preserve_classes/preserve_data_attrs/preserve_aria_attrs are deprecated
     // no-ops (RFC 005 Slice B2); the flags are kept as no-op passthroughs for
-    // command-line compatibility rather than removed.
+    // command-line compatibility rather than removed. Unlike Node
+    // (`process.emitWarning`) and Python (`DeprecationWarning`), the CLI
+    // previously said nothing at all when one was passed -- silent on the
+    // one surface most likely to sit unread in a script (RFC 039 §2.5, §3
+    // A7). Warned only when explicitly passed, matching both bindings: the
+    // mode's own defaults for these fields never trigger it.
     #[allow(deprecated)]
     {
         if preserve_classes {
+            warn_deprecated_flag("--preserve-classes");
             opts.preserve_classes = true;
         }
         if preserve_data {
+            warn_deprecated_flag("--preserve-data");
             opts.preserve_data_attrs = true;
         }
         if let Some(v) = preserve_aria_override {
+            warn_deprecated_flag("--preserve-aria");
             opts.preserve_aria_attrs = v;
         }
     }
@@ -176,7 +214,9 @@ fn main() {
         // single file → out_dir, or the input's own directory
         (false, 1, _) => {
             match mdka::html_file_to_markdown_with(&file_args[0], out_dir.as_deref(), &opts) {
-                Ok(r) => println!("{} -> {}", r.src.display(), r.dest.display()),
+                // Progress, not output: `mdka page.html > out.md` must leave
+                // out.md holding only the conversion (RFC 039 §3 A7).
+                Ok(r) => eprintln!("{} -> {}", r.src.display(), r.dest.display()),
                 Err(e) => {
                     eprintln!("error: {e}");
                     process::exit(1);
@@ -198,7 +238,8 @@ fn main() {
             let mut had_error = false;
             for (src, res) in results {
                 match res {
-                    Ok(dest) => println!("{} -> {}", src.display(), dest.display()),
+                    // Progress, not output -- see the single-file case above.
+                    Ok(dest) => eprintln!("{} -> {}", src.display(), dest.display()),
                     Err(e) => {
                         eprintln!("error: {}: {e}", src.display());
                         had_error = true;

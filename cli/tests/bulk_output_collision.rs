@@ -37,17 +37,20 @@ fn colliding_stems_error_and_exit_nonzero() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     let stderr = String::from_utf8(output.stderr).unwrap();
 
+    // Progress (including the success line) goes to stderr, not stdout (RFC
+    // 039 §3 A7): `mdka -o out/ *.html > log` must leave stdout empty here,
+    // since none of these inputs are read from stdin.
     assert!(
-        stdout.contains(&format!(
+        stdout.is_empty(),
+        "no stdin conversion requested, stdout must be empty, got: {stdout}"
+    );
+    assert!(
+        stderr.contains(&format!(
             "{} -> {}",
             src_a.display(),
             out.join("index.md").display()
         )),
-        "first input must report success, got stdout: {stdout}"
-    );
-    assert!(
-        !stdout.contains(&src_b.display().to_string()),
-        "rejected input must not report success, got stdout: {stdout}"
+        "first input must report success, got stderr: {stderr}"
     );
     assert!(
         stderr.contains(&src_b.display().to_string())

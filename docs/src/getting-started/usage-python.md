@@ -98,6 +98,13 @@ results = mdka.html_to_markdown_many(pages)
 
 This is faster than calling `html_to_markdown` in a Python loop for large batches.
 
+Use `html_to_markdown_many_with` to pass `mode` and the other conversion
+options, the same keyword arguments `html_to_markdown_with` accepts:
+
+```python
+results = mdka.html_to_markdown_many_with(pages, mode=mdka.ConversionMode.Minimal)
+```
+
 ## Single File Conversion
 
 ```python
@@ -119,6 +126,9 @@ result = mdka.html_file_to_markdown(
 )
 ```
 
+`html_file_to_markdown_with` is the same function under the name the
+`_with` convention would predict, accepting the same keyword arguments.
+
 ## Bulk File Conversion
 
 ```python
@@ -133,6 +143,9 @@ for r in results:
     else:
         print(f"Error: {r.src}: {r.error}")
 ```
+
+`html_files_to_markdown_with` is the same function under the `_with` name,
+accepting `mode` and the other conversion options.
 
 ## Error Handling
 
@@ -151,34 +164,30 @@ never raise exceptions regardless of input quality.
 
 ## Type Annotations
 
-**mdka does not ship type information.** There is no `py.typed` marker and no
-`.pyi` stubs, so a type checker treats every symbol below as `Any`. mypy will
-say so directly:
-
-```
-error: Skipping analyzing "mdka": module is installed, but missing library
-stubs or py.typed marker  [import-untyped]
-```
-
-That message is accurate, and it is better than the alternative. Every public
-symbol is implemented in Rust and exposed through a compiled extension module,
-which a type checker cannot read signatures from. Shipping a bare `py.typed`
-would silence the warning without providing anything to check — the symbols
-would still resolve as `Any`, and a genuinely wrong annotation would then pass
-silently. Typed stubs are the real fix and are not written yet.
+**mdka ships a `py.typed` marker, but no `.pyi` stubs**, so a type checker no
+longer reports the package as untyped, but every symbol below still resolves
+as `Any`. Every public symbol is implemented in Rust and exposed through a
+compiled extension module, which a type checker cannot read signatures from;
+shipping the bare marker without stubs stops mypy from complaining about a
+missing marker, but does not by itself give it anything to check a call
+against. Typed stubs are the real fix and are not written yet.
 
 Until then, the signatures are:
 
 ```python
 from mdka import (
-    html_to_markdown,          # (html: str) -> str
-    html_to_markdown_with,     # (html: str, mode=..., **flags) -> str
-    html_to_markdown_many,     # (html_list: list[str]) -> list[str]
-    html_file_to_markdown,     # (path, out_dir=None, ...) -> ConvertResult
-    html_files_to_markdown,    # (paths, out_dir, ...) -> list[BulkConvertResult]
-    ConversionMode,            # enum
-    ConvertResult,             # dataclass: src, dest (str)
-    BulkConvertResult,         # dataclass: src, dest?, error?, ok
-    MdkaError,                 # exception
+    html_to_markdown,               # (html: str) -> str
+    html_to_markdown_with,          # (html: str, mode=..., **flags) -> str
+    html_to_markdown_many,          # (html_list: list[str]) -> list[str]
+    html_to_markdown_many_with,     # (html_list: list[str], mode=..., **flags) -> list[str]
+    html_file_to_markdown,          # (path, out_dir=None, ...) -> ConvertResult
+    html_file_to_markdown_with,     # (path, out_dir=None, mode=..., **flags) -> ConvertResult
+    html_files_to_markdown,         # (paths, out_dir, ...) -> list[BulkConvertResult]
+    html_files_to_markdown_with,    # (paths, out_dir, mode=..., **flags) -> list[BulkConvertResult]
+    ConversionMode,                 # enum
+    ConvertResult,                  # dataclass: src, dest (str)
+    BulkConvertResult,              # dataclass: src, dest?, error?, ok
+    MdkaError,                      # exception
+    version,                        # () -> str
 )
 ```

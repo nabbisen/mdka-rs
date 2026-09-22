@@ -48,7 +48,8 @@ truth — it is generated from the binary you are running.
 |---|---|
 | `-o, --output <DIR>` | Output directory (defaults to the input's directory) |
 | `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `strict` · `minimal` · `semantic` · `preserve` |
-| `--preserve-ids` | Keep `id` attributes |
+| `--preserve-ids` | Emit `<a id="…"></a>` anchors for elements with an `id`. On by default in every mode except `minimal` |
+| `--no-preserve-ids` | Turn anchor emission off, in any mode |
 | `--preserve-classes` | **Deprecated, no effect.** Markdown has no attribute syntax |
 | `--preserve-data` | **Deprecated, no effect.** Same reason |
 | `--preserve-aria` | **Deprecated, no effect.** Same reason |
@@ -66,5 +67,11 @@ The three deprecated flags are still accepted, so existing command lines keep
 working, but they change nothing about the output. They are documented here
 only so that you can recognise them; do not reach for them expecting an
 effect. See [`ConversionOptions`](../api/options.md).
+
+**Deprecation notices and per-file progress go to stderr, not stdout.** A
+deprecated flag's warning and the `in.html -> in.md` progress line printed for
+each converted file never mix into stdout, so `mdka page.html > out.md` and
+`echo '<h1>Hi</h1>' | mdka --preserve-classes > out.md` both leave `out.md`
+holding only the converted Markdown.
 
 For full mode descriptions see [Conversion Modes](../api/modes.md).
