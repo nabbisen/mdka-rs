@@ -543,6 +543,13 @@ pub fn markdown_facts(md: &str, reading: Reading) -> MarkdownFacts {
                 }
             }
             Event::SoftBreak | Event::HardBreak | Event::Rule => facts.text.push(' '),
+            // A literal `<br>` written back as inline HTML (RFC 008/024) is
+            // the one raw tag mdka ever emits verbatim; it separates words
+            // the same way `br` does on the HTML side (`HTML_BLOCKS`,
+            // above), or a block boundary flattened to `<br>` with no
+            // literal space of its own (RFC 008 §4.1's F1) reads as fused
+            // text here even though no content was lost.
+            Event::Html(h) | Event::InlineHtml(h) if &*h == "<br>" => facts.text.push(' '),
             _ => {}
         }
     }

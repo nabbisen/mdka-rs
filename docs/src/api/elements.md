@@ -37,9 +37,10 @@ output of its own and no break. `<span>A</span><span>B</span>` converts to
 
 ## Tables
 
-A `<table>` becomes a GFM table when it is **expressible**: exactly one
-header row (all `<th>`, first), no `colspan`/`rowspan`, no cell holding more
-than a single bare paragraph of content, no nested table, and no `<caption>`.
+Almost every `<table>` becomes a GFM table. Only four shapes are inexpressible:
+more than one whole-row header, the row-header pattern (`<th>` used as each
+row's own first cell rather than as a whole header row), a nested `<table>`
+anywhere in a cell, and `<caption>` — GFM has no syntax for any of these.
 
 ```html
 <table><thead><tr><th>Name</th><th>Age</th></tr></thead>
@@ -54,27 +55,56 @@ converts to:
 | Alice | 30 |
 ```
 
-Alignment is carried from `align=` or `text-align:` into `:--`/`--:`/`:-:`. A
-literal `|` in a cell is escaped (`\|`). A ragged row — one with a different
-cell count from the header — is not a blocker: GFM pads a short row and
-truncates a long one, so no special handling is needed, but a truncated
-cell's content is genuinely lost from the output. `<br>` inside a cell
-survives as literal inline HTML rather than a Markdown hard break, which
-would end the cell early.
+A table missing a `<th>` entirely gets an empty header row synthesized over
+the data, rather than promoting row 1 to a heading the source never wrote.
+`colspan`/`rowspan` are expanded by repeating the spanned content across
+every cell it covers, header included. A cell holding block content —
+multiple paragraphs, a list, a code block, a heading, a blockquote — flattens
+to inline: paragraphs join with `<br>`; a list becomes `<br>`-separated
+`- `/`N. ` marker text (two spaces of indent per nesting level); a code block
+becomes one code span per source line, `<br>`-joined; a heading or blockquote
+contributes its text plain, without inventing emphasis or a quote marker the
+cell can't hold:
 
-**A table that is not expressible never welds its cells together** — the
+```html
+<table><tr><th colspan="2">Name</th><th>Age</th></tr>
+<tr><td>Alice</td><td>Smith</td><td>30</td></tr>
+<tr><td colspan="2"><p>Bob Jones</p><p>(pending)</p></td><td>27</td></tr></table>
+```
+
+converts to:
+
+```markdown
+| Name | Name | Age |
+| --- | --- | --- |
+| Alice | Smith | 30 |
+| Bob Jones<br>(pending) | Bob Jones<br>(pending) | 27 |
+```
+
+Alignment is carried from `align=` or `text-align:` into `:--`/`--:`/`:-:`. A
+literal `|` in a cell is escaped (`\|`), including one produced by a nested
+code span, link, or image. A ragged row — one with a different cell count
+from the header — is not a blocker: GFM pads a short row, and a body row
+longer than the header widens the whole table's grid instead (an empty
+header cell is synthesized over the extra column, so nothing is lost).
+`<br>` inside a cell survives as literal inline HTML rather than a Markdown
+hard break, which would end the cell early.
+
+**A table that is inexpressible never welds its cells together** — the
 `H1H2ab` defect below is fixed regardless of which case applies. Every
 `<tr>`/`<td>`/`<th>`/`<caption>` renders as its own paragraph-like block, so
 row and column structure is not preserved, but every cell's text is clearly
 separated:
 
 ```html
-<table><tr><th>H1</th><th>H2</th></tr><tr><td>a</td><td>b</td></tr><tr><td colspan="2">c</td></tr></table>
+<table><tr><th>R1</th><td>1</td></tr><tr><th>R2</th><td>2</td></tr></table>
 ```
 
-converts to `H1`, `H2`, `a`, `b`, `c`, each its own paragraph (blank-line
-separated) — not `H1H2abc`. A `<caption>` is never dropped silently; it
-appears as its own paragraph, in its document position.
+converts to `R1`, `1`, `R2`, `2`, each its own paragraph (blank-line
+separated) — not `R11R22`. A nested table is analyzed on its own terms: it
+may become its own expressible table even while the table containing it
+falls back. A `<caption>` is never dropped silently; it appears as its own
+paragraph, in its document position.
 
 Turning the row/column structure of an inexpressible table into a real GFM
 table (flattening a cell's block content, synthesising a header where none

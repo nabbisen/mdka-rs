@@ -380,7 +380,7 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
     let capacity = document.html().len() / 2;
     let mut renderer = MarkdownRenderer::new(capacity.max(256));
     let hints = structure_hints(document, opts);
-    let tables = crate::table::analyze(document, opts);
+    let tables = crate::table::analyze(document);
 
     // root() は Document ノードなので子ノードだけを渡す
     drive(

@@ -1,18 +1,22 @@
-//! GFM table support (RFC 008 slice `008a`).
+//! GFM table support (RFC 008, slices `008a` and `008b`).
 //!
 //! A pre-pass resolves each `<table>`'s `colspan`/`rowspan` into a
-//! rectangular grid and decides whether it can become a plain GFM table (RFC
-//! 008 §3): a blocker -- no header row, more than one header row, a cell
-//! holding more than a single bare paragraph of content, any span, a nested
-//! table, or a `<caption>` -- sends it to the fallback instead. An
-//! expressible table is emitted as GFM here, in [`render`]. An inexpressible
-//! one needs no special handling at all: `utils::block_kind` classifies
+//! rectangular grid and decides whether it can become a GFM table. Three
+//! blockers remain (RFC 008 §3, §4.1): more than one whole-row header, a
+//! row-header table (`<th>` as each row's own first cell rather than as a
+//! whole row -- RFC 008 amendment, "not a span problem"), and a nested
+//! `<table>` anywhere in a cell. A `<caption>` still has no GFM syntax and
+//! also sends the whole table to the fallback. Everything else is now
+//! expressible: a genuinely absent header is synthesised empty (F2); a span
+//! is resolved through the grid and its content repeated across every
+//! covered cell, header included (F3); a cell holding block content is
+//! flattened to inline, per block type (F1, `MarkdownRenderer`'s
+//! `enter_cell_block`/`leave_cell_block`). An inexpressible table needs no
+//! special fallback rendering at all: `utils::block_kind` classifies
 //! `tr`/`td`/`th`/`caption` as `Block::Paragraph`, so the ordinary traversal
 //! already keeps every cell separated (criterion 2) with every existing
 //! container-prefix, `<pre>`-suppression and `<caption>`-preservation
-//! guarantee that classification already carries. `008b` (F1 flatten-cell-
-//! blocks, F2 synthesise-header, F3 expand-spans) replaces that floor with a
-//! real GFM table wherever it can.
+//! guarantee that classification already carries.
 
 use std::collections::HashMap;
 
@@ -131,18 +135,24 @@ fn cell_align(elem: &scraper::node::Element) -> Align {
 
 // ─── Pre-pass: per-table expressibility (RFC 008 §3) ───────────────────────
 
+/// One resolved header column. `node: None` is F2's synthesised empty
+/// header (no `<th>` anywhere in the source) -- rendered as an empty cell,
+/// never `<th>` text that does not exist.
 pub(crate) struct HeaderCol<'a> {
-    node: NodeRef<'a, Node>,
+    node: Option<NodeRef<'a, Node>>,
     align: Align,
 }
 
 pub(crate) struct ExpressibleGrid<'a> {
     header: Vec<HeaderCol<'a>>,
-    /// Every row after the header, cells in document order. Ragged -- a
-    /// short or long row relative to the header -- is not a blocker (RFC 008
-    /// §3's own "Can" list): GFM pads and truncates gracefully, so each row
-    /// is written with however many cells it actually has.
-    rows: Vec<Vec<NodeRef<'a, Node>>>,
+    /// Every row after the header, one entry per grid column. `None` is an
+    /// uncovered position -- a genuinely ragged row, not a span artifact
+    /// (`render` trims a row's own trailing `None`s: GFM already pads a
+    /// short row, so nothing is gained by writing empty cells GFM would add
+    /// on its own). A span's covered cells are `Some`, holding the
+    /// *originating* cell repeated -- F3 renders it more than once, not a
+    /// second, different node.
+    rows: Vec<Vec<Option<NodeRef<'a, Node>>>>,
 }
 
 /// What the pre-pass decided about one `<table>`. `grid: None` covers every
@@ -166,13 +176,6 @@ fn parse_span(elem: &scraper::node::Element, attr: &str) -> usize {
         .and_then(|v| v.trim().parse::<usize>().ok())
         .filter(|&n| n > 0)
         .unwrap_or(1)
-}
-
-/// Whether `opts` would actually render `tag` at all: content that never
-/// reaches the page is not a blocker (mirrors `traversal::disposition`'s
-/// skip half, which this pre-pass cannot call directly without exposing it).
-fn renders(tag: &str, opts: &ConversionOptions) -> bool {
-    !(utils::is_skip_tag(tag) || (opts.drop_interactive_shell && utils::is_shell_tag(tag)))
 }
 
 /// Every `<tr>` inside `table`, in document order, never crossing into a
@@ -210,34 +213,19 @@ fn is_all_th(cells: &[NodeRef<'_, Node>]) -> bool {
             .all(|c| element(*c).is_some_and(|e| e.name() == "th"))
 }
 
-/// Whether `cell` holds anything GFM cannot express (RFC 008 §3): any
-/// rendered block descendant, unless it is exactly one direct-child `<p>`
-/// holding no block of its own and nothing else beside it (whitespace-only
-/// text aside) -- that flattens to inline trivially (§2's method note).  A
-/// paragraph mixed with other sibling content does NOT qualify: rendering it
-/// would still put a blank line inside the cell's own captured text.
-fn cell_has_blocker(cell: NodeRef<'_, Node>, opts: &ConversionOptions) -> bool {
-    let blocks: Vec<NodeRef<'_, Node>> = cell
-        .descendants()
-        .skip(1)
-        .filter(|d| {
-            element(*d)
-                .is_some_and(|e| renders(e.name(), opts) && utils::block_kind(e.name()).is_some())
-        })
-        .collect();
-    match blocks.as_slice() {
-        [] => false,
-        [only] => {
-            let is_direct_child = only.parent().map(|p| p.id()) == Some(cell.id());
-            let is_paragraph = element(*only)
-                .is_some_and(|e| utils::block_kind(e.name()) == Some(utils::Block::Paragraph));
-            let is_only_significant_child = cell.children().all(|c| {
-                c.id() == only.id() || matches!(c.value(), Node::Text(t) if t.trim().is_empty())
-            });
-            !(is_direct_child && is_paragraph && is_only_significant_child)
-        }
-        _ => true,
-    }
+/// Whether any cell in the table is a `<th>`, even though no *row* is
+/// all-`<th>` (RFC 008 amendment: a row-header table, `<th>` as each row's
+/// own first cell, is not a missing-header table -- it must stay
+/// inexpressible, not be handed to F2). `opts` is unused here deliberately:
+/// a dropped `<th>` (inside a skipped shell tag, say) still marks the
+/// source as row-header-shaped, since F2's synthesised header is about
+/// tables that never had `<th>` at all, not ones where it happened not to
+/// render.
+fn table_has_any_th(row_cells: &[Vec<NodeRef<'_, Node>>]) -> bool {
+    row_cells
+        .iter()
+        .flatten()
+        .any(|&c| element(c).is_some_and(|e| e.name() == "th"))
 }
 
 fn cell_has_nested_table(cell: NodeRef<'_, Node>) -> bool {
@@ -252,7 +240,7 @@ fn table_has_caption(table: NodeRef<'_, Node>) -> bool {
         .any(|c| element(c).is_some_and(|e| e.name() == "caption"))
 }
 
-fn analyze_one<'a>(table: NodeRef<'a, Node>, opts: &ConversionOptions) -> TableInfo<'a> {
+fn analyze_one<'a>(table: NodeRef<'a, Node>) -> TableInfo<'a> {
     let rows = collect_rows(table);
     // A `<caption>` has no GFM syntax (RFC 008 §3): send the whole table to
     // the fallback rather than emit a GFM table with the caption dropped.
@@ -264,22 +252,49 @@ fn analyze_one<'a>(table: NodeRef<'a, Node>, opts: &ConversionOptions) -> TableI
 
     let row_cells: Vec<Vec<NodeRef<'a, Node>>> = rows.iter().map(|r| collect_cells(*r)).collect();
 
-    // Exactly one header row, and it is the first (RFC 008 §3: "no header
-    // row" and "two header rows" are both blockers).
-    let header_rows: Vec<usize> = row_cells
+    // Nested table anywhere blocks the whole outer table: GFM cannot
+    // express a table inside a cell at all, and it is the one shape F1
+    // cannot flatten (RFC 008 §4.1: "a nested table remains a blocker").
+    // Every other block shape a cell might hold is F1's, not this pre-pass's,
+    // to reject.
+    if row_cells
+        .iter()
+        .flatten()
+        .any(|&c| cell_has_nested_table(c))
+    {
+        return TableInfo { grid: None };
+    }
+
+    // A whole-row header, in document order.
+    let all_th_rows: Vec<usize> = row_cells
         .iter()
         .enumerate()
         .filter(|(_, cells)| is_all_th(cells))
         .map(|(i, _)| i)
         .collect();
-    if header_rows.len() != 1 || header_rows[0] != 0 {
+    // More than one whole-row header (RFC 008 §3, unchanged by the
+    // amendment): the first becomes a stray paragraph above the table.
+    if all_th_rows.len() > 1 {
         return TableInfo { grid: None };
     }
+    // A single whole-row header exists but is not the table's first row:
+    // this slice does not attempt to reorder it, so the table is still not
+    // directly expressible.
+    if all_th_rows.len() == 1 && all_th_rows[0] != 0 {
+        return TableInfo { grid: None };
+    }
+    // No whole-row header, but `<th>` appears somewhere: a row-header table
+    // (`<th>` as each row's own first cell) -- the RFC 008 amendment's own
+    // finding. Not a missing header for F2 to synthesise, and not a span for
+    // F3 to expand; it must stay inexpressible.
+    if all_th_rows.is_empty() && table_has_any_th(&row_cells) {
+        return TableInfo { grid: None };
+    }
+    let has_header = all_th_rows == [0];
 
-    // Any span at all is a blocker for `008a` (`008b`'s F3 owns expanding
-    // them) -- resolved through the real grid algorithm, not a raw attribute
-    // scan, so the decision and the estimate in the review package come from
-    // the same code.
+    // Resolve every row -- header included, when one exists -- through one
+    // grid, so a span starting in the header and carrying into the body (or
+    // vice versa) is placed consistently (RFC 008 §4.1).
     let spans: Vec<Vec<SpanIn>> = row_cells
         .iter()
         .map(|cells| {
@@ -295,27 +310,58 @@ fn analyze_one<'a>(table: NodeRef<'a, Node>, opts: &ConversionOptions) -> TableI
                 .collect()
         })
         .collect();
-    let (placements, _col_count) = resolve_grid(&spans);
-    if placements.iter().any(|p| p.colspan > 1 || p.rowspan > 1) {
+    let (placements, col_count) = resolve_grid(&spans);
+    if col_count == 0 {
+        // Every row is empty (no cells at all): nothing to render.
         return TableInfo { grid: None };
     }
 
+    // The full logical grid: `grid[r][c]` is the cell occupying that
+    // position, repeated across every position its span covers (F3) --
+    // `None` where nothing does (a genuinely ragged row).
+    let mut grid: Vec<Vec<Option<NodeRef<'a, Node>>>> =
+        vec![vec![None; col_count]; row_cells.len()];
+    let mut placement_idx = 0;
     for cells in &row_cells {
         for &cell in cells {
-            if cell_has_blocker(cell, opts) || cell_has_nested_table(cell) {
-                return TableInfo { grid: None };
+            let p = placements[placement_idx];
+            placement_idx += 1;
+            let row_end = (p.row + p.rowspan).min(row_cells.len());
+            let col_end = (p.col + p.colspan).min(col_count);
+            for row in &mut grid[p.row..row_end] {
+                for slot in &mut row[p.col..col_end] {
+                    *slot = Some(cell);
+                }
             }
         }
     }
 
-    let header: Vec<HeaderCol<'a>> = row_cells[0]
-        .iter()
-        .map(|&node| HeaderCol {
-            node,
-            align: cell_align(element(node).expect("header cell is an element")),
-        })
-        .collect();
-    let body_rows: Vec<Vec<NodeRef<'a, Node>>> = row_cells[1..].to_vec();
+    let (header, body_start) = if has_header {
+        let header: Vec<HeaderCol<'a>> = grid[0]
+            .iter()
+            .map(|&node| HeaderCol {
+                node,
+                align: node
+                    .and_then(element)
+                    .map(cell_align)
+                    .unwrap_or(Align::None),
+            })
+            .collect();
+        (header, 1)
+    } else {
+        // F2: no `<th>` anywhere, so no row was consumed as a header --
+        // synthesise an empty one rather than promote a data row, which
+        // would silently assert a heading the source never wrote (RFC 008
+        // §4).
+        let header: Vec<HeaderCol<'a>> = (0..col_count)
+            .map(|_| HeaderCol {
+                node: None,
+                align: Align::None,
+            })
+            .collect();
+        (header, 0)
+    };
+    let body_rows: Vec<Vec<Option<NodeRef<'a, Node>>>> = grid[body_start..].to_vec();
 
     TableInfo {
         grid: Some(ExpressibleGrid {
@@ -328,13 +374,13 @@ fn analyze_one<'a>(table: NodeRef<'a, Node>, opts: &ConversionOptions) -> TableI
 /// Analyzes every `<table>` in the document, independently -- a nested
 /// table (already excluded from its parent's own rows by `collect_rows`)
 /// gets its own entry here and is expressible or not on its own terms.
-pub(crate) fn analyze<'a>(document: &'a Html, opts: &ConversionOptions) -> Tables<'a> {
+pub(crate) fn analyze(document: &Html) -> Tables<'_> {
     document
         .tree
         .root()
         .descendants()
         .filter(|n| element(*n).is_some_and(|e| e.name() == "table"))
-        .map(|n| (n.id(), analyze_one(n, opts)))
+        .map(|n| (n.id(), analyze_one(n)))
         .collect()
 }
 
@@ -342,11 +388,12 @@ pub(crate) fn analyze<'a>(document: &'a Html, opts: &ConversionOptions) -> Table
 
 /// Captures `content`'s children as one GFM table cell: rendered through the
 /// ordinary dispatch (so `<strong>`/`<a>`/`<code>`/`<img>` behave exactly as
-/// they would anywhere else), with `|` escaped and `<br>` kept literal. Safe
-/// to call precisely because the pre-pass already proved this cell holds no
-/// block content -- there is no cell renderer here that *forbids* a block,
-/// only one that is never asked to hold one (see the estimate in the review
-/// package for what a real one would cost).
+/// they would anywhere else), with `|` escaped at the cell boundary and
+/// `<br>` kept literal. A cell holding block content -- a list, a code
+/// block, a heading, a blockquote, two or more paragraphs -- flattens to
+/// inline via `MarkdownRenderer::enter_cell_block`/`leave_cell_block` (F1),
+/// which `enter_block`/`leave_block` reach automatically once
+/// `Sink::in_table_cell` is true; nothing here needs to know that happened.
 fn render_cell(
     renderer: &mut MarkdownRenderer,
     content: NodeRef<'_, Node>,
@@ -357,6 +404,22 @@ fn render_cell(
     renderer.begin_cell_capture();
     traversal::drive(renderer, content.children(), hints, opts, tables);
     renderer.end_cell_capture()
+}
+
+/// [`render_cell`] for a possibly-uncovered grid position: `None` (a
+/// genuinely ragged row, or F2's synthesised header) renders as an empty
+/// cell, never `<th>`/`<td>` text that was never authored.
+fn render_cell_opt(
+    renderer: &mut MarkdownRenderer,
+    content: Option<NodeRef<'_, Node>>,
+    hints: &Hints,
+    opts: &ConversionOptions,
+    tables: &Tables<'_>,
+) -> String {
+    match content {
+        Some(node) => render_cell(renderer, node, hints, opts, tables),
+        None => String::new(),
+    }
 }
 
 fn row_line(cells: &[String]) -> String {
@@ -389,10 +452,14 @@ pub(crate) fn render(
     };
     renderer.begin_block();
 
+    // The header is never trimmed, even when F2 synthesised it empty: its
+    // width is what fixes the table's own column count, since ragged body
+    // rows are tolerated against it (RFC 008 §3's own "Can" list), not the
+    // other way around.
     let header_cells: Vec<String> = grid
         .header
         .iter()
-        .map(|h| render_cell(renderer, h.node, hints, opts, tables))
+        .map(|h| render_cell_opt(renderer, h.node, hints, opts, tables))
         .collect();
     renderer.write_table_line(&row_line(&header_cells));
 
@@ -407,10 +474,26 @@ pub(crate) fn render(
     renderer.write_table_line(&delimiter_line);
 
     for row in &grid.rows {
-        let cells: Vec<String> = row
-            .iter()
-            .map(|&cell| render_cell(renderer, cell, hints, opts, tables))
-            .collect();
+        // Trim a row's own trailing `None`s -- an uncovered position with
+        // nothing after it is a genuinely ragged row, not a span artifact,
+        // and GFM already pads it (§3's own "Can" list); writing the empty
+        // cells ourselves would only bloat the line for no visible
+        // difference. An uncovered position with *something* after it
+        // (should not happen for a well-formed table, but is not this
+        // renderer's place to assume) still gets an empty cell, since
+        // trimming only the end keeps every row's own column positions
+        // aligned with the header's.
+        let last_covered = row.iter().rposition(Option::is_some);
+        let cells: Vec<String> = match last_covered {
+            Some(last) => row[..=last]
+                .iter()
+                .map(|&cell| render_cell_opt(renderer, cell, hints, opts, tables))
+                .collect(),
+            // A row with no cells of its own at all (malformed input): keep
+            // the table well-formed with one empty cell rather than a
+            // pipe-less blank line.
+            None => vec![String::new()],
+        };
         renderer.next_table_line();
         renderer.write_table_line(&row_line(&cells));
     }

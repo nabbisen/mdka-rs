@@ -85,6 +85,30 @@ pub struct MarkdownRenderer {
     /// it wrote, so leaving can close it -- or, if it turns out empty,
     /// remove it instead (RFC 037).
     emphasis: Vec<Option<EmphasisFrame>>,
+    /// F1 (RFC 008 slice `008b`): a table cell's flattened list nesting --
+    /// each open list's kind and next item number, indented two literal
+    /// spaces per level, since a cell has no real lines for the
+    /// container-prefix machinery to reapply to. Reset per cell.
+    cell_lists: Vec<CellList>,
+    /// F1: whether the content just written was a flattened list item's own
+    /// marker (`- `/`N. `, indented) -- the item's first block (commonly a
+    /// bare run of text, but a `<p>` is not unusual) follows it directly,
+    /// with no `<br>` in between. Cleared by the next block boundary,
+    /// whichever writes one. Reset per cell.
+    cell_after_marker: bool,
+    /// F1: an open `<pre>` inside a table cell, accumulating its raw text
+    /// until it closes, when it becomes one code span per source line,
+    /// `<br>`-joined -- not the normal fenced-block machinery, which
+    /// assumes real lines to put the fence and the content on. Reset per
+    /// cell.
+    cell_pre: Option<String>,
+}
+
+/// One open list, flattened inside a table cell (F1): its kind and, for an
+/// ordered list, the next item number.
+struct CellList {
+    ordered: bool,
+    counter: usize,
 }
 
 /// `strong`/`b` vs `em`/`i`, by the delimiter they write -- the rule is
@@ -114,15 +138,21 @@ impl MarkdownRenderer {
             links: Vec::new(),
             code_captures: Vec::new(),
             emphasis: Vec::new(),
+            cell_lists: Vec::new(),
+            cell_after_marker: false,
+            cell_pre: None,
         }
     }
 
     /// Inside a `<pre>` -- with or without `<code>` -- or an inline code span,
     /// child elements contribute text only: no emphasis delimiters, image or
     /// link syntax, and an image contributes nothing (RFC 024 criteria 3 and 9,
-    /// amended 2026-09-17). Markdown has no markup inside code.
+    /// amended 2026-09-17). Markdown has no markup inside code. A table cell's
+    /// own flattened `<pre>` (F1, RFC 008 `008b`) is the same rule in a
+    /// different destination: `cell_pre` accumulates raw text the same way,
+    /// so nested markup must be suppressed here too.
     fn in_code(&self) -> bool {
-        self.in_pre || self.sink.in_code_span()
+        self.in_pre || self.sink.in_code_span() || self.cell_pre.is_some()
     }
 
     /// Whether a `<pre>` is currently open (RFC 008): an expressible table
@@ -158,6 +188,9 @@ impl MarkdownRenderer {
     /// else.
     pub(crate) fn begin_cell_capture(&mut self) {
         self.sink.begin_capture(Capture::Cell);
+        self.cell_lists.clear();
+        self.cell_after_marker = false;
+        self.cell_pre = None;
     }
 
     /// Ends the innermost cell capture and returns what it collected, with
@@ -299,6 +332,24 @@ impl MarkdownRenderer {
     // ─── Text ──────────────────────────────────────────────────────────────
 
     pub fn process_text(&mut self, text: &str) {
+        // F1 (RFC 008 `008b`): a table cell's own flattened `<pre>`
+        // accumulates its text raw, exactly like the fenced-block case just
+        // below, but into a plain buffer rather than the sink -- there is no
+        // fence, and the whole thing becomes one code span per line only
+        // once it closes (`leave_cell_block`).
+        if let Some(held) = &mut self.cell_pre {
+            held.push_str(text);
+            return;
+        }
+        // A list item's marker only protects the separator immediately
+        // before its OWN first content -- once that content is real text
+        // (not whitespace), the protection is spent, so a block entered
+        // afterwards (a nested list's first item, in particular) gets its
+        // own `<br>` like any later sibling would, rather than running
+        // together with this item's text on one visual line.
+        if self.cell_after_marker && !text.trim().is_empty() {
+            self.cell_after_marker = false;
+        }
         if self.in_pre {
             if let Fence::Pending { held } = &mut self.fence {
                 if text.trim().is_empty() {
@@ -419,6 +470,14 @@ impl MarkdownRenderer {
         loose_list: bool,
         needs_disambiguation: bool,
     ) {
+        // A GFM cell holds inline content only (F1, RFC 008 `008b`): a block
+        // that reaches here is flattened, never given the normal container/
+        // prefix/blank-line treatment, which assumes real lines a cell does
+        // not have.
+        if self.in_table_cell() {
+            self.enter_cell_block(block, elem);
+            return;
+        }
         // Inside a <pre>, a block element -- a nested <pre> too -- contributes
         // its text only: no container, prefix, marker or blank line, and its
         // boundaries are line breaks (RFC 024 rule 7).
@@ -520,6 +579,10 @@ impl MarkdownRenderer {
 
     fn enter_inline(&mut self, tag: &str, elem: &scraper::node::Element, wraps_blocks: bool) {
         match tag {
+            // A cell's own flattened `<pre>` (F1) has no fence and opens no
+            // capture: its `<code>`, like anything else inside it, is text
+            // that `process_text`'s `cell_pre` redirect already collects.
+            "code" if self.cell_pre.is_some() => {}
             "code" if self.in_pre => {
                 // One <pre>, one code block: only the first thing inside the
                 // <pre> opens the fence, and only a <code> that opens it names
@@ -640,10 +703,15 @@ impl MarkdownRenderer {
             }
             // Inside code a <br> is text, not a Markdown hard break, whose
             // trailing spaces would become code (RFC 024 rule 8): one line
-            // break in a <pre>, one space in a code span. Inside a GFM table
-            // cell a hard break's own newline would end the cell -- and
-            // survives as inline HTML instead (RFC 008 §3's own "Can" list).
+            // break in a <pre>, one space in a code span -- including a
+            // table cell's own flattened <pre> (F1), a real line break in
+            // the code its buffer accumulates, checked before the general
+            // in_pre case since neither `self.in_pre` nor `self.fence` is
+            // set for it. Inside a GFM table cell otherwise, a hard break's
+            // own newline would end the cell -- and survives as inline HTML
+            // instead (RFC 008 §3's own "Can" list).
             "br" if self.in_pre => self.process_text("\n"),
+            "br" if self.cell_pre.is_some() => self.process_text("\n"),
             "br" if self.sink.in_code_span() => self.sink.text(" "),
             "br" if self.in_table_cell() => {
                 self.sink.flush_space();
@@ -666,6 +734,7 @@ impl MarkdownRenderer {
             return;
         }
         match tag {
+            "code" if self.cell_pre.is_some() => {}
             "code" if !self.in_pre => {
                 if self.code_captures.pop() == Some(true)
                     && let Some((_, content, trailing)) = self.sink.end_capture()
@@ -705,6 +774,10 @@ impl MarkdownRenderer {
     }
 
     fn leave_block(&mut self, block: Block) {
+        if self.in_table_cell() {
+            self.leave_cell_block(block);
+            return;
+        }
         if self.in_pre && (block != Block::Pre || self.pre_depth > 1) {
             self.pre_block_break = true;
             if block != Block::Pre {
@@ -764,6 +837,109 @@ impl MarkdownRenderer {
                 self.end_block();
             }
             Block::Rule => {}
+        }
+    }
+
+    // ─── Table cells: flattening blocks to inline (F1, RFC 008 `008b`) ─────
+
+    /// A literal `<br>` before the next flattened block's content, unless
+    /// the cell holds nothing yet, or what was just written is this same
+    /// item's own marker (`cell_after_marker`) -- a fresh item's first block
+    /// follows its `- `/`N. ` directly, the way plain text after it already
+    /// would. Consumes `cell_after_marker` unconditionally: it protects
+    /// exactly one following block, never the one after that (a sibling
+    /// item, or this cell's very next block, still gets its own separator).
+    fn cell_block_separator(&mut self) {
+        if self.sink.dest_len() > 0 && !self.cell_after_marker {
+            self.sink.flush_space();
+            self.sink.markup("<br>");
+        }
+        self.cell_after_marker = false;
+    }
+
+    /// A GFM cell holds inline content only. Each block keeps its words and
+    /// gives up only the structure (RFC 008 §4.1's own table): a nested
+    /// `<table>` is not reachable here at all -- the pre-pass already sent
+    /// the whole outer table to the fallback before any cell is rendered.
+    fn enter_cell_block(&mut self, block: Block, elem: &scraper::node::Element) {
+        // Inside this cell's own flattened `<pre>`, a further block
+        // contributes text only -- mirrors the outer `in_pre` guard in
+        // `enter_block`, for the same reason: a fenced block's content is
+        // exactly its text, whatever markup momentarily wraps a line of it.
+        if self.cell_pre.is_some() && block != Block::Pre {
+            return;
+        }
+        match block {
+            Block::ListItem => {
+                self.cell_block_separator();
+                let indent = "  ".repeat(self.cell_lists.len().saturating_sub(1));
+                let marker = match self.cell_lists.last_mut() {
+                    Some(CellList {
+                        ordered: true,
+                        counter,
+                    }) => {
+                        let n = *counter;
+                        *counter += 1;
+                        let mut m = String::new();
+                        push_usize(&mut m, n);
+                        m.push_str(". ");
+                        m
+                    }
+                    _ => "- ".to_string(),
+                };
+                self.sink.markup(&format!("{indent}{marker}"));
+                self.cell_after_marker = true;
+            }
+            Block::UnorderedList => {
+                self.cell_lists.push(CellList {
+                    ordered: false,
+                    counter: 0,
+                });
+            }
+            Block::OrderedList => {
+                let start = elem
+                    .attr("start")
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(1);
+                self.cell_lists.push(CellList {
+                    ordered: true,
+                    counter: start,
+                });
+            }
+            Block::Pre => {
+                self.cell_block_separator();
+                self.cell_pre = Some(String::new());
+            }
+            Block::Heading(_) | Block::Paragraph | Block::Quote | Block::Rule => {
+                self.cell_block_separator();
+            }
+        }
+    }
+
+    fn leave_cell_block(&mut self, block: Block) {
+        if self.cell_pre.is_some() && block != Block::Pre {
+            return;
+        }
+        match block {
+            Block::ListItem => {
+                // A later sibling item always gets its own separator, empty
+                // or not -- this is not the one `cell_block_separator` call
+                // `cell_after_marker` protects.
+                self.cell_after_marker = false;
+            }
+            Block::UnorderedList | Block::OrderedList => {
+                self.cell_lists.pop();
+            }
+            Block::Pre => {
+                // One code span per source line, `<br>`-joined -- not one
+                // span holding a literal `<br>`, where the tag would be
+                // verbatim text inside the span (RFC 008 §4.1).
+                if let Some(code) = self.cell_pre.take() {
+                    let spans: Vec<String> = code.lines().map(escape::code_span).collect();
+                    self.sink.markup(&spans.join("<br>"));
+                }
+            }
+            Block::Heading(_) | Block::Paragraph | Block::Quote | Block::Rule => {}
         }
     }
 
