@@ -38,7 +38,8 @@ HTML string
     │             Preprocessing is applied inline during this traversal:
     │               · drops script/style/head/svg/… unconditionally
     │               · drops shell elements when opted in
-    │               · unwraps generic wrappers when opted in
+    │               · unwraps generic wrappers when opted in (tag removed,
+    │                 separation kept — no output effect today)
     │             Drives MarkdownRenderer
     ▼
 [3] Finalise     renderer.finish()
@@ -100,9 +101,13 @@ and the language comes from a `<code>` that opens the block.
 one bottom-up pass over the document and marks each `<strong>`/`<b>`,
 `<em>`/`<i>`, `<code>` and `<a>` that has a rendered block among its
 descendants. What counts as a block comes from the same classification the
-renderer's block arms use, and elements the mode skips or unwraps are left out
-as the traversal itself would. A marked emphasis or code element writes no
-delimiters. A marked link is written once per run of inline content between
+renderer's block arms use; an element the mode skips is left out, as the
+traversal itself would leave it. An unwrapped wrapper (`<div>`, `<section>`,
+`<article>`, `<main>`) still counts as the paragraph-like block it stands
+in for — unwrapping removes the tag, not the separation (RFC 036 §5.2) —
+matching what the traversal itself now does. A marked emphasis or code
+element writes no delimiters. A marked link is written once per run of
+inline content between
 block boundaries: `## [Title](/x)`. Separately, a `<b>`/`<strong>` or
 `<i>`/`<em>` whose own `style` negates its emphasis (`font-weight` `normal` or
 ≤ 500, `font-style: normal`) writes no delimiters.

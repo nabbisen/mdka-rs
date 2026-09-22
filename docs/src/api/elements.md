@@ -48,9 +48,10 @@ the item's content:
 > Otherwise it is **tight**.
 
 A block is a paragraph, heading, blockquote, code block or rule, and anything
-else the chosen mode renders as a block: `<div>` counts in Balanced, Strict and
-Preserve, but not in Minimal and Semantic, which unwrap it; an element the
-mode drops counts as nothing.
+else the chosen mode renders as a block: `<div>` counts in every mode,
+including Minimal and Semantic, which unwrap it — unwrapping removes the tag,
+not the paragraph break it stood for; an element the mode drops counts as
+nothing.
 
 A CMS list with one `<p>` per item stays tight:
 

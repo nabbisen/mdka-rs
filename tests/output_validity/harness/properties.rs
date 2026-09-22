@@ -127,15 +127,36 @@ pub fn emphasis_negated_by_own_style(name: &str, style: Option<&str>) -> bool {
 /// Elements that start a Markdown block inside a link (RFC 028 criterion 7:
 /// "paragraphs, headings, list items, blockquotes, and `<pre>`", and the
 /// other elements rendered as blocks). `div`, `article`, `section` and `main`
-/// are not blocks when the documented `unwrap_unknown_wrappers` option removes
-/// them.
-pub fn starts_markdown_block(name: &str, opts: &ConversionOptions) -> bool {
-    match name {
-        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "ul" | "ol" | "li" | "blockquote"
-        | "pre" | "hr" | "header" | "footer" | "nav" | "aside" | "figure" | "figcaption" => true,
-        "div" | "article" | "section" | "main" => !opts.unwrap_unknown_wrappers,
-        _ => false,
-    }
+/// still start one even when `unwrap_unknown_wrappers` removes the tag
+/// itself: unwrapping drops the element, not the paragraph break it stood
+/// for (RFC 036 §5.2, slice `036d`) -- `opts` is threaded through for that
+/// history, though every branch is now independent of it.
+pub fn starts_markdown_block(name: &str, _opts: &ConversionOptions) -> bool {
+    matches!(
+        name,
+        "h1" | "h2"
+            | "h3"
+            | "h4"
+            | "h5"
+            | "h6"
+            | "p"
+            | "ul"
+            | "ol"
+            | "li"
+            | "blockquote"
+            | "pre"
+            | "hr"
+            | "header"
+            | "footer"
+            | "nav"
+            | "aside"
+            | "figure"
+            | "figcaption"
+            | "div"
+            | "article"
+            | "section"
+            | "main"
+    )
 }
 
 /// An `<a href>` being read.

@@ -246,17 +246,21 @@ async function run(name, fn) {
       assert.strictEqual(md, '# <a id="t"></a>Title\n\nBody\n', `unexpected output: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: unwrapUnknownWrappers changes output', () => {
+    await run('htmlToMarkdownWith: unwrapUnknownWrappers no longer changes output', () => {
       // Bare-sibling-text fixture, not a block-element fixture: RFC 005
       // Slice A found block-element fixtures cannot discriminate this
       // field at all, since neighbouring blocks' own spacing already
-      // dominates the output either way.
+      // dominates the output either way. It was, until RFC 036 §5.2 /
+      // slice 036d: unwrapping was deleting the paragraph break along with
+      // the tag, which is exactly what made this fixture discriminate it.
+      // Fixed, there is nothing left for it to discriminate -- this is now
+      // the strongest evidence for that: the project's one known
+      // discriminating fixture stopped discriminating.
       const html = 'Before<div class="wrap"><span>inner</span></div>After'
       const without = htmlToMarkdownWith(html, { mode: 'balanced' })
       const withUnwrap = htmlToMarkdownWith(html, { mode: 'balanced', unwrapUnknownWrappers: true })
-      assert.notStrictEqual(without, withUnwrap, `unwrapUnknownWrappers had no effect: ${withUnwrap}`)
+      assert.strictEqual(without, withUnwrap, `unwrapUnknownWrappers unexpectedly changed something: ${withUnwrap}`)
       assert.strictEqual(without, 'Before\n\ninner\n\nAfter\n')
-      assert.strictEqual(withUnwrap, 'BeforeinnerAfter\n')
     })
 
     // Both warning tests run in a fresh child process rather than sharing

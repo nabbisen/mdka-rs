@@ -37,7 +37,7 @@ CMS output, and SPA-rendered DOM without special-casing.
 no matter the nesting depth.
 - **Configurable pre-processing.**
     Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html) let you tune what gets kept or
-stripped, from noise-free LLM input to maximum retention. Three of the five
+stripped, from noise-free LLM input to maximum retention. Four of the five
 currently produce identical output — see [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html).
 - **Multi-language.**
     The same Rust implementation is accessible from Node.js (napi-rs) and
@@ -174,10 +174,10 @@ minimal = mdka.html_to_markdown_with(
 | `Semantic` | SPA content, ARIA-aware pipelines |
 | `Preserve` | Archiving, audit trails |
 
-**`Balanced`, `Strict` and `Preserve` currently produce identical output.** They
-differ only in the defaults of five fields that have no effect, so choosing
-between them changes nothing today. They remain distinct API and may diverge
-again — see
+**`Balanced`, `Strict`, `Semantic` and `Preserve` currently produce identical
+output.** They differ only in the defaults of fields that have no effect
+today, so choosing between them changes nothing today. They remain distinct
+API and may diverge again — see
 [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes), which explains
 why in full.
 

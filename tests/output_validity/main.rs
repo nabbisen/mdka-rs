@@ -15,6 +15,8 @@
 //! - `gfm`: text that must stay text when read as GitHub Flavored Markdown.
 //! - `corpus`: a directory runner that needs no per-file expectations.
 //! - `proofs`: the helper and the properties shown failing.
+//! - `wrappers`: an unwrapped wrapper (`<div>`, `<section>`, `<article>`,
+//!   `<main>`) keeps its block separation (RFC 036 §5.2, slice `036d`).
 //!
 //! A cell marked `defect(...)` is a strict expected failure: it passes while
 //! the recorded defect is present and FAILS once it is fixed, so the marker
@@ -57,3 +59,4 @@ mod gfm;
 mod inline_in_container;
 mod proofs;
 mod well_formedness;
+mod wrappers;

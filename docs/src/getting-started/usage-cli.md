@@ -53,7 +53,7 @@ truth — it is generated from the binary you are running.
 | `--preserve-data` | **Deprecated, no effect.** Same reason |
 | `--preserve-aria` | **Deprecated, no effect.** Same reason |
 | `--drop-shell` | Drop `nav`, `header`, `footer`, `aside` |
-| `--unwrap-wrappers` | Unwrap `div`, `span`, `section`, `article`, `main` that carry no meaning |
+| `--unwrap-wrappers` | **No effect today.** Unwraps `div`, `span`, `section`, `article`, `main` tags, keeping their content and separation — see [Conversion Options](../api/options.md#unwrap_unknown_wrappers) |
 | `-h, --help` | Show this help |
 | `-V, --version` | Show the version |
 | `--` | End of options; everything after is a path |

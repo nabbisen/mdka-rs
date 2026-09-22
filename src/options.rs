@@ -125,7 +125,13 @@ pub struct ConversionOptions {
     /// Whether to drop shell elements such as `nav`, `header`, `footer` and
     /// `aside`.
     pub drop_interactive_shell: bool,
-    /// Whether to unwrap wrapper elements that carry no meaning.
+    /// No effect today. Unwrapping a wrapper element (`<div>`, `<section>`,
+    /// `<article>`, `<main>`) removes the tag but keeps the paragraph break
+    /// it stood for, so the tag's removal alone leaves nothing left for this
+    /// option to change. Not deprecated: unlike the fields above, this is
+    /// unimplementable for nothing — a future mode that preserves raw HTML
+    /// wrappers would make it observable again. See the
+    /// [options page](https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers).
     pub unwrap_unknown_wrappers: bool,
 }
 

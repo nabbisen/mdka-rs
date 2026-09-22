@@ -69,11 +69,12 @@ let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 | `preserve_unknown_attrs` | ❌ | ✅ | ❌ | ❌ | ✅ | **None — deprecated** |
 | `drop_presentation_attrs` | ✅ | ❌ | ✅ | ✅ | ❌ | **None — deprecated** |
 | `drop_interactive_shell` | ❌ | ❌ | ✅ | ❌ | ❌ | Drops shell elements |
-| `unwrap_unknown_wrappers` | ❌ | ❌ | ✅ | ✅ | ❌ | Unwraps wrapper elements |
+| `unwrap_unknown_wrappers` | ❌ | ❌ | ✅ | ✅ | ❌ | No effect today |
 
-Because the five deprecated fields have no effect, **`Balanced`, `Strict`,
-and `Preserve` currently produce byte-identical output** — they differ
-from each other only in these fields' defaults. See
+Because the five deprecated fields have no effect, and `unwrap_unknown_wrappers`
+has no effect *today* for a different reason (below), **`Balanced`, `Strict`,
+`Semantic`, and `Preserve` currently produce byte-identical output** — they
+differ from each other only in these fields' defaults. See
 [Conversion Modes](./modes.md) for what this means when choosing a mode.
 
 ## Field Reference
@@ -165,6 +166,18 @@ Enabled by default in `Minimal`; disabled by default in every other mode.
 Whether to replace `<div>`, `<span>`, `<section>`, `<article>`, and
 `<main>` with their children, discarding the wrapper tag itself, when
 `unwrap_unknown_wrappers` is enabled. Enabled in `Minimal` and `Semantic`.
+
+**No effect today, for a different reason than the five deprecated fields
+above.** Unwrapping a block-level wrapper (`<div>`, `<section>`, `<article>`,
+`<main>`) removes the tag, but keeps the paragraph break it stood for — the
+same block separation the element would have produced rendered. The tag's
+removal has no Markdown-visible trace either way, so there is currently
+nothing left for this option to change. This is *not* a deprecation: unlike
+the five fields above, `unwrap_unknown_wrappers` is unimplementable for
+nothing — a future mode that preserves raw HTML wrappers would make it
+observable again at once. It carries no `#[deprecated]` attribute and
+triggers no warning; see [Conversion Modes](./modes.md) for the same
+distinction drawn for `Strict` and `Preserve`.
 
 **`<figure>` and `<figcaption>` are never unwrapped**, in any mode — see
 the [Block Elements table](./elements.md) for why they're excluded even

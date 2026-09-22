@@ -6,6 +6,11 @@
 //! the neighbouring blocks' own spacing already dominates the output either
 //! way. See tests/characterisation_structural.rs in the workspace root for
 //! the full explanation.
+//!
+//! **Update, RFC 036 §5.2 / slice `036d`.** The flag no longer changes this
+//! fixture's output either — unwrapping used to delete the paragraph break
+//! along with the tag, which is exactly what made this fixture discriminate
+//! it; fixed, there is nothing left to discriminate.
 
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -31,13 +36,12 @@ fn run_mdka(args: &[&str], input: &str) -> String {
 }
 
 #[test]
-fn unwrap_wrappers_flag_changes_output() {
+fn unwrap_wrappers_flag_no_longer_changes_output() {
     let without = run_mdka(&[], HTML);
     let with = run_mdka(&["--unwrap-wrappers"], HTML);
-    assert_ne!(
+    assert_eq!(
         without, with,
-        "--unwrap-wrappers did not change output on a fixture designed to discriminate it"
+        "--unwrap-wrappers unexpectedly changed something on this fixture"
     );
     assert_eq!(without, "Before\n\ninner\n\nAfter\n");
-    assert_eq!(with, "BeforeinnerAfter\n");
 }

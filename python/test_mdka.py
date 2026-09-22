@@ -437,15 +437,18 @@ def test_with_unwrap_unknown_wrappers_flag():
     # Bare-sibling-text fixture, not a block-element fixture: RFC 005 Slice A
     # found block-element fixtures cannot discriminate this field at all,
     # since neighbouring blocks' own spacing already dominates the output
-    # either way.
+    # either way. It was, until RFC 036 §5.2 / slice 036d: unwrapping was
+    # deleting the paragraph break along with the tag, which is exactly what
+    # made this fixture discriminate it. Fixed, there is nothing left for it
+    # to discriminate -- this is now the strongest evidence for that: the
+    # project's one known discriminating fixture stopped discriminating.
     html = 'Before<div class="wrap"><span>inner</span></div>After'
     without = html_to_markdown_with(html, mode=ConversionMode.Balanced)
     with_unwrap = html_to_markdown_with(
         html, mode=ConversionMode.Balanced, unwrap_unknown_wrappers=True
     )
-    assert without != with_unwrap, f"unwrap_unknown_wrappers had no effect: {with_unwrap}"
+    assert without == with_unwrap, f"unwrap_unknown_wrappers unexpectedly changed something: {with_unwrap}"
     assert without == "Before\n\ninner\n\nAfter\n"
-    assert with_unwrap == "BeforeinnerAfter\n"
 
 def test_explicit_deprecated_field_emits_warning():
     with pytest.warns(DeprecationWarning, match="preserve_classes"):

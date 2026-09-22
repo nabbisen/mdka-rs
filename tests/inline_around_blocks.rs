@@ -38,18 +38,18 @@ fn any_block_counts_not_only_paragraphs() {
 }
 
 #[test]
-fn a_block_a_mode_removes_is_not_a_block() {
-    // Minimal and Semantic unwrap <div>: there is no block, so the emphasis is
-    // around inline content and keeps its delimiters.
+fn a_mode_unwrapping_a_div_is_still_a_block() {
+    // Previously named "...is not a block", asserting Minimal/Semantic kept
+    // "**x**\n" (delimiters) because unwrapping <div> was believed to remove
+    // its block-ness along with the tag. RFC 036 §5.2 / slice 036d corrected
+    // that: unwrapping drops the element, not the paragraph break it stood
+    // for, so a div still negates surrounding emphasis in every mode, exactly
+    // like any_block_counts_not_only_paragraphs's own (never-unwrapped) case.
     let html = "<b><div>x</div></b>";
     for mode in MODES {
-        let expected = match mode {
-            ConversionMode::Minimal | ConversionMode::Semantic => "**x**\n",
-            _ => "x\n",
-        };
         assert_eq!(
             conv_with(html, &ConversionOptions::for_mode(mode)),
-            expected,
+            "x\n",
             "{mode}"
         );
     }

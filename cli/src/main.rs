@@ -15,7 +15,7 @@
 //!       --preserve-data  [deprecated, no effect] Keep data-* attributes
 //!       --preserve-aria  [deprecated, no effect] Keep aria-* attributes
 //!       --drop-shell     Drop nav/header/footer/aside
-//!       --unwrap-wrappers  Unwrap div/span/section/article/main that carry no meaning
+//!       --unwrap-wrappers  [no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
 //!   -h, --help           Show this help
 //!   -V, --version        Show the version
 //!       --               End of options; everything after is a path
@@ -40,7 +40,7 @@ Options:
       --preserve-data     [deprecated, no effect] Keep data-* attributes (same reason)
       --preserve-aria     [deprecated, no effect] Keep aria-* attributes (same reason)
       --drop-shell        Drop nav/header/footer/aside
-      --unwrap-wrappers   Unwrap div/span/section/article/main that carry no meaning
+      --unwrap-wrappers   [no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
   -h, --help              Show this help
   -V, --version           Show the version
       --                  End of options; everything after is a path

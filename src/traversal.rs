@@ -171,7 +171,21 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
                 }
                 let tag = elem.name();
                 let render = frame.disposition == Disposition::Render;
-                let kind = if render { utils::block_kind(tag) } else { None };
+                // An unwrapped wrapper that still separates its content
+                // (`div`/`section`/`article`/`main`; RFC 036 §5.2, `036d`)
+                // is, for every purpose downstream of this pass, the
+                // paragraph-like block it stands in for -- not rendering it
+                // itself no longer means "no block here". Anything that
+                // depends on that (RFC 028's "does an inline wrapper enclose
+                // a block" detection, just below) must agree with what the
+                // traversal now actually does.
+                let kind = if render {
+                    utils::block_kind(tag)
+                } else if frame.disposition == Disposition::Unwrap {
+                    utils::block_kind(tag).filter(|k| *k == utils::Block::Paragraph)
+                } else {
+                    None
+                };
                 if frame.has_block && render && utils::is_inline_wrapper(tag) {
                     hints.wrappers.insert(node.id());
                 }
@@ -236,7 +250,18 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
                         // Skipped with its content.
                         Disposition::Skip => continue,
                         // Not rendered itself; only its children are traversed.
+                        // A wrapper classified as a paragraph-like block when
+                        // rendered (`div`, `section`, `article`, `main`; not
+                        // `span`, which is inline and never was one) still
+                        // separates its content from what surrounds it even
+                        // unwrapped -- unwrapping removes the tag, not the
+                        // paragraph break it stood for (RFC 036 §5.2, `036d`).
                         Disposition::Unwrap => {
+                            let separates = utils::block_kind(tag) == Some(utils::Block::Paragraph);
+                            if separates {
+                                renderer.begin_unwrapped_separator();
+                                stack.push(Event::Leave(node));
+                            }
                             for child in node.children().rev() {
                                 stack.push(Event::Enter(child));
                             }
@@ -273,7 +298,15 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
             },
             Event::Leave(node) => {
                 if let scraper::Node::Element(elem) = node.value() {
-                    renderer.leave_element(elem);
+                    // Only ever pushed for a rendered element, or for an
+                    // unwrapped separating wrapper (see the `Unwrap` arm
+                    // above) -- never for `Skip`, and never for `Unwrap`
+                    // without a separator.
+                    if disposition(elem.name(), opts) == Disposition::Unwrap {
+                        renderer.end_unwrapped_separator();
+                    } else {
+                        renderer.leave_element(elem);
+                    }
                 }
             }
         }

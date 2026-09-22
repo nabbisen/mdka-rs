@@ -118,6 +118,38 @@ impl MarkdownRenderer {
         self.ensure_newlines(2);
     }
 
+    /// A block boundary for content whose own element contributed nothing:
+    /// an unwrapped wrapper (`<div>`, `<section>`, `<article>`, `<main>`
+    /// with `unwrap_unknown_wrappers` on) still separates its children from
+    /// whatever surrounds them the way it would have as a rendered
+    /// `Block::Paragraph`, even though the tag itself is never entered or
+    /// left (RFC 036 §5.2, slice `036d`). Reuses `begin_block`/`end_block`
+    /// exactly -- the same path any other block already takes -- so an
+    /// unwrapped wrapper's separation is not a second notion of "block
+    /// break" beside the existing one.
+    ///
+    /// Inside a `<pre>`, a wrapper contributes text only, the same as any
+    /// other block element would (RFC 024 rule 7): mirrors `enter_block`'s
+    /// and `leave_block`'s own `in_pre` guard exactly, rather than let an
+    /// unwrapped wrapper reach `ensure_newlines` unguarded and write a real
+    /// blank line into what must stay verbatim content.
+    pub fn begin_unwrapped_separator(&mut self) {
+        if self.in_pre {
+            self.pre_block_break = true;
+            return;
+        }
+        self.begin_block();
+    }
+
+    /// See [`begin_unwrapped_separator`](Self::begin_unwrapped_separator).
+    pub fn end_unwrapped_separator(&mut self) {
+        if self.in_pre {
+            self.pre_block_break = true;
+            return;
+        }
+        self.end_block();
+    }
+
     /// Every block boundary goes through here: a distributed link's current
     /// run ends before the line does.
     fn ensure_newlines(&mut self, count: usize) {
