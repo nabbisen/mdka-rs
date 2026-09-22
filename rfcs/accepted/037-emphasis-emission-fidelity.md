@@ -1,9 +1,9 @@
 # RFC 037 — Emphasis emission fidelity: empty and nested
 
-**Status.** Proposed
+**Status.** Accepted (owner, 2026-09-22)
 **Author.** Architect
 **Created.** 2026-09-22
-**Milestone.** M4 · Coverage and durability → `2.4.0` (proposed)
+**Milestone.** M4 · Coverage and durability → `2.4.0` (owner, 2026-09-22)
 **Sequencing.** Independent of RFC 036; either order.
 **Source.** `2.3.0` consumer pass, findings §5.3 and §5.4 — `.git-exclude/reviewed/2.3.0-consumer-pass/README.md`.
 **Touches.** `src/renderer.rs`, `tests/output_validity/`.
@@ -21,6 +21,54 @@ Neither is a `2.3.0` regression; both reproduce identically in `2.2.3`.
 | §5.3 | `<p>a<em></em>b</p>` | `a**b` | literal `a**b` |
 | §5.4 | `<p><em><em>x</em></em></p>` | `**x**` | **bold** — source has no bold |
 | §5.4 | `<p><em><i>x</i></em></p>` | `**x**` | **bold** — mixed tags do it too |
+
+## 1.1 Re-derived at `2e9af49`, 2026-09-22 — three additions before handover
+
+Probed beyond §1's shapes after acceptance. All of the following are **pre-existing in `2.2.3`**; none is a
+regression.
+
+**A. Two shapes change content type — the RFC 038 family, in emphasis clothing.**
+
+```
+<p><b></b></p>              ->  "****"  ->  hr        an empty paragraph becomes a thematic break
+<p><em><em></em></em></p>   ->  "****"  ->  hr
+```
+
+A paragraph whose only content is empty emphasis emits four asterisks on their own line, which CommonMark
+reads as a thematic break. **In scope**: it is the same defect as §5.3 — delimiters emitted around nothing —
+and it is the more damaging half, because the content type changes rather than merely showing junk.
+
+**B. Nesting order is lost, and §4's criterion 2 does not hold today.**
+
+```
+<p><em><strong>x</strong></em></p>   ->  "***x***"  ->  em(strong("x"))
+<p><strong><em>x</em></strong></p>   ->  "***x***"  ->  em(strong("x"))     order inverted
+```
+
+Both orders produce identical bytes, and both parse as `em(strong(…))`. Criterion 2 as written — *"still
+parse back to both, nested, in the source's order"* — therefore **fails at the baseline**. It is not
+unreachable: order is expressible by mixing delimiters, verified —
+
+```
+**_x_**   ->  strong(em("x"))          _**x**_   ->  em(strong("x"))
+```
+
+— and **mdka already alternates to `_`** when adjacent emphasis would otherwise merge
+(`src/renderer/sink.rs:634–640`; `<p><b>a</b><b>b</b></p>` → `__a__**b**`). So this is the existing
+mechanism applied to a new position, not a new concept. Keep criterion 2.
+
+**C. Whitespace-only emphasis leaks its whitespace.**
+
+```
+<p>a<b> </b>b</p>   ->  "a**** b"
+```
+
+Criterion 3 already requires whitespace-only emphasis to be treated as empty; recorded here because the
+space currently survives *outside* the delimiters, so the expected result is `a b`, not `ab`.
+
+**Also observed, out of scope:** `<b><i><b>x</b></i></b>` → `*****x*****` → `em(strong(strong("x")))`
+(criterion 2's collapse rule should reach it); `<del><del>x</del></del>` → `x`, strikethrough dropped
+entirely — that is RFC 009's element coverage, not this.
 
 ## 2. Why
 

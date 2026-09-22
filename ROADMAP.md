@@ -642,8 +642,9 @@ a candidate rather than a plan.
 | 012 | Benchmark hardening + regenerate published performance claims | **P1** | M |
 | 013 | Internal comment migration to English | P2 | L |
 | 036 | Whitespace and separators at block boundaries — ✅ **closed 2026-09-22** at `559e8ff` (`c6b2ea7`, `4ee6aaa`, `559e8ff`); 443 Rust / 39 Node / 80 Python tests green | **P1** | M |
-| 037 | Emphasis emission fidelity: empty and nested — **from the `2.3.0` consumer pass** | P2 | S |
+| 037 | Emphasis emission fidelity: empty and nested — **accepted 2026-09-22**, handed over. Scope grew on re-derivation: `<p><b></b></p>` emits `****`, a thematic break | P2 | S |
 | 038 | Marker lines colliding with other CommonMark constructs — ✅ **closed 2026-09-22** at `190e266`; ten shapes, two failure modes, one mechanism | **P1** | S |
+| 039 | Public API surface coherence — **authorized 2026-09-22**. Half A (additive parity: Python `_with` file forms, `many` in Rust/Node, unconditional bulk API, `version()`, `py.typed`, CLI fixes) handed over for `2.4.0`; Half B (one result type, Rust bulk uses it, an option surface showing only what works) specified, unscheduled, `3.0` | **P1** | M |
 
 #### From the `2.3.0` consumer pass, 2026-09-22
 
