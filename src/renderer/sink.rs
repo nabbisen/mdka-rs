@@ -31,6 +31,15 @@
 //! captures are not escaped, and fenced blocks are sized to their content.
 //! Every write to a destination therefore goes through [`Dest::put`].
 //!
+//! **A delimiter choice can depend on what has not been written yet
+//! (RFC 037 addendum).** A `<strong><em>` swap to `_` is only safe once
+//! nothing alphanumeric follows the whole nested span, which is not known
+//! until later. It is written provisionally and settled the same way a
+//! waiting escape is -- against whatever the destination writes next --
+//! rather than deferring the write itself, since both possible delimiters
+//! are one byte and patching one for the other later changes nothing else
+//! already written.
+//!
 //! **Line breaks are written lazily.** A block boundary records how many
 //! newlines it needs; they are written when the next content arrives, so a
 //! blank line gets the prefix of the containers that stayed open across it,
@@ -75,9 +84,21 @@ struct Dest {
     link_text: bool,
     /// Offsets of the emphasis delimiters opened and not yet closed.
     emphasis_opens: Vec<usize>,
-    /// The emphasis span closed last: its opening offset, delimiter length
-    /// and end offset (RFC 010 §3.8).
-    last_emphasis: Option<(usize, usize, usize)>,
+    /// The emphasis span closed last: its opening offset, delimiter length,
+    /// end offset (RFC 010 §3.8), and whether it was itself an RFC 037
+    /// addendum intraword `_`-swap candidate, pending confirmation (used by
+    /// [`Sink::emphasis_close`] to tell an ordinary close from the outer
+    /// Bold ancestor's own).
+    last_emphasis: Option<(usize, usize, usize, bool)>,
+    /// RFC 037 addendum: a `<strong><em>`-order `_`-swap whose safety is not
+    /// yet confirmed -- the byte offsets of its one-byte opening and closing
+    /// delimiters, patched back to `*` if the next character written
+    /// anywhere after it turns out to be alphanumeric. Set only once the
+    /// outer Bold ancestor itself closes (see [`Sink::emphasis_close`]),
+    /// since only then is the position "whatever follows the whole nested
+    /// span" fixed; resolved the same way [`wait`](Self::wait) is, by
+    /// whatever writes next.
+    flank_guard: Option<(usize, usize)>,
 }
 
 impl Dest {
@@ -97,6 +118,7 @@ impl Dest {
             link_text: false,
             emphasis_opens: Vec::new(),
             last_emphasis: None,
+            flank_guard: None,
         }
     }
 
@@ -110,6 +132,23 @@ impl Dest {
         }
     }
 
+    /// Settles a pending RFC 037 addendum flanking guard, now that the byte
+    /// after it is known (`None`: nothing follows in this destination).
+    /// Alphanumeric undoes the swap -- `**` cannot open at all once
+    /// followed by `_` and preceded by a letter or digit, and followed by a
+    /// letter or digit, `_` cannot close either, so the underscore reverts
+    /// to `*` at both ends, exactly the pre-swap bytes. Anything else
+    /// (whitespace, punctuation, or nothing) counts as safe: the swap
+    /// stays.
+    fn settle_flank(&mut self, next: Option<char>) {
+        if let Some((open, close)) = self.flank_guard.take()
+            && escape::class(next) == escape::Class::Word
+        {
+            self.buf.replace_range(open..open + 1, "*");
+            self.buf.replace_range(close..close + 1, "*");
+        }
+    }
+
     /// Every write to `buf` goes through here: the waiting escape is settled
     /// against the first character, and a line break starts a new line -- a
     /// block boundary's; a hard break says otherwise afterwards.
@@ -118,6 +157,7 @@ impl Dest {
             return;
         };
         self.settle(Some(first));
+        self.settle_flank(Some(first));
         self.buf.push_str(s);
         if s.contains('|') {
             self.line.pipe_here = true;
@@ -167,6 +207,9 @@ impl Dest {
                 if self.wait.is_some() {
                     self.settle(Some(c));
                 }
+                if self.flank_guard.is_some() {
+                    self.settle_flank(Some(c));
+                }
                 self.buf.push(c);
             } else {
                 self.write_escaped(c);
@@ -197,6 +240,9 @@ impl Dest {
         if self.wait.is_some() {
             self.settle(Some(c));
         }
+        if self.flank_guard.is_some() {
+            self.settle_flank(Some(c));
+        }
         self.buf.push(c);
         if c == '|' {
             self.line.pipe_here = true;
@@ -225,6 +271,56 @@ impl Dest {
 pub(super) enum Capture {
     Link { href: String, title: Option<String> },
     CodeSpan,
+}
+
+/// What [`Sink::emphasis_open`] wrote, and enough of the destination's prior
+/// state to undo it cleanly (RFC 037: an emphasis with no rendered content
+/// emits no delimiters at all). Opaque outside this module -- the renderer
+/// only ever holds one of these to hand back unchanged.
+pub(super) struct EmphasisMark {
+    /// Buffer position before `emphasis_open` did anything at all -- before
+    /// even its own `flush_space`. Removing an empty span truncates back to
+    /// here, not just past the delimiter: a space flushed only because this
+    /// span was about to open must not become a real, separate byte once
+    /// the span turns out to have nothing in it, or a still-pending space
+    /// after it would double up instead of merging with it (RFC 037 finding
+    /// C: `<p>a <b></b> b</p>` must collapse to one space, not two).
+    pre_flush_start: usize,
+    /// Whether `emphasis_open`'s own `flush_space` actually wrote a byte.
+    flushed_space: bool,
+    /// Buffer position right before the delimiter itself (after any flush).
+    start: usize,
+    delimiter: &'static str,
+    at_line_start: bool,
+    newlines_emitted: usize,
+    line: Line,
+    /// RFC 037 addendum: whether this span's delimiter is a tentative
+    /// `<strong><em>`-order `_`-swap, not yet confirmed safe. Carried
+    /// through, opaque, from [`Sink::emphasis_open`] to
+    /// [`Sink::emphasis_close_or_remove`], which is the only place it is
+    /// read.
+    intraword_candidate: bool,
+}
+
+impl EmphasisMark {
+    /// The offset just after the delimiter this mark records. Nothing
+    /// written since means the span this mark belongs to is still exactly
+    /// as it was on opening -- used both to decide emptiness on close, and
+    /// by a nested emphasis deciding whether it would open touching this one
+    /// (RFC 037's asymmetric `_`-swap: `<em><strong>` already parses back
+    /// correctly as written, only `<strong><em>` needs it, so only that
+    /// direction swaps).
+    pub(super) fn end(&self) -> usize {
+        self.start + self.delimiter.len()
+    }
+
+    /// The offset just before the delimiter this mark records -- used by the
+    /// renderer's RFC 037 addendum flanking check to look at what comes
+    /// before an open Bold ancestor's own delimiter, which is
+    /// already-written history, not a lookahead.
+    pub(super) fn start(&self) -> usize {
+        self.start
+    }
 }
 
 struct Open {
@@ -329,6 +425,23 @@ impl Sink {
 
     pub(super) fn ends_with_newline(&self) -> bool {
         self.dest_ref().buf.ends_with('\n')
+    }
+
+    /// The current destination's length: used to tell whether a new
+    /// emphasis span would open touching an already-open one (RFC 037), the
+    /// same way [`EmphasisMark`] tells [`emphasis_close_or_remove`](Self::emphasis_close_or_remove)
+    /// whether one closes touching nothing at all.
+    pub(super) fn dest_len(&self) -> usize {
+        self.dest_ref().buf.len()
+    }
+
+    /// The character in the current destination immediately before byte
+    /// offset `pos` -- used by the renderer's RFC 037 addendum flanking
+    /// check, which must look further back than the buffer's current end
+    /// (already-written history, not a lookahead: `pos` is always an
+    /// earlier [`EmphasisMark::start`]).
+    pub(super) fn char_before(&self, pos: usize) -> Option<char> {
+        self.dest_ref().buf[..pos].chars().next_back()
     }
 
     // ─── Containers ────────────────────────────────────────────────────────
@@ -603,7 +716,9 @@ impl Sink {
     }
 
     /// Opens emphasis with `delimiter` (`*` or `**`) and returns the delimiter
-    /// written, which the closing run must repeat.
+    /// actually written (see below) plus an [`EmphasisMark`] the caller must
+    /// hand back to [`emphasis_close_or_remove`](Self::emphasis_close_or_remove)
+    /// when the element leaves.
     ///
     /// When the emphasis closed last ends exactly here with a `*` run, its
     /// closing run would touch this opening run, and CommonMark would resolve
@@ -618,12 +733,36 @@ impl Sink {
     ///
     /// Between two letters or digits (`x*a**b*y`) neither can: delimiters
     /// cannot express that, and it is left as it is.
-    pub(super) fn emphasis_open(&mut self, delimiter: &'static str) -> &'static str {
+    ///
+    /// `intraword_candidate` (RFC 037 addendum) marks a caller-decided
+    /// `<strong><em>`-order swap to `_` as not yet confirmed safe: the
+    /// character before it was checked already (by the caller, since that is
+    /// already-written history), but what follows the whole nested span's
+    /// close is not known until later. Carried on the returned
+    /// [`EmphasisMark`] to [`emphasis_close_or_remove`](Self::emphasis_close_or_remove),
+    /// which is where the confirmation happens, once it can.
+    pub(super) fn emphasis_open(
+        &mut self,
+        delimiter: &'static str,
+        intraword_candidate: bool,
+    ) -> (&'static str, EmphasisMark) {
         self.begin_content();
         self.end_leading_strip();
+        // Flushing here, as part of this span's own opening, rather than
+        // leaving the caller to do it first: an empty span (RFC 037) must be
+        // able to undo the flush along with its delimiter, or a space
+        // pending only because this span was about to open becomes a real,
+        // separate byte that a later, still-pending one then duplicates.
+        let pre_flush_start = self.dest().buf.len();
+        self.flush_space();
         let dest = self.dest();
+        let flushed_space = dest.buf.len() != pre_flush_start;
+        let at_line_start = dest.at_line_start;
+        let newlines_emitted = dest.newlines_emitted;
+        let line = dest.line;
+        let start = dest.buf.len();
         let mut written = delimiter;
-        if let Some((open, len, end)) = dest.last_emphasis
+        if let Some((open, len, end, _)) = dest.last_emphasis
             && end == dest.buf.len()
             && dest.buf[end - len..end].starts_with('*')
         {
@@ -645,17 +784,81 @@ impl Sink {
         dest.newlines_emitted = 0;
         dest.at_line_start = false;
         dest.emphasis_opens.push(dest.buf.len() - written.len());
-        written
+        (
+            written,
+            EmphasisMark {
+                pre_flush_start,
+                flushed_space,
+                start,
+                delimiter: written,
+                at_line_start,
+                newlines_emitted,
+                line,
+                intraword_candidate,
+            },
+        )
     }
 
     /// Closes the innermost emphasis with `delimiter`.
-    pub(super) fn emphasis_close(&mut self, delimiter: &str) {
+    ///
+    /// RFC 037 addendum: before writing this span's own closing delimiter,
+    /// checks whether the span that closed immediately before it (nothing
+    /// written since) was an unconfirmed intraword `_`-swap candidate. If
+    /// so, this close is that swap's outer Bold ancestor's own -- the first
+    /// point at which what follows the *whole* nested span is fixed, since
+    /// nothing else can be written before this delimiter is. The check must
+    /// happen before `markup` writes anything: `markup`'s own write would
+    /// otherwise settle the guard against this delimiter's first character
+    /// (always punctuation), never learning what genuinely comes after.
+    fn emphasis_close(&mut self, delimiter: &str, intraword_candidate: bool) {
+        let dest = self.dest();
+        let pending = dest
+            .last_emphasis
+            .and_then(|(open, len, end, was_candidate)| {
+                (was_candidate && end == dest.buf.len()).then_some((open, end - len))
+            });
         self.markup(delimiter);
         let dest = self.dest();
+        if let Some(guard) = pending {
+            dest.flank_guard = Some(guard);
+        }
         dest.last_emphasis = dest
             .emphasis_opens
             .pop()
-            .map(|open| (open, delimiter.len(), dest.buf.len()));
+            .map(|open| (open, delimiter.len(), dest.buf.len(), intraword_candidate));
+    }
+
+    /// Closes the emphasis `mark` records, or -- if nothing was written
+    /// since it opened -- removes it instead: no delimiters for an emphasis
+    /// whose rendered content is empty (RFC 037), the same shape as the
+    /// settled rule for a link with no text and no image (RFC 024 criterion
+    /// 7). Restores the destination's line-start bookkeeping to what it was
+    /// before the delimiter was written, so content after a removed,
+    /// genuinely-empty span is not left thinking a line already started.
+    ///
+    /// `last_was_space` is deliberately left alone either way: content that
+    /// collapsed to nothing but was whitespace (`<b> </b>`) must still leave
+    /// its pending space for whatever comes next, exactly as if the element
+    /// were not there at all.
+    pub(super) fn emphasis_close_or_remove(&mut self, mark: EmphasisMark) {
+        if self.dest().buf.len() == mark.start + mark.delimiter.len() {
+            let dest = self.dest();
+            dest.buf.truncate(mark.pre_flush_start);
+            dest.emphasis_opens.pop();
+            dest.at_line_start = mark.at_line_start;
+            dest.newlines_emitted = mark.newlines_emitted;
+            dest.line = mark.line;
+            // The space this span's own opening flushed, if any, goes back
+            // to being merely pending -- not gone, so it can still merge
+            // with whatever comes next, and not a committed byte either, so
+            // a still-pending one after this (now nonexistent) span does not
+            // duplicate it.
+            if mark.flushed_space {
+                dest.last_was_space = true;
+            }
+        } else {
+            self.emphasis_close(mark.delimiter, mark.intraword_candidate);
+        }
     }
 
     /// The opening fence of a code block, with its info string. Emits the
@@ -872,6 +1075,7 @@ impl Sink {
         // A link's text is followed by `]`.
         let next = matches!(open.kind, Capture::Link { .. }).then_some(']');
         open.dest.settle(next);
+        open.dest.settle_flank(next);
         Some((open.kind, open.dest.buf, open.dest.last_was_space))
     }
 
@@ -905,6 +1109,7 @@ impl Sink {
         );
         let mut document = self.document;
         document.settle(None);
+        document.settle_flank(None);
         let mut out = document.buf;
         let end = out.trim_end().len();
         out.truncate(end);

@@ -261,7 +261,14 @@ fn mixed_inline_and_block_children() {
 fn emphasis_and_links_around_inline_content_are_unchanged() {
     assert_eq!(conv("<p>a <strong>b</strong> c</p>"), "a **b** c\n");
     assert_eq!(conv("<p>a <em>b</em> c</p>"), "a *b* c\n");
-    assert_eq!(conv("<p><strong><em>x</em></strong></p>"), "***x***\n");
+    // RFC 037 §1.1 B: `**` then `*` concatenate into `***`, which reparses
+    // the same way regardless of which order wrote it -- and before RFC
+    // 037, this order wrote it wrong (`em(strong(x))`, source order
+    // inverted). Fixed by swapping the inner `<em>`'s delimiter to `_`,
+    // which only this direction needs -- `<em><strong>` already reparses
+    // correctly as plain `*`/`**` and is unchanged (see
+    // `tests/output_validity/emphasis_fidelity.rs`).
+    assert_eq!(conv("<p><strong><em>x</em></strong></p>"), "**_x_**\n");
     assert_eq!(
         conv(r#"<p><a href="/x"><strong>t</strong></a></p>"#),
         "[**t**](/x)\n"

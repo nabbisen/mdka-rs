@@ -79,9 +79,26 @@ pub struct MarkdownRenderer {
     links: Vec<LinkState>,
     /// Per open inline `<code>`: whether it opened a code-span capture.
     code_captures: Vec<bool>,
-    /// Per open `<strong>`/`<b>`/`<em>`/`<i>`: the delimiter it wrote, if any,
-    /// so leaving writes exactly what entering did.
-    emphasis: Vec<Option<&'static str>>,
+    /// Per open `<strong>`/`<b>`/`<em>`/`<i>`: `None` if it wrote no
+    /// delimiters at all (inside code, around blocks, style-negated, or
+    /// collapsed into a same-class ancestor, RFC 037); `Some` records what
+    /// it wrote, so leaving can close it -- or, if it turns out empty,
+    /// remove it instead (RFC 037).
+    emphasis: Vec<Option<EmphasisFrame>>,
+}
+
+/// `strong`/`b` vs `em`/`i`, by the delimiter they write -- the rule is
+/// about the delimiter, not the tag name (RFC 037 §1.1 B: `<em><i>` collapses
+/// the same as `<em><em>`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum EmphasisClass {
+    Bold,
+    Italic,
+}
+
+struct EmphasisFrame {
+    class: EmphasisClass,
+    mark: sink::EmphasisMark,
 }
 
 impl MarkdownRenderer {
@@ -472,22 +489,71 @@ impl MarkdownRenderer {
             }
             "strong" | "b" | "em" | "i" => {
                 // No delimiters inside code, around blocks (RFC 028 criterion
-                // 1), or when the element's own style negates the emphasis
-                // (criterion 4).
-                let delimiter = if matches!(tag, "strong" | "b") {
-                    "**"
+                // 1), when the element's own style negates the emphasis
+                // (criterion 4), or when a same-class ancestor is already
+                // open (RFC 037: italic in italic is italic, bold in bold is
+                // bold) -- this element's content flows through as if it
+                // were not there, the same as any of the other cases.
+                let class = if matches!(tag, "strong" | "b") {
+                    EmphasisClass::Bold
                 } else {
-                    "*"
+                    EmphasisClass::Italic
                 };
                 let write = !self.in_code()
                     && !wraps_blocks
                     && !utils::emphasis_negated_by_style(tag, elem.attr("style"));
-                let written = write.then(|| {
+                let collapsed = write && self.emphasis.iter().flatten().any(|f| f.class == class);
+                let frame = (write && !collapsed).then(|| {
                     let _ = self.open_distributed_link();
-                    self.sink.flush_space();
-                    self.sink.emphasis_open(delimiter)
+                    // `emphasis_open` flushes any pending space itself, as
+                    // part of what it can undo if this span turns out empty
+                    // (RFC 037 finding C) -- not done here first.
+                    // A same-class ancestor aside, an *open*, differently
+                    // classed ancestor immediately adjacent (nothing written
+                    // since its own delimiter) risks the opposite problem:
+                    // `**` then `*` (or vice versa) concatenate into one run
+                    // that reparses the same way regardless of which order
+                    // wrote it. `<em><strong>` already reparses correctly as
+                    // plain `*`/`**`; only `<strong><em>` does not, so only
+                    // that one direction swaps to `_` here.
+                    let start = self.sink.dest_len();
+                    let bold_ancestor = self
+                        .emphasis
+                        .iter()
+                        .rev()
+                        .find_map(|f| f.as_ref())
+                        .filter(|f| f.class == EmphasisClass::Bold);
+                    let touching_bold_ancestor = class == EmphasisClass::Italic
+                        && bold_ancestor.is_some_and(|f| f.mark.end() == start);
+                    // RFC 037 addendum: swapping to `_` only helps if `**`
+                    // can still open where it is -- CommonMark requires a
+                    // delimiter run followed by punctuation (here, the `_`
+                    // this swap is about to write) to be preceded by
+                    // whitespace, punctuation, or nothing. Preceded by a
+                    // letter or digit instead, `**` cannot open at all, and
+                    // the bold is lost outright: worse than the
+                    // order-inverted bug this swap exists to fix (RFC 037
+                    // review, 2026-09-22). Checked against the character
+                    // before the Bold ancestor's own opening delimiter --
+                    // already-written history, not a lookahead. What follows
+                    // the whole nested span's *close* is not knowable here;
+                    // `Sink::emphasis_close` confirms that half once it can.
+                    let intraword_candidate = touching_bold_ancestor
+                        && bold_ancestor.is_some_and(|f| {
+                            escape::class(self.sink.char_before(f.mark.start()))
+                                != escape::Class::Word
+                        });
+                    let delimiter = if intraword_candidate {
+                        "_"
+                    } else if class == EmphasisClass::Bold {
+                        "**"
+                    } else {
+                        "*"
+                    };
+                    let (_, mark) = self.sink.emphasis_open(delimiter, intraword_candidate);
+                    EmphasisFrame { class, mark }
                 });
-                self.emphasis.push(written);
+                self.emphasis.push(frame);
             }
             "a" => {
                 let href = elem.attr("href").unwrap_or("").to_string();
@@ -549,8 +615,8 @@ impl MarkdownRenderer {
                 }
             }
             "strong" | "b" | "em" | "i" => {
-                if let Some(Some(delimiter)) = self.emphasis.pop() {
-                    self.sink.emphasis_close(delimiter);
+                if let Some(Some(frame)) = self.emphasis.pop() {
+                    self.sink.emphasis_close_or_remove(frame.mark);
                 }
             }
             "a" => match self.links.pop() {

@@ -103,21 +103,21 @@ fn a_fence_is_longer_than_any_backtick_run_at_a_line_start() {
 #[test]
 fn touching_emphasis_runs_are_separated() {
     let mut sink = Sink::new(16);
-    sink.emphasis_open("*");
+    let (_, mark) = sink.emphasis_open("*", false);
     sink.text("a");
-    sink.emphasis_close("*");
-    sink.emphasis_open("**");
+    sink.emphasis_close_or_remove(mark);
+    let (_, mark) = sink.emphasis_open("**", false);
     sink.text("b");
-    sink.emphasis_close("**");
+    sink.emphasis_close_or_remove(mark);
     assert_eq!(sink.finish(), "_a_**b**\n");
     // A chain: the second span cannot take `_` next to the first, so the
     // third does.
     let mut sink = Sink::new(16);
     let mut written = Vec::new();
     for text in ["a", "b", "c"] {
-        let delimiter = sink.emphasis_open("**");
+        let (delimiter, mark) = sink.emphasis_open("**", false);
         sink.text(text);
-        sink.emphasis_close(delimiter);
+        sink.emphasis_close_or_remove(mark);
         written.push(delimiter);
     }
     assert_eq!(written, ["**", "**", "__"]);
