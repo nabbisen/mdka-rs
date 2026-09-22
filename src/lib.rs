@@ -23,6 +23,7 @@
 pub mod options;
 
 mod renderer;
+mod table;
 mod traversal;
 mod utils;
 

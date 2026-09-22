@@ -125,14 +125,69 @@ impl MarkdownRenderer {
         self.in_pre || self.sink.in_code_span()
     }
 
-    fn begin_block(&mut self) {
+    /// Whether a `<pre>` is currently open (RFC 008): an expressible table
+    /// found inside one is not rendered specially -- its `tr`/`td`/`th`
+    /// fall through to the ordinary `Block::Paragraph` dispatch, which
+    /// `enter_block`'s own `in_pre` guard already empties of markup (RFC 024
+    /// rule 7), the same as any other block inside `<pre>`.
+    pub(crate) fn in_pre(&self) -> bool {
+        self.in_pre
+    }
+
+    /// Whether a GFM table cell's content is being captured (RFC 008):
+    /// `<br>` there is literal `<br>`, not a hard break.
+    fn in_table_cell(&self) -> bool {
+        self.sink.in_table_cell()
+    }
+
+    pub(crate) fn begin_block(&mut self) {
         // The blockquote prefix is not written here; the sink writes it
         // before the next content byte.
         self.ensure_newlines(2);
     }
 
-    fn end_block(&mut self) {
+    pub(crate) fn end_block(&mut self) {
         self.ensure_newlines(2);
+    }
+
+    // ─── Tables (RFC 008) ────────────────────────────────────────────────
+
+    /// Starts capturing one GFM table cell's content: rendered the same as
+    /// any other inline content -- escaping, `<br>`'s literal form,
+    /// `<strong>`/`<a>`/`<code>` all behave exactly as they would anywhere
+    /// else.
+    pub(crate) fn begin_cell_capture(&mut self) {
+        self.sink.begin_capture(Capture::Cell);
+    }
+
+    /// Ends the innermost cell capture and returns what it collected, with
+    /// every `|` escaped (RFC 008 addendum A). Escaped here, once, over the
+    /// whole assembled cell -- not while writing -- because a nested capture
+    /// (a code span, a link's text or destination, an image's alt) splices
+    /// its own already-rendered string in whole, bypassing the per-character
+    /// escaping a cell's own direct text already goes through; the cell
+    /// boundary is the only point every source of a literal `|` passes
+    /// through regardless of which path produced it.
+    pub(crate) fn end_cell_capture(&mut self) -> String {
+        let content = self
+            .sink
+            .end_capture()
+            .map(|(_, content, _)| content)
+            .unwrap_or_default();
+        escape::escape_table_cell_pipes(&content)
+    }
+
+    /// Writes one already-assembled GFM row or delimiter line as raw markup
+    /// -- the cells inside it are already escaped, from capture.
+    pub(crate) fn write_table_line(&mut self, line: &str) {
+        self.sink.markup_closed(line);
+    }
+
+    /// Requests the single newline between two table lines. Never a blank
+    /// line: unlike every other block boundary in this renderer, one here
+    /// would end the table (GFM has no concept of a table with a gap in it).
+    pub(crate) fn next_table_line(&mut self) {
+        self.ensure_newlines(1);
     }
 
     /// A block boundary for content whose own element contributed nothing:
@@ -585,9 +640,15 @@ impl MarkdownRenderer {
             }
             // Inside code a <br> is text, not a Markdown hard break, whose
             // trailing spaces would become code (RFC 024 rule 8): one line
-            // break in a <pre>, one space in a code span.
+            // break in a <pre>, one space in a code span. Inside a GFM table
+            // cell a hard break's own newline would end the cell -- and
+            // survives as inline HTML instead (RFC 008 §3's own "Can" list).
             "br" if self.in_pre => self.process_text("\n"),
             "br" if self.sink.in_code_span() => self.sink.text(" "),
+            "br" if self.in_table_cell() => {
+                self.sink.flush_space();
+                self.sink.markup("<br>");
+            }
             "br" => {
                 // The next content line gets the blockquote prefix, if any.
                 self.sink.hard_break();

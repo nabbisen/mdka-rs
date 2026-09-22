@@ -156,6 +156,14 @@ pub fn starts_markdown_block(name: &str, _opts: &ConversionOptions) -> bool {
             | "article"
             | "section"
             | "main"
+            // RFC 008: a table row or cell, on its own, is a paragraph-like
+            // block (`utils::block_kind`) -- inside a `<pre>` this is what
+            // makes `h.pres`'s own text extraction agree with the line break
+            // mdka's `in_pre` handling already inserts at the same boundary.
+            | "tr"
+            | "td"
+            | "th"
+            | "caption"
     )
 }
 

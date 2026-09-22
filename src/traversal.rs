@@ -50,7 +50,7 @@ fn disposition(tag: &str, opts: &ConversionOptions) -> Disposition {
 }
 
 /// What one pass over the document knows before rendering.
-struct Hints {
+pub(crate) struct Hints {
     /// Inline wrapper elements (`strong`/`b`, `em`/`i`, `code`, `a`) with a
     /// rendered block among their descendants (RFC 028).
     wrappers: HashSet<NodeId>,
@@ -253,21 +253,25 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
     hints
 }
 
-/// HTML ドキュメントをトラバースして Markdown 文字列を生成する。
+/// Runs the Enter/Leave stack machine over `roots`, dispatching each element
+/// through `renderer`. Shared by the top-level document walk and, for an
+/// expressible GFM table's own cells and an inexpressible table's fallback
+/// content (RFC 008), a subtree rooted anywhere else: same disposition rules,
+/// same hints, same renderer methods, so a `<strong>`/`<a>`/`<code>` inside a
+/// table cell behaves exactly as it would anywhere else in the document.
 ///
-/// 再帰を使わず `Vec` ベースのスタックで深さ優先探索を行うため、
-/// 10,000段以上のネストでもスタックオーバーフローが発生しない。
-///
-/// 前処理（タグ除外・ラッパーアンラップ）もこの関数内でインライン実行する。
-pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
-    // 元の HTML サイズの半分を初期容量として確保
-    let capacity = document.html().len() / 2;
-    let mut renderer = MarkdownRenderer::new(capacity.max(256));
-    let hints = structure_hints(document, opts);
-
-    // root() は Document ノードなので子ノードだけを逆順で積む
-    let mut stack: Vec<Event> = Vec::with_capacity(64);
-    for child in document.tree.root().children().rev() {
+/// `tables` is consulted for every `<table>` this reaches, including one
+/// found while driving a fallback table's own cell content -- a nested
+/// table is analyzed and rendered exactly like a top-level one.
+pub(crate) fn drive<'a>(
+    renderer: &mut MarkdownRenderer,
+    roots: impl DoubleEndedIterator<Item = ego_tree::NodeRef<'a, scraper::Node>>,
+    hints: &Hints,
+    opts: &ConversionOptions,
+    tables: &crate::table::Tables<'a>,
+) {
+    let mut stack: Vec<Event> = Vec::with_capacity(16);
+    for child in roots.rev() {
         stack.push(Event::Enter(child));
     }
 
@@ -300,6 +304,25 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
                             continue;
                         }
                         Disposition::Render => {}
+                    }
+
+                    // RFC 008: an expressible table (never inside `<pre>` --
+                    // there its `tr`/`td`/`th` fall through below, to the
+                    // ordinary `Block::Paragraph` dispatch that `enter_block`'s
+                    // `in_pre` guard already empties of markup) is rendered as
+                    // GFM here, in one call, rather than through the per-tag
+                    // dispatch every other element uses -- a header row, its
+                    // delimiter row and every data row must be written
+                    // together, not discovered one `<tr>` at a time. No Leave
+                    // is pushed and its children are not queued: `table::render`
+                    // does the whole subtree itself.
+                    if tag == "table"
+                        && !renderer.in_pre()
+                        && let Some(info) = tables.get(&node.id())
+                        && info.grid.is_some()
+                    {
+                        crate::table::render(renderer, info, hints, opts, tables);
+                        continue;
                     }
 
                     renderer.enter_element(
@@ -344,6 +367,29 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
             }
         }
     }
+}
+
+/// HTML ドキュメントをトラバースして Markdown 文字列を生成する。
+///
+/// 再帰を使わず `Vec` ベースのスタックで深さ優先探索を行うため、
+/// 10,000段以上のネストでもスタックオーバーフローが発生しない。
+///
+/// 前処理（タグ除外・ラッパーアンラップ）もこの関数内でインライン実行する。
+pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
+    // 元の HTML サイズの半分を初期容量として確保
+    let capacity = document.html().len() / 2;
+    let mut renderer = MarkdownRenderer::new(capacity.max(256));
+    let hints = structure_hints(document, opts);
+    let tables = crate::table::analyze(document, opts);
+
+    // root() は Document ノードなので子ノードだけを渡す
+    drive(
+        &mut renderer,
+        document.tree.root().children(),
+        &hints,
+        opts,
+        &tables,
+    );
 
     renderer.finish()
 }

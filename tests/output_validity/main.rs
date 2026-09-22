@@ -21,6 +21,8 @@
 //!   setext heading underline or lazy-continuation text (RFC 038).
 //! - `emphasis_fidelity`: empty emphasis writes no delimiters; nested
 //!   same-class emphasis collapses to one level (RFC 037).
+//! - `tables`: an expressible table becomes GFM; everything else falls back
+//!   to a shape that never welds cells (RFC 008 slice `008a`).
 //!
 //! A cell marked `defect(...)` is a strict expected failure: it passes while
 //! the recorded defect is present and FAILS once it is fixed, so the marker
@@ -64,5 +66,6 @@ mod gfm;
 mod inline_in_container;
 mod marker_collisions;
 mod proofs;
+mod tables;
 mod well_formedness;
 mod wrappers;

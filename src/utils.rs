@@ -64,6 +64,17 @@ pub(crate) fn block_kind(tag: &str) -> Option<Block> {
         "h6" => Block::Heading(6),
         "p" | "div" | "article" | "section" | "main" | "header" | "footer" | "nav" | "aside"
         | "figure" | "figcaption" => Block::Paragraph,
+        // RFC 008: a table row or cell, on its own, is a paragraph-like
+        // block -- the floor that keeps a table's cells from welding
+        // together (`H1H2ab`) wherever the table isn't rendered specially
+        // (an inexpressible table's fallback, or any table content inside
+        // `<pre>`, where `enter_block`'s own `in_pre` guard already
+        // suppresses every block's markup, this one included). An
+        // expressible table intercepts `<table>` itself before its children
+        // ever reach this dispatch, so this arm never fires for one.
+        // `<caption>` is content to keep, not lost silently (criterion 7);
+        // as a paragraph it lands in the flow at its own document position.
+        "tr" | "td" | "th" | "caption" => Block::Paragraph,
         "ul" => Block::UnorderedList,
         "ol" => Block::OrderedList,
         "li" => Block::ListItem,
@@ -91,7 +102,7 @@ pub(crate) fn is_inline_wrapper(tag: &str) -> bool {
 /// Declarations are split on `;`; the name before `:` and the value are
 /// trimmed and case-folded, `!important` is stripped, and the last declaration
 /// of the property wins. No other property is read, nothing is inherited, and
-/// emphasis is never added. This is the only place mdka reads `style`.
+/// emphasis is never added.
 pub(crate) fn emphasis_negated_by_style(tag: &str, style: Option<&str>) -> bool {
     let property = match tag {
         "b" | "strong" => "font-weight",
@@ -101,6 +112,21 @@ pub(crate) fn emphasis_negated_by_style(tag: &str, style: Option<&str>) -> bool 
     let Some(style) = style else {
         return false;
     };
+    let Some(value) = style_property(style, property) else {
+        return false;
+    };
+    if property == "font-style" {
+        return value == "normal";
+    }
+    value == "normal" || value.parse::<f64>().is_ok_and(|weight| weight <= 500.0)
+}
+
+/// Reads one property out of an inline `style` attribute: declarations split
+/// on `;`, the name before `:` and the value trimmed and case-folded,
+/// `!important` stripped, the last declaration of the property wins. Shared
+/// by [`emphasis_negated_by_style`] and the table alignment reader (RFC 008
+/// §3, `align=`/`text-align:`) -- the only two places mdka reads `style`.
+pub(crate) fn style_property(style: &str, property: &str) -> Option<String> {
     let mut value: Option<String> = None;
     for declaration in style.split(';') {
         let Some((name, raw)) = declaration.split_once(':') else {
@@ -115,13 +141,7 @@ pub(crate) fn emphasis_negated_by_style(tag: &str, style: Option<&str>) -> bool 
         }
         value = Some(v);
     }
-    let Some(value) = value else {
-        return false;
-    };
-    if property == "font-style" {
-        return value == "normal";
-    }
-    value == "normal" || value.parse::<f64>().is_ok_and(|weight| weight <= 500.0)
+    value
 }
 
 /// アンラップ候補のラッパータグ。

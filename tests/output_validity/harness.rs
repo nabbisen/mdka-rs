@@ -37,8 +37,19 @@ pub fn mdka_convert(html: &str, opts: &ConversionOptions) -> String {
 /// What a cell asserts beyond the properties.
 #[derive(Clone, Copy)]
 pub enum Expect {
-    /// The parsed structure, in `structure` notation, must equal this.
+    /// The parsed structure, in `structure` notation, must equal this under
+    /// every reading.
     Tree(&'static str),
+    /// The parsed structure differs by reading: a GFM-only construct (RFC
+    /// 008: a table) reads back as itself only once the extension is on;
+    /// under plain CommonMark the same bytes are still valid Markdown, never
+    /// garbage, just read as something else -- a paragraph holding the
+    /// literal pipe text, joined by soft breaks. Both readings are still
+    /// asserted; neither is exempt, only different.
+    TreeByReading {
+        commonmark: &'static str,
+        gfm: &'static str,
+    },
     /// The intended structure is a recorded question, not a decision. Only
     /// the intent-free properties are asserted.
     Undecided(&'static str),
@@ -46,6 +57,10 @@ pub enum Expect {
 
 pub const fn tree(s: &'static str) -> Expect {
     Expect::Tree(s)
+}
+
+pub const fn tree_by_reading(commonmark: &'static str, gfm: &'static str) -> Expect {
+    Expect::TreeByReading { commonmark, gfm }
 }
 
 pub const fn undecided(question: &'static str) -> Expect {
@@ -134,7 +149,15 @@ pub fn evaluate(convert: Convert, html: &str, expect: Expect, mode: ConversionMo
     let checked = catch_unwind(AssertUnwindSafe(|| {
         let mut problems = Vec::new();
         for reading in READINGS {
-            if let Expect::Tree(want) = expect {
+            let want = match expect {
+                Expect::Tree(want) => Some(want),
+                Expect::TreeByReading { commonmark, gfm } => Some(match reading {
+                    Reading::CommonMark => commonmark,
+                    Reading::Gfm => gfm,
+                }),
+                Expect::Undecided(_) => None,
+            };
+            if let Some(want) = want {
                 let got = structure(&md, reading, opts.preserve_ids);
                 if got != want {
                     problems.push(format!(
@@ -142,11 +165,24 @@ pub fn evaluate(convert: Convert, html: &str, expect: Expect, mode: ConversionMo
                     ));
                 }
             }
-            problems.extend(
-                properties(html, &md, &opts, reading)
-                    .into_iter()
-                    .map(|p| format!("({reading}) {p}")),
-            );
+            // The intent-free properties assume the reading recovers the
+            // HTML's own words and delimiter count. For GFM-only output (RFC
+            // 008: a table) read as plain CommonMark, that assumption does
+            // not hold by construction: the pipe/dash syntax the extension
+            // would have consumed instead becomes literal prose, adding
+            // words and punctuation the HTML never had. That is the accepted
+            // cost of always emitting a real table (RFC 008 §4), not a text
+            // loss or a stray delimiter -- so it is not checked under this
+            // reading. The structure assertion above still runs for both:
+            // the CommonMark reading must still be a sensible paragraph, not
+            // garbage, and is asserted as one.
+            if !(matches!(expect, Expect::TreeByReading { .. }) && reading == Reading::CommonMark) {
+                problems.extend(
+                    properties(html, &md, &opts, reading)
+                        .into_iter()
+                        .map(|p| format!("({reading}) {p}")),
+                );
+            }
         }
         problems
     }));
@@ -164,7 +200,7 @@ pub fn evaluate(convert: Convert, html: &str, expect: Expect, mode: ConversionMo
 
 fn question(expect: Expect) -> String {
     match expect {
-        Expect::Tree(_) => String::new(),
+        Expect::Tree(_) | Expect::TreeByReading { .. } => String::new(),
         Expect::Undecided(q) => format!("\n  structure undecided: {q}"),
     }
 }

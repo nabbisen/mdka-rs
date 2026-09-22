@@ -58,6 +58,13 @@ fn block_kind_classifies_every_block_the_renderer_emits() {
         "aside",
         "figure",
         "figcaption",
+        // RFC 008: a table row or cell, on its own, is paragraph-like -- the
+        // floor that keeps cells from welding together wherever a table
+        // isn't rendered specially.
+        "tr",
+        "td",
+        "th",
+        "caption",
     ] {
         assert_eq!(block_kind(tag), Some(Block::Paragraph), "{tag}");
     }
@@ -67,7 +74,7 @@ fn block_kind_classifies_every_block_the_renderer_emits() {
     assert_eq!(block_kind("blockquote"), Some(Block::Quote));
     assert_eq!(block_kind("pre"), Some(Block::Pre));
     assert_eq!(block_kind("hr"), Some(Block::Rule));
-    for tag in ["span", "strong", "a", "code", "br", "img", "table", "td"] {
+    for tag in ["span", "strong", "a", "code", "br", "img", "table"] {
         assert_eq!(block_kind(tag), None, "{tag}");
     }
 }

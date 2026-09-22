@@ -400,3 +400,35 @@ pub(super) fn title(t: &str) -> String {
     out.push(close);
     out
 }
+
+// ─── Table cells ────────────────────────────────────────────────────────────
+
+/// Escapes every `|` in `s` not already escaped, so it cannot end a GFM
+/// table cell early (RFC 008, addendum A). Run once over a cell's *whole*
+/// assembled content -- the cell is the escaping boundary, not any one path
+/// through it. A cell's own direct text and inline-formatting content is
+/// already correctly escaped by [`decide`] as it is written; what that
+/// cannot reach is a nested capture's own already-rendered string spliced in
+/// whole (a code span's verbatim backticks, a link's captured text and
+/// destination, an image's alt) -- each bypasses per-character escaping
+/// entirely by design (RFC 024), so their `|` is untouched until this runs.
+///
+/// Safe to run unconditionally over the whole string: a `|` already preceded
+/// by an escaping `\` is left alone (no double escape), and a literal `\`
+/// the source itself contained before punctuation is already doubled by
+/// [`decide`]'s own `Wait::Backslash` rule before this ever sees it, so a
+/// single `\` immediately before `|` here is always an escape, never raw
+/// content -- tracked by parity, so `\\|` (an escaped backslash, then a
+/// genuinely unescaped `|`) still gets the `|` escaped.
+pub(super) fn escape_table_cell_pipes(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut escaped = false;
+    for c in s.chars() {
+        if c == '|' && !escaped {
+            out.push('\\');
+        }
+        out.push(c);
+        escaped = c == '\\' && !escaped;
+    }
+    out
+}

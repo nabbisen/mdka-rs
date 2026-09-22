@@ -18,6 +18,7 @@ Markdown it produces. Elements not listed are either silently removed
 | `<hr>` | `---` | |
 | `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
 | `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
+| `<table>` | GFM table, or a non-welding fallback | See [Tables](#tables) |
 
 ## Inline Elements
 
@@ -33,6 +34,54 @@ Markdown it produces. Elements not listed are either silently removed
 `<span>` is **not** in either table, and that is deliberate: it produces no
 output of its own and no break. `<span>A</span><span>B</span>` converts to
 `AB`, with the children passed straight through.
+
+## Tables
+
+A `<table>` becomes a GFM table when it is **expressible**: exactly one
+header row (all `<th>`, first), no `colspan`/`rowspan`, no cell holding more
+than a single bare paragraph of content, no nested table, and no `<caption>`.
+
+```html
+<table><thead><tr><th>Name</th><th>Age</th></tr></thead>
+<tbody><tr><td>Alice</td><td>30</td></tr></tbody></table>
+```
+
+converts to:
+
+```markdown
+| Name | Age |
+| --- | --- |
+| Alice | 30 |
+```
+
+Alignment is carried from `align=` or `text-align:` into `:--`/`--:`/`:-:`. A
+literal `|` in a cell is escaped (`\|`). A ragged row — one with a different
+cell count from the header — is not a blocker: GFM pads a short row and
+truncates a long one, so no special handling is needed, but a truncated
+cell's content is genuinely lost from the output. `<br>` inside a cell
+survives as literal inline HTML rather than a Markdown hard break, which
+would end the cell early.
+
+**A table that is not expressible never welds its cells together** — the
+`H1H2ab` defect below is fixed regardless of which case applies. Every
+`<tr>`/`<td>`/`<th>`/`<caption>` renders as its own paragraph-like block, so
+row and column structure is not preserved, but every cell's text is clearly
+separated:
+
+```html
+<table><tr><th>H1</th><th>H2</th></tr><tr><td>a</td><td>b</td></tr><tr><td colspan="2">c</td></tr></table>
+```
+
+converts to `H1`, `H2`, `a`, `b`, `c`, each its own paragraph (blank-line
+separated) — not `H1H2abc`. A `<caption>` is never dropped silently; it
+appears as its own paragraph, in its document position.
+
+Turning the row/column structure of an inexpressible table into a real GFM
+table (flattening a cell's block content, synthesising a header where none
+exists, expanding a span) is a separate, larger piece of work, tracked as its
+own follow-up. See
+[`ROADMAP.md`](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) for
+scheduling.
 
 ## Lists: tight and loose
 
@@ -113,26 +162,14 @@ empty, but the structure or emphasis they carry is lost.
 
 | HTML | Current behaviour | Status |
 |---|---|---|
-| `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>` | Cell text is emitted as plain text; no GFM table is produced and the row/column structure is lost | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 | `<dl>`, `<dt>`, `<dd>` | Term and description text run together as plain text | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 | `<del>`, `<s>` | Text kept, strike-through (`~~text~~`) not emitted | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 | `<sup>`, `<sub>` | Text kept inline, with no indication it was raised or lowered | [Planned](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 | `<video>`, `<audio>` | No output for the media element itself | Not yet scheduled |
 
-**Tables are the largest gap**, and the cell text is not merely unstructured —
-it is run together without separators:
-
-```html
-<table><thead><tr><th>H1</th><th>H2</th></tr></thead><tbody><tr><td>a</td><td>b</td></tr></tbody></table>
-```
-
-converts to `H1H2ab`. mdka adds no separator between cells; the only spacing
-that survives is whitespace already present in the source, so the same table
-written across two lines comes out as `H1H2 ab`. If your input is table-heavy,
-the converted Markdown will read as runs of joined text where the table was.
-See
-[`ROADMAP.md`](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) for
-scheduling.
+Tables were the largest gap here until they gained the treatment described in
+[Tables](#tables), above: an expressible table is real GFM; anything else at
+least never welds its cells together.
 
 ## Code Blocks and Language Hints
 

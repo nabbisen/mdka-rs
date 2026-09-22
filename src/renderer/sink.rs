@@ -269,8 +269,21 @@ impl Dest {
 
 /// What a capture is collecting.
 pub(super) enum Capture {
-    Link { href: String, title: Option<String> },
+    Link {
+        href: String,
+        title: Option<String>,
+    },
     CodeSpan,
+    /// A GFM table cell's content (RFC 008): rendered inline, then joined
+    /// into the row line by the caller -- not spliced back through
+    /// [`Sink::splice`] the way a link or code span is. `|` is escaped once
+    /// the whole cell is assembled (`escape::escape_table_cell_pipes`,
+    /// addendum A), not per character while writing: a nested capture (a
+    /// code span, a link) splices its own already-rendered string in whole,
+    /// bypassing per-character escaping entirely, so the cell boundary is
+    /// the only point that sees the final text regardless of what produced
+    /// it.
+    Cell,
 }
 
 /// What [`Sink::emphasis_open`] wrote, and enough of the destination's prior
@@ -416,6 +429,15 @@ impl Sink {
         self.captures
             .iter()
             .any(|open| matches!(open.kind, Capture::CodeSpan))
+    }
+
+    /// Whether a GFM table cell's content is currently being captured (RFC
+    /// 008): `<br>` renders as literal `<br>` there, not a real hard break,
+    /// since a cell's content is one line.
+    pub(super) fn in_table_cell(&self) -> bool {
+        self.captures
+            .iter()
+            .any(|open| matches!(open.kind, Capture::Cell))
     }
 
     /// Whether the next content byte in the current destination starts a line.
