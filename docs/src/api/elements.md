@@ -75,6 +75,19 @@ A nested list is not counted, so text followed by a sublist is still one block:
    1. inner
 ```
 
+**Exception: a nested list whose own first item is empty gets a blank line
+first, regardless.** Without one, its bare marker line is not read as a
+nested list at all — an unordered marker alone is a setext-heading underline
+for the text above it, and an ordered one is absorbed as that text's own
+lazy-continuation, taking any non-empty siblings after it along (RFC 038).
+mdka inserts the blank line to keep the output unambiguous. This is a
+disambiguation, not a looseness call: the rule above is unchanged, and the
+list itself still counts as tight by it — but CommonMark reads any blank
+line as loose once it sees one, so a reparse of this shape shows every
+item's text wrapped in a paragraph regardless of what counted this list as
+tight in the first place. A nested list whose first item has real content,
+like `inner` above, is never affected.
+
 Two paragraphs in one item make the whole list loose:
 
 ```html

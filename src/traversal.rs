@@ -56,6 +56,12 @@ struct Hints {
     wrappers: HashSet<NodeId>,
     /// Lists (`ul`/`ol`) that are loose (RFC 035 §3.1).
     loose_lists: HashSet<NodeId>,
+    /// Lists (`ul`/`ol`) whose own first item is empty (RFC 038): nested one
+    /// level in after real content, such a list's marker line would
+    /// otherwise be read as a setext-heading underline (unordered) or
+    /// absorbed as lazy-continuation text (ordered), so entering it needs a
+    /// disambiguating blank line first.
+    needs_disambiguation: HashSet<NodeId>,
 }
 
 /// What an element's rendered content amounts to, for counting the blocks of
@@ -120,6 +126,10 @@ struct Frame {
     units: Units,
     /// A rendered `ul`/`ol`, the list its `li` descendants belong to.
     is_list: bool,
+    /// For a list frame: whether its first `li` child was empty, recorded
+    /// once, the first time a child closes as a `ListItem` (RFC 038).
+    /// `None` until that first item closes.
+    first_item_empty: Option<bool>,
     id: NodeId,
 }
 
@@ -133,6 +143,7 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
     let mut hints = Hints {
         wrappers: HashSet::new(),
         loose_lists: HashSet::new(),
+        needs_disambiguation: HashSet::new(),
     };
     let mut open: Vec<Frame> = Vec::with_capacity(64);
     for edge in document.tree.root().traverse() {
@@ -149,6 +160,7 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
                                 utils::block_kind(tag),
                                 Some(utils::Block::UnorderedList | utils::Block::OrderedList)
                             ),
+                        first_item_empty: None,
                         id: node.id(),
                     });
                 }
@@ -196,6 +208,17 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
                 {
                     hints.loose_lists.insert(list.id);
                 }
+                // RFC 038: a nested list's own first item being empty is what
+                // risks a marker-line collision with the parent's text -- a
+                // setext underline for an unordered child, lazy-continuation
+                // text for an ordered one. Recorded against the list itself.
+                if matches!(
+                    kind,
+                    Some(utils::Block::UnorderedList | utils::Block::OrderedList)
+                ) && frame.first_item_empty == Some(true)
+                {
+                    hints.needs_disambiguation.insert(node.id());
+                }
                 let contribution = match kind {
                     Some(utils::Block::UnorderedList | utils::Block::OrderedList) => Units::BARRIER,
                     Some(utils::Block::ListItem) => Units::BARRIER,
@@ -212,6 +235,15 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
                 };
                 let is_block = kind.is_some();
                 if let Some(parent) = open.last_mut() {
+                    // RFC 038: recorded once, the first time a child closes as
+                    // a `ListItem` -- later siblings don't change whether the
+                    // list's *first* item was empty.
+                    if kind == Some(utils::Block::ListItem)
+                        && parent.is_list
+                        && parent.first_item_empty.is_none()
+                    {
+                        parent.first_item_empty = Some(frame.units.empty);
+                    }
                     parent.has_block |= frame.has_block || is_block;
                     parent.units.append(contribution);
                 }
@@ -275,6 +307,7 @@ pub fn traverse(document: &Html, opts: &ConversionOptions) -> String {
                         opts.preserve_ids,
                         hints.wrappers.contains(&node.id()),
                         hints.loose_lists.contains(&node.id()),
+                        hints.needs_disambiguation.contains(&node.id()),
                     );
 
                     // Leave イベントを先にスタックへ（子より後に処理される）

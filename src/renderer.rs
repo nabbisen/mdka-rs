@@ -310,14 +310,17 @@ impl MarkdownRenderer {
     // ─── Enter ─────────────────────────────────────────────────────────────
 
     /// `wraps_blocks`: the element has a rendered block among its descendants.
-    /// `loose_list`: the element is a list that is loose (RFC 035 §3.1). Both
-    /// are computed once per document by the traversal.
+    /// `loose_list`: the element is a list that is loose (RFC 035 §3.1).
+    /// `needs_disambiguation`: the element is a list whose own first item is
+    /// empty, so entering it nested may need a blank line first (RFC 038).
+    /// All three are computed once per document by the traversal.
     pub fn enter_element(
         &mut self,
         elem: &scraper::node::Element,
         preserve_ids: bool,
         wraps_blocks: bool,
         loose_list: bool,
+        needs_disambiguation: bool,
     ) {
         let tag = elem.name();
         // Tags whose own arm opens a capture or a code block: anchor first.
@@ -328,7 +331,7 @@ impl MarkdownRenderer {
             self.emit_id_anchor(elem, preserve_ids);
         }
         if let Some(block) = utils::block_kind(tag) {
-            self.enter_block(block, elem, loose_list);
+            self.enter_block(block, elem, loose_list, needs_disambiguation);
         } else {
             self.enter_inline(tag, elem, wraps_blocks);
         }
@@ -337,7 +340,13 @@ impl MarkdownRenderer {
         }
     }
 
-    fn enter_block(&mut self, block: Block, elem: &scraper::node::Element, loose_list: bool) {
+    fn enter_block(
+        &mut self,
+        block: Block,
+        elem: &scraper::node::Element,
+        loose_list: bool,
+        needs_disambiguation: bool,
+    ) {
         // Inside a <pre>, a block element -- a nested <pre> too -- contributes
         // its text only: no container, prefix, marker or blank line, and its
         // boundaries are line breaks (RFC 024 rule 7).
@@ -358,6 +367,8 @@ impl MarkdownRenderer {
             Block::UnorderedList => {
                 if self.list_stack.is_empty() {
                     self.begin_block();
+                } else if needs_disambiguation {
+                    self.sink.force_disambiguating_blank_line();
                 }
                 self.list_stack.push(ListContext {
                     kind: ListKind::Unordered,
@@ -369,6 +380,8 @@ impl MarkdownRenderer {
             Block::OrderedList => {
                 if self.list_stack.is_empty() {
                     self.begin_block();
+                } else if needs_disambiguation {
+                    self.sink.force_disambiguating_blank_line();
                 }
                 let start = elem
                     .attr("start")

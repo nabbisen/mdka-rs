@@ -17,6 +17,8 @@
 //! - `proofs`: the helper and the properties shown failing.
 //! - `wrappers`: an unwrapped wrapper (`<div>`, `<section>`, `<article>`,
 //!   `<main>`) keeps its block separation (RFC 036 §5.2, slice `036d`).
+//! - `marker_collisions`: a nested list's own marker line, colliding with a
+//!   setext heading underline or lazy-continuation text (RFC 038).
 //!
 //! A cell marked `defect(...)` is a strict expected failure: it passes while
 //! the recorded defect is present and FAILS once it is fixed, so the marker
@@ -57,6 +59,7 @@ mod escaping;
 mod field_reports;
 mod gfm;
 mod inline_in_container;
+mod marker_collisions;
 mod proofs;
 mod well_formedness;
 mod wrappers;

@@ -36,6 +36,18 @@
 //! blank line gets the prefix of the containers that stayed open across it,
 //! and a container that closed in between leaves no `>` on the blank line
 //! after it.
+//!
+//! **A marker line can be misread as something else it resembles (RFC 036,
+//! RFC 038).** Three places adjust one to stop that: [`Sink::leave_item`]
+//! swaps a bullet when a run of empty nested markers would read as a
+//! thematic break; [`Sink::thematic_break`] moves a colliding `<hr>` to a
+//! continuation line rather than change its character, since `---` is
+//! documented and must stay `---`; [`Sink::force_disambiguating_blank_line`]
+//! forces a blank line before a nested list whose own first item is empty,
+//! so its bare marker is not read as the parent's setext underline or
+//! absorbed as its lazy-continuation text. Each dodges a different
+//! collision and none shares a mechanism with another -- landing on one
+//! does not mean the other two do not exist.
 
 use super::escape::{self, Decision, FenceScan, Head, Line, Wait};
 
@@ -512,6 +524,43 @@ impl Sink {
             return;
         }
         dest.pending_newlines = dest.pending_newlines.max(count);
+        dest.last_was_space = false;
+        dest.at_line_start = true;
+    }
+
+    /// Forces a blank line before content that would otherwise collide with
+    /// a different CommonMark construct if it merely continued on the next
+    /// line (RFC 038): a nested list whose own first item is empty would be
+    /// read as the parent's own setext-heading underline (unordered child)
+    /// or absorbed as the parent's own lazy-continuation text (ordered
+    /// child) -- destroying the nested list and, for the ordered case, any
+    /// non-empty siblings after it too.
+    ///
+    /// This is disambiguation, not looseness: RFC 035 §3.1's tight/loose
+    /// rule and its own block-counting are unchanged by this call. A
+    /// genuinely tight item's newline budget is `ensure_newlines`'s to
+    /// enforce, and that clamp to one is deliberately bypassed here -- this
+    /// blank line is not describing the source's structure, only keeping
+    /// the output unambiguous. (CommonMark will still read the surrounding
+    /// list as loose once it sees this blank line, since looseness is a
+    /// property of the bytes, not of what emitted them; that consequence is
+    /// unavoidable and does not need mirroring in `ensure_newlines`'s own
+    /// accounting elsewhere.)
+    ///
+    /// Still suppressed when nothing but markers precedes on this line (an
+    /// all-empty nested chain, RFC 036 §5.5, or an item with no real
+    /// content of its own yet) -- the same as any other boundary; there is
+    /// no parent text yet for a nested list to be confused with.
+    pub(super) fn force_disambiguating_blank_line(&mut self) {
+        if self.only_markers && !self.is_capturing() {
+            return;
+        }
+        let dest = self.dest();
+        if dest.buf.is_empty() {
+            dest.at_line_start = true;
+            return;
+        }
+        dest.pending_newlines = dest.pending_newlines.max(2);
         dest.last_was_space = false;
         dest.at_line_start = true;
     }
