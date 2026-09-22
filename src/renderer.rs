@@ -67,6 +67,16 @@ pub struct MarkdownRenderer {
     pre_block_break: bool,
     /// Inside a `<pre>`: text has been written into the code block.
     pre_has_text: bool,
+    /// A list item's or heading's marker was just written, and no visible
+    /// content has appeared yet: the next text carries the block's own
+    /// leading whitespace and must have it stripped (RFC 036 §5.1, §5.6).
+    /// Cleared by the first non-empty (once trimmed) text, wherever in the
+    /// block's descendants it occurs -- whitespace-only text before it is
+    /// dropped entirely, not forwarded -- and by
+    /// [`consumed_leading`](Self::consumed_leading) for visible content that
+    /// does not reach [`process_text`](Self::process_text) at all (an image,
+    /// a thematic break). Never consulted inside `<pre>`.
+    pending_leading_strip: bool,
     fence: Fence,
     /// Per open `<a>`.
     links: Vec<LinkState>,
@@ -86,6 +96,7 @@ impl MarkdownRenderer {
             pre_depth: 0,
             pre_block_break: false,
             pre_has_text: false,
+            pending_leading_strip: false,
             fence: Fence::None,
             links: Vec::new(),
             code_captures: Vec::new(),
@@ -99,6 +110,17 @@ impl MarkdownRenderer {
     /// amended 2026-09-17). Markdown has no markup inside code.
     fn in_code(&self) -> bool {
         self.in_pre || self.sink.in_code_span()
+    }
+
+    /// Visible content was written by a path other than
+    /// [`process_text`](Self::process_text) (an image, a thematic break):
+    /// the item's or heading's leading-whitespace phase is over, the same as
+    /// if real text had arrived there (RFC 036 §5.1, §5.6). Without this, an
+    /// image or `<hr>` before a text node that carries an ordinary,
+    /// non-leading space (`<img> text`) would leave that space attributed to
+    /// the block's own leading whitespace and drop it.
+    fn consumed_leading(&mut self) {
+        self.pending_leading_strip = false;
     }
 
     fn begin_block(&mut self) {
@@ -222,6 +244,21 @@ impl MarkdownRenderer {
             self.sink.code_block_content(text);
             return;
         }
+        // A list item's or heading's marker leaves the sink's own line-start
+        // bookkeeping consumed (RFC 035's content column already begins after
+        // it), so its usual leading-whitespace collapse does not reach the
+        // block's own text. Strip it here instead, wherever it falls among
+        // the block's descendants -- a whitespace-only text node before the
+        // first real content is dropped entirely, not forwarded as a space.
+        if self.pending_leading_strip {
+            let stripped =
+                text.trim_start_matches(|c: char| c.is_ascii_whitespace() || c == '\u{a0}');
+            if stripped.is_empty() {
+                return;
+            }
+            self.pending_leading_strip = false;
+            return self.process_text(stripped);
+        }
         if !text.trim().is_empty() {
             let at_line_start = self.sink.at_line_start();
             if self.open_distributed_link() && at_line_start {
@@ -314,6 +351,7 @@ impl MarkdownRenderer {
                 let mut marker = "#".repeat(level);
                 marker.push(' ');
                 self.sink.heading_marker(&marker);
+                self.pending_leading_strip = true;
             }
             Block::Paragraph => self.begin_block(),
             Block::UnorderedList => {
@@ -365,6 +403,7 @@ impl MarkdownRenderer {
                 }
                 self.close_distributed_link();
                 self.sink.item_marker(&marker, !loose);
+                self.pending_leading_strip = true;
             }
             Block::Quote => {
                 self.begin_block();
@@ -384,6 +423,7 @@ impl MarkdownRenderer {
                 self.begin_block();
                 self.sink.block_raw("---");
                 self.end_block();
+                self.consumed_leading();
             }
         }
     }
@@ -458,6 +498,7 @@ impl MarkdownRenderer {
                 let _ = self.open_distributed_link();
                 self.sink.flush_space();
                 self.sink.markup_closed(&image);
+                self.consumed_leading();
             }
             // Inside code a <br> is text, not a Markdown hard break, whose
             // trailing spaces would become code (RFC 024 rule 8): one line
@@ -527,7 +568,13 @@ impl MarkdownRenderer {
             }
         }
         match block {
-            Block::Heading(_) | Block::Paragraph => self.end_block(),
+            Block::Heading(_) => {
+                self.end_block();
+                // A heading with no real content (all whitespace) leaves no
+                // dangling strip request past its own end.
+                self.pending_leading_strip = false;
+            }
+            Block::Paragraph => self.end_block(),
             Block::UnorderedList | Block::OrderedList => {
                 self.list_stack.pop();
                 // A nested list ending inside an item is a block boundary too:
@@ -540,6 +587,8 @@ impl MarkdownRenderer {
                 self.close_distributed_link();
                 self.sink.leave_item();
                 self.ensure_newlines(1);
+                // Ditto for an item with no real content of its own.
+                self.pending_leading_strip = false;
             }
             Block::Quote => {
                 // End a link run before the quote's prefix goes away.

@@ -67,6 +67,10 @@ pub enum Owner {
     /// Escaping and text round-trip: prose, code spans, fences, destinations,
     /// titles.
     Rfc010,
+    /// Whitespace and separators at block boundaries: leading whitespace in a
+    /// list item or heading; degenerate nested-list markers colliding with a
+    /// thematic break.
+    Rfc036,
     /// Nobody. Listed in the review request.
     Unowned,
 }
@@ -78,6 +82,7 @@ impl std::fmt::Display for Owner {
             Owner::Rfc028 => "RFC 028",
             Owner::Rfc035 => "RFC 035",
             Owner::Rfc010 => "RFC 010",
+            Owner::Rfc036 => "RFC 036",
             Owner::Unowned => "UNOWNED",
         })
     }

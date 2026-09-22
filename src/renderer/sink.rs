@@ -372,6 +372,31 @@ impl Sink {
             self.containers.last(),
             Some(Container::Item { .. })
         ));
+        // A chain of nested items that are all otherwise empty writes only
+        // their own markers, sharing one line (RFC 035's "only markers"
+        // rule): "- - -" for three levels. This is the one point that knows
+        // for certain nothing else will ever land on that line -- every
+        // shallower item's own leave finds `only_markers` already false,
+        // cleared by this one's pop -- so once such a run of plain `- `
+        // markers (width 2: the unordered bullet, not an ordered `N. `)
+        // reaches three, the line reads as a CommonMark thematic break, not
+        // three nested empty list items (RFC 036 §5.5). Swap this item's own
+        // marker to a different, equally valid bullet character: a thematic
+        // break needs every character in the run to match, so one different
+        // bullet breaks that reading while every level still nests as a
+        // list, each still honouring the width RFC 035 assumed.
+        if !self.is_capturing() && self.only_markers {
+            let dash_run = self
+                .containers
+                .iter()
+                .rev()
+                .take_while(|c| matches!(c, Container::Item { width: 2, .. }))
+                .count();
+            if dash_run >= 3 && self.document.buf.ends_with("- ") {
+                let at = self.document.buf.len() - 2;
+                self.document.buf.replace_range(at..at + 1, "*");
+            }
+        }
         self.pop_container();
     }
 
