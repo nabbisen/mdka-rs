@@ -231,3 +231,30 @@ fn link_with_own_id_inline_in_a_paragraph() {
         "see <a id=\"l\"></a>[here](/) now\n"
     );
 }
+
+// ─── RFC 036 `036b` §1/Q3: leading whitespace combined with an id anchor ───
+//
+// The id anchor is metadata, not the block's own content: the leading
+// whitespace after the marker belongs to the heading's or item's own text,
+// which starts *after* the anchor, and must still be stripped (RFC 036 §5.1,
+// §5.6) exactly as it would with no anchor at all. Verifies the sink's
+// `end_leading_strip` is not called by `id_anchor` (`036b`'s review, §3).
+
+#[test]
+fn heading_with_id_and_leading_whitespace_strips_after_the_anchor() {
+    assert_eq!(
+        conv_with(r#"<h2 id="x"> Leading</h2>"#, &with_preserve_ids(true)),
+        "## <a id=\"x\"></a>Leading\n"
+    );
+}
+
+#[test]
+fn list_item_with_id_and_leading_whitespace_strips_after_the_anchor() {
+    assert_eq!(
+        conv_with(
+            r#"<ul><li id="b"> Leading</li></ul>"#,
+            &with_preserve_ids(true)
+        ),
+        "- <a id=\"b\"></a>Leading\n"
+    );
+}

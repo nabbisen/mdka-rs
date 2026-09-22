@@ -93,6 +93,30 @@ cells! {
         => tree(r#"ul(li(image[i.png]("i"), " text"))"#);
 }
 
+// ── slice `036b` §1: the strip's clearing, centralized in the sink ────────
+//
+// The renderer-level fix above cleared its own flag from two call sites
+// (an image, a thematic break) that it happened to add; anything else
+// writing a list item's or heading's first real content, without going
+// through the renderer's own text path, inherited nothing. Moving the flag
+// into the sink and clearing it at every one of its own write paths closes
+// that off structurally instead of one call site at a time -- these three
+// are what the review found still open, none of them named in the original
+// handoff.
+
+cells! {
+    // The hard break itself does not survive reparsing this early in a
+    // block (CommonMark: a break needs inline content before it to break
+    // from) at `bec40bf` either -- that is unrelated to this fix, and
+    // unchanged by it; what this cell guards is the space after it.
+    li_hard_break_then_text: "<ul><li><br> x</li></ul>"
+        => tree(r#"ul(li("x"))"#);
+    li_emphasis_then_text: "<ul><li><b>bold</b> x</li></ul>"
+        => tree(r#"ul(li(strong("bold"), " x"))"#);
+    li_pre_then_text: "<ul><li> <pre><code>x</code></pre> t</li></ul>"
+        => tree(r#"ul(li(codeblock("x"), para("t")))"#);
+}
+
 // ── controls: must stay byte-identical to `2.3.0` (RFC 036 §4 criterion 2) ─
 
 cells! {

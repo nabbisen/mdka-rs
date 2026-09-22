@@ -85,3 +85,44 @@ cells! {
     empty_li_d5: "<ul><li><ul><li><ul><li><ul><li><ul><li></li></ul></li></ul></li></ul></li></ul></li></ul>"
         => tree(r#"ul(li(ul(li(ul(li(ul(li(ul(li())))))))))"#);
 }
+
+// ── slice `036b` §2: the same collision, with a non-empty sibling ──────────
+//
+// The swap above lands on the one item whose own line collides; a sibling
+// after it, in the same list, must swap the same way, or the two would no
+// longer share a bullet and CommonMark would read two lists where the
+// source had one. Two empty siblings already swapped identically (each hits
+// the collision on its own turn); this is the sibling that does not, and
+// must still be made to match.
+
+cells! {
+    empty_li_sibling_nonempty: "<ul><li><ul><li><ul><li></li><li>x</li></ul></li></ul></li></ul>"
+        => tree(r#"ul(li(ul(li(ul(li(), li("x"))))))"#);
+    // Control: two empty siblings, already correct before this slice.
+    empty_li_all_empty_siblings: "<ul><li><ul><li><ul><li></li><li></li></ul></li></ul></li></ul>"
+        => tree(r#"ul(li(ul(li(ul(li(), li())))))"#);
+}
+
+// ── slice `036b` §3: a thematic break collides with its own item's marker ──
+//
+// `<hr>` shares its line with an item's marker the same way an empty nested
+// item does (RFC 035's "only markers" idiom): `- ---` is the marker's `-`
+// plus the break's `---`, four homogeneous dashes CommonMark reads as one
+// break for the whole line, destroying the item and splitting the list.
+// Moved to a continuation line instead -- where any other block content of
+// an item already lives once something precedes it -- the break keeps its
+// documented `---` unconditionally (addendum B §1: a substitute character
+// here would itself violate `docs/src/api/elements.md`'s promise). An
+// ordered item's `1. ` is never homogeneous with a break either way, so it
+// is a control here.
+
+cells! {
+    li_hr_ws_then_text: "<ul><li> <hr> text</li></ul>"
+        => tree(r#"ul(li(rule, para("text")))"#);
+    li_hr_only_then_sibling: "<ul><li><hr></li><li>b</li></ul>"
+        => tree(r#"ul(li(rule), li("b"))"#);
+    ol_hr_ws_then_text: "<ol><li> <hr> text</li></ol>"
+        => tree(r#"ol[1](li(rule, para("text")))"#);
+    ol_hr_only_then_sibling: "<ol><li><hr></li><li>b</li></ol>"
+        => tree(r#"ol[1](li(rule), li("b"))"#);
+}

@@ -245,6 +245,20 @@ pub(super) struct Sink {
     /// The open fenced block in the document: the offset just after its
     /// opening backticks, and its content scanned so far (RFC 010 §3.2).
     fence: Option<(usize, FenceScan)>,
+    /// A list item's or heading's marker was just written, and no real
+    /// content has appeared for the block yet: the next text carries the
+    /// block's own leading whitespace and must have it stripped, not
+    /// collapsed, the way a fresh line's would be (RFC 036 §5.1, §5.6, and
+    /// slice `036b` §1). Set by [`item_marker`](Self::item_marker) and
+    /// [`heading_marker`](Self::heading_marker); cleared by
+    /// [`end_leading_strip`](Self::end_leading_strip), called at every other
+    /// write of real content -- so a future content producer inherits the
+    /// clearing for free, with no call site of its own to remember, the way
+    /// `consumed_leading()` at the renderer layer had to be (slice 4's
+    /// review found three more of those to add: `<br>`, empty emphasis, a
+    /// fenced block). Not cleared by `id_anchor`: an anchor is metadata, not
+    /// the block's own content, and whitespace after it is still leading.
+    pending_leading_strip: bool,
 }
 
 impl Sink {
@@ -256,7 +270,18 @@ impl Sink {
             only_markers: false,
             min_depth: 0,
             fence: None,
+            pending_leading_strip: false,
         }
+    }
+
+    /// Ends the block's leading-whitespace-strip window, if one is open: no
+    /// further text in this block is the block's own leading whitespace.
+    /// Called at every write of real content, and (`pub(super)`, for a
+    /// heading -- a list item calls it itself, from
+    /// [`leave_item`](Self::leave_item)) at a block's end for one that had
+    /// none at all.
+    pub(super) fn end_leading_strip(&mut self) {
+        self.pending_leading_strip = false;
     }
 
     fn dest(&mut self) -> &mut Dest {
@@ -351,6 +376,7 @@ impl Sink {
             tight,
         });
         self.only_markers = true;
+        self.pending_leading_strip = true;
     }
 
     /// Between two items of a loose list: a blank line, even directly inside
@@ -367,37 +393,46 @@ impl Sink {
         dest.at_line_start = true;
     }
 
-    pub(super) fn leave_item(&mut self) {
+    /// `Some(bullet)` when this item's own marker was swapped to dodge a
+    /// thematic break: the caller must carry `bullet` to this same list's
+    /// later items too (`036b` §2), or they would no longer share a bullet
+    /// with it and CommonMark would read two lists where the source had one.
+    pub(super) fn leave_item(&mut self) -> Option<char> {
         debug_assert!(matches!(
             self.containers.last(),
             Some(Container::Item { .. })
         ));
         // A chain of nested items that are all otherwise empty writes only
         // their own markers, sharing one line (RFC 035's "only markers"
-        // rule): "- - -" for three levels. This is the one point that knows
-        // for certain nothing else will ever land on that line -- every
-        // shallower item's own leave finds `only_markers` already false,
-        // cleared by this one's pop -- so once such a run of plain `- `
-        // markers (width 2: the unordered bullet, not an ordered `N. `)
-        // reaches three, the line reads as a CommonMark thematic break, not
-        // three nested empty list items (RFC 036 §5.5). Swap this item's own
-        // marker to a different, equally valid bullet character: a thematic
-        // break needs every character in the run to match, so one different
-        // bullet breaks that reading while every level still nests as a
-        // list, each still honouring the width RFC 035 assumed.
-        if !self.is_capturing() && self.only_markers {
-            let dash_run = self
-                .containers
-                .iter()
-                .rev()
-                .take_while(|c| matches!(c, Container::Item { width: 2, .. }))
+        // rule): "- - -" for three levels. Once a run of plain `- ` markers
+        // (width 2: the unordered bullet, not an ordered `N. `) actually on
+        // the current line -- not merely open ancestors, which may have
+        // broken onto earlier lines of their own if an earlier sibling had
+        // real content (`036b` §2's fix) -- reaches three, the line reads as
+        // a CommonMark thematic break, not nested empty list items (RFC 036
+        // §5.5). Swap this item's own marker to a different, equally valid
+        // bullet character: a thematic break needs every character in the
+        // run to match, so one different bullet breaks that reading while
+        // every level still nests as a list, each still honouring the width
+        // RFC 035 assumed.
+        let mut swapped = None;
+        if !self.is_capturing() && self.only_markers && self.document.buf.ends_with("- ") {
+            let line_start = self.document.buf.rfind('\n').map_or(0, |i| i + 1);
+            let dash_run = self.document.buf.as_bytes()[line_start..]
+                .rchunks(2)
+                .take_while(|chunk| *chunk == b"- ")
                 .count();
-            if dash_run >= 3 && self.document.buf.ends_with("- ") {
+            if dash_run >= 3 {
                 let at = self.document.buf.len() - 2;
                 self.document.buf.replace_range(at..at + 1, "*");
+                swapped = Some('*');
             }
         }
+        // An item with no content at all leaves no dangling strip request
+        // past its own end.
+        self.end_leading_strip();
         self.pop_container();
+        swapped
     }
 
     /// Writes the newlines a block boundary asked for. Each blank line gets
@@ -496,6 +531,7 @@ impl Sink {
     /// syntax. Emits the pending prefix first.
     pub(super) fn markup(&mut self, s: &str) {
         self.begin_content();
+        self.end_leading_strip();
         let dest = self.dest();
         dest.put(s);
         dest.line.head = Head::Inline;
@@ -514,6 +550,7 @@ impl Sink {
     pub(super) fn heading_marker(&mut self, marker: &str) {
         self.markup_closed(marker);
         self.dest().line.heading = true;
+        self.pending_leading_strip = true;
     }
 
     /// Opens emphasis with `delimiter` (`*` or `**`) and returns the delimiter
@@ -534,6 +571,7 @@ impl Sink {
     /// cannot express that, and it is left as it is.
     pub(super) fn emphasis_open(&mut self, delimiter: &'static str) -> &'static str {
         self.begin_content();
+        self.end_leading_strip();
         let dest = self.dest();
         let mut written = delimiter;
         if let Some((open, len, end)) = dest.last_emphasis
@@ -577,6 +615,7 @@ impl Sink {
     /// it if the content needs more.
     pub(super) fn open_fence(&mut self, info: &str) {
         self.begin_content();
+        self.end_leading_strip();
         let capturing = self.is_capturing();
         let dest = self.dest();
         dest.put("```");
@@ -607,11 +646,40 @@ impl Sink {
         self.code_block_content(&"`".repeat(len));
     }
 
-    /// A block-level literal (a thematic break, an id anchor). Emits the
-    /// pending prefix first; line state follows the string's newlines.
-    pub(super) fn block_raw(&mut self, s: &str) {
+    /// A thematic break (`<hr>`). Emits the pending prefix first; line state
+    /// follows the string's newlines.
+    ///
+    /// Sharing its line with an item's own marker -- the "only markers"
+    /// idiom (RFC 035) -- collides exactly the way slice 4's nested empty
+    /// markers did (RFC 036 §5.5): `- ---` is the marker's `-` plus this
+    /// break's `---`, four homogeneous dashes that CommonMark reads as one
+    /// break for the whole line, not a list item containing one (`036b`
+    /// §3). Unlike an empty marker, there is no substitute bullet character
+    /// to reach for without the break itself stopping being `---` -- and
+    /// `docs/src/api/elements.md` documents `<hr>` as `---` unconditionally
+    /// (addendum B §1: writing `___` here would be exactly the
+    /// documented-intent violation this RFC exists to close). Instead, the
+    /// break moves to a continuation line, the same place any other block
+    /// content of an item already lives once something precedes it (`<p>`,
+    /// `<pre>`, a blockquote) -- sharing the marker's line was the anomaly
+    /// only `<hr>` had, not a property worth keeping for it alone.
+    pub(super) fn thematic_break(&mut self) {
+        if !self.is_capturing()
+            && self.only_markers
+            && matches!(
+                self.containers.last(),
+                Some(Container::Item { width: 2, .. })
+            )
+        {
+            // Clearing `only_markers` first makes `ensure_newlines` treat
+            // this exactly like the boundary before any other block inside
+            // the item, instead of sharing the marker's line.
+            self.only_markers = false;
+            self.ensure_newlines(1);
+        }
         self.begin_content();
-        self.dest().push_raw(s);
+        self.end_leading_strip();
+        self.dest().push_raw("---");
     }
 
     /// An `<a id="…"></a>` anchor: the pending prefix, then any pending space,
@@ -661,6 +729,7 @@ impl Sink {
         if !self.is_capturing() {
             self.only_markers = false;
         }
+        self.end_leading_strip();
         let dest = self.dest();
         let pipe = dest.line.pipe_here;
         dest.put("  \n");
@@ -674,7 +743,28 @@ impl Sink {
 
     /// Text: whitespace collapsed, and escaped by context -- not at all inside
     /// a code span.
+    ///
+    /// While a leading-whitespace strip is pending (RFC 036 §5.1, §5.6), it is
+    /// applied here first: a list item's or heading's marker leaves the
+    /// destination's line-start bookkeeping consumed (RFC 035's content
+    /// column already begins after it), so the usual leading-whitespace
+    /// collapse -- correct for any other fresh line -- would not reach the
+    /// block's own text. Leading whitespace is stripped instead, wherever in
+    /// the block's descendants it falls; a whitespace-only text node before
+    /// the first real content is dropped entirely here, not forwarded as a
+    /// space.
     pub(super) fn text(&mut self, text: &str) {
+        let text = if self.pending_leading_strip {
+            let stripped =
+                text.trim_start_matches(|c: char| c.is_ascii_whitespace() || c == '\u{a0}');
+            if stripped.is_empty() {
+                return;
+            }
+            self.pending_leading_strip = false;
+            stripped
+        } else {
+            text
+        };
         let has_content = !text.trim().is_empty();
         if has_content {
             self.begin_content();

@@ -20,6 +20,13 @@ pub struct ListContext {
     pub loose: bool,
     /// An item of this list has been opened.
     pub started: bool,
+    /// The bullet an unordered item writes (`ListKind::Ordered` ignores
+    /// this). `'-'` unless a prior item of this same list collided with a
+    /// thematic break and had its own marker swapped to something else
+    /// (RFC 036 §5.5, `036b` §2): a sibling written after that must swap the
+    /// same way, or the two would no longer share one bullet and CommonMark
+    /// would read them as two lists, not one.
+    pub bullet: char,
 }
 
 /// The opening fence of the current `<pre>` (RFC 024 A-02).
@@ -67,16 +74,6 @@ pub struct MarkdownRenderer {
     pre_block_break: bool,
     /// Inside a `<pre>`: text has been written into the code block.
     pre_has_text: bool,
-    /// A list item's or heading's marker was just written, and no visible
-    /// content has appeared yet: the next text carries the block's own
-    /// leading whitespace and must have it stripped (RFC 036 §5.1, §5.6).
-    /// Cleared by the first non-empty (once trimmed) text, wherever in the
-    /// block's descendants it occurs -- whitespace-only text before it is
-    /// dropped entirely, not forwarded -- and by
-    /// [`consumed_leading`](Self::consumed_leading) for visible content that
-    /// does not reach [`process_text`](Self::process_text) at all (an image,
-    /// a thematic break). Never consulted inside `<pre>`.
-    pending_leading_strip: bool,
     fence: Fence,
     /// Per open `<a>`.
     links: Vec<LinkState>,
@@ -96,7 +93,6 @@ impl MarkdownRenderer {
             pre_depth: 0,
             pre_block_break: false,
             pre_has_text: false,
-            pending_leading_strip: false,
             fence: Fence::None,
             links: Vec::new(),
             code_captures: Vec::new(),
@@ -110,17 +106,6 @@ impl MarkdownRenderer {
     /// amended 2026-09-17). Markdown has no markup inside code.
     fn in_code(&self) -> bool {
         self.in_pre || self.sink.in_code_span()
-    }
-
-    /// Visible content was written by a path other than
-    /// [`process_text`](Self::process_text) (an image, a thematic break):
-    /// the item's or heading's leading-whitespace phase is over, the same as
-    /// if real text had arrived there (RFC 036 §5.1, §5.6). Without this, an
-    /// image or `<hr>` before a text node that carries an ordinary,
-    /// non-leading space (`<img> text`) would leave that space attributed to
-    /// the block's own leading whitespace and drop it.
-    fn consumed_leading(&mut self) {
-        self.pending_leading_strip = false;
     }
 
     fn begin_block(&mut self) {
@@ -244,21 +229,6 @@ impl MarkdownRenderer {
             self.sink.code_block_content(text);
             return;
         }
-        // A list item's or heading's marker leaves the sink's own line-start
-        // bookkeeping consumed (RFC 035's content column already begins after
-        // it), so its usual leading-whitespace collapse does not reach the
-        // block's own text. Strip it here instead, wherever it falls among
-        // the block's descendants -- a whitespace-only text node before the
-        // first real content is dropped entirely, not forwarded as a space.
-        if self.pending_leading_strip {
-            let stripped =
-                text.trim_start_matches(|c: char| c.is_ascii_whitespace() || c == '\u{a0}');
-            if stripped.is_empty() {
-                return;
-            }
-            self.pending_leading_strip = false;
-            return self.process_text(stripped);
-        }
         if !text.trim().is_empty() {
             let at_line_start = self.sink.at_line_start();
             if self.open_distributed_link() && at_line_start {
@@ -351,7 +321,6 @@ impl MarkdownRenderer {
                 let mut marker = "#".repeat(level);
                 marker.push(' ');
                 self.sink.heading_marker(&marker);
-                self.pending_leading_strip = true;
             }
             Block::Paragraph => self.begin_block(),
             Block::UnorderedList => {
@@ -362,6 +331,7 @@ impl MarkdownRenderer {
                     kind: ListKind::Unordered,
                     loose: loose_list,
                     started: false,
+                    bullet: '-',
                 });
             }
             Block::OrderedList => {
@@ -376,6 +346,7 @@ impl MarkdownRenderer {
                     kind: ListKind::Ordered { counter: start },
                     loose: loose_list,
                     started: false,
+                    bullet: '-', // unused: an ordered item's marker ignores it
                 });
             }
             Block::ListItem => {
@@ -391,8 +362,12 @@ impl MarkdownRenderer {
                 let mut marker = String::new();
                 if let Some(ctx) = self.list_stack.last_mut() {
                     ctx.started = true;
+                    let bullet = ctx.bullet;
                     match &mut ctx.kind {
-                        ListKind::Unordered => marker.push_str("- "),
+                        ListKind::Unordered => {
+                            marker.push(bullet);
+                            marker.push(' ');
+                        }
                         ListKind::Ordered { counter } => {
                             let n = *counter;
                             *counter += 1;
@@ -403,7 +378,6 @@ impl MarkdownRenderer {
                 }
                 self.close_distributed_link();
                 self.sink.item_marker(&marker, !loose);
-                self.pending_leading_strip = true;
             }
             Block::Quote => {
                 self.begin_block();
@@ -421,9 +395,8 @@ impl MarkdownRenderer {
             }
             Block::Rule => {
                 self.begin_block();
-                self.sink.block_raw("---");
+                self.sink.thematic_break();
                 self.end_block();
-                self.consumed_leading();
             }
         }
     }
@@ -498,7 +471,6 @@ impl MarkdownRenderer {
                 let _ = self.open_distributed_link();
                 self.sink.flush_space();
                 self.sink.markup_closed(&image);
-                self.consumed_leading();
             }
             // Inside code a <br> is text, not a Markdown hard break, whose
             // trailing spaces would become code (RFC 024 rule 8): one line
@@ -572,7 +544,7 @@ impl MarkdownRenderer {
                 self.end_block();
                 // A heading with no real content (all whitespace) leaves no
                 // dangling strip request past its own end.
-                self.pending_leading_strip = false;
+                self.sink.end_leading_strip();
             }
             Block::Paragraph => self.end_block(),
             Block::UnorderedList | Block::OrderedList => {
@@ -585,10 +557,16 @@ impl MarkdownRenderer {
             Block::ListItem => {
                 // End a link run before the item's prefix goes away.
                 self.close_distributed_link();
-                self.sink.leave_item();
+                // A swap to dodge a thematic break (RFC 036 §5.5) must carry
+                // to this same list's later items too, or they would no
+                // longer share this item's bullet and CommonMark would read
+                // two lists where the source had one (`036b` §2).
+                if let Some(bullet) = self.sink.leave_item()
+                    && let Some(ctx) = self.list_stack.last_mut()
+                {
+                    ctx.bullet = bullet;
+                }
                 self.ensure_newlines(1);
-                // Ditto for an item with no real content of its own.
-                self.pending_leading_strip = false;
             }
             Block::Quote => {
                 // End a link run before the quote's prefix goes away.
