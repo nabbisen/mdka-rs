@@ -54,12 +54,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # RFC 030 addendum, 2026-09-22: ~/.cargo/registry/src (the extracted
+      # packages `cargo package --workspace` builds the dependents against)
+      # must never be cached. Cargo never re-extracts while a version is
+      # unchanged, so a cached extraction from before a source-only change
+      # (no new dependency, so the Cargo.lock-keyed cache entry is unchanged
+      # too) verifies stale source under the current version number -- this
+      # is exactly how RFC 039's `html_to_markdown_many_with` read as "cannot
+      # find function" against a pre-RFC-039 extraction. Caching only
+      # registry/index and registry/cache (the crates.io download cache, no
+      # tmp-registry entries) keeps the download-avoidance this cache exists
+      # for, at zero cost, without ever caching an extraction. ~/.cargo/git
+      # is dropped entirely: Cargo.lock has zero git-sourced entries.
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
             target
           key: ${{ runner.os }}-cargo-package-gate-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |

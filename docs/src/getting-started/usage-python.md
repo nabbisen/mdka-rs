@@ -102,6 +102,9 @@ Use `html_to_markdown_many_with` to pass `mode` and the other conversion
 options, the same keyword arguments `html_to_markdown_with` accepts:
 
 ```python
+import mdka
+
+pages = ["<h1>A</h1>", "<p>B</p>", "<ul><li>C</li></ul>"]
 results = mdka.html_to_markdown_many_with(pages, mode=mdka.ConversionMode.Minimal)
 ```
 
