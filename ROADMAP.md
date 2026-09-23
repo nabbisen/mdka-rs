@@ -637,9 +637,9 @@ a candidate rather than a plan.
 | RFC | Title | Priority | Size |
 |---|---|---|---|
 | 008 | GFM table support — ✅ **closed 2026-09-23** at `7e7cec2` (`008a` `02c56e7` + `008b`). **27% → 90%** of measured tables emit a real GFM table; Wikipedia 0/7 → 7/7. The one remaining is the row-header pattern, a §4.1 decision. **`2.4.0` promisable on tables** | **P1** | L |
-| 009 | Element coverage extension (`dl`/`dt`/`dd`, `del`/`s`, `sup`/`sub`, task-list checkboxes) — **moved from M3 with 008** | P2 | M |
+| 009 | Element coverage extension — ✅ **closed 2026-09-23** at `d2c5448`. `<dl>` no longer welds (the last such element); `~~` with RFC 037's collapse rule; task markers; `<sup>`/`<sub>` Unicode where mappable. **Closes bekoedit items 5 and 6** | P2 | M |
 | 011 | Robustness: fuzzing + `MdkaError::Io` error-path tests | P2 | M |
-| 012 | Benchmark hardening + regenerate published performance claims | **P1** | M |
+| 012 | Benchmark hardening + regenerate published claims — ✅ **closed 2026-09-23** at `d567509`. Page reproducible for the first time: one sitting, environment recorded, competitor versions named. README tagline and depth-bound sentence landed. `mdka_v1`'s "933 MB" shown to be cumulative allocation; real peak ~8.9 MB | **P1** | M |
 | 013 | Internal comment migration to English | P2 | L |
 | 036 | Whitespace and separators at block boundaries — ✅ **closed 2026-09-22** at `559e8ff` (`c6b2ea7`, `4ee6aaa`, `559e8ff`); 443 Rust / 39 Node / 80 Python tests green | **P1** | M |
 | 037 | Emphasis emission fidelity: empty and nested — ✅ **closed 2026-09-23** at `81f0ec5`. `<p><b></b></p>` no longer emits `****` (a thematic break); nested italic stays italic. Criterion 2 relaxed: order preserved only where the delimiters can flank, never at the cost of an emphasis level | P2 | S |
@@ -775,10 +775,10 @@ Japanese text remains in `src/`, `cli/`, `node/`, or `python/`.
 | 006 | Option docs + binding parity | M2 | P1 | M | 005 |
 | 007 | English-only public surface | M2 | P1 | M | — |
 | 008 | GFM table support — ✅ **closed 2026-09-23** at `7e7cec2` (`008a` `02c56e7` + `008b`). **27% → 90%** of measured tables emit a real GFM table; Wikipedia 0/7 → 7/7. The one remaining is the row-header pattern, a §4.1 decision. **`2.4.0` promisable on tables** | **P1** | L |
-| 009 | Element coverage extension | M4 (moved from M3, 2026-09-16) | P2 | M | 008 |
+| 009 | Element coverage extension — ✅ **closed 2026-09-23** at `d2c5448`. `<dl>` no longer welds (the last such element); `~~` with RFC 037's collapse rule; task markers; `<sup>`/`<sub>` Unicode where mappable. **Closes bekoedit items 5 and 6** | P2 | M |
 | 010 | Escaping and text round-trip | M3 | P0 | L | 024, 025 |
 | 011 | Robustness: fuzzing + I/O error paths | M4 | P2 | M | 001 |
-| 012 | Benchmark hardening | M4 | P2 | M | 008 |
+| 012 | Benchmark hardening + regenerate published claims — ✅ **closed 2026-09-23** at `d567509`. Page reproducible for the first time: one sitting, environment recorded, competitor versions named. README tagline and depth-bound sentence landed. `mdka_v1`'s "933 MB" shown to be cumulative allocation; real peak ~8.9 MB | **P1** | M |
 | 013 | Internal comment migration to English | M4 | P2 | L | 007 |
 | 014 | Release-time CI verification | M1 | P1 | S | 001 |
 | 015 | Release tooling completion | M1b | P1 | M | 014 |

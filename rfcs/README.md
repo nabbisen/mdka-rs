@@ -14,8 +14,11 @@ None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
-None. Everything accepted has shipped — see below. New work begins with M4
-(`ROADMAP.md`): RFC 012 (benchmark hardening, raised to P1), 008, 009, 011, 013.
+| ID | Title | State |
+|----|-------|-------|
+| 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
+
+M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
 
 ## Implemented
 
@@ -37,7 +40,7 @@ None. Everything accepted has shipped — see below. New work begins with M4
 | 020 | [npm distribution repair + install gate](./done/020-npm-distribution-repair.md) — [handoff](./handoffs/020-npm-distribution-repair/implementation-handoff.md) | 2.2.1 |
 | 007 | [English-only public surface](./done/007-english-only-public-surface.md) — [handoff](./handoffs/007-english-only-public-surface/implementation-handoff.md) | 2.2.2 |
 | 021 | [Bulk conversion output-collision safety](./done/021-bulk-output-collision-safety.md) — [handoff](./handoffs/021-bulk-output-collision-safety/implementation-handoff.md) | 2.2.2 |
-| 022 | [CLI allocator; settle `jemalloc`](./done/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) · [deprecation](./handoffs/022-cli-allocator-and-jemalloc/alloc-counter-deprecation-handoff.md) | 2.2.2 |
+| 022 | [CLI allocator; settle `jemalloc`](./done/022-cli-allocator-and-jemalloc.md) — [handoff](./handoffs/022-cli-allocator-and-jemalloc/implementation-handoff.md) · [deprecation](./handoffs/022-cli-allocator-and-jemalloc/alloc-counter-deprecation-handoff.md) · [second half](./handoffs/022-cli-allocator-and-jemalloc/second-half-handoff-2026-09-23.md) | 2.2.2; `alloc_counter` removed in 2.4.0 |
 | 023 | [Getting-started documentation reconciliation](./done/023-getting-started-doc-reconciliation.md) — [handoff](./handoffs/023-getting-started-doc-reconciliation/implementation-handoff.md) | 2.2.2 |
 | 026 | [Consumer-artifact verification gates](./done/026-consumer-artifact-gates.md) — [handoff](./handoffs/026-consumer-artifact-gates/implementation-handoff.md) | 2.2.2 |
 | 027 | [Verification discipline: the consumer pass](./done/027-verification-discipline.md) — [handoff](./handoffs/027-verification-discipline/implementation-handoff.md) | 2.2.2 |
@@ -52,6 +55,12 @@ None. Everything accepted has shipped — see below. New work begins with M4
 | 028 | [Inline elements around block content; emphasis negated by its own style](./done/028-emphasis-around-block-content.md) — [handoff](./handoffs/028-emphasis-around-block-content/implementation-handoff.md) · [028b](./handoffs/028-emphasis-around-block-content/addendum-028b.md) | 2.3.0 |
 | 035 | [Block structure inside containers](./done/035-block-structure-inside-containers.md) — [handoff](./handoffs/035-block-structure-inside-containers/implementation-handoff.md) | 2.3.0 |
 | 010 | [Escaping and text round-trip](./done/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) · closed M3 | 2.3.0 |
+| 036 | [Whitespace and separators at block boundaries](./done/036-whitespace-at-block-boundaries.md) — [handoff](./handoffs/036-whitespace-at-block-boundaries/implementation-handoff.md) · [036b](./handoffs/036-whitespace-at-block-boundaries/slice-b-handoff.md) · [036d](./handoffs/036-whitespace-at-block-boundaries/slice-d-handoff.md) | 2.4.0 |
+| 038 | [Marker lines colliding with other CommonMark constructs](./done/038-marker-line-collisions.md) — [handoff](./handoffs/038-marker-line-collisions/implementation-handoff.md) | 2.4.0 |
+| 008 | [GFM table support](./done/008-gfm-table-support.md) — [008a](./handoffs/008-gfm-table-support/slice-a-handoff.md) · [008b](./handoffs/008-gfm-table-support/slice-b-handoff.md) | 2.4.0 |
+| 037 | [Emphasis emission fidelity: empty and nested](./done/037-emphasis-emission-fidelity.md) — [handoff](./handoffs/037-emphasis-emission-fidelity/implementation-handoff.md) | 2.4.0 |
+| 009 | [Element coverage extension](./done/009-element-coverage-extension.md) — [handoff](./handoffs/009-element-coverage-extension/implementation-handoff.md) | 2.4.0 |
+| 012 | [Benchmark hardening and regenerating the published claims](./done/012-benchmark-hardening.md) — [handoff](./handoffs/012-benchmark-hardening/implementation-handoff.md) | 2.4.0 |
 
 ## Archive
 
@@ -65,11 +74,7 @@ milestone actually shipped. Numbers are permanent and are never reused.
 
 | ID | Title | Milestone |
 |----|-------|-----------|
-| 008 | GFM table support | M3 |
-| 009 | Element coverage extension | M3 |
-| 010 | Escaping & text-processing audit | M3 |
 | 011 | Robustness: fuzzing + I/O error paths | M4 |
-| 012 | Benchmark hardening | M4 |
 | 013 | Internal comment migration to English | M4 |
 
 ## Maintaining this index
