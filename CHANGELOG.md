@@ -9,7 +9,144 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
-## [Unreleased]
+## [2.4.0] - 2026-09-23
+
+**If you convert documents containing tables, your output changes in this
+release.** Tables that previously came out as a run of cell text now become
+real Markdown tables. Nine of ten tables measured across five real pages
+convert; the tenth, and three other shapes, fall back to one paragraph per
+cell — readable and complete, but not a table. The **Added** and **Changed**
+entries below say which. Peak memory is unchanged; conversion of table-heavy
+documents does more work than before.
+
+### Added
+
+- **Tables convert to real Markdown tables.** `<table>` was the largest known
+  gap: until now every cell's text ran together with no separator at all, so
+  `<th>A</th><th>B</th><td>1</td><td>2</td>` became `AB12`. Tables now produce
+  GFM tables, with column alignment carried over from `align` and
+  `text-align`, and `|` inside a cell escaped so it cannot split the row.
+  Measured across five real pages, 10 of 11 tables now convert, including all
+  seven on the Wikipedia article for Markdown, which previously produced none.
+
+  Four shapes have no Markdown expression and fall back to one paragraph per
+  cell rather than producing a broken table: a table with more than one header
+  row, one using `<th>` as each row's first cell instead of a header row, one
+  containing a nested `<table>`, and one with a `<caption>`. **No table welds
+  its cells any more, on either path.**
+
+  Where a table does convert but a cell holds block content, the cell is
+  flattened: paragraphs join with `<br>`, a list becomes `- one<br>- two`, a
+  code block becomes one code span per line. The grid is kept; structure
+  inside a cell is not. `colspan` and `rowspan` are expanded by repeating the
+  spanned content across the cells it covered.
+
+- **Strikethrough.** `<del>` and `<s>` become `~~text~~`. `<ins>` and `<u>`
+  remain plain text — Markdown has no syntax for either, and `~~` would say
+  the opposite of what `<ins>` means.
+
+- **Task-list checkboxes.** A list item beginning with
+  `<input type="checkbox">` becomes `- [x]` or `- [ ]`.
+
+- **Superscript and subscript, where the characters exist.** `2<sup>7</sup>`
+  now yields `2⁷`, `H<sub>2</sub>O` yields `H₂O`, `x<sup>n</sup>` yields `xⁿ`.
+  Previously these lost the distinction entirely and produced `27`, which is a
+  different number rather than merely unstyled text. Content that has no
+  Unicode form — a citation marker such as `<sup><a>[1]</a></sup>`, or any
+  letter outside the small mappable set — is left exactly as before.
+
+- **`html_to_markdown_many` in Rust and Node**, converting a slice of HTML
+  strings in one call, parallel when the `parallel` feature is on. Python had
+  this already and now has `html_to_markdown_many_with` to pass options to it.
+
+- **Python gains `html_file_to_markdown_with` and
+  `html_files_to_markdown_with`.** The `_with` convention already existed for
+  string conversion, so a reader could reasonably conclude that file
+  conversion could not take options. It always could, as keyword arguments on
+  the plain functions, which still work.
+
+- **`mdka::version()` in Rust**, which Node and Python already had.
+
+- **The Python wheel ships `py.typed`.** mypy no longer reports the package as
+  untyped. There are still no `.pyi` stubs, so symbols resolve as `Any`.
+
+- **`mdka --no-preserve-ids`.** `id` anchors are on by default in every mode
+  except `minimal`, and there was previously no way to turn them off without
+  changing mode — which also drops nav/header/footer and unwraps wrappers.
+  `--help`'s description of `--preserve-ids` was also wrong: it emits
+  `<a id="…"></a>` anchors rather than keeping attributes.
+
+### Changed
+
+- **Definition lists no longer run together.** `<dl><dt>Term</dt><dd>Desc</dd>`
+  produced `TermDesc`; each `<dt>` and `<dd>` is now its own paragraph. Note
+  what this does not do: Markdown has no definition-list syntax, so a long
+  glossary becomes a run of paragraphs with nothing marking which term belongs
+  to which description. We chose that over bolding the term or joining with a
+  dash, either of which would invent structure the source did not have.
+
+- **`Semantic` now produces the same output as `Balanced`.** Unwrapping a
+  `<div>`, `<section>`, `<article>` or `<main>` used to remove the paragraph
+  break along with the tag, so `<div>First.</div><div>Second.</div>` became
+  `First.Second.` in `Minimal` and `Semantic`. Unwrapping now removes the tag
+  and keeps the break — which is what the documentation always promised, and
+  which leaves `unwrap_unknown_wrappers` with no observable effect today.
+  **Four of the five modes — `Balanced`, `Strict`, `Semantic`, `Preserve` —
+  now produce byte-identical output.** `Minimal` is the only one that still
+  differs. The option and the modes are kept: a future mode that preserves raw
+  HTML would make them differ again.
+
+- **The `parallel` feature no longer changes which functions exist.** Building
+  with `default-features = false` used to remove `html_files_to_markdown` and
+  `html_files_to_markdown_with` entirely. The feature now only decides whether
+  bulk conversion runs in parallel.
+
+- **CLI: deprecation notices and per-file conversion progress now go to
+  stderr, not stdout.** Until now, a deprecated flag's warning and the
+  `in.html -> in.md` progress line both wrote to stdout alongside single-file
+  stdin-to-stdout conversion. `mdka page.html > out.md` was fine, but `echo
+  '<h1>Hi</h1>' | mdka --preserve-classes > out.md` silently mixed the
+  deprecation notice into `out.md`, and any script piping `mdka`'s stdout
+  further downstream could pick up progress noise it never asked for. Both
+  now go to stderr; stdout carries only the converted Markdown (RFC 039 §3
+  A7).
+
+- **The performance page is measured again.** Its tables had been carried
+  forward from `2.0.0`, measured in April on a machine that was never
+  recorded, which made them impossible for anyone to reproduce or compare
+  against. Every figure is now from one sitting on one machine, with the
+  hardware, versions, commit and commands printed beside them. The page also
+  states what its memory column measures — cumulative bytes allocated, not
+  peak resident memory — and publishes depth-scaling data showing that the
+  cost of deeply nested input is quadratic and lies almost entirely inside the
+  HTML parser, before mdka's own traversal begins.
+
+### Fixed
+
+- **A list item whose content is indented no longer splits the list.** Any
+  pretty-printed HTML — `<li>` followed by a newline and indented content, as
+  every formatter and CMS produces — could end the list early: the following
+  paragraph escaped the item, nesting flattened, and a code block inside the
+  item was ejected from it.
+
+- **An empty inline element no longer emits literal asterisks.**
+  `a<b></b>b` produced `a****b`, and a paragraph containing only an empty
+  `<b>` produced `****`, which reads as a horizontal rule.
+
+- **Nested identical emphasis no longer inverts meaning.**
+  `<em><em>x</em></em>` produced bold where the source said italic twice. The
+  nesting order of mixed emphasis is now preserved as well, wherever Markdown
+  can express it.
+
+- **Degenerate nested list markers no longer become a horizontal rule.** Three
+  or more empty nested list items emitted `- - -`, which reads as a thematic
+  break; with a non-empty sibling, the content was destroyed outright. An
+  `<hr>` as a list item's first content had the same effect.
+
+- **An empty nested list no longer turns its parent's text into a heading.**
+  `<li>y<ul><li></li></ul></li>` emitted `- y` followed by `  -`, which reads
+  as a setext heading underline: the text became an `<h2>` and the sub-list
+  disappeared.
 
 ### Removed
 
@@ -25,18 +162,6 @@ confidence, that is stated explicitly rather than guessed.
   crates.io reverse-dependency check (re-run the day of removal, not cited
   from the original two-releases-ago ruling) confirmed no dependent
   references it.
-
-### Changed
-
-- **CLI: deprecation notices and per-file conversion progress now go to
-  stderr, not stdout.** Until now, a deprecated flag's warning and the
-  `in.html -> in.md` progress line both wrote to stdout alongside single-file
-  stdin-to-stdout conversion. `mdka page.html > out.md` was fine, but `echo
-  '<h1>Hi</h1>' | mdka --preserve-classes > out.md` silently mixed the
-  deprecation notice into `out.md`, and any script piping `mdka`'s stdout
-  further downstream could pick up progress noise it never asked for. Both
-  now go to stderr; stdout carries only the converted Markdown (RFC 039 §3
-  A7).
 
 ## [2.3.0] - 2026-09-22
 
