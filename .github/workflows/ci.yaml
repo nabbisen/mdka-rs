@@ -147,6 +147,14 @@ jobs:
         working-directory: node
         run: node test.js
 
+      # RFC 040: the package entry point (loader.js), which test.js does not go
+      # through. Also asserts the platform list in loader.js against
+      # napi.targets and release-npm.yaml, so a target added to one place and
+      # not the others fails here rather than shipping a false message.
+      - name: node test-loader.js
+        working-directory: node
+        run: node test-loader.js
+
       # index.d.ts is generated from Rust doc comments and is both committed and
       # published to npm. This keeps the shipped type definitions honest.
       - name: Verify index.d.ts has no drift

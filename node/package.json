@@ -26,15 +26,19 @@
   ],
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "loader.js"
   ],
-  "main": "index.js",
+  "main": "loader.js",
   "types": "index.d.ts",
   "napi": {
     "binaryName": "mdka",
     "packageName": "@mdka/lib",
     "targets": [
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
       "arm64-apple-darwin",
       "x86_64-pc-windows-msvc"
     ]
@@ -47,6 +51,6 @@
   },
   "scripts": {
     "build": "napi build --platform --release --js index.js --dts index.d.ts",
-    "test": "node test.js"
+    "test": "node test.js && node test-loader.js"
   }
 }
