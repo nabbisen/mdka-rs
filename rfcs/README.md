@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | State |
+|----|-------|-------|
+| 040 | [npm platform coverage, and an error message that contradicts the documentation](./proposed/040-npm-platform-coverage.md) | Awaiting owner acceptance. npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest, install exits 0 and `require` then blames a non-existent npm bug |
 
 ## Accepted
 
