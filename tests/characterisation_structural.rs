@@ -40,6 +40,15 @@ const SHELL_HTML: &str = r#"<nav><a href="/">Home</a></nav><main><p>Content</p><
 /// unwrap_unknown_wrappers at all.
 const WRAPPER_HTML: &str = r#"Before<div class="wrap"><span>inner</span></div>After"#;
 
+/// `WRAPPER_HTML` with an `id` on the wrapper and on the span inside it
+/// (2.4.1). The original fixture carried none, so it could not see
+/// `preserve_ids` being dropped for a wrapper `Semantic` unwraps -- the one
+/// axis on which `Semantic` actually differed from the other three, shipped
+/// unnoticed in 2.4.0 because nothing here put an `id` where the difference
+/// lived.
+const WRAPPER_ID_HTML: &str =
+    r#"Before<div class="wrap" id="w"><span id="s">inner</span></div>After"#;
+
 #[test]
 fn drop_interactive_shell_toggle_changes_output_in_every_mode() {
     let expected_baseline = [
@@ -132,6 +141,28 @@ fn balanced_and_semantic_are_identical_on_div_per_line_markup() {
 }
 
 #[test]
+fn unwrap_unknown_wrappers_toggle_is_inert_with_ids_too() {
+    // The same inertness claim, on the fixture that can falsify it for
+    // `preserve_ids`: an unwrapped wrapper keeps its anchor.
+    for mode in MODES {
+        let mut opts = ConversionOptions::for_mode(mode);
+        let base = conv_with(WRAPPER_ID_HTML, &opts);
+        let expected = if opts.preserve_ids {
+            "Before\n\n<a id=\"w\"></a><a id=\"s\"></a>inner\n\nAfter\n"
+        } else {
+            "Before\n\ninner\n\nAfter\n"
+        };
+        assert_eq!(base, expected, "{mode} baseline");
+        opts.unwrap_unknown_wrappers = !opts.unwrap_unknown_wrappers;
+        let flipped = conv_with(WRAPPER_ID_HTML, &opts);
+        assert_eq!(
+            base, flipped,
+            "{mode}: toggling unwrap_unknown_wrappers changed the output"
+        );
+    }
+}
+
+#[test]
 fn unwrap_unknown_wrappers_naive_fixture_shows_no_difference() {
     // Recorded deliberately: this is the fixture the discovery pass tried
     // first, and it demonstrates why WRAPPER_HTML above had to be different.
@@ -177,25 +208,18 @@ fn unwrap_unknown_wrappers_naive_fixture_shows_no_difference() {
 
 #[test]
 fn balanced_strict_semantic_preserve_are_identical_on_the_wrapper_fixture() {
-    let balanced = conv_with(
-        WRAPPER_HTML,
-        &ConversionOptions::for_mode(ConversionMode::Balanced),
-    );
-    let strict = conv_with(
-        WRAPPER_HTML,
-        &ConversionOptions::for_mode(ConversionMode::Strict),
-    );
-    let semantic = conv_with(
-        WRAPPER_HTML,
-        &ConversionOptions::for_mode(ConversionMode::Semantic),
-    );
-    let preserve = conv_with(
-        WRAPPER_HTML,
-        &ConversionOptions::for_mode(ConversionMode::Preserve),
-    );
-    assert_eq!(balanced, strict, "Balanced vs Strict on WRAPPER_HTML");
-    assert_eq!(balanced, semantic, "Balanced vs Semantic on WRAPPER_HTML");
-    assert_eq!(balanced, preserve, "Balanced vs Preserve on WRAPPER_HTML");
+    // Both fixtures: `WRAPPER_HTML` alone could not see a dropped `id`.
+    for html in [WRAPPER_HTML, WRAPPER_ID_HTML] {
+        let balanced = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Balanced));
+        for mode in [
+            ConversionMode::Strict,
+            ConversionMode::Semantic,
+            ConversionMode::Preserve,
+        ] {
+            let got = conv_with(html, &ConversionOptions::for_mode(mode));
+            assert_eq!(balanced, got, "Balanced vs {mode} on {html}");
+        }
+    }
 }
 
 #[test]
@@ -217,4 +241,110 @@ fn balanced_strict_semantic_preserve_are_identical_on_an_attribute_rich_element(
         balanced, preserve,
         "Balanced vs Preserve on an attribute-rich element"
     );
+}
+
+// ─── 2.4.1: fixtures that can actually discriminate ────────────────────────
+//
+// The two tests above passed while `Semantic` dropped the `id` anchor of every
+// wrapper it unwrapped, because neither fixture put an `id` on a wrapper --
+// `api/modes` cited them as *chosen to discriminate*, and they discriminated
+// on none of the axes where the modes differed. These do, and each shape is
+// here because it varies one thing the earlier fixtures held fixed:
+//
+// * every wrapper tag, not only `div`/`span` (`main`, `section`, `article`);
+// * the wrapper alone, empty, and as the only content of a container (a
+//   blockquote, a list item, a table cell) -- the anchor's line and prefix;
+// * nested wrappers, each with its own id;
+// * a wrapper around a block, a list and a heading, versus around bare text;
+// * shell elements (`nav`/`header`/`footer`/`aside`) carrying an id, which
+//   `drop_interactive_shell` touches in Minimal only;
+// * an `id` that needs escaping, and an empty `id` (no anchor);
+// * an inline wrapper (`span`) versus a block one, since only the latter
+//   separates.
+
+const ID_WRAPPER_SHAPES: &[&str] = &[
+    r#"<main id="a"><p>hi</p></main>"#,
+    r#"<div id="a"><p>hi</p></div>"#,
+    r#"<section id="a"><h2>t</h2><p>x</p></section>"#,
+    r#"<article id="a"><p>x</p><p>y</p></article>"#,
+    r#"<div id="a"><div id="b"><p>x</p></div></div>"#,
+    r#"<div id="a"><span id="b">x</span></div>"#,
+    r#"<span id="a">x</span> tail"#,
+    r#"before <span id="a"></span> after"#,
+    r#"<div id="a"></div>"#,
+    r#"<p>x</p><section id="a"></section><p>y</p>"#,
+    r#"<blockquote><section id="a"><p>q</p></section></blockquote>"#,
+    r#"<ol><li><article id="a"><p>i</p></article></li></ol>"#,
+    r#"<ul><li><span id="a">i</span> tail</li></ul>"#,
+    r#"<table><tr><th>H</th></tr><tr><td><div id="a">c</div></td></tr></table>"#,
+    r#"<table><tr><th>H</th></tr><tr><td><span id="a">c</span></td></tr></table>"#,
+    r#"<header id="h"><p>a</p></header><footer id="f"><p>b</p></footer><aside id="s"><p>c</p></aside>"#,
+    r#"<div id="a" class="c" data-x="y"><p>x</p></div>"#,
+    r#"<div id="">x</div>"#,
+    r#"<div id="a &amp; b&quot;q">x</div>"#,
+    r#"<h2><span id="a">t</span></h2>"#,
+    r#"<div id="a"><ul><li>i</li></ul></div>"#,
+    r#"<pre><span id="a">x</span></pre>"#,
+];
+
+#[test]
+fn balanced_strict_semantic_preserve_are_identical_on_id_carrying_wrappers() {
+    for html in ID_WRAPPER_SHAPES {
+        let balanced = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Balanced));
+        for mode in [
+            ConversionMode::Strict,
+            ConversionMode::Semantic,
+            ConversionMode::Preserve,
+        ] {
+            let got = conv_with(html, &ConversionOptions::for_mode(mode));
+            assert_eq!(balanced, got, "Balanced vs {mode} on {html}");
+        }
+    }
+}
+
+#[test]
+fn unwrapped_wrapper_with_an_id_emits_its_anchor_when_preserve_ids_is_on() {
+    let html = r#"<main id="x"><p>hi</p></main>"#;
+    for mode in [
+        ConversionMode::Balanced,
+        ConversionMode::Strict,
+        ConversionMode::Semantic,
+        ConversionMode::Preserve,
+    ] {
+        let got = conv_with(html, &ConversionOptions::for_mode(mode));
+        assert_eq!(got, "<a id=\"x\"></a>\n\nhi\n", "{mode}");
+    }
+    // The control: Minimal has preserve_ids off, so no anchor -- the rule is
+    // fine, its application was not.
+    let minimal = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Minimal));
+    assert_eq!(minimal, "hi\n");
+}
+
+#[test]
+fn minimal_emits_no_anchor_for_any_id_wrapper_shape() {
+    for html in ID_WRAPPER_SHAPES {
+        let got = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Minimal));
+        assert!(
+            !got.contains("<a id="),
+            "Minimal emitted an anchor for {html}: {got:?}"
+        );
+    }
+}
+
+#[test]
+fn wrappers_without_an_id_are_unchanged() {
+    for html in [
+        "<div><p>x</p></div>",
+        "<main><p>x</p></main>",
+        "<span>a</span><span>b</span>",
+        "Before<div><span>inner</span></div>After",
+    ] {
+        for mode in MODES {
+            let got = conv_with(html, &ConversionOptions::for_mode(mode));
+            assert!(
+                !got.contains("<a id="),
+                "{mode} invented an anchor for {html}: {got:?}"
+            );
+        }
+    }
 }

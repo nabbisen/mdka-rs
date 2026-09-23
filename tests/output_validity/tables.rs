@@ -450,6 +450,46 @@ mod f1_f3_structural_cost {
         );
     }
 
+    // 2.4.1: a blank source line inside a code block in a cell is a bare
+    // `<br>`, not an empty code span. ` `` ` is a stray delimiter run that
+    // paired with the next one, pulling the following line into a span it
+    // was never in and turning the `<br>`s into literal text -- 24 cells of
+    // Wikipedia's *Markdown* article, the syntax-reference table that
+    // article exists for. Each line is now its own span, the blank lines
+    // are the `<br><br>` between them.
+    #[test]
+    fn code_block_with_blank_lines_in_cell_keeps_every_line_in_its_own_span() {
+        check(
+            "<table><tr><th>A</th></tr><tr><td><pre>a\n\nb\n\nc</pre></td></tr></table>",
+            r#"para("| A | | --- | | ", code("a"), html("<br>"), html("<br>"), code("b"), html("<br>"), html("<br>"), code("c"), " |")"#,
+            r#"table(thead(td("A")), tr(td(code("a"), html("<br>"), html("<br>"), code("b"), html("<br>"), html("<br>"), code("c"))))"#,
+        );
+    }
+
+    #[test]
+    fn code_block_with_consecutive_blank_lines_in_cell() {
+        check(
+            "<table><tr><th>A</th></tr><tr><td><pre>a\n\n\nb</pre></td></tr></table>",
+            r#"para("| A | | --- | | ", code("a"), html("<br>"), html("<br>"), html("<br>"), code("b"), " |")"#,
+            r#"table(thead(td("A")), tr(td(code("a"), html("<br>"), html("<br>"), html("<br>"), code("b"))))"#,
+        );
+    }
+
+    /// Byte-identical to 2.4.0: no blank line, so no change.
+    #[test]
+    fn code_block_cells_without_blank_lines_are_byte_identical() {
+        let one = mdka_convert(
+            "<table><tr><th>A</th></tr><tr><td><pre>x</pre></td></tr></table>",
+            &mdka::options::ConversionOptions::default(),
+        );
+        assert_eq!(one, "| A |\n| --- |\n| `x` |\n");
+        let two = mdka_convert(
+            "<table><tr><th>A</th></tr><tr><td><pre>a\nb</pre></td></tr></table>",
+            &mdka::options::ConversionOptions::default(),
+        );
+        assert_eq!(two, "| A |\n| --- |\n| `a`<br>`b` |\n");
+    }
+
     // A heading contributes its text plain -- bolding it would invent
     // emphasis the source never had (RFC 037's own defect, RFC 008 §4.1).
     #[test]

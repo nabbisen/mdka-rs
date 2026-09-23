@@ -9,6 +9,53 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [Unreleased]
+
+**`2.4.1` — a patch release, mostly to correct what `2.4.0` said about
+itself.** The conversion engine changes only in the two output fixes below (an `id`
+anchor `Semantic` dropped, and blank lines in a table cell's code block); the
+release exists because statements published in `2.4.0` were false — its
+README denied the release's headline feature and the four-modes-identical
+claim did not hold — and a registry page can only be corrected by publishing.
+
+### Fixed
+
+- **`2.4.0`'s README said tables were not converted.** It read *"Tables are not
+  yet converted … a table becomes a run of joined text"* — precisely the defect
+  `2.4.0` fixed, live on crates.io, npm and PyPI. The README now says what
+  happens: tables convert to GFM tables, and four shapes (more than one header
+  row, `<th>` as each row's first cell, a nested `<table>`, a `<caption>`) fall
+  back to one paragraph per cell. The documentation site was already correct.
+
+- **`Semantic` did not match the other three modes on `id` anchors.** `Balanced`, `Strict`, `Semantic` and `Preserve` are
+  documented as producing identical output, but `<main id="x"><p>hi</p></main>`
+  gave `<a id="x"></a>` + `hi` in three of them and just `hi` in `Semantic`:
+  a wrapper (`div`, `span`, `section`, `article`, `main`) that a mode unwraps
+  lost its `id` anchor along with its tag, although `preserve_ids` asks for an
+  anchor on every element that has an `id`. An unwrapped wrapper now keeps the
+  anchor, so the four modes are identical as documented. `Minimal` still emits
+  none, because `preserve_ids` is off there. Wrappers without an `id`, and
+  everything that is not a wrapper, are byte-identical to `2.4.0`. The
+  characterisation tests that were cited as proving the modes identical put no
+  `id` on a wrapper, which is why this shipped; they now do, and cover every
+  wrapper tag, nesting, containers, table cells and shell elements.
+
+- **A blank line inside a code block in a table cell corrupted the cell.** The
+  blank line was written as ` `` `, which is a stray delimiter run rather than
+  an empty code span; it paired with the next run, so the following line landed
+  inside a code span it was never in and the `<br>` separators became literal
+  text. A blank line is now a bare `<br>` between the lines' own code spans.
+  Cells with no blank line are byte-identical. This affected real pages: the
+  Wikipedia article for Markdown, whose syntax-reference table is what makes
+  the page worth converting, was mangled in 24 cells.
+
+- **`mdka page.html > out.md` leaves `out.md` empty, not holding the
+  conversion.** `--help`, the CLI docs and the source claimed the opposite. A
+  file argument writes `page.md` beside its input and prints only a progress
+  line to stderr; only converting stdin (`… | mdka > out.md`) puts the Markdown
+  on stdout. All three places now say what actually happens, and use `-o` to
+  choose where the file goes.
+
 ## [2.4.0] - 2026-09-23
 
 **If you convert documents containing tables, your output changes in this

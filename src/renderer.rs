@@ -416,7 +416,7 @@ impl MarkdownRenderer {
     /// before the arm, with only the inherited state. An anchor is never
     /// written into a capture or a code block, where it would corrupt the
     /// content.
-    fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
+    pub(crate) fn emit_id_anchor(&mut self, elem: &scraper::node::Element, preserve_ids: bool) {
         if !preserve_ids || self.sink.is_capturing() || self.in_pre {
             return;
         }
@@ -1016,7 +1016,20 @@ impl MarkdownRenderer {
                 // span holding a literal `<br>`, where the tag would be
                 // verbatim text inside the span (RFC 008 §4.1).
                 if let Some(code) = self.cell_pre.take() {
-                    let spans: Vec<String> = code.lines().map(escape::code_span).collect();
+                    // A blank source line is a bare `<br>`, not an empty code
+                    // span: ` `` ` is a stray delimiter run, not an empty span,
+                    // and pairs with the next run, pulling the following line
+                    // into a span it was never in (2.4.1).
+                    let spans: Vec<String> = code
+                        .lines()
+                        .map(|line| {
+                            if line.is_empty() {
+                                String::new()
+                            } else {
+                                escape::code_span(line)
+                            }
+                        })
+                        .collect();
                     self.sink.markup(&spans.join("<br>"));
                 }
             }

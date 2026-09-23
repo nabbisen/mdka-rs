@@ -3,8 +3,11 @@
 //! Covers the slice's own criterion 5: `--no-preserve-ids` turns anchors off
 //! in every mode, `--help` documents `--preserve-ids`/`--no-preserve-ids`
 //! correctly, a deprecated flag's notice goes to stderr with stdout left
-//! untouched, and single-file conversion's progress line goes to stderr so
-//! `mdka page.html > out.md` leaves `out.md` holding only the conversion.
+//! untouched, and single-file conversion's progress line goes to stderr, so it
+//! cannot mix into a redirected stdin conversion. (This header used to claim
+//! `mdka page.html > out.md` leaves `out.md` holding the conversion; a file
+//! argument writes a sibling `.md` and leaves stdout empty, so that redirect
+//! gives an empty `out.md` -- corrected in 2.4.1, and pinned below.)
 
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -112,6 +115,43 @@ fn single_file_progress_goes_to_stderr_not_stdout() {
     assert!(dest.exists(), "output file was not created");
     let content = std::fs::read_to_string(&dest).unwrap();
     assert_eq!(content.trim(), "# Hello");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// 2.4.1: `--help` and reality agree. A file argument's conversion is the
+/// sibling file, so redirecting stdout captures nothing; `--help` must say so
+/// rather than promise the opposite.
+#[test]
+fn file_argument_redirect_is_empty_and_help_says_so() {
+    let dir = std::env::temp_dir().join("mdka_cli_test_241_redirect");
+    std::fs::create_dir_all(&dir).unwrap();
+    let src = dir.join("page.html");
+    std::fs::write(&src, "<h1>Hello</h1>").unwrap();
+
+    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
+        .arg(&src)
+        .output()
+        .expect("failed to run mdka");
+    assert!(
+        out.stdout.is_empty(),
+        "stdout must be empty for a file argument"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("page.md")).unwrap().trim(),
+        "# Hello"
+    );
+
+    let help = run_mdka(&["--help"], "");
+    let help = String::from_utf8(help.stdout).unwrap();
+    assert!(
+        help.contains("gives an empty out.md"),
+        "--help must say the file-argument redirect is empty: {help}"
+    );
+    assert!(
+        !help.contains("leaves out.md holding only the"),
+        "--help still carries the old, false claim: {help}"
+    );
 
     std::fs::remove_dir_all(&dir).unwrap();
 }

@@ -70,8 +70,14 @@ effect. See [`ConversionOptions`](../api/options.md).
 
 **Deprecation notices and per-file progress go to stderr, not stdout.** A
 deprecated flag's warning and the `in.html -> in.md` progress line printed for
-each converted file never mix into stdout, so `mdka page.html > out.md` and
-`echo '<h1>Hi</h1>' | mdka --preserve-classes > out.md` both leave `out.md`
-holding only the converted Markdown.
+each converted file never mix into stdout. That is what makes the stdin form
+safe to redirect: `echo '<h1>Hi</h1>' | mdka --preserve-classes > out.md`
+leaves `out.md` holding only the converted Markdown, with the warning on the
+terminal.
+
+A file argument is a different mode: `mdka page.html` writes `page.md` beside
+its input and prints only the progress line (to stderr), so stdout is empty.
+`mdka page.html > out.md` therefore creates an **empty** `out.md` and the
+conversion lands in `page.md`. To choose where the file goes, use `-o`.
 
 For full mode descriptions see [Conversion Modes](../api/modes.md).

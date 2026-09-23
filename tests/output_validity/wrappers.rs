@@ -31,4 +31,16 @@ cells! {
     // working the same way now that the wrapper supplies one too.
     wrapper_holding_a_paragraph_still_separates: "<div><p>a</p></div><div><p>b</p></div>"
         => tree(r#"para("a"), para("b")"#);
+    // 2.4.1: a wrapper carrying an `id` keeps its anchor in every mode that
+    // has `preserve_ids` on, unwrapped or not. The harness skips id anchors
+    // when comparing a tree (they are a documented option's output, not
+    // content), so these cells assert the anchor does not disturb the
+    // separation -- that the anchor is *there* is
+    // `characterisation_structural.rs`'s job, byte for byte.
+    id_wrapper_per_line: r#"<div id="a">First.</div><div id="b">Second.</div>"#
+        => tree(r#"para("First."), para("Second.")"#);
+    id_nested_wrappers_separate: r#"<div id="a">a<div id="b">b</div>c</div>"#
+        => tree(r#"para("a"), para("b"), para("c")"#);
+    id_wrapper_in_list_item: r#"<ul><li><div id="a">item</div></li></ul>"#
+        => tree(r#"ul(li("item"))"#);
 }

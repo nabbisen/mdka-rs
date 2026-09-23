@@ -184,8 +184,13 @@ API and may diverge again — see
 [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes), which explains
 why in full.
 
-**Tables are not yet converted.** `<table>` cell text is emitted without
-structure or separators, so a table becomes a run of joined text. See
+**Tables convert to GFM tables.** Column alignment is carried over, `|` in a
+cell is escaped, `colspan`/`rowspan` are expanded, and a cell holding block
+content is flattened (paragraphs join with `<br>`, a list becomes
+`- one<br>- two`). Four shapes have no Markdown expression and fall back to
+one paragraph per cell rather than a broken table: more than one header row,
+`<th>` used as each row's first cell, a nested `<table>`, and a `<caption>`.
+No table welds its cells together on either path. See
 [Supported Elements](https://nabbisen.github.io/mdka-rs/api/elements) for the
 full list of what is and is not supported.
 

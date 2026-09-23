@@ -23,8 +23,10 @@
 //! ```
 //!
 //! Deprecation notices and per-file progress (`in.html -> in.md`) are written
-//! to stderr, not stdout: `mdka page.html > out.md` must leave `out.md`
-//! holding only the conversion (RFC 039 §3 A7).
+//! to stderr, not stdout (RFC 039 §3 A7), so converting stdin can be redirected
+//! cleanly: `echo '<h1>Hi</h1>' | mdka > out.md`. A file argument writes a
+//! sibling `.md` and leaves stdout empty; `mdka page.html > out.md` creates an
+//! empty `out.md` (2.4.1 -- this comment claimed the opposite).
 
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -63,8 +65,9 @@ Output:
   Without -o, a single file is written beside its input as .md
   -o is required when converting multiple files
   Deprecation notices and per-file progress (in.html -> in.md) go to stderr,
-  never stdout -- `mdka page.html > out.md` leaves out.md holding only the
-  conversion
+  never stdout, so `... | mdka > out.md` (stdin) holds only the conversion.
+  A file argument writes the .md beside it and prints nothing to stdout:
+  `mdka page.html > out.md` gives an empty out.md -- use -o to choose where
 
 Examples:
   echo '<h1>Hello</h1>' | mdka
@@ -214,8 +217,9 @@ fn main() {
         // single file → out_dir, or the input's own directory
         (false, 1, _) => {
             match mdka::html_file_to_markdown_with(&file_args[0], out_dir.as_deref(), &opts) {
-                // Progress, not output: `mdka page.html > out.md` must leave
-                // out.md holding only the conversion (RFC 039 §3 A7).
+                // Progress, not output (RFC 039 §3 A7): stderr, so it cannot mix
+                // into a redirected stdin conversion. A file argument's
+                // conversion is the file written, not stdout.
                 Ok(r) => eprintln!("{} -> {}", r.src.display(), r.dest.display()),
                 Err(e) => {
                     eprintln!("error: {e}");

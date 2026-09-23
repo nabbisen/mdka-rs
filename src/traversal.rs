@@ -321,6 +321,12 @@ pub(crate) fn drive<'a>(
                                 renderer.begin_unwrapped_separator();
                                 stack.push(Event::Leave(node));
                             }
+                            // ...and not the anchor it carried either (2.4.1):
+                            // `preserve_ids` asks for one for every element with
+                            // an `id`, and a wrapper Semantic/Minimal unwrap is
+                            // still such an element. Placed after the separator,
+                            // as a rendered wrapper's is after its `begin_block`.
+                            renderer.emit_id_anchor(elem, opts.preserve_ids);
                             for child in node.children().rev() {
                                 stack.push(Event::Enter(child));
                             }
