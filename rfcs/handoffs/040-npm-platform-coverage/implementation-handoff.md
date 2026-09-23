@@ -102,3 +102,19 @@ must still be named as such.
 Paste the registry query from criterion 1 and the container transcript from criterion 2. For criterion 3,
 paste the **actual thrown text** — that string is the deliverable of Part B, and I want to read it as a user
 would.
+
+## 7. Committing and pushing — the rule, set by the owner 2026-09-24
+
+**You may commit and push only work that is yours and has been approved.** Both halves matter:
+
+- **Yours.** Only the files this handoff asks you to change. The working tree may hold commits and
+  documents that are not yours — RFCs, handoffs, review records, release notes. Do not include them, do not
+  amend them, and do not push a branch that carries them.
+- **Approved.** Report back first (§6). Approval comes through that review. Do not push on the strength of
+  a green test run: green is necessary and is not approval.
+
+Also not yours: **tagging, releasing, or triggering any release workflow.** A release is cut against a
+checklist by the architect, on the owner's authorisation.
+
+If you are unsure whether something falls inside this slice, say so in the report rather than deciding it.
+Ask before, not after — a push is visible and runs seven workflows.
