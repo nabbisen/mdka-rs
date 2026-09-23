@@ -10,16 +10,22 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | State |
+|----|-------|-------|
+| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./proposed/041-conversion-surface-honesty.md) | Awaiting owner acceptance. After `2.4.2`, 6 of 8 options cannot affect output and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute fidelity Markdown cannot carry. `3.0`; no direction proposed — see §5 |
 
 ## Accepted
 
 | ID | Title | State |
 |----|-------|-------|
-| 040 | [npm platform coverage, and an error message that contradicts the documentation](./accepted/040-npm-platform-coverage.md) | **Accepted (owner, 2026-09-24).** npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest `npm install` exits 0 and `require` blames a non-existent npm bug. Part B (the message) outranks Part A (the matrix) |
+| 040 | [npm platform coverage, and an error message that contradicts the documentation](./accepted/040-npm-platform-coverage.md) — [handoff](./handoffs/040-npm-platform-coverage/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest `npm install` exits 0 and `require` blames a non-existent npm bug. Part B (the message) outranks Part A (the matrix) |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
+
+**Not an RFC, and ahead of both accepted RFCs:** `2.4.2`, a P1 patch for an option documented as inert that
+corrupts tables in two default modes —
+[handoff](./handoffs/2.4.2-unwrap-wrappers-fix/implementation-handoff.md). RFC 040 ships after it.
 
 ## Implemented
 
