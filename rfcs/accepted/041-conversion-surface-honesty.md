@@ -1,6 +1,6 @@
 # RFC 041 — The conversion surface: options that cannot act, modes that cannot differ
 
-**Status.** Proposed
+**Status.** **Accepted (owner, 2026-09-24)** — the problem statement and constraints are ratified. **§6 is still open and no direction is chosen**, so this cannot produce a handoff yet. Unscheduled.
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** Unscheduled → `3.0` (breaking). Nothing here belongs in a patch or a minor.
@@ -127,3 +127,69 @@ unwrapping; it invents scope to justify a shape rather than fitting the shape to
 
 The `2.4.2` fix and its invariants; RFC 040; any change to conversion output. **This RFC changes no
 Markdown.** Every option it discusses is one that, by then, provably does nothing.
+
+---
+
+## 8. Recommendation — added 2026-09-24, after acceptance
+
+§1 said no direction was proposed, and at the time that was right: choosing between §5.1, §5.2 and §5.3 is a
+product decision and I had nothing to ground it in. The owner has since stated the criteria — *"finally
+clean, safe and secure, robust and sophisticated design"* and *"APIs for users not to be confused or
+misunderstand (and the documentation for it)"* — which is enough to derive one. §6 remains formally open;
+this is an answer to it, not a substitute for the owner's.
+
+### 8.1 Direction: §5.1, collapse to what is real
+
+- **§5.2 is excluded by the word "finally".** It ends with nine options and five modes for two behaviours,
+  permanently, and asks the user to read documentation to learn that three of their five choices are one
+  choice. It makes the surface honest without making it clean.
+- **§5.3 is excluded by "sophisticated".** Sophistication is the design fitting the problem, not the problem
+  being enlarged to fit the design. Building an axis so that existing names stop being wrong is the wrong
+  order, and §5.3 admits nobody has asked for unwrapping.
+- **§5.1 is the only one that ends.** Two modes, and the options that can act.
+
+### 8.2 The migration carries no output risk, which is unusual and decides the "safe" question
+
+Normally collapsing an API risks changing behaviour. Here it cannot, and this is the strongest argument for
+§5.1 rather than against it:
+
+- The five attribute options are **provably inert** — 0/10 shapes each, and inert *permanently*, since
+  Markdown has no attribute syntax.
+- `Strict` and `Preserve` differ from `Balanced` **only** in those fields; `Semantic` only in
+  `unwrap_unknown_wrappers`, inert after `2.4.2`.
+
+So **mapping the three alias modes onto `Balanced` changes no user's output at all** — they already produce
+identical bytes, by construction and not by coincidence. The entire cost of this change is names and
+compilation. Nothing a user converts comes out differently.
+
+That is the difference between a risky collapse and a safe one, and it will not be true later: the longer
+three aliases sit there being documented as potentially divergent, the more likely someone gives one of them
+a real effect and the free migration is gone.
+
+### 8.3 Sequence
+
+**Next minor — non-breaking, and it does the user-facing work immediately:**
+
+1. §6.2's honest wording: `modes.md` stops saying *"may diverge again"* of modes that cannot, and `Strict`,
+   `Semantic` and `Preserve` stop being described as *"for debugging and comparison"* / *"for SPAs and
+   accessibility"* / *"for archiving and auditing"* — three purposes built on attribute fidelity that
+   Markdown cannot carry. They are documented as **aliases of `Balanced`**.
+2. Mark the three mode variants `#[deprecated]`, so the **compiler** tells users, not only the documentation.
+   **Precedent: this project already deprecated the five attribute options in a minor, `2.2.0`**, so this is
+   consistent rather than novel. One caveat to weigh, not hide: a downstream build running `-D warnings`
+   turns a new deprecation into a failure. That was equally true in `2.2.0` and was accepted then.
+
+**`3.0` — the removal**, with the migration guide the release policy requires. By then the deprecation has
+been visible for at least one release and the guide says "delete the argument; your output does not change",
+which is a true and unusually easy migration note.
+
+### 8.4 §6.3: decide with RFC 039 Half B, not separately
+
+Both rewrite the same public surface at `3.0`. Deciding them apart risks two migrations for the same users,
+or two designs that each assume the other did not happen. **They should be one decision and, when the time
+comes, one migration guide** — even if they remain two documents.
+
+### 8.5 What is still the owner's
+
+Everything above is a recommendation. The decision, the scheduling of `3.0`, and whether §8.3's first step
+goes into the next minor or waits are unchanged as owner calls; §6 stays the list of record.

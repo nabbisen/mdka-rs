@@ -10,14 +10,13 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | State |
-|----|-------|-------|
-| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./proposed/041-conversion-surface-honesty.md) | Awaiting owner acceptance. After `2.4.2`, 6 of 8 options cannot affect output and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute fidelity Markdown cannot carry. `3.0`; no direction proposed — see §5 |
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
 | ID | Title | State |
 |----|-------|-------|
+| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) | **Accepted (owner, 2026-09-24)**, unscheduled, `3.0`. 6 of 8 options cannot act and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to diverge. **§6's three questions are unanswered — no handoff is possible until a direction is chosen** |
 | 040 | [npm platform coverage, and an error message that contradicts the documentation](./accepted/040-npm-platform-coverage.md) — [handoff](./handoffs/040-npm-platform-coverage/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest `npm install` exits 0 and `require` blames a non-existent npm bug. Part B (the message) outranks Part A (the matrix) |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
