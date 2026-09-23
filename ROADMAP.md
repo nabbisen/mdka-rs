@@ -1,11 +1,14 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.3.0 (prepared 2026-09-22; awaiting the pre-tag checkpoint)
+**Current version.** 2.4.0 (prepared 2026-09-23; awaiting the pre-tag checkpoint)
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
-028, 030–035** — output validity, and the control repairs that made it measurable.
-**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete and `2.3.0` shipped** (2026-09-22, tag `bec40bf`) — all ten RFCs implemented and approved, all four registries verified, and the full consumer pass returned **no regressions**. **M4 (`2.4.0`) is open**, with RFC 036 and RFC 012 as its P1s.
+028, 030–035** — output validity, and the control repairs that made it measurable;
+**`2.4.0` ships RFC 008, 009, 012, 036, 037, 038, RFC 039 Half A and RFC 022's
+second half** — tables, element coverage, five output fixes, additive API parity,
+a reproducible performance page, and the removal of `alloc_counter`.
+**Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete and `2.3.0` shipped** (2026-09-22, tag `bec40bf`) — all ten RFCs implemented and approved, all four registries verified, and the full consumer pass returned **no regressions**. **M4 is substantially complete and `2.4.0` is prepared** (2026-09-23) — RFC 008, 009, 012, 036, 037, 038, RFC 039 Half A and RFC 022's second half all landed and green. Remaining in M4: RFC 011 and RFC 013, both P2 and neither changing output; RFC 039 Half B is specified for `3.0` and unscheduled.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -430,7 +433,7 @@ shared with bekoedit's item 8, not a defect.
 no wrapper, in 2.2.3's renderer and RFC 028's alike — pre-existing, likely html5ever's formatting-element handling. Not
 investigated.
 
-### M3 · Output validity → `2.3.0` (minor) — ✅ COMPLETE, awaiting the tag
+### M3 · Output validity → `2.3.0` (minor) — ✅ SHIPPED 2026-09-22, tag `bec40bf`
 
 **All ten RFCs implemented and approved, 2026-09-22.** The owner accepted RFC 010's criterion 7 the same day: ship the
 correctness work, recover the speed in RFC 012. What remains is release prep — the list below — then the pre-tag checkpoint.
@@ -469,8 +472,8 @@ GFM parsing the harness gains in `025c`. Reasoning:
    ready, and the dev team built from an earlier version — a silent edit to a file
    someone is working from is not a notification.
 
-**Before `2.3.0` is cut** — prep items recorded during M3 so they are not
-rediscovered at the checkpoint:
+**Before `2.3.0` is cut** — ✅ all done; `2.3.0` shipped 2026-09-22. Kept as the
+record of what was tracked into that checkpoint:
 
 **Dispatched to the dev team 2026-09-22:** `.git-exclude/release/2.3.0/prep-handoff.md` — items 1 to 5 below. The architect
 holds the RFC moves, the index, this file and the version bump.
@@ -632,7 +635,7 @@ RFC 005 and RFC 006 spent a milestone making the option surface honest. **Adding
 four options needs deliberate appetite, not accumulation** — which is why this is
 a candidate rather than a plan.
 
-### M4 · Coverage and durability → `2.4.0` (minor)
+### M4 · Coverage and durability → `2.4.0` (minor) — ✅ conversion work complete, prepared 2026-09-23
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
