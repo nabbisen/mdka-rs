@@ -9,7 +9,7 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
-## [Unreleased]
+## [2.4.1] - 2026-09-23
 
 **`2.4.1` — a patch release, mostly to correct what `2.4.0` said about
 itself.** The conversion engine changes only in the two output fixes below (an `id`
