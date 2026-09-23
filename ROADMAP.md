@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.4.1 — **shipped 2026-09-24**, tag `40b80d4`, verified on crates.io, npm and PyPI. `2.4.0` shipped 2026-09-23, tag `2f72f5b`.
+**Current version.** 2.4.2 — **prepared 2026-09-24**, awaiting the pre-tag checkpoint. `2.4.1` shipped 2026-09-24, tag `40b80d4`, verified on crates.io, npm and PyPI; `2.4.0` shipped 2026-09-23, tag `2f72f5b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -15,10 +15,16 @@ denied tables were converted, and the four-modes-identical claim did not hold.
 A registry README can only be corrected by publishing.
 **Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete and `2.3.0` shipped** (2026-09-22, tag `bec40bf`) — all ten RFCs implemented and approved, all four registries verified, and the full consumer pass returned **no regressions**. **M4's conversion work is complete and both releases are out** — `2.4.0` (2026-09-23) and the `2.4.1` patch (2026-09-24). RFC 008, 009, 012, 036, 037, 038, RFC 039 Half A and RFC 022's second half all landed and green. Remaining in M4: RFC 011 and RFC 013, both P2, neither changing output, and **neither yet written** — they are reserved numbers in the portfolio below, not documents.
 
-**Ahead of both, a `2.4.2` patch (P1):** `unwrap_unknown_wrappers` is published as having no effect and
-corrupts a GFM table row inside a cell; it is on by default in `Semantic` and `Minimal`. Found 2026-09-24 by
-the documentation audit, not by CI. **RFC 040** (npm platform coverage and an honest load error) is accepted
-and ships after it.
+**`2.4.2` is a patch from the documentation audit, prepared 2026-09-24 at `1c22d6a`.**
+`unwrap_unknown_wrappers` — published as having **no effect**, and on by default in `Semantic` and `Minimal` —
+wrote a real blank line into a GFM row when an unwrapped wrapper sat inside a table cell, so the row ended
+early and the rest of the cell came out as body text. Found by the audit, not by CI, and not by the 22
+fixtures `2.4.1` added: every one put a single child in a cell and the defect needs two siblings. The release
+also carries the two properties nothing asserted — an option documented inert **is** inert, in every mode,
+and `Balanced` ≡ `Strict` ≡ `Semantic` ≡ `Preserve` — both over a corpus, both failing before the fix. It
+corrects `2.4.1`'s published claim that the four modes were already identical.
+
+**RFC 040** (npm platform coverage and an honest load error) is accepted, has a handoff, and ships after it.
 
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
