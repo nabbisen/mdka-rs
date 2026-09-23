@@ -10,14 +10,13 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | State |
-|----|-------|-------|
-| 040 | [npm platform coverage, and an error message that contradicts the documentation](./proposed/040-npm-platform-coverage.md) | Awaiting owner acceptance. npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest, install exits 0 and `require` then blames a non-existent npm bug |
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
 | ID | Title | State |
 |----|-------|-------|
+| 040 | [npm platform coverage, and an error message that contradicts the documentation](./accepted/040-npm-platform-coverage.md) | **Accepted (owner, 2026-09-24).** npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest `npm install` exits 0 and `require` blames a non-existent npm bug. Part B (the message) outranks Part A (the matrix) |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.

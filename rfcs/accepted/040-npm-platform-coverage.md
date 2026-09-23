@@ -1,6 +1,6 @@
 # RFC 040 — npm platform coverage, and an error message that contradicts the documentation
 
-**Status.** Proposed
+**Status.** **Accepted (owner, 2026-09-24)** — awaiting implementation handoff
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** M4 · Coverage and durability → a patch or `2.5.0`
