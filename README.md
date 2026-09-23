@@ -16,7 +16,8 @@
 ![logo](https://raw.githubusercontent.com/nabbisen/mdka-rs/main/docs/src/assets/logo.png)
 
 mdka balances conversion quality with runtime efficiency —
-readable output from real-world HTML, without sacrificing speed or memory.    
+correct, readable Markdown from real-world HTML, at competitive speed and
+near-flat memory.    
 "ka" means "化 (か)" pointing to conversion.
 
 ---
@@ -34,7 +35,9 @@ web browsers use, so it handles malformed tags, deeply nested structures,
 CMS output, and SPA-rendered DOM without special-casing.
 - **Crash resistance.**
     Conversion uses non-recursive DFS throughout. There is no stack overflow,
-no matter the nesting depth.
+no matter the nesting depth. That is a claim about crashing, not speed —
+deep nesting still costs real time, quadratically; see
+[Scaling: Depth and Width](https://nabbisen.github.io/mdka-rs/design/performance-characteristics.html#scaling-depth-and-width).
 - **Configurable pre-processing.**
     Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html) let you tune what gets kept or
 stripped, from noise-free LLM input to maximum retention. Four of the five
