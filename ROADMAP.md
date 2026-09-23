@@ -1,13 +1,18 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.4.0 (prepared 2026-09-23; awaiting the pre-tag checkpoint)
+**Current version.** 2.4.1 (prepared 2026-09-23; awaiting the pre-tag checkpoint). `2.4.0` shipped 2026-09-23, tag `2f72f5b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
 **`2.4.0` ships RFC 008, 009, 012, 036, 037, 038, RFC 039 Half A and RFC 022's
 second half** — tables, element coverage, five output fixes, additive API parity,
 a reproducible performance page, and the removal of `alloc_counter`.
+**`2.4.1` is a patch from `2.4.0`'s consumer pass** — two output fixes (an `id`
+anchor `Semantic` dropped, blank lines in a table cell's code block) and the
+correction of two statements `2.4.0` published that were false: its README
+denied tables were converted, and the four-modes-identical claim did not hold.
+A registry README can only be corrected by publishing.
 **Milestone progress.** M1, M1b, M2, M2b and M2c complete. **M3 complete and `2.3.0` shipped** (2026-09-22, tag `bec40bf`) — all ten RFCs implemented and approved, all four registries verified, and the full consumer pass returned **no regressions**. **M4 is substantially complete and `2.4.0` is prepared** (2026-09-23) — RFC 008, 009, 012, 036, 037, 038, RFC 039 Half A and RFC 022's second half all landed and green. Remaining in M4: RFC 011 and RFC 013, both P2 and neither changing output; RFC 039 Half B is specified for `3.0` and unscheduled.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
