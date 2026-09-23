@@ -27,15 +27,6 @@ mod table;
 mod traversal;
 mod utils;
 
-#[doc(hidden)]
-#[deprecated(
-    since = "2.2.2",
-    note = "benchmark-only utility, never part of the conversion API; \
-            scheduled for removal in 2.4.0. See \
-            https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md"
-)]
-pub mod alloc_counter;
-
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};

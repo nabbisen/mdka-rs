@@ -11,14 +11,14 @@ mdka/
 │   ├── renderer.rs        MarkdownRenderer state machine
 │   │   ├── sink.rs            The output sink: the only writer of Markdown
 │   │   └── escape.rs          Escaping by context (RFC 010)
-│   ├── utils.rs           Tag classification helpers
-│   └── alloc_counter.rs   Custom allocator for benchmarks (deprecated since 2.2.2, removed in 2.4.0)
+│   └── utils.rs           Tag classification helpers
 ├── tests/             integration test modules
 ├── cli/               mdka-cli binary crate
 │   └── src/main.rs        Argument parsing + dispatch
 ├── node/              Node.js bindings (napi-rs v3)
 ├── python/            Python bindings (PyO3 v0)
 ├── benches/           criterion benchmarks
+│   └── alloc_counter.rs   Custom allocator for the memory benchmark (2.4.0: moved here from src/, never part of the public API)
 └── examples/          Allocation measurement tool
 ```
 

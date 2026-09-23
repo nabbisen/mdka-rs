@@ -11,6 +11,21 @@ confidence, that is stated explicitly rather than guessed.
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking: `mdka::alloc_counter` is gone.** Deprecated in `2.2.2`, removed
+  here as scheduled. It was never part of the conversion API — a
+  benchmark-only counting allocator this project's own `benches/memory` and
+  `examples/{quick_mem,measure_mem}` used to measure heap allocation — so
+  removing it changes nothing for any code that calls `html_to_markdown` or
+  any other conversion function. If your code did `use
+  mdka::alloc_counter::...` directly, that import now fails to resolve; the
+  same counting allocator lives on as an internal `benches/alloc_counter.rs`
+  for this project's own use, not published as part of the crate's API. A
+  crates.io reverse-dependency check (re-run the day of removal, not cited
+  from the original two-releases-ago ruling) confirmed no dependent
+  references it.
+
 ### Changed
 
 - **CLI: deprecation notices and per-file conversion progress now go to

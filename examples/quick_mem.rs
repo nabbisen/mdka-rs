@@ -5,13 +5,14 @@
 //! CountingAllocator でアロケーションバイト数と回数を計測する。
 //! 各セルの値は n=5 回の計測の中央値。
 
-// alloc_counter is deprecated as public API (RFC 022), removal in 2.4.0.
-// Measuring allocation is this example's whole purpose; allow at the use
-// site only.
-#[allow(deprecated)]
-use mdka::alloc_counter::{AllocSnapshot, CountingAllocator};
+// mdka::alloc_counter (RFC 022 second half, removed in 2.4.0) was never part
+// of the conversion API -- this counting allocator lives beside the
+// benchmarks it was written for; measuring allocation is this example's
+// whole purpose.
+#[path = "../benches/alloc_counter.rs"]
+mod alloc_counter;
+use alloc_counter::{AllocSnapshot, CountingAllocator};
 
-#[allow(deprecated)]
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
@@ -23,7 +24,6 @@ struct MemResult {
 }
 
 /// クロージャを n 回実行し、アロケーションバイト数の中央値を返す。
-#[allow(deprecated)]
 fn measure<F: Fn()>(f: &F, n: usize) -> MemResult {
     let mut samples: Vec<(usize, usize)> = (0..n)
         .map(|_| {
