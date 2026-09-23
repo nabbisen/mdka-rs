@@ -188,6 +188,28 @@ cells! {
             r#"table(thead(td("A")), tr(td("x", html("<br>"), "y")))"#,
         );
 
+    // 2.4.2: an unwrapped wrapper (`<div>`, `<section>`, ... in Semantic and
+    // Minimal, which unwrap by default) in a cell is the cell's own `<br>`,
+    // not a blank line -- the blank line split the row and lost the second
+    // child. The tree, not merely the presence of a table, is the check: a
+    // truncated table still parses as a table. All five modes, so a mode that
+    // diverges from `Balanced` fails here by name.
+    sibling_wrappers_in_cell_join_with_br: "<table><tr><th>H</th></tr><tr><td><div>a</div><div>b</div></td></tr></table>"
+        => tree_by_reading(
+            r#"para("| H | | --- | | a", html("<br>"), "b |")"#,
+            r#"table(thead(td("H")), tr(td("a", html("<br>"), "b")))"#,
+        );
+    wrapper_beside_paragraph_in_cell_joins_with_br: "<table><tr><th>H</th></tr><tr><td><div>a</div><p>b</p></td></tr></table>"
+        => tree_by_reading(
+            r#"para("| H | | --- | | a", html("<br>"), "b |")"#,
+            r#"table(thead(td("H")), tr(td("a", html("<br>"), "b")))"#,
+        );
+    sibling_wrappers_in_header_cell_join_with_br: "<table><tr><th><div>a</div><div>b</div></th></tr><tr><td>x</td></tr></table>"
+        => tree_by_reading(
+            r#"para("| a", html("<br>"), "b | | --- | | x |")"#,
+            r#"table(thead(td("a", html("<br>"), "b")), tr(td("x")))"#,
+        );
+
     // ── criterion 4: container prefix on every line ────────────────────────
 
     // A tight list item's sole paragraph is not itself wrapped (a CommonMark

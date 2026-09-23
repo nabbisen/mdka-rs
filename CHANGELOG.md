@@ -9,6 +9,55 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.4.2] - 2026-09-24
+
+**`2.4.2` — a patch release that fixes an option documented as having no
+effect, and corrects what `2.4.1` said about the four modes.** No public
+signature, option default or `--help` output changes.
+
+### Correction
+
+`2.4.1` said of the `id`-anchor fix: *"An unwrapped wrapper now keeps the
+anchor, so the four modes are identical as documented."* **They were not
+identical.** `Balanced`, `Strict`, `Semantic` and `Preserve` still differed
+whenever an unwrapped wrapper sat inside a table cell (below), and the
+`2.4.1` release page, which links to this file frozen at that tag, cannot be
+edited to say so. As of `2.4.2` the four agree everywhere we check, and what we
+check is now a corpus — every input in it, in every mode — rather than
+hand-picked fixtures. That is deliberately a statement about the evidence:
+`2.4.1` claimed identity outright, and this entry does not repeat the form of
+the claim it corrects.
+
+### Fixed
+
+- **An unwrapped wrapper in a table cell broke the row.** With
+  `unwrap_unknown_wrappers` on — its default in `Semantic` and `Minimal`, and
+  what `--unwrap-wrappers` turns on in any mode — two siblings in a cell, such
+  as `<td><div>a</div><div>b</div></td>` or `<td><div>a</div><p>b</p></td>`,
+  wrote a real blank line into the row instead of the cell's `<br>`. The table
+  ended after `a`, and `b |` came out as body text with a literal pipe.
+  The result is now `| a<br>b |` in all five modes. The option is documented as
+  having no effect on output; it now has none here either. Inside a cell's own
+  `<pre>` a wrapper still contributes nothing. Input without a wrapper in a
+  table cell is byte-identical to `2.4.1`.
+
+### Tests
+
+- Two properties over a corpus that includes wrappers in `td`/`th`, beside a
+  `<p>`, in `<li>`, in `<blockquote>` and in a cell's `<pre>`: flipping any one
+  option documented as having no effect changes nothing in any mode, and
+  `Balanced`, `Strict`, `Semantic` and `Preserve` agree byte for byte. Both
+  fail on `2.4.1` and pass now. The `2.4.1` fixtures put one child in a cell,
+  and this defect needs two.
+
+### Documentation
+
+- `node/README.md` pointed at `release-executable.yaml`, but the workflow that
+  overwrites that file is `release-npm.yaml`; the link now points there.
+- `docs/src/design/architecture.md` called `examples/` an "Allocation
+  measurement tool"; it holds four helpers, two for allocation and two for
+  speed.
+
 ## [2.4.1] - 2026-09-23
 
 **`2.4.1` — a patch release, mostly to correct what `2.4.0` said about
@@ -33,7 +82,9 @@ claim did not hold — and a registry page can only be corrected by publishing.
   a wrapper (`div`, `span`, `section`, `article`, `main`) that a mode unwraps
   lost its `id` anchor along with its tag, although `preserve_ids` asks for an
   anchor on every element that has an `id`. An unwrapped wrapper now keeps the
-  anchor, so the four modes are identical as documented. `Minimal` still emits
+  anchor, so the four modes are identical as documented. *(Correction: this
+  sentence was wrong — the four modes were still not identical. See
+  [2.4.2](#242---2026-09-24).)* `Minimal` still emits
   none, because `preserve_ids` is off there. Wrappers without an `id`, and
   everything that is not a wrapper, are byte-identical to `2.4.0`. The
   characterisation tests that were cited as proving the modes identical put no

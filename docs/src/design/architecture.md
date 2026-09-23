@@ -19,7 +19,7 @@ mdka/
 ├── python/            Python bindings (PyO3 v0)
 ├── benches/           criterion benchmarks
 │   └── alloc_counter.rs   Custom allocator for the memory benchmark (2.4.0: moved here from src/, never part of the public API)
-└── examples/          Allocation measurement tool
+└── examples/          Four measurement helpers: measure_mem and quick_mem (allocation), quick_bench and quick_compare (speed)
 ```
 
 ## Conversion Pipeline

@@ -235,10 +235,18 @@ impl MarkdownRenderer {
     /// with `unwrap_unknown_wrappers` on) still separates its children from
     /// whatever surrounds them the way it would have as a rendered
     /// `Block::Paragraph`, even though the tag itself is never entered or
-    /// left (RFC 036 §5.2, slice `036d`). Reuses `begin_block`/`end_block`
-    /// exactly -- the same path any other block already takes -- so an
-    /// unwrapped wrapper's separation is not a second notion of "block
-    /// break" beside the existing one.
+    /// left (RFC 036 §5.2, slice `036d`).
+    ///
+    /// It has to take the *same path a rendered block takes*, and that path
+    /// starts with the table-cell check (`enter_block`/`leave_block`), before
+    /// `in_pre` and before `begin_block`. `begin_block` alone is only what is
+    /// left after those two guards -- reusing it directly wrote a real blank
+    /// line into a GFM row, so an unwrapped wrapper inside a cell split the
+    /// row in two (2.4.2; the comment that used to stand here said this
+    /// reused "the same path any other block already takes", which was the
+    /// bug). In a cell the separator is the cell's own `<br>`; inside a
+    /// cell's flattened `<pre>` a wrapper contributes nothing, mirroring
+    /// `enter_cell_block`.
     ///
     /// Inside a `<pre>`, a wrapper contributes text only, the same as any
     /// other block element would (RFC 024 rule 7): mirrors `enter_block`'s
@@ -246,6 +254,12 @@ impl MarkdownRenderer {
     /// unwrapped wrapper reach `ensure_newlines` unguarded and write a real
     /// blank line into what must stay verbatim content.
     pub fn begin_unwrapped_separator(&mut self) {
+        if self.in_table_cell() {
+            if self.cell_pre.is_none() {
+                self.cell_block_separator();
+            }
+            return;
+        }
         if self.in_pre {
             self.pre_block_break = true;
             return;
@@ -254,7 +268,12 @@ impl MarkdownRenderer {
     }
 
     /// See [`begin_unwrapped_separator`](Self::begin_unwrapped_separator).
+    /// In a table cell nothing is written on the way out: like
+    /// `leave_cell_block`, the `<br>` belongs to the *next* block's entry.
     pub fn end_unwrapped_separator(&mut self) {
+        if self.in_table_cell() {
+            return;
+        }
         if self.in_pre {
             self.pre_block_break = true;
             return;

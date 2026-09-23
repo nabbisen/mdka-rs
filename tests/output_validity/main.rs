@@ -69,6 +69,7 @@ mod field_reports;
 mod gfm;
 mod inline_in_container;
 mod marker_collisions;
+mod mode_identity;
 mod proofs;
 mod tables;
 mod well_formedness;
