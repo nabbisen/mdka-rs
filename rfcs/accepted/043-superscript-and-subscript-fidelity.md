@@ -124,3 +124,23 @@ Inside `<pre>`/code, where content is verbatim text and no marker belongs.
 **bekoedit pins `mdka = "=2.5.1"` exactly.** They will not receive this by upgrading, and they rank
 conversion correctness highly. When it ships they must be **told**, not left to find it — their `Minimal`
 mode is affected like any other, though citation markers, their common case, are untouched by §4.2's rule.
+
+---
+
+## 8. Corrected figures, 2026-09-25
+
+§2's measurement was **415 / 185 / 128 / 102**. The implementation re-measured and got
+**417 / 186 / 127 / 104**, flagged the difference and did not guess at it. The cause is mine:
+
+**my extraction regex `<sup\b[^>]*>(.*?)</sup>` is non-greedy and cannot see nesting.** The corpus holds
+**417** `<sup` opening tags; 7 spans contain a nested `<sup>`/`<sub>`, and for those a non-greedy match closes
+at the *inner* `</sup>`, swallowing the outer — losing exactly 2. The remaining deltas follow from those spans
+and the re-bucketing of nested cases.
+
+**Read 417 / 186 / 127 / 104 throughout.** The conclusion is unchanged and slightly strengthened: 104 of 417,
+still about a quarter.
+
+Nested scripts turned out to matter twice over — they are also the shapes that rendered worst
+(`a<sup>3<sup>3</sup></sup>b` → `a3³b`, the outer 3 losing its raised status), and they are why the map alone
+could not ship: without the marker the outer element mapped a *subscript* into a *superscript*.
+
