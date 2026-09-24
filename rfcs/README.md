@@ -10,14 +10,13 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| ID | Title | State |
-|----|-------|-------|
-| 043 | [`<sup>` and `<sub>` that silently change the meaning](./proposed/043-superscript-and-subscript-fidelity.md) | Awaiting owner acceptance. Owner chose the visible-fallback option on 2026-09-24; measuring it first found the harm is **24% of 415 real occurrences, not the 1% I had reported**, that `<sub>` has the identical defect, and that three map gaps close much of it without any fallback |
+None. Everything currently open has been accepted — see below.
 
 ## Accepted
 
 | ID | Title | State |
 |----|-------|-------|
+| 043 | [`<sup>` and `<sub>` that silently change the meaning](./accepted/043-superscript-and-subscript-fidelity.md) — [handoff](./handoffs/043-superscript-and-subscript-fidelity/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** 102 of 415 real occurrences (24%) are silently wrong; `<sub>` has the identical defect; three map gaps close much of it with a real superscript rather than a notation |
 | 042 | [Assert what is inside a published artifact](./accepted/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** Nothing inspects artifact contents. **The published CLI `Linux-x64-gnu` binary requires glibc 2.34** and the gate must be shown failing on it before the fix lands |
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording slice is handed off**; the structural half stays unscheduled |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |

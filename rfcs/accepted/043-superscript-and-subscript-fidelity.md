@@ -1,6 +1,6 @@
 # RFC 043 — `<sup>` and `<sub>` that silently change the meaning
 
-**Status.** Proposed
+**Status.** **Accepted (owner, 2026-09-25)** — handoff issued
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** Unassigned. An output change, so a minor.
