@@ -33,9 +33,42 @@ Markdown it produces. Elements not listed are either silently removed
 | `<code>` (inline) | `` `text` `` | Only when not inside `<pre>` |
 | `<a href="…">` | `[text](url)` | `title` attribute → `[text](url "title")` |
 | `<img src="…" alt="…">` | `![alt](src)` | `title` attribute → `![alt](src "title")` |
-| `<sup>` | Unicode superscript (`²`, `ⁿ`, …), or unchanged | Only when **every** character of the content maps (digits, `+ - = ( )`, `n`, `i`); otherwise the content is left exactly as it was, not partially converted. Most real-world `<sup>` is a citation marker (`<sup><a href="#c1">[1]</a></sup>`) that is already correct without any mapping — `[` and `]` do not map, so it is untouched either way |
-| `<sub>` | Unicode subscript (`₂`, `ₙ`, …), or unchanged | Same rule; mappable set is digits, `+ - = ( )`, and `a e o x h k l m n p s t` |
+| `<sup>` | A Unicode superscript (`²`, `ⁿ`, `⁻⁹`), or a marker: `^(…)` | See [Superscript and subscript](#superscript-and-subscript) below |
+| `<sub>` | A Unicode subscript (`₂`, `ₙ`, `ᵢ`), or a marker: `_(…)` | Same rules; see below |
 | `<br>` | `  \n` (trailing two spaces + newline) | |
+
+### Superscript and subscript
+
+`<sup>` and `<sub>` are converted by three rules, tried in this order. The reason
+there is a rule three at all: `2<sup>n − 1</sup>` used to convert to `2n − 1`,
+which reads as "two times n minus one" — a different statement, not a lossy one.
+
+1. **A real Unicode superscript or subscript, when every character has one.**
+   `10<sup>−9</sup>` → `10⁻⁹`, `x<sup><i>n</i></sup>` → `xⁿ`, `H<sub>2</sub>O` → `H₂O`,
+   `x<sub>max</sub>` → `xₘₐₓ`. The characters that map are digits, `+ - = ( )`,
+   U+2212 MINUS SIGN (treated as `-`), and lowercase letters:
+   - `<sup>`: `a b c d e f g h i j k l m n o p r s t u v w x y z` — 25 of 26, there is no
+     superscript `q`;
+   - `<sub>`: `a e h i j k l m n o p r s t u v x` — only 17, Unicode has no subscript
+     `b c d f g q w y z`, so `x<sub>y</sub>` can never map.
+
+   Content that is only emphasis (`<i>`, `<em>`, `<b>`, `<strong>`, `<var>`) is seen
+   through: a superscript character cannot carry emphasis anyway. The rule is all or
+   nothing — a run with one character that has no form (an uppercase letter, `/`, a
+   space) is **not** half-converted, which would be a different number.
+2. **Text that already delimits itself is left exactly as it was.** If the text inside is
+   bracketed — `[1]` or `(a b)` — it is a marker already (a citation, a note, a
+   parenthetical) and nothing is added. This is why the citation markers on real pages
+   (`<sup><a href="#c1">[1]</a></sup>`) convert as they always did.
+3. **Everything else gets a visible marker, always parenthesised:** `2<sup>n − 1</sup>` →
+   `2^(n − 1)`, `x<sub>y</sub>` → `x_(y)`, `x<sup>N</sup>` → `x^(N)`. Emphasis inside
+   survives: `x<sup><i>n</i> + N</sup>` → `x^(*n* + N)`. The subscript marker's `_` is
+   escaped (`\_(y)`) wherever it could otherwise pair with another underscore and
+   italicise the text between them — after a space or punctuation, inside emphasis, or
+   when an unescaped `_` is already open in the paragraph.
+
+Inside code (`<pre>`, `<code>`) nothing is mapped and no marker is written; the text
+stays as it is. `<sup>`/`<sub>` are converted the same way in every mode.
 
 `<span>` is **not** in either table, and that is deliberate: it produces no
 output of its own and no break. `<span>A</span><span>B</span>` converts to

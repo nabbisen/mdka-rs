@@ -21,6 +21,11 @@ platforms have one, and the exact archive name for each, is listed in the
 [README's Quick Start](https://github.com/nabbisen/mdka-rs#try-it-from-the-command-line);
 that table is the single source, so it is linked here rather than repeated.
 
+The Linux x64 glibc archive is built against **glibc 2.17** — the same floor the
+npm bindings and Python wheels below promise — so it starts on any distribution
+with glibc 2.17 or newer, including Ubuntu 20.04, Debian 11 and RHEL 8. The two
+musl archives are statically linked and have no glibc requirement.
+
 Or install directly with cargo, which builds for whatever platform you are on:
 
 ```bash

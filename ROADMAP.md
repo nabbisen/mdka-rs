@@ -37,6 +37,21 @@ while the npm binding silently excluded three widely-used distributions. Second,
 platforms and shipped three. Both deserve an RFC; the second also has a one-line checklist remedy, already
 added.
 
+**`2.6.0` ships RFC 042, 043 and 045, plus RFC 041's wording half** — prepared 2026-09-25.
+`<sup>`/`<sub>` stop silently converting to a different statement: **104 of 417 real occurrences (25%)** did,
+and now reach a real Unicode superscript where one exists or a visible `^(…)` / `_(…)` marker where it does
+not, while the 186 self-delimiting citation markers are untouched. The release asserts what is inside each
+artifact before publishing it, which is what closes the first control gap above — and carries the fix it
+found: the prebuilt Linux x64 CLI was built against **glibc 2.34** and now against **2.17**, so it starts on
+Ubuntu 20.04, Debian 11 and RHEL 8. The Python wheel ships type stubs, so `mypy --strict` stops reporting
+*"Success"* on code that assigns a `str` to an `int`; `stubtest` runs in CI against the built extension.
+`--help` and the `ConversionMode` rustdoc stop promising fidelity the modes cannot deliver.
+
+**RFC 044 is accepted and deliberately not in it** — emphasis first inside `<strong>` is lost and leaves a
+literal `_`. Real, reproducible and live in every published version, but its prevalence is unmeasured, and
+`2.6.0` carries two defects that are live in public. Its handoff follows the tag and leads with the corpus
+measurement RFC 044 §5 says it needs.
+
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
 aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute
@@ -807,16 +822,16 @@ what order, is the owner's call.
 
 | Item | What is open |
 |---|---|
-| **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); whether the *wording* half ships early in a minor; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
+| **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); ~~whether the *wording* half ships early in a minor~~ — it did, in `2.6.0`; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
 | **RFC 039 Half B** — public API coherence | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
-| **`<sup>` and `<sub>` that change meaning** — now **RFC 043**, shipped to `main` | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **104 of 417 real occurrences (25%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
-| **`py.typed` without stubs** — now **RFC 045**, proposed | **`mypy --strict` reports "Success: no issues found"** on code that assigns a `str` to an `int`, passes an `int` where a `str` is required and omits a required argument — verified against the published `2.5.1` wheel. Without the marker mypy would say *"missing library stubs"*, which is true, so we replaced a correct warning with a false clearance. Owner accepted shipping stubs, with `stubtest` in CI so the second surface cannot drift. **The false all-clear is live until it ships** |
+| ~~**`<sup>` and `<sub>` that change meaning**~~ — **RFC 043, shipped in `2.6.0`** | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **104 of 417 real occurrences (25%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
+| ~~**`py.typed` without stubs**~~ — **RFC 045, shipped in `2.6.0`** | **`mypy --strict` reports "Success: no issues found"** on code that assigns a `str` to an `int`, passes an `int` where a `str` is required and omits a required argument — verified against the published `2.5.1` wheel. Without the marker mypy would say *"missing library stubs"*, which is true, so we replaced a correct warning with a false clearance. Owner accepted shipping stubs, with `stubtest` in CI so the second surface cannot drift. **The false all-clear was live in every wheel through `2.5.1`** |
 
 ### Proposed for the next minor
 
 | Item | Why |
 |---|---|
-| **An artifact-inspection gate** — now **RFC 042**, proposed | **Nothing in this project inspects the contents of a built artifact.** CI, the four consumer gates, the release-time registry checks and a whole-documentation audit were all green for a dozen releases while the npm x64 binding silently required glibc 2.34 and excluded Ubuntu 20.04, Debian 11 and RHEL 8. It surfaced only because a cross-compile put two differently-built bindings side by side and someone ran `objdump`. A gate that asserts the glibc floor, the architecture and the exported symbols of each published binary would have caught it. **A survey on 2026-09-24 found the same defect still live in the CLI:** the published `Linux-x64-gnu` archive at `2.5.1` requires glibc 2.34, and `README.md` offers it with no floor stated. PyPI is unaffected — `auditwheel` is the one artifact-content check we have, and PyPI is the one channel that never had this bug |
+| ~~**An artifact-inspection gate**~~ — **RFC 042, shipped in `2.6.0`**, and it carried the CLI glibc fix it was written to catch | **Nothing in this project inspects the contents of a built artifact.** CI, the four consumer gates, the release-time registry checks and a whole-documentation audit were all green for a dozen releases while the npm x64 binding silently required glibc 2.34 and excluded Ubuntu 20.04, Debian 11 and RHEL 8. It surfaced only because a cross-compile put two differently-built bindings side by side and someone ran `objdump`. A gate that asserts the glibc floor, the architecture and the exported symbols of each published binary would have caught it. **A survey on 2026-09-24 found the same defect still live in the CLI:** the published `Linux-x64-gnu` archive at `2.5.1` requires glibc 2.34, and `README.md` offers it with no floor stated. PyPI is unaffected — `auditwheel` is the one artifact-content check we have, and PyPI is the one channel that never had this bug |
 | **`npm-install-gate.yaml` covers glibc x64 only** | Since `2.5.0` npm ships six platforms. The gate installs on one of them, so a musl or arm64 regression cannot be detected. A container matrix (Alpine, arm64 under emulation) is the durable form |
 | **`fail-fast` is on in the release build matrices** | One target failing cancels the others, so a release reports one failure and hides the rest. Seen on 2026-09-24: four of five jobs came back `cancelled` rather than giving their own verdict. `fail-fast: false` would let each target report and upload independently — which is what RFC 042's gate is for |
 | **`cargo-zigbuild` and `ziglang` are unpinned in the release path** | Added for the musl cross-builds in `2.5.0`. CI takes whatever is current at release time. Pinning is a deliberate choice, not an oversight to fix silently |
@@ -826,7 +841,7 @@ what order, is the owner's call.
 
 | Item | State |
 |---|---|
-| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, accepted (owner, 2026-09-25) and deliberately held out of `2.6.0`. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
+| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, accepted (owner, 2026-09-25) and deliberately held out of `2.6.0`; handoff follows that tag. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
 
 ### Recorded here because they had stopped being carried, 2026-09-24
 

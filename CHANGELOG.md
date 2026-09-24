@@ -9,6 +9,76 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.6.0] - 2026-09-25
+
+**`2.6.0` — superscripts that no longer change the meaning, a CLI that starts on
+older Linux, and Python types that are actually checked.** No API change: every
+export, signature and option is the same as `2.5.1`. One conversion behaviour
+changes, described first.
+
+### Changed
+
+- **`<sup>` and `<sub>` no longer silently convert to a different statement.**
+  `10<sup>-9</sup>` produced `10−9`, which reads as a subtraction, and
+  `2<sup>n - 1</sup>` produced `2n - 1`, which reads as multiplication. Measured
+  over 417 occurrences on four real pages, **104 (25%) converted to something
+  that meant something else**. Now:
+  - more content reaches a real Unicode superscript or subscript — U+2212 MINUS
+    SIGN, the full lowercase modifier-letter sets, and content wrapped only in
+    `<i>`/`<em>`/`<b>`/`<strong>`/`<var>`, so `10<sup>-9</sup>` → `10⁻⁹` and
+    `x<sup><i>n</i></sup>` → `xⁿ`;
+  - what Unicode cannot express gets a visible marker instead of nothing:
+    `2<sup>n - 1</sup>` → `2^(n - 1)`, `x<sub>y</sub>` → `x_(y)`;
+  - **text that already delimits itself is untouched**, so citation markers
+    (`<sup><a href="#c1">[1]</a></sup>`) convert exactly as they did — that is
+    186 of the 417 measured occurrences.
+
+  `docs/src/api/elements.md` states the three rules and lists which letters
+  Unicode actually has: 25 of 26 for superscript, only 17 for subscript.
+
+- **`--help` and the `ConversionMode` rustdoc say what the modes do.** They
+  described fidelity the modes cannot deliver — `Preserve` claimed to keep "as
+  much of the original as possible" and named a feature that does not exist.
+  Wording only; no mode behaves differently.
+
+### Fixed
+
+- **The prebuilt Linux x64 CLI now starts on Ubuntu 20.04, Debian 11 and
+  RHEL 8.** It was built against glibc 2.34 and failed to start on anything
+  older, with nothing in the documentation saying so. It is now built against
+  **glibc 2.17**, the same floor the npm bindings and Python wheels promise.
+  The musl archives are statically linked and were never affected.
+
+- **The Python package no longer makes a type checker certify wrong code.** It
+  shipped a `py.typed` marker with no stub files, so `mypy --strict` reported
+  *"Success: no issues found"* on code assigning a `str` to an `int`, passing an
+  `int` where a `str` was required, and omitting a required argument. Without
+  the marker mypy would have said *"missing library stubs"*, which was true — so
+  a correct warning had been replaced with a false clearance. The wheel now
+  ships `__init__.pyi` and `mdka_python.pyi` covering all thirteen public names,
+  and CI runs `stubtest` against the built extension so the stubs cannot drift.
+
+### Added
+
+- **The release now asserts what is inside each artifact before publishing it.**
+  A declared per-target contract — glibc floor, architecture, linkage, expected
+  files — is checked against every built binary, and the publish stops if an
+  artifact does not match. Nothing in this project inspected artifact *contents*
+  before; that is how the glibc defect above stayed live through a dozen
+  releases with every gate green.
+
+### Note on an earlier entry
+
+**The `2.5.1` entry below gives the wrong cause, and is corrected here rather
+than rewritten.** It says the `2.5.0` npm failure was restricted default access
+for new scoped packages. The `publishConfig.access: public` fix it describes was
+real and is still correct to have, but it was **not** what fixed the failure.
+The actual cause: npm trusted publishing is configured **per package**, and a
+package that does not exist cannot hold that configuration, so CI could not
+create one — npm answers `404` rather than `403` for a resource a credential
+cannot reach. The three new packages had to be created by hand once. This is now
+a named prerequisite in the release checklist.
+
 ## [2.5.1] - 2026-09-24
 
 **`2.5.1` — the release `2.5.0` was supposed to be on npm.** `2.5.0` published

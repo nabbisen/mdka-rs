@@ -58,11 +58,15 @@ Python (PyO3).
 
 | Platform | Asset |
 |---|---|
-| Linux x64 (glibc) | `mdka@Linux-x64-gnu-<version>.tar.gz` |
-| Linux x64 (musl) | `mdka@Linux-x64-musl-<version>.tar.gz` |
-| Linux aarch64 (musl) | `mdka@Linux-aarch64-musl-<version>.tar.gz` |
+| Linux x64 (glibc 2.17 or newer) | `mdka@Linux-x64-gnu-<version>.tar.gz` |
+| Linux x64 (musl, static) | `mdka@Linux-x64-musl-<version>.tar.gz` |
+| Linux aarch64 (musl, static) | `mdka@Linux-aarch64-musl-<version>.tar.gz` |
 | macOS Apple Silicon | `mdka@macOS-aarch64-<version>.zip` |
 | Windows x64 | `mdka@Windows-x64-<version>.zip` |
+
+The glibc archive is built against glibc 2.17, so it runs on Ubuntu 20.04,
+Debian 11 and RHEL 8 as well as newer systems; the musl archives have no glibc
+requirement at all.
 
 Other platforms (macOS Intel, Windows ARM, Linux aarch64 glibc) aren't built
 as binaries — use `cargo install mdka-cli` below instead.

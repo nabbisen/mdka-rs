@@ -1,6 +1,6 @@
 # RFC 045 — `py.typed` without stubs makes a type checker certify wrong code
 
-**Status.** **Accepted (owner, 2026-09-25)** — handoff issued
+**Status.** Implemented — shipped in `2.6.0`, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. Packaging and typing only; no conversion change.

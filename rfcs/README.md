@@ -17,10 +17,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | ID | Title | State |
 |----|-------|-------|
 | 044 | [Emphasis first inside `<strong>` is lost, and leaves a literal `_`](./accepted/044-emphasis-first-inside-strong.md) | **Accepted (owner, 2026-09-25).** `<b><em>q</em>a</b>` → `**_q_a**`, which parses as `strong("_" "q_a")` — live in every published version. **Deliberately not in `2.6.0`** (§8); the handoff follows that tag and leads with a prose-heavy corpus measurement, since prevalence is unmeasured — zero in the four-page corpus |
-| 045 | [`py.typed` without stubs makes a type checker certify wrong code](./accepted/045-python-type-stubs.md) — [handoff](./handoffs/045-python-type-stubs/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** `mypy --strict` reports "Success" on code assigning `str` to `int`; `stubtest` in CI is the condition |
-| 043 | [`<sup>` and `<sub>` that silently change the meaning](./accepted/043-superscript-and-subscript-fidelity.md) — [handoff](./handoffs/043-superscript-and-subscript-fidelity/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** 104 of 417 real occurrences (25%) are silently wrong; `<sub>` has the identical defect; three map gaps close much of it with a real superscript rather than a notation |
-| 042 | [Assert what is inside a published artifact](./accepted/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** Nothing inspects artifact contents. **The published CLI `Linux-x64-gnu` binary requires glibc 2.34** and the gate must be shown failing on it before the fix lands |
-| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording slice is handed off**; the structural half stays unscheduled |
+| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording half shipped in `2.6.0`**; the structural half stays unscheduled and is decided with RFC 039 Half B |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
@@ -71,6 +68,9 @@ corrupted tables in two default modes —
 | 037 | [Emphasis emission fidelity: empty and nested](./done/037-emphasis-emission-fidelity.md) — [handoff](./handoffs/037-emphasis-emission-fidelity/implementation-handoff.md) | 2.4.0 |
 | 009 | [Element coverage extension](./done/009-element-coverage-extension.md) — [handoff](./handoffs/009-element-coverage-extension/implementation-handoff.md) | 2.4.0 |
 | 012 | [Benchmark hardening and regenerating the published claims](./done/012-benchmark-hardening.md) — [handoff](./handoffs/012-benchmark-hardening/implementation-handoff.md) | 2.4.0 |
+| 042 | [Assert what is inside a published artifact](./done/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | 2.6.0 |
+| 043 | [`<sup>` and `<sub>` that silently change the meaning](./done/043-superscript-and-subscript-fidelity.md) — [handoff](./handoffs/043-superscript-and-subscript-fidelity/implementation-handoff.md) | 2.6.0 |
+| 045 | [`py.typed` without stubs makes a type checker certify wrong code](./done/045-python-type-stubs.md) — [handoff](./handoffs/045-python-type-stubs/implementation-handoff.md) | 2.6.0 |
 
 ## Archive
 
