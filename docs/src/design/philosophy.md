@@ -43,13 +43,15 @@ that fits in heap memory.
 
 HTML from different sources needs different treatment. A page scraped from a
 news site has navigation, advertising, and footer content that a content
-extraction pipeline wants to remove. A document being archived for audit
-purposes should retain as much as possible.
+extraction pipeline wants to remove — that is `Minimal`. A document being
+archived for audit purposes wants nothing removed — that is `Balanced`, the
+default; there is no stronger preset.
 
-The five [conversion modes](../api/modes.md) encode these intent differences
-as named, opinionated presets. They are applied inline during the single
-tree traversal, filtering as the DOM is walked rather than as a separate
-step — keeping the conversion logic itself simple and mode-agnostic.
+Of the five [conversion modes](../api/modes.md), those are the two that
+convert differently; `Strict`, `Semantic` and `Preserve` are aliases of
+`Balanced`. The preset is applied inline during the single tree traversal,
+filtering as the DOM is walked rather than as a separate step — keeping the
+conversion logic itself simple and mode-agnostic.
 
 ## One Allocator, Minimal Copies
 

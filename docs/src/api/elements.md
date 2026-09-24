@@ -27,8 +27,8 @@ Markdown it produces. Elements not listed are either silently removed
 
 | HTML | Markdown output | Notes |
 |---|---|---|
-| `<strong>`, `<b>` | `**text**` | |
-| `<em>`, `<i>` | `*text*` | |
+| `<strong>`, `<b>` | `**text**` | **No delimiters** when the element's own inline `style` sets `font-weight` to `normal` or a number ≤ 500: `<b style="font-weight:normal">x</b>` converts to `x`. Google Docs, for one, wraps pasted content in such an element. `bolder`, `lighter` and numbers above 500 do not suppress anything. **Only this one property, on this element, is read.** Nothing is inherited, and bold is never *added*: text made bold only by `<span style="font-weight:700">`, or by a `font-weight` on a parent element, converts as plain text |
+| `<em>`, `<i>` | `*text*` | **No delimiters** when the element's own inline `style` sets `font-style: normal`. The same rule: only that property, on that element, and italic carried only by a `<span style="font-style:italic">` is lost |
 | `<del>`, `<s>` | `~~text~~` | No delimiters at all if the element wraps a block, or is inside code — the same rule `<strong>`/`<em>` already follow |
 | `<code>` (inline) | `` `text` `` | Only when not inside `<pre>` |
 | `<a href="…">` | `[text](url)` | `title` attribute → `[text](url "title")` |

@@ -11,18 +11,18 @@ Some fast converters use recursive tree traversal and will crash on
 deeply nested input. If your input source is not fully controlled,
 crash resistance matters.
 
-## Five Conversion Modes
+## Five Conversion Modes, Two Behaviours
 
-Rather than a single fixed conversion strategy, mdka offers five
-named modes that tune the pre-processing pipeline:
+mdka offers five named modes, of which two convert differently:
 
-- **Balanced** — readable output for general use
-- **Strict** — maximum attribute retention for debugging
-- **Minimal** — body text only; good for LLM input preparation
-- **Semantic** — preserves ARIA and document structure
-- **Preserve** — maximum fidelity for archiving
+- **Balanced** — readable output for general use; the default
+- **Minimal** — body text only, without shell elements or `id` anchors; good for
+  LLM input preparation
+- **Strict**, **Semantic**, **Preserve** — aliases of `Balanced`, kept for
+  compatibility. They produce identical output and cannot differ: what would
+  distinguish them is attribute handling, and Markdown has no attribute syntax.
 
-Each mode can be further customised with per-call option flags.
+The behaviour of a call can be adjusted further with per-call option flags.
 See [Conversion Modes](../api/modes.md) and [ConversionOptions](../api/options.md).
 
 ## Parallel File Conversion

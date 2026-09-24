@@ -37,7 +37,7 @@ md = mdka.html_to_markdown_with(
     drop_interactive_shell=True,
 )
 
-# Favour semantic structure — for SPAs and accessibility-aware output
+# Semantic is an alias of Balanced: this converts exactly as the default does
 md = mdka.html_to_markdown_with(
     html,
     mode=mdka.ConversionMode.Semantic,
@@ -82,7 +82,8 @@ TypeError: html_to_markdown_with() got an unexpected keyword argument
 Use `mode` to influence the output.
 
 Available modes: `ConversionMode.Balanced` (default), `Strict`, `Minimal`,
-`Semantic`, `Preserve`.
+`Semantic`, `Preserve`. Only `Balanced` and `Minimal` convert differently; the
+other three are aliases of `Balanced` — see [Conversion Modes](../api/modes.md).
 
 ## Parallel Batch Conversion (GIL released)
 

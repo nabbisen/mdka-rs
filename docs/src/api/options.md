@@ -176,8 +176,8 @@ nothing left for this option to change. This is *not* a deprecation: unlike
 the five fields above, `unwrap_unknown_wrappers` is unimplementable for
 nothing — a future mode that preserves raw HTML wrappers would make it
 observable again at once. It carries no `#[deprecated]` attribute and
-triggers no warning; see [Conversion Modes](./modes.md) for the same
-distinction drawn for `Strict` and `Preserve`.
+triggers no warning; see [Conversion Modes](./modes.md) for how this
+affects the modes.
 
 **`<figure>` and `<figcaption>` are never unwrapped**, in any mode — see
 the [Block Elements table](./elements.md) for why they're excluded even

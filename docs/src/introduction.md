@@ -14,7 +14,7 @@ without sacrificing speed or memory.
 |---|---|
 | Any HTML string — a full page, a snippet, CMS output, SPA-rendered DOM | Clean, readable Markdown |
 | A list of HTML files | Parallel Markdown output via rayon |
-| A conversion mode (`minimal`, `semantic`, …) | Pre-processed output tuned for your use case |
+| A conversion mode (`balanced`, or `minimal` to strip page chrome) | Output tuned for your use case |
 
 ## Key Properties
 
@@ -24,8 +24,9 @@ without sacrificing speed or memory.
   real-world HTML gracefully.
 - **Crash-resistant**: a non-recursive DFS traversal means even 10,000 levels of
   nesting will not overflow the stack.
-- **Configurable**: five [conversion modes](./api/modes.md) let you tune the
-  pre-processing pipeline — from noise-free LLM input to lossless archiving.
+- **Configurable**: five [conversion modes](./api/modes.md), of which two convert
+  differently — `Balanced` (the default) and `Minimal`, which strips to body text
+  and structure for LLM input. The other three are aliases of `Balanced`.
 - **Multi-language**: available as a Rust library, a Node.js package (napi-rs),
   and a Python package (PyO3).
 
@@ -34,7 +35,7 @@ without sacrificing speed or memory.
 mdka is a good fit if you need:
 
 - **Stable, predictable output** from diverse HTML sources (CMS, SPA, scraped pages)
-- **Mode-based pre-processing** to strip navigation, preserve ARIA, or retain attributes
+- **Pre-processing** to strip navigation and other page chrome (`Minimal` mode, or the `drop_interactive_shell` option)
 - **Memory efficiency** at scale (bulk file conversion, streaming pipelines)
 - **Multi-language access** from a single underlying Rust implementation
 

@@ -36,7 +36,7 @@ mdka -o out/ docs/*.html
 **Choose a conversion mode:**
 ```bash
 mdka --mode minimal --drop-shell page.html   # extract body text
-mdka --mode preserve -o archive/ *.html      # maximum fidelity
+mdka -o out/ *.html                          # balanced, the default
 ```
 
 ## All Options

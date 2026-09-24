@@ -68,7 +68,9 @@ main()
 ```
 
 Available mode strings: `"balanced"` (default), `"strict"`, `"minimal"`,
-`"semantic"`, `"preserve"`.
+`"semantic"`, `"preserve"`. Only `"balanced"` and `"minimal"` convert
+differently; the other three are aliases of `"balanced"` — see
+[Conversion Modes](../api/modes.md).
 
 ## Converting Multiple Strings
 

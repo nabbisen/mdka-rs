@@ -39,9 +39,10 @@ no matter the nesting depth. That is a claim about crashing, not speed —
 deep nesting still costs real time, quadratically; see
 [Scaling: Depth and Width](https://nabbisen.github.io/mdka-rs/design/performance-characteristics.html#scaling-depth-and-width).
 - **Configurable pre-processing.**
-    Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html) let you tune what gets kept or
-stripped, from noise-free LLM input to maximum retention. Four of the five
-currently produce identical output — see [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html).
+    Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html), of which **two convert
+differently**: `Balanced` (the default) and `Minimal`, which strips to body text and structure for LLM
+input. The other three are aliases of `Balanced` — see
+[Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html).
 - **Multi-language.**
     The same Rust implementation is accessible from Node.js (napi-rs) and
 Python (PyO3).
@@ -151,6 +152,10 @@ async function main() {
 main()
 ```
 
+The `Async` functions cannot emit deprecation warnings, so an option that has been
+deprecated is reported only by the synchronous form (`htmlToMarkdownWith`). See
+[Usage — Node.js](https://nabbisen.github.io/mdka-rs/getting-started/usage-nodejs.html).
+
 ### Add to a Python project
 
 ```bash
@@ -177,18 +182,16 @@ minimal = mdka.html_to_markdown_with(
 
 | Mode | Use when |
 |---|---|
-| `Balanced` | General use — default |
-| `Strict` | Debugging, diff comparison |
-| `Minimal` | LLM input, text extraction |
-| `Semantic` | SPA content, ARIA-aware pipelines |
-| `Preserve` | Archiving, audit trails |
+| `Balanced` | General use — the default |
+| `Minimal` | LLM input, text extraction — the only mode that converts differently |
+| `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility |
 
-**`Balanced`, `Strict`, `Semantic` and `Preserve` currently produce identical
-output.** They differ only in the defaults of fields that have no effect
-today, so choosing between them changes nothing today. They remain distinct
-API and may diverge again — see
-[Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes), which explains
-why in full.
+**`Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output, and
+cannot differ.** They vary only in the defaults of options that have no effect
+on Markdown — the format has no syntax for HTML attributes or wrapper elements —
+so there is no mechanism by which they could diverge. Choosing between them
+changes nothing. See [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html)
+for the full explanation.
 
 **Tables convert to GFM tables.** Column alignment is carried over, `|` in a
 cell is escaped, `colspan`/`rowspan` are expanded, and a cell holding block
@@ -197,7 +200,7 @@ content is flattened (paragraphs join with `<br>`, a list becomes
 one paragraph per cell rather than a broken table: more than one header row,
 `<th>` used as each row's first cell, a nested `<table>`, and a `<caption>`.
 No table welds its cells together on either path. See
-[Supported Elements](https://nabbisen.github.io/mdka-rs/api/elements) for the
+[Supported Elements](https://nabbisen.github.io/mdka-rs/api/elements.html) for the
 full list of what is and is not supported.
 
 ---
@@ -211,19 +214,19 @@ https://nabbisen.github.io/mdka-rs/
 
 | Topic | Link |
 |---|---|
-| Installation | [/getting-started/installation](https://nabbisen.github.io/mdka-rs/getting-started/installation) |
-| Rust Usage & Examples | [/getting-started/usage-rust](https://nabbisen.github.io/mdka-rs/getting-started/usage-rust) |
-| Node.js Usage | [/getting-started/usage-nodejs](https://nabbisen.github.io/mdka-rs/getting-started/usage-nodejs) |
-| Python Usage | [/getting-started/usage-python](https://nabbisen.github.io/mdka-rs/getting-started/usage-python) |
-| CLI Reference | [/getting-started/usage-cli](https://nabbisen.github.io/mdka-rs/getting-started/usage-cli) |
-| API Reference | [/api/index](https://nabbisen.github.io/mdka-rs/api/index) |
-| Conversion Modes | [/api/modes](https://nabbisen.github.io/mdka-rs/api/modes) |
-| ConversionOptions | [/api/options](https://nabbisen.github.io/mdka-rs/api/options) |
-| Supported Elements | [/api/elements](https://nabbisen.github.io/mdka-rs/api/elements) |
-| Design Philosophy | [/design/philosophy](https://nabbisen.github.io/mdka-rs/design/philosophy) |
-| Performance Characteristics | [/design/performance-characteristics](https://nabbisen.github.io/mdka-rs/design/performance-characteristics) |
-| Architecture | [/design/architecture](https://nabbisen.github.io/mdka-rs/design/architecture) |
-| Features | [/design/features](https://nabbisen.github.io/mdka-rs/design/features) |
+| Installation | [/getting-started/installation](https://nabbisen.github.io/mdka-rs/getting-started/installation.html) |
+| Rust Usage & Examples | [/getting-started/usage-rust](https://nabbisen.github.io/mdka-rs/getting-started/usage-rust.html) |
+| Node.js Usage | [/getting-started/usage-nodejs](https://nabbisen.github.io/mdka-rs/getting-started/usage-nodejs.html) |
+| Python Usage | [/getting-started/usage-python](https://nabbisen.github.io/mdka-rs/getting-started/usage-python.html) |
+| CLI Reference | [/getting-started/usage-cli](https://nabbisen.github.io/mdka-rs/getting-started/usage-cli.html) |
+| API Reference | [/api/index](https://nabbisen.github.io/mdka-rs/api/index.html) |
+| Conversion Modes | [/api/modes](https://nabbisen.github.io/mdka-rs/api/modes.html) |
+| ConversionOptions | [/api/options](https://nabbisen.github.io/mdka-rs/api/options.html) |
+| Supported Elements | [/api/elements](https://nabbisen.github.io/mdka-rs/api/elements.html) |
+| Design Philosophy | [/design/philosophy](https://nabbisen.github.io/mdka-rs/design/philosophy.html) |
+| Performance Characteristics | [/design/performance-characteristics](https://nabbisen.github.io/mdka-rs/design/performance-characteristics.html) |
+| Architecture | [/design/architecture](https://nabbisen.github.io/mdka-rs/design/architecture.html) |
+| Features | [/design/features](https://nabbisen.github.io/mdka-rs/design/features.html) |
 | Changelog | [CHANGELOG.md](https://github.com/nabbisen/mdka-rs/blob/main/CHANGELOG.md) |
 | Roadmap | [ROADMAP.md](https://github.com/nabbisen/mdka-rs/blob/main/ROADMAP.md) |
 

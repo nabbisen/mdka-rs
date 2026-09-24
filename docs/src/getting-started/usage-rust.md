@@ -139,12 +139,11 @@ let results = html_files_to_markdown_with(&files, Path::new("out/"), &opts);
 | Mode | Best for |
 |---|---|
 | `Balanced` | General use; default |
-| `Strict` | Debugging, diff comparison |
-| `Minimal` | LLM pre-processing, compression |
-| `Semantic` | SPA content, accessibility-aware output |
-| `Preserve` | Archiving, audit trails |
+| `Minimal` | LLM pre-processing, compression — the only mode that converts differently |
+| `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility |
 
-See [Conversion Modes](../api/modes.md) for full details.
+`Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output and
+cannot differ. See [Conversion Modes](../api/modes.md) for why.
 
 ## Error Handling
 
