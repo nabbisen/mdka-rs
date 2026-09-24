@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.5.1 — **prepared 2026-09-24**, awaiting the pre-tag checkpoint. `2.5.0` shipped 2026-09-24, tag `872711f`, to crates.io, PyPI and GitHub **but not npm**: its first new scoped package could not be created, so `mdka` on npm remains `2.4.2` and `2.5.1` is the release that delivers `2.5.0`'s npm half. `2.4.2` 2026-09-24, tag `0913c7d`; `2.4.1` tag `40b80d4`; `2.4.0` tag `2f72f5b`.
+**Current version.** 2.5.1 — **shipped 2026-09-24**, tag `4d7626d`, complete on all four registries: crates.io, PyPI, GitHub and npm, the last declaring six `optionalDependencies` all resolvable. `2.5.0` (tag `872711f`) shipped everywhere except npm — its three new scoped packages could not be created by CI, since npm trusted publishing is attached per package and cannot be configured for a name that does not exist; the owner created them by hand and `2.5.1` completed in place. `2.4.2` tag `0913c7d`; `2.4.1` tag `40b80d4`; `2.4.0` tag `2f72f5b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -797,6 +797,46 @@ figure in `docs/src/design/` regenerated from a current benchmark run; no
 Japanese text remains in `src/`, `cli/`, `node/`, or `python/`.
 
 ---
+
+## Carried forward — open items, 2026-09-24
+
+Recorded here because they were previously tracked only outside the repository. Each is stated in full
+rather than linked, so this section stands on its own.
+
+**The next milestone is not opened.** Targets below are proposals; which of these become a milestone, and in
+what order, is the owner's call.
+
+### Needs an owner decision before it can be scheduled
+
+| Item | What is open |
+|---|---|
+| **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); whether the *wording* half ships early in a minor; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
+| **RFC 039 Half B** — public API coherence | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
+| **`<sup>` that changes meaning** | `2<sup>n − 1</sup>` converts to `2n − 1`. The mapping rule is documented accurately in `docs/src/api/elements.md`; what is open is whether an unmappable `<sup>` should emit a visible fallback marker rather than silently flattening |
+| **`py.typed` without stubs** | The marker ships with no `.pyi`, so a type checker stops reporting the package as untyped while every symbol still resolves as `Any`. Documented honestly in `docs/src/getting-started/usage-python.md`; the open question is whether to write stubs or drop the marker |
+
+### Proposed for the next minor
+
+| Item | Why |
+|---|---|
+| **An artifact-inspection gate** — no RFC yet | **Nothing in this project inspects the contents of a built artifact.** CI, the four consumer gates, the release-time registry checks and a whole-documentation audit were all green for a dozen releases while the npm x64 binding silently required glibc 2.34 and excluded Ubuntu 20.04, Debian 11 and RHEL 8. It surfaced only because a cross-compile put two differently-built bindings side by side and someone ran `objdump`. A gate that asserts the glibc floor, the architecture and the exported symbols of each published binary would have caught it |
+| **`npm-install-gate.yaml` covers glibc x64 only** | Since `2.5.0` npm ships six platforms. The gate installs on one of them, so a musl or arm64 regression cannot be detected. A container matrix (Alpine, arm64 under emulation) is the durable form |
+| **`cargo-zigbuild` and `ziglang` are unpinned in the release path** | Added for the musl cross-builds in `2.5.0`. CI takes whatever is current at release time. Pinning is a deliberate choice, not an oversight to fix silently |
+| **Three stale tracked directories** — `node/linux-x64-gnu/`, `node/darwin-arm64/`, `node/win32-x64-msvc/` | Each holds a `package.json` and README, is bumped by `version.sh`, and is unused: publishing uses the generated, git-ignored `node/npm/`. Probably napi-v2 relics |
+
+### Reserved numbers, never written
+
+| Item | Note |
+|---|---|
+| **RFC 011** — fuzzing and `MdkaError::Io` error paths | Carries `R-03`: `node/test.js` runs three async IIFEs sharing counters, and the first failure calls `process.exit(1)`, leaving later tests unrun. The gate's exit code stays correct, so CI still fails — it is diagnosis that degrades |
+| **RFC 013** — internal comments to English | **Its inventory is stale and must be re-derived.** `alloc_counter` moved to `benches/`, and `examples/` (`measure_mem`, `quick_bench`, `quick_compare`, `quick_mem`) carries Japanese doc comments that predate the original inventory |
+
+### Recorded, no action intended
+
+| Item | |
+|---|---|
+| Three npm packages have no provenance at `2.5.1` | `@mdka/lib-linux-x64-musl`, `-linux-arm64-gnu`, `-linux-arm64-musl` were published by hand to create them, because npm trusted publishing is attached per package and cannot be configured for a name that does not exist. Every other package and version carries a SLSA attestation, and these three will from their next release |
+| `@mdka/lib-linux-x64-gnu@2.5.0` is orphaned | Published before the `2.5.0` npm failure aborted. Nothing references it — `optionalDependencies` pin exact versions — and removing it needs manual registry access |
 
 ## Portfolio at a glance
 
