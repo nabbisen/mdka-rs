@@ -79,12 +79,12 @@ actually lives.
   asset, and carry platform and version in both that name and the filename
   (e.g. `mdka@Linux-x64-gnu-2.1.8.tar.gz` → `mdka@Linux-x64-gnu-2.1.8/mdka`).
   This **contradicts** the packaging rule in
-  `.git-exclude/rules/project-instructions-rust-cli.md:57`, which forbids an
+  the project's internal packaging rule, which forbids an
   intermediate parent directory. Recorded, not resolved: `release-executable.yaml`
   is stale and slated for replacement by the CI workflows, so the layout will be
   decided deliberately then. Until that lands, this bullet describes what the
-  archives actually do. See
-  `.git-exclude/reviewed/archive-layout-decision/README.md`.
+  archives actually do. See the internal
+  archive-layout decision record.
 - Scheduling is **sequence-based**, not date-bound. Releases are cut at logical
   breaking points — normally when a milestone's RFCs are all resolved.
 - One milestone maps to one release unless the owner directs otherwise.
@@ -154,7 +154,7 @@ exists only to serve this repository's own benchmarks.
 **Released 2026-08-02.** All five RFCs implemented, reviewed, and approved; all
 four exit criteria met. Post-release evaluation and root-cause analysis of the
 `verify-ci` failure are in
-`.git-exclude/reviewed/release-2.1.7-complete/README.md`.
+the internal `2.1.7` release record.
 
 No behaviour change. Establishes the quality gate that every later milestone
 lands through, and closes the documentation claims that are wrong regardless of
@@ -319,8 +319,7 @@ evidence is what settles it.
 ### M2b · Audit remediation → `2.2.1` + `2.2.2` (patches) — ✅ COMPLETE
 
 Arising from the independent audit of 2026-08-31
-(`.git-exclude/reviewed/audit-2026-08-31/`, architect response in
-`ARCHITECT-RESPONSE.md`). **This milestone is live user harm only.** Nothing here
+(recorded internally, with the architect's response). **This milestone is live user harm only.** Nothing here
 is an improvement; every item is something that is currently wrong for someone
 who has installed the package.
 
@@ -373,7 +372,7 @@ publication, by someone who did not implement the release — tracked in the
 `2.2.2` release record.
 
 `2.2.2` was the first release cut against
-`.git-exclude/release/RELEASE-CHECKLIST.md`.
+the project's internal release checklist.
 
 The consumer pass runs against **`2.2.2`**, not `2.2.1`: by the time it could
 run, `2.2.2` had replaced `usage-cli.md`, the CLI `--help` and the
@@ -423,7 +422,7 @@ the Linux artifacts install and the documented examples resolve — nothing more
 
 From the **first consumer pass** (RFC 027 Rule 1), run against published `2.2.2`
 by a session with no history of this project. Disposition:
-`.git-exclude/reviewed/2.2.2-consumer-pass/README.md`.
+the internal `2.2.2` consumer-pass record.
 
 | RFC | Title | Priority | Size |
 |---|---|---|---|
@@ -477,7 +476,7 @@ mdka already claims to handle. `2.3.0` is now **validity**: every known defect i
 existing output has an owner and ships together — RFC 025, 024, 028, 010. Tables and
 element coverage move to **M4 / `2.4.0`**, where they build on valid output and on the
 GFM parsing the harness gains in `025c`. Reasoning:
-`.git-exclude/reviewed/025-output-validity-harness/README.md` §5–§6.
+the internal RFC 025 review record, §5–§6.
 
 | RFC | Title | Priority | Size | Order |
 |---|---|---|---|---|
@@ -507,7 +506,7 @@ GFM parsing the harness gains in `025c`. Reasoning:
 **Before `2.3.0` is cut** — ✅ all done; `2.3.0` shipped 2026-09-22. Kept as the
 record of what was tracked into that checkpoint:
 
-**Dispatched to the dev team 2026-09-22:** `.git-exclude/release/2.3.0/prep-handoff.md` — items 1 to 5 below. The architect
+**Dispatched to the dev team 2026-09-22** as the internal `2.3.0` prep handoff — items 1 to 5 below. The architect
 holds the RFC moves, the index, this file and the version bump.
 
 - Remove internal RFC IDs from two docs.rs-visible doc comments:
@@ -575,8 +574,7 @@ syntax including alignment and header rows; each rule in
 
 A downstream consumer building paste-as-Markdown reported nine measured gaps.
 **All nine reproduced exactly**; assessment in
-`.git-exclude/reviewed/upstream-bekoedit-2026-09-16/README.md`, reply drafted in
-`.git-exclude/upstream/bekoedit/send/draft/`.
+the internal correspondence records, where the reply was drafted.
 
 Three were already scheduled (tables → RFC 008; the `\1.` escape → RFC 010;
 strikethrough → RFC 009). The rest are new:
@@ -602,8 +600,7 @@ RFC 025.
 
 **Reply held until after the release cut** — owner decision, 2026-09-16. The
 draft is written and complete at
-`.git-exclude/upstream/bekoedit/send/draft/2026-09-16-reply-conversion-gaps.md`,
-marked HELD with its trigger.
+the internal correspondence drafts, marked HELD with its trigger.
 
 Taken as the **next** cut, `2.2.2`. Noted there and here because `2.2.2` carries
 none of bekoedit's items — they land in `2.3.0` — so the reply will still be
@@ -625,7 +622,7 @@ than have it buried in a sequencing decision the architect made alone.
 RFC 028's handoff was written into `rfcs/handoffs/` while both its preconditions
 were unmet, carrying its gate in a header metadata line. The implementer stopped
 and escalated correctly
-(`.git-exclude/reviewed/028-sequencing-conflict/README.md`).
+(recorded in the internal RFC 028 sequencing-conflict review).
 
 **A handoff present in `rfcs/handoffs/` is an instruction to start.** A
 sequencing clause inside it is not a substitute for not dispatching it — it
@@ -686,7 +683,7 @@ a candidate rather than a plan.
 The full consumer pass (fresh performer, no project history) returned twelve findings. **Eleven are not
 regressions** — each verified identical in `2.2.3` — and the worst is *less* damaging in `2.3.0` than it was
 before, so nothing warranted a hotfix. Disposition and the verification behind it:
-`.git-exclude/reviewed/2.3.0-consumer-pass/README.md`.
+the internal `2.3.0` consumer-pass record.
 
 **The twelfth is a `2.3.0` regression, found 2026-09-22.** Empty list items nested three or more deep emit
 `- - -`, which satisfies CommonMark's thematic-break grammar; with a non-empty sibling the content is

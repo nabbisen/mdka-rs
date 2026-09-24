@@ -4,7 +4,7 @@
 **Author.** Architect
 **Created.** 2026-09-22
 **Milestone.** M4 · Coverage and durability → `2.4.0` (Half A); `3.0` (Half B)
-**Source.** A function-by-function survey of all three bindings and the CLI, 2026-09-22, after the owner added *"interfaces of APIs should be intuitive and easy to understand to users"*. Request: `.git-exclude/review-request/m4-open-decisions-v3/README.md`.
+**Source.** A function-by-function survey of all three bindings and the CLI, 2026-09-22, after the owner added *"interfaces of APIs should be intuitive and easy to understand to users"*. Recorded in the project's internal review records.
 **Touches.** `src/lib.rs`, `src/options.rs`, `node/src/lib.rs`, `python/src/lib.rs`, `python/mdka/`, `python/pyproject.toml`, `cli/src/main.rs`, `docs/src/`.
 
 ---

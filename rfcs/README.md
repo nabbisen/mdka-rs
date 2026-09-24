@@ -83,6 +83,18 @@ milestone actually shipped. Numbers are permanent and are never reused.
 | 011 | Robustness: fuzzing + I/O error paths | M4 |
 | 013 | Internal comment migration to English | M4 |
 
+## A note on internal records
+
+Some RFCs and handoffs here — especially older ones — refer to the project's **internal records**: review
+outcomes, decision requests, release records and upstream correspondence. Those live outside the repository
+and are deliberately not published, so a reference to one is a provenance note rather than a link you can
+follow.
+
+Living documents (`ROADMAP.md` and anything in `accepted/`) no longer cite them by path. **Closed RFCs in
+`done/` and everything in `handoffs/` are left as written**: a handoff is frozen once it is named ready, and
+a closed RFC is the record of a decision as it was made. Rewriting either to tidy a reference would edit
+history for cosmetics.
+
 ## Maintaining this index
 
 Update this file in the same commit that moves an RFC between folders. Before

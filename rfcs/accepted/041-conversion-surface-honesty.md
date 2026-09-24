@@ -4,7 +4,7 @@
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** Unscheduled → `3.0` (breaking). Nothing here belongs in a patch or a minor.
-**Source.** Owner authorised opening this on 2026-09-24, after asking whether the `2.4.2` recommendations matched *"finally clean, safe and secure, robust and sophisticated design"* and *"APIs for users not to be confused or misunderstand"*. They did not; the measurement is in `.git-exclude/review-request/unwrap-wrappers-defect/README.md` §4.
+**Source.** Owner authorised opening this on 2026-09-24, after asking whether the `2.4.2` recommendations matched *"finally clean, safe and secure, robust and sophisticated design"* and *"APIs for users not to be confused or misunderstand"*. They did not; the measurement is recorded in the project's internal review records.
 **Touches.** `src/options.rs`, `src/lib.rs`, `cli/src/main.rs`, `node/src/lib.rs`, `python/src/lib.rs`, `docs/src/api/options.md`, `docs/src/api/modes.md`, `docs/src/getting-started/usage-cli.md`, `README.md`.
 **Relates to.** RFC 039 Half B — the other unscheduled `3.0` API document. These should be decided together.
 
