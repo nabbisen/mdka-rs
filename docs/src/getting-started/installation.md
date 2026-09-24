@@ -46,21 +46,33 @@ yarn add mdka
 
 Requires Node.js 16 or later.
 
-Prebuilt native bindings are published for **three** platforms, resolved
+Prebuilt native bindings are published for **six** platforms, resolved
 automatically through `optionalDependencies`:
 
 | Platform | Package |
 |---|---|
 | Linux x64 (glibc) | `@mdka/lib-linux-x64-gnu` |
+| Linux x64 (musl, e.g. Alpine) | `@mdka/lib-linux-x64-musl` |
+| Linux arm64 (glibc) | `@mdka/lib-linux-arm64-gnu` |
+| Linux arm64 (musl) | `@mdka/lib-linux-arm64-musl` |
 | macOS Apple Silicon | `@mdka/lib-darwin-arm64` |
 | Windows x64 (MSVC) | `@mdka/lib-win32-x64-msvc` |
 
-**On any other platform — musl, Linux arm64, macOS Intel, Windows ARM — there
-is no fallback inside the package.** The published tarball contains four files
-(`index.js`, `index.d.ts`, `package.json`, `README.md`) and no Rust source, so
-`npm run build` cannot work from an installed copy: there is nothing to build,
-and the napi toolchain is a development dependency that is not installed for
-consumers.
+The two glibc bindings are built against **glibc 2.17** — the same floor the
+Python wheels below advertise — so any distribution with glibc 2.17 or newer can
+load them. That covers everything from CentOS 7 onward, including Ubuntu 20.04,
+Debian 11 and RHEL 8. The musl bindings link musl statically and have no glibc
+requirement at all.
+
+**On any other platform — macOS Intel, Windows ARM, and architectures such as
+32-bit ARM or RISC-V — there is no fallback inside the package.** `npm install`
+succeeds there, because a native package that does not match the platform is
+skipped by design, and `require('mdka')` then fails with an error that names the
+platform, lists the six above and points back to this page. The published
+tarball contains five files (`index.js`, `index.d.ts`, `loader.js`,
+`package.json`, `README.md`) and no Rust source, so `npm run build` cannot work
+from an installed copy: there is nothing to build, and the napi toolchain is a
+development dependency that is not installed for consumers.
 
 What does work on those platforms:
 

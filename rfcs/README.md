@@ -17,14 +17,13 @@ None. Everything currently open has been accepted — see below.
 | ID | Title | State |
 |----|-------|-------|
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) | **Accepted (owner, 2026-09-24)**, unscheduled, `3.0`. 6 of 8 options cannot act and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to diverge. **§6's three questions are unanswered — no handoff is possible until a direction is chosen** |
-| 040 | [npm platform coverage, and an error message that contradicts the documentation](./accepted/040-npm-platform-coverage.md) — [handoff](./handoffs/040-npm-platform-coverage/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** npm ships 3 platform families where the CLI ships 5 and PyPI 6; on the rest `npm install` exits 0 and `require` blames a non-existent npm bug. Part B (the message) outranks Part A (the matrix) |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
 
-**Not an RFC, and ahead of both accepted RFCs:** `2.4.2`, a P1 patch for an option documented as inert that
-corrupts tables in two default modes —
-[handoff](./handoffs/2.4.2-unwrap-wrappers-fix/implementation-handoff.md). RFC 040 ships after it.
+**Shipped since, neither an RFC nor pending:** `2.4.2`, a P1 patch for an option documented as inert that
+corrupted tables in two default modes —
+[handoff](./handoffs/2.4.2-unwrap-wrappers-fix/implementation-handoff.md).
 
 ## Implemented
 
@@ -62,6 +61,7 @@ corrupts tables in two default modes —
 | 035 | [Block structure inside containers](./done/035-block-structure-inside-containers.md) — [handoff](./handoffs/035-block-structure-inside-containers/implementation-handoff.md) | 2.3.0 |
 | 010 | [Escaping and text round-trip](./done/010-escaping-and-text-round-trip.md) — [handoff](./handoffs/010-escaping-and-text-round-trip/implementation-handoff.md) · closed M3 | 2.3.0 |
 | 036 | [Whitespace and separators at block boundaries](./done/036-whitespace-at-block-boundaries.md) — [handoff](./handoffs/036-whitespace-at-block-boundaries/implementation-handoff.md) · [036b](./handoffs/036-whitespace-at-block-boundaries/slice-b-handoff.md) · [036d](./handoffs/036-whitespace-at-block-boundaries/slice-d-handoff.md) | 2.4.0 |
+| 040 | [npm platform coverage, and an error message that contradicts the documentation](./done/040-npm-platform-coverage.md) — [handoff](./handoffs/040-npm-platform-coverage/implementation-handoff.md) · [addendum](./handoffs/040-npm-platform-coverage/addendum-2026-09-24-x64-glibc-floor.md) | 2.5.0 |
 | 038 | [Marker lines colliding with other CommonMark constructs](./done/038-marker-line-collisions.md) — [handoff](./handoffs/038-marker-line-collisions/implementation-handoff.md) | 2.4.0 |
 | 008 | [GFM table support](./done/008-gfm-table-support.md) — [008a](./handoffs/008-gfm-table-support/slice-a-handoff.md) · [008b](./handoffs/008-gfm-table-support/slice-b-handoff.md) | 2.4.0 |
 | 037 | [Emphasis emission fidelity: empty and nested](./done/037-emphasis-emission-fidelity.md) — [handoff](./handoffs/037-emphasis-emission-fidelity/implementation-handoff.md) | 2.4.0 |

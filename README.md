@@ -128,6 +128,12 @@ let md = html_to_markdown_with(html, &opts);
 npm install mdka
 ```
 
+Prebuilt bindings are published for six platforms: Linux on x64 and arm64 (each
+with glibc and musl), macOS Apple Silicon, and Windows x64. macOS Intel and
+Windows ARM are not supported; the
+[installation page](https://nabbisen.github.io/mdka-rs/getting-started/installation.html#as-a-nodejs-package)
+lists what does work there.
+
 ```js
 const { htmlToMarkdown, htmlToMarkdownWithAsync } = require('mdka')
 

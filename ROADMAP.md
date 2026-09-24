@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.4.2 — **prepared 2026-09-24**, awaiting the pre-tag checkpoint. `2.4.1` shipped 2026-09-24, tag `40b80d4`, verified on crates.io, npm and PyPI; `2.4.0` shipped 2026-09-23, tag `2f72f5b`.
+**Current version.** 2.5.0 — **prepared 2026-09-24**, awaiting the pre-tag checkpoint. `2.4.2` shipped 2026-09-24, tag `0913c7d`, verified on all four registries; `2.4.1` 2026-09-24, tag `40b80d4`; `2.4.0` 2026-09-23, tag `2f72f5b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -24,7 +24,15 @@ also carries the two properties nothing asserted — an option documented inert 
 and `Balanced` ≡ `Strict` ≡ `Semantic` ≡ `Preserve` — both over a corpus, both failing before the fix. It
 corrects `2.4.1`'s published claim that the four modes were already identical.
 
-**RFC 040** (npm platform coverage and an honest load error) is accepted, has a handoff, and ships after it.
+**`2.5.0` ships RFC 040** — npm goes from three prebuilt platforms to six (Linux x64 musl, Linux arm64 glibc
+and musl join), and `require('mdka')` stops reporting an unsupported platform as an npm bug with advice that
+cannot work. Mid-slice the x64 glibc binding was also found to require **glibc 2.34** while our own PyPI
+wheels reached 2.17; it is now cross-built to 2.17, so Ubuntu 20.04, Debian 11 and RHEL 8 are served. No API
+change and conversion output is byte-identical to `2.4.2`.
+
+**A control gap this exposed:** nothing in the project inspected the *contents* of a built artifact. CI, the
+gates, the release checks and the documentation audit were all green for a dozen releases while the npm
+binding silently excluded three widely-used distributions. Worth its own RFC after `2.5.0`.
 
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are

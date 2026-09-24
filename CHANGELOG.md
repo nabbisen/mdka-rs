@@ -9,6 +9,48 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.5.0] - 2026-09-24
+
+**`2.5.0` — npm reaches six platforms instead of three, and stops blaming npm
+when it cannot load.** No API change: every export, signature and option is
+unchanged, and conversion output is byte-identical to `2.4.2`.
+
+### Added
+
+- **Prebuilt npm bindings for Linux x64 musl, Linux arm64 glibc and Linux arm64
+  musl**, joining the existing Linux x64 glibc, macOS Apple Silicon and Windows
+  x64. Alpine and arm64 hosts no longer fall off the end of `npm install`. The
+  CLI archives and the PyPI wheels already covered musl and arm64; npm was the
+  channel left behind.
+
+### Fixed
+
+- **`require('mdka')` blamed npm for a bug that was not there.** On a platform
+  with no prebuilt binary, `npm install` exits 0 — a native package that does
+  not match the platform is skipped by design — and the load then failed with
+  *"npm has a bug related to optional dependencies … try `npm i` again after
+  removing package-lock.json and node_modules"*. There was no npm bug, the
+  advice was a loop that could not terminate, and it contradicted the
+  installation page, which described the situation correctly. The package entry
+  point is now `loader.js`, which names the platform, lists the six published
+  ones, links the installation page, and attaches the real per-path load errors
+  as `error.cause`. A platform that *is* published but whose binary will not
+  load gets a different message rather than being called unsupported
+  (`MDKA_UNSUPPORTED_PLATFORM` / `MDKA_BINARY_LOAD_FAILED`).
+
+- **The Linux x64 glibc binding required glibc 2.34**, because it was built
+  natively on the CI runner, so it would not load on Ubuntu 20.04, Debian 11 or
+  RHEL 8 — while the PyPI wheels for the same platform reach glibc 2.17. It is
+  now cross-built against **glibc 2.17**, like the new arm64 glibc binding.
+  Conversion output is byte-identical across 360 conversions; the only changes
+  to the binary are the ones that follow from the older baseline.
+
+### Documentation
+
+- The installation page and `README.md` list six npm platforms, state the glibc
+  floor, and describe what happens on an unsupported one. `macOS Intel` and
+  `Windows ARM` remain unsupported and are still named as such.
+
 ## [2.4.2] - 2026-09-24
 
 **`2.4.2` — a patch release that fixes an option documented as having no
