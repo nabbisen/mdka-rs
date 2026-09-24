@@ -822,6 +822,12 @@ what order, is the owner's call.
 | **`cargo-zigbuild` and `ziglang` are unpinned in the release path** | Added for the musl cross-builds in `2.5.0`. CI takes whatever is current at release time. Pinning is a deliberate choice, not an oversight to fix silently |
 | **Three stale tracked directories** — `node/linux-x64-gnu/`, `node/darwin-arm64/`, `node/win32-x64-msvc/` | Each holds a `package.json` and README, is bumped by `version.sh`, and is unused: publishing uses the generated, git-ignored `node/npm/`. Probably napi-v2 relics |
 
+### Found by machinery built for something else, 2026-09-25
+
+| Item | State |
+|---|---|
+| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, proposed. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
+
 ### Recorded here because they had stopped being carried, 2026-09-24
 
 Each of these had a home that turned out not to exist, or no home at all. Listed so they no longer depend on
