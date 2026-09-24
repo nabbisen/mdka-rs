@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | State |
+|----|-------|-------|
+| 043 | [`<sup>` and `<sub>` that silently change the meaning](./proposed/043-superscript-and-subscript-fidelity.md) | Awaiting owner acceptance. Owner chose the visible-fallback option on 2026-09-24; measuring it first found the harm is **24% of 415 real occurrences, not the 1% I had reported**, that `<sub>` has the identical defect, and that three map gaps close much of it without any fallback |
 
 ## Accepted
 

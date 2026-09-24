@@ -809,7 +809,7 @@ what order, is the owner's call.
 |---|---|
 | **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); whether the *wording* half ships early in a minor; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
 | **RFC 039 Half B** — public API coherence | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
-| **`<sup>` that changes meaning** | `2<sup>n − 1</sup>` converts to `2n − 1`. The mapping rule is documented accurately in `docs/src/api/elements.md`; what is open is whether an unmappable `<sup>` should emit a visible fallback marker rather than silently flattening |
+| **`<sup>` and `<sub>` that change meaning** — now **RFC 043**, proposed | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **102 of 415 real occurrences (24%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
 | **`py.typed` without stubs** | The marker ships with no `.pyi`, so a type checker stops reporting the package as untyped while every symbol still resolves as `Any`. Documented honestly in `docs/src/getting-started/usage-python.md`; the open question is whether to write stubs or drop the marker |
 
 ### Proposed for the next minor
