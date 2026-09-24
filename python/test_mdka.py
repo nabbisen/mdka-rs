@@ -698,3 +698,30 @@ def test_file_with_mode_option(tmp_path):
 def test_file_with_nonexistent_raises():
     with pytest.raises(MdkaError):
         html_file_to_markdown_with("/no/such/file.html")
+
+
+# ─── Type stubs (RFC 045) ────────────────────────────────────────────────────
+#
+# `python -m mypy.stubtest mdka` (run in CI) checks the stubs against this
+# module and catches anything missing from the stub, or a signature that
+# differs. It does NOT catch a class attribute the stub declares and the
+# runtime lacks (verified: an extra `ConversionMode` member passes), so those
+# are asserted here: every name a stub class declares as a variable must exist
+# on the runtime class.
+
+def test_stub_class_variables_exist_at_runtime():
+    import ast
+
+    stub = Path(mdka.__file__).parent / "mdka_python.pyi"
+    assert stub.is_file(), f"the type stub is not shipped beside the module: {stub}"
+    runtime = mdka.mdka_python
+    declared = 0
+    for node in ast.parse(stub.read_text()).body:
+        if isinstance(node, ast.ClassDef):
+            for stmt in node.body:
+                if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+                    declared += 1
+                    assert hasattr(getattr(runtime, node.name), stmt.target.id), (
+                        f"stub declares {node.name}.{stmt.target.id}, which the runtime lacks"
+                    )
+    assert declared == 5, "expected the five ConversionMode members to be checked"

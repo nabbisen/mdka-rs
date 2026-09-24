@@ -168,30 +168,29 @@ never raise exceptions regardless of input quality.
 
 ## Type Annotations
 
-**mdka ships a `py.typed` marker, but no `.pyi` stubs**, so a type checker no
-longer reports the package as untyped, but every symbol below still resolves
-as `Any`. Every public symbol is implemented in Rust and exposed through a
-compiled extension module, which a type checker cannot read signatures from;
-shipping the bare marker without stubs stops mypy from complaining about a
-missing marker, but does not by itself give it anything to check a call
-against. Typed stubs are the real fix and are not written yet.
+mdka ships type stubs (`mdka/__init__.pyi` and `mdka/mdka_python.pyi`) next to a
+`py.typed` marker, so a type checker (checked with mypy) reports calls against
+the real signatures:
 
-Until then, the signatures are:
+```python,fragment
+import mdka
 
-```python
-from mdka import (
-    html_to_markdown,               # (html: str) -> str
-    html_to_markdown_with,          # (html: str, mode=..., **flags) -> str
-    html_to_markdown_many,          # (html_list: list[str]) -> list[str]
-    html_to_markdown_many_with,     # (html_list: list[str], mode=..., **flags) -> list[str]
-    html_file_to_markdown,          # (path, out_dir=None, ...) -> ConvertResult
-    html_file_to_markdown_with,     # (path, out_dir=None, mode=..., **flags) -> ConvertResult
-    html_files_to_markdown,         # (paths, out_dir, ...) -> list[BulkConvertResult]
-    html_files_to_markdown_with,    # (paths, out_dir, mode=..., **flags) -> list[BulkConvertResult]
-    ConversionMode,                 # enum
-    ConvertResult,                  # dataclass: src, dest (str)
-    BulkConvertResult,              # dataclass: src, dest?, error?, ok
-    MdkaError,                      # exception
-    version,                        # () -> str
-)
+n: int = mdka.html_to_markdown("<p>hi</p>")   # error: "str" is not assignable to "int"
+mdka.html_to_markdown(42)                      # error: argument 1 must be "str"
+mdka.html_file_to_markdown()                   # error: missing argument "path"
 ```
+
+The stubs are the reference for every signature; read them, or ask your editor,
+rather than a copy in prose. Three things worth knowing about them:
+
+- **They describe what the extension accepts, which is narrower than "anything
+  path-like".** File paths are `str`, not `os.PathLike`: pass `str(path)`. The
+  list arguments (`html_list`, `paths`) take any sequence of `str` — but a bare
+  `str` is rejected at runtime, which a type checker cannot express.
+- **The three deprecated keywords are in the signature.** `preserve_classes`,
+  `preserve_data_attrs` and `preserve_aria_attrs` are still accepted, have no
+  effect and emit a `DeprecationWarning`; see [Conversion Options](../api/options.md).
+  `preserve_unknown_attrs` is not accepted and is not in the stubs.
+- **They are checked against the built extension in CI** (`python -m
+  mypy.stubtest mdka`), so a signature that changes in Rust without the stub
+  changing fails the build rather than misleading a type checker.

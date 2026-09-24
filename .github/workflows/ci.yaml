@@ -236,3 +236,16 @@ jobs:
           source ../.venv/bin/activate
           python --version
           python -m pytest test_mdka.py
+
+      # RFC 045: the type stubs (python/mdka/*.pyi) are a second description of
+      # the extension's surface. stubtest imports the module just built above
+      # and fails on anything missing, extra or differently shaped, so the stubs
+      # cannot drift from the runtime unnoticed. It cannot see a class variable
+      # the stub declares and the runtime lacks; pytest covers that one
+      # (test_stub_class_variables_exist_at_runtime).
+      - name: stubtest
+        working-directory: python
+        run: |
+          source ../.venv/bin/activate
+          uv pip install mypy
+          python -m mypy.stubtest mdka
