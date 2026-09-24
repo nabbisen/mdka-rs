@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-None. Everything currently open has been accepted — see below.
+| ID | Title | State |
+|----|-------|-------|
+| 042 | [Assert what is inside a published artifact](./proposed/042-artifact-content-gate.md) | Awaiting owner acceptance. Nothing inspects artifact contents; every control was green while the npm Linux binary required glibc 2.34. **The published CLI `Linux-x64-gnu` binary still does** — a live defect the proposed gate would fail on immediately |
 
 ## Accepted
 
