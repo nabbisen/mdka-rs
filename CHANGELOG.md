@@ -9,6 +9,31 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.5.1] - 2026-09-24
+
+**`2.5.1` — the release `2.5.0` was supposed to be on npm.** `2.5.0` published
+correctly to crates.io and PyPI; its npm publish failed partway and `mdka` on
+npm stayed at `2.4.2`. Identical library code to `2.5.0`; the only change is one
+field that lets the three new platform packages be created.
+
+### Fixed
+
+- **`2.5.0` could not create its new npm packages.** `napi pre-publish` runs a
+  plain `npm publish` for each per-platform package, and a *new* scoped package
+  defaults to restricted access, which this account cannot create — so the first
+  brand-new package (`@mdka/lib-linux-x64-musl`) failed with a 404 on PUT and the
+  publish stopped there. Existing packages were unaffected, which is why
+  `@mdka/lib-linux-x64-gnu@2.5.0` went out and nothing else did. `node/package.json`
+  now sets `publishConfig.access` to `public`, which napi copies into every
+  generated per-platform manifest.
+
+### Note for npm users
+
+`2.5.0` does not exist on npm; take `2.5.1`, which is the same code. On
+crates.io and PyPI, `2.5.0` and `2.5.1` are identical and either is fine.
+`@mdka/lib-linux-x64-gnu@2.5.0` was published before the failure and is
+referenced by nothing; it can be ignored.
+
 ## [2.5.0] - 2026-09-24
 
 **`2.5.0` — npm reaches six platforms instead of three, and stops blaming npm
