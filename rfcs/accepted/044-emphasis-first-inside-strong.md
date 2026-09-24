@@ -1,9 +1,9 @@
 # RFC 044 — Emphasis first inside `<strong>` is lost, and leaves a literal `_`
 
-**Status.** Proposed
+**Status.** Accepted — owner, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
-**Milestone.** Unassigned. An output-correctness fix; a patch or a minor.
+**Milestone.** Unassigned. An output-correctness fix; a patch or a minor. **Scheduled after `2.6.0`** — see §8.
 **Source.** Found by the dev team while fuzzing their own subscript marker during RFC 043 — 28 000 generated cases across six contexts, each converted **and parsed**. Not related to `<sup>`/`<sub>`; they reproduced it on the published binary and did not touch it.
 **Touches.** wherever RFC 037's addendum chooses the inner emphasis delimiter, plus the output-validity harness.
 **Relates to.** RFC 037's addendum, which introduced the `_` swap this narrows. Same class as RFC 036/037/038.
@@ -101,3 +101,23 @@ reproduction on the published binary rather than working around it.
 
 That is now the fourth defect found this way, and the second found by machinery built for something else.
 It is the argument for the harness parsing rather than comparing strings.
+
+---
+
+## 8. Owner decision, 2026-09-25
+
+**Accepted**, with the sequencing recommended in §5 and in the release-scope package: **this does not ride
+`2.6.0`**. That release was authorised the same day and carries a live glibc exclusion, a live false type
+all-clear and RFC 043's output fix; holding it for a P2 whose prevalence is unmeasured would have been the
+wrong trade.
+
+**So the handoff is issued after `2.6.0` is tagged**, not before. Two reasons, and the second is the real one:
+
+1. A conversion change landing on `main` during release prep would move the tip I have to tag.
+2. **`2.6.0` gives the corpus this RFC could not have.** §5 says plainly that the four-page corpus found zero
+   occurrences and that a prose-heavy corpus should be measured before anyone calls this urgent. The
+   implementing handoff will carry that measurement as its first task, so the priority is set by evidence
+   rather than by the plausibility argument in §5.
+
+Nothing in §1–§7 changes. The fix in §4 stands as proposed and was verified before the RFC was written.
+

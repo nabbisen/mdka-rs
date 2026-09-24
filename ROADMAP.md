@@ -809,7 +809,7 @@ what order, is the owner's call.
 |---|---|
 | **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); whether the *wording* half ships early in a minor; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
 | **RFC 039 Half B** — public API coherence | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
-| **`<sup>` and `<sub>` that change meaning** — now **RFC 043**, proposed | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **102 of 415 real occurrences (24%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
+| **`<sup>` and `<sub>` that change meaning** — now **RFC 043**, shipped to `main` | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **104 of 417 real occurrences (25%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
 | **`py.typed` without stubs** — now **RFC 045**, proposed | **`mypy --strict` reports "Success: no issues found"** on code that assigns a `str` to an `int`, passes an `int` where a `str` is required and omits a required argument — verified against the published `2.5.1` wheel. Without the marker mypy would say *"missing library stubs"*, which is true, so we replaced a correct warning with a false clearance. Owner accepted shipping stubs, with `stubtest` in CI so the second surface cannot drift. **The false all-clear is live until it ships** |
 
 ### Proposed for the next minor
@@ -826,7 +826,7 @@ what order, is the owner's call.
 
 | Item | State |
 |---|---|
-| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, proposed. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
+| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, accepted (owner, 2026-09-25) and deliberately held out of `2.6.0`. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
 
 ### Recorded here because they had stopped being carried, 2026-09-24
 
