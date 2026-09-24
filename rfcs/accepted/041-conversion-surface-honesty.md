@@ -193,3 +193,25 @@ comes, one migration guide** — even if they remain two documents.
 
 Everything above is a recommendation. The decision, the scheduling of `3.0`, and whether §8.3's first step
 goes into the next minor or waits are unchanged as owner calls; §6 stays the list of record.
+
+---
+
+## 9. §6 answered — owner decision, 2026-09-24
+
+| Question | Decision |
+|---|---|
+| **§6.1 direction** | **§5.1 — collapse to what is real.** Deprecate the alias modes and the permanently-inert options in a minor (precedent: the attribute options in `2.2.0`), remove at `3.0` |
+| **§6.2 ship the honest wording early** | **Yes.** Non-breaking, and the inaccuracy is published on crates.io, on PyPI and in the README, not only on the docs site |
+| **§6.3 decide with RFC 039 Half B** | **Yes.** Both rewrite the same surface at `3.0`; deciding apart risks two migrations or two designs each assuming the other did not happen |
+
+**§6.2 is separable and goes first.** It is documentation only and corrects text that is untrue in effect
+today, so it does not wait for the structural work. Handoff:
+`rfcs/handoffs/041-conversion-surface-honesty/wording-slice-handoff.md`.
+
+**The structural half stays unscheduled** and is now bound to RFC 039 Half B. When it is scheduled, one
+migration guide covers both.
+
+Also folded in, from the documentation audit: **`mdka_python` leaks into the Python package's public
+namespace** — `dir(mdka)` exposes 14 names where 13 are documented. It belongs to this RFC's surface work,
+not to a patch.
+

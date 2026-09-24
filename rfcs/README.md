@@ -17,7 +17,7 @@ None. Everything currently open has been accepted — see below.
 | ID | Title | State |
 |----|-------|-------|
 | 042 | [Assert what is inside a published artifact](./accepted/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** Nothing inspects artifact contents. **The published CLI `Linux-x64-gnu` binary requires glibc 2.34** and the gate must be shown failing on it before the fix lands |
-| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) | **Accepted (owner, 2026-09-24)**, unscheduled, `3.0`. 6 of 8 options cannot act and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to diverge. **§6's three questions are unanswered — no handoff is possible until a direction is chosen** |
+| 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording slice is handed off**; the structural half stays unscheduled |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
