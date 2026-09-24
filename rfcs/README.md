@@ -12,6 +12,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | State |
 |----|-------|-------|
+| 045 | [`py.typed` without stubs makes a type checker certify wrong code](./proposed/045-python-type-stubs.md) | Awaiting owner acceptance. `mypy --strict` reports **"Success"** on code that assigns `str` to `int` and omits a required argument. Owner accepted shipping stubs on 2026-09-24, with `stubtest` in CI as the mechanism that stops them drifting |
 | 044 | [Emphasis first inside `<strong>` is lost, and leaves a literal `_`](./proposed/044-emphasis-first-inside-strong.md) | Awaiting owner acceptance. `<b><em>q</em>a</b>` → `**_q_a**`, which parses as `strong("_" "q_a")` — live in every published version. Found by the dev team's fuzzer during RFC 043. **P2: real and reproducible, but prevalence is unmeasured — zero in the four-page corpus** |
 
 ## Accepted
