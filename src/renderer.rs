@@ -108,6 +108,22 @@ pub struct MarkdownRenderer {
     /// assumes real lines to put the fence and the content on. Reset per
     /// cell.
     cell_pre: Option<String>,
+    /// Per open `<sup>`/`<sub>` that opened a capture (RFC 043): what is
+    /// needed to decide, once it closes, how to write it -- the source text
+    /// inside it, and whether the only markup was emphasis.
+    script: Vec<ScriptFrame>,
+}
+
+/// One open `<sup>`/`<sub>` (RFC 043). The capture holds the content's own
+/// *rendering* -- `*n*` for `<i>n</i>` -- which is what a fallback must keep
+/// but is no use for deciding whether the content is just the letter `n`
+/// raised, or for the bracket test, which is about the source text.
+struct ScriptFrame {
+    /// Every character of text inside the element, with the tags stripped.
+    text: String,
+    /// The only elements inside are emphasis (`<i>`, `<em>`, `<b>`,
+    /// `<strong>`, `<var>`) and the wrapper `<span>`, which adds no markup.
+    emphasis_only: bool,
 }
 
 /// One open list, flattened inside a table cell (F1): its kind and, for an
@@ -131,7 +147,73 @@ struct EmphasisFrame {
     mark: sink::EmphasisMark,
 }
 
+/// Elements that leave a `<sup>`/`<sub>` "emphasis only" (RFC 043 §2.3):
+/// emphasis, which a superscript character cannot carry anyway, and `<span>`,
+/// which some modes unwrap and some do not -- it must not decide the outcome.
+fn is_transparent_in_script(tag: &str) -> bool {
+    matches!(tag, "i" | "em" | "b" | "strong" | "var" | "span")
+}
+
+/// How a closed `<sup>`/`<sub>` is written. `content` is its rendering (RFC
+/// 043); `frame` is what was seen of its source; `underscore_safe` says
+/// whether a `_` written here can be left unescaped.
+///
+/// 1. Everything maps to Unicode: a real superscript/subscript, the best
+///    outcome (RFC 009 §4.3, widened by RFC 043 §2). All or nothing -- half a
+///    superscript is a different number, not an improvement.
+/// 2. Text that closes itself -- `[1]`, `(a b)` -- is left exactly as it
+///    renders. The brackets already say it is a marker, and this is what
+///    keeps every citation marker as it was (RFC 043 §3).
+/// 3. Anything else gets a marker, always parenthesised: `x^(n − 1)`,
+///    `x_(y)`. Without one `2<sup>n − 1</sup>` read as "two times n minus
+///    one", a different statement rather than a lossy one.
+fn render_script(
+    content: String,
+    superscript: bool,
+    frame: Option<ScriptFrame>,
+    underscore_safe: bool,
+) -> String {
+    if let Some(mapped) = utils::map_script(&content, superscript) {
+        return mapped;
+    }
+    let source = frame.as_ref().map_or("", |f| f.text.trim());
+    // `<sup><i>n</i></sup>` is the variable n raised, exactly as
+    // `<sup>n</sup>` is; the emphasis is what defeated the map, and a
+    // superscript character cannot carry it (RFC 043 §2.3).
+    if frame.as_ref().is_some_and(|f| f.emphasis_only)
+        && !source.is_empty()
+        && let Some(mapped) = utils::map_script(source, superscript)
+    {
+        return mapped;
+    }
+    if is_self_delimiting(source) {
+        return content;
+    }
+    // When mapping fails the content is ordinary inline content, and its
+    // emphasis survives: `x^(*n* + 1)`, not `x^(n + 1)`.
+    if superscript {
+        format!("^({content})")
+    } else if underscore_safe {
+        format!("_({content})")
+    } else {
+        format!("\\_({content})")
+    }
+}
+
+/// Source text bracketed at both ends, `[...]` or `(...)`. A property of the
+/// text, not a guess about meaning (RFC 043 §3).
+fn is_self_delimiting(source: &str) -> bool {
+    (source.starts_with('[') && source.ends_with(']'))
+        || (source.starts_with('(') && source.ends_with(')'))
+}
+
 impl MarkdownRenderer {
+    fn mark_script_not_emphasis_only(&mut self) {
+        for frame in &mut self.script {
+            frame.emphasis_only = false;
+        }
+    }
+
     pub fn new(capacity: usize) -> Self {
         Self {
             sink: Sink::new(capacity),
@@ -148,6 +230,7 @@ impl MarkdownRenderer {
             cell_lists: Vec::new(),
             cell_after_marker: false,
             cell_pre: None,
+            script: Vec::new(),
         }
     }
 
@@ -254,6 +337,11 @@ impl MarkdownRenderer {
     /// unwrapped wrapper reach `ensure_newlines` unguarded and write a real
     /// blank line into what must stay verbatim content.
     pub fn begin_unwrapped_separator(&mut self) {
+        // An unwrapped `<div>` is still block content inside a `<sup>`, as an
+        // entered one is (RFC 043 §2.3): the modes must not differ on it.
+        if !self.script.is_empty() {
+            self.mark_script_not_emphasis_only();
+        }
         if self.in_table_cell() {
             if self.cell_pre.is_none() {
                 self.cell_block_separator();
@@ -358,6 +446,9 @@ impl MarkdownRenderer {
     // ─── Text ──────────────────────────────────────────────────────────────
 
     pub fn process_text(&mut self, text: &str) {
+        for frame in &mut self.script {
+            frame.text.push_str(text);
+        }
         // F1 (RFC 008 `008b`): a table cell's own flattened `<pre>`
         // accumulates its text raw, exactly like the fenced-block case just
         // below, but into a plain buffer rather than the sink -- there is no
@@ -476,6 +567,11 @@ impl MarkdownRenderer {
         checkbox: Option<bool>,
     ) {
         let tag = elem.name();
+        // Any element other than emphasis inside a `<sup>`/`<sub>` means its
+        // content is not just a raised letter (RFC 043 §2.3).
+        if !self.script.is_empty() && !is_transparent_in_script(tag) {
+            self.mark_script_not_emphasis_only();
+        }
         // Tags whose own arm opens a capture or a code block: anchor first.
         // Adding a tag that sets either guard means adding it here too
         // (RFC 006 Slice D; tests/anchor_drift_guard.rs).
@@ -740,6 +836,10 @@ impl MarkdownRenderer {
             "sup" | "sub" => {
                 let _ = self.open_distributed_link();
                 self.sink.begin_capture(Capture::SupSub);
+                self.script.push(ScriptFrame {
+                    text: String::new(),
+                    emphasis_only: true,
+                });
             }
             "a" => {
                 let href = elem.attr("href").unwrap_or("").to_string();
@@ -824,17 +924,27 @@ impl MarkdownRenderer {
             }
             "sup" | "sub" if self.in_code() => {}
             "sup" | "sub" => {
+                let frame = self.script.pop();
                 if let Some((_, content, trailing)) = self.sink.end_capture() {
+                    // A subscript marker `_` is left unescaped only where it
+                    // cannot pair with another: glued to a word on its left
+                    // (so it cannot open), outside any open emphasis (an
+                    // enclosing `_` delimiter is what it could close, and
+                    // which delimiter an emphasis span writes is settled
+                    // late, RFC 037 addendum), and with no unescaped `_`
+                    // earlier in the paragraph still waiting for a partner.
+                    let underscore_safe = self.sink.glued_to_word()
+                        && self.emphasis.iter().all(Option::is_none)
+                        && !self.sink.underscore_may_pair();
                     // Empty content maps vacuously (RFC 037's own rule for
-                    // an empty `<strong>`: nothing to write). Otherwise,
-                    // every character mapping wins; falling short of that,
-                    // the captured content is spliced back exactly as
-                    // captured -- unchanged, the citation-marker case above
-                    // everything else here (RFC 009 §5.4).
+                    // an empty `<strong>`: nothing to write). Otherwise
+                    // every character mapping wins (RFC 009 §4.3, widened by
+                    // RFC 043 §2); falling short of that, the captured
+                    // content is spliced back as captured.
                     let rendered = if content.is_empty() {
                         None
                     } else {
-                        utils::map_script(&content, tag == "sup").or(Some(content))
+                        Some(render_script(content, tag == "sup", frame, underscore_safe))
                     };
                     self.sink.splice(rendered.as_deref(), trailing);
                 }

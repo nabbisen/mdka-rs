@@ -480,6 +480,55 @@ impl Sink {
         self.dest_ref().at_line_start
     }
 
+    /// Whether the next byte written lands directly against a letter or
+    /// digit, with nothing pending between (RFC 043): a `_` written there
+    /// is flanked by a word on its left, so it cannot open emphasis -- the
+    /// only thing an unescaped subscript marker has to avoid.
+    pub(super) fn glued_to_word(&self) -> bool {
+        let dest = self.dest_ref();
+        !dest.last_was_space
+            && !dest.at_line_start
+            && escape::class(dest.prev_char()) == escape::Class::Word
+    }
+
+    /// Whether the current paragraph already holds an unescaped `_` that
+    /// could be waiting for a partner (RFC 043) -- an emphasis delimiter, or
+    /// a stray one left where a span's own delimiters did not pair. A `_`
+    /// glued to a word on its left can *close* such an opener, so a
+    /// subscript marker is escaped when one is there. Not counted: a `_`
+    /// between two word characters (`snake_case`, which can neither open nor
+    /// close) and one that is itself a safe subscript marker (`x_(`).
+    ///
+    /// Reads back to the last blank line, capped, since this runs only when
+    /// a marker is about to be written and more escaping is always safe.
+    pub(super) fn underscore_may_pair(&self) -> bool {
+        let buf = &self.dest_ref().buf;
+        let mut start = buf
+            .rfind("\n\n")
+            .map_or(0, |i| i + 2)
+            .max(buf.len().saturating_sub(4096));
+        while !buf.is_char_boundary(start) {
+            start += 1;
+        }
+        let chars: Vec<char> = buf[start..].chars().collect();
+        let word = |c: Option<&char>| c.is_some_and(|c| c.is_alphanumeric());
+        (0..chars.len()).any(|i| {
+            if chars[i] != '_' {
+                return false;
+            }
+            // Escaped: an odd number of backslashes directly before it.
+            let backslashes = chars[..i].iter().rev().take_while(|&&c| c == '\\').count();
+            if backslashes % 2 == 1 {
+                return false;
+            }
+            let before = i.checked_sub(1).and_then(|j| chars.get(j));
+            let after = chars.get(i + 1);
+            let intraword = word(before) && word(after);
+            let safe_marker = word(before) && after == Some(&'(');
+            !(intraword || safe_marker)
+        })
+    }
+
     pub(super) fn ends_with_newline(&self) -> bool {
         self.dest_ref().buf.ends_with('\n')
     }

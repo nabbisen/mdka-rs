@@ -208,8 +208,15 @@ pub fn extract_code_lang(class: Option<&str>) -> Option<&str> {
 }
 
 /// A `<sup>`'s character mapped to Unicode superscript, if it has one (RFC
-/// 009 §4.3): digits, `+ - = ( )`, and `n`/`i` -- the set with a superscript
-/// form in Unicode at all.
+/// 009 §4.3, widened by RFC 043 §2): digits, `+ - = ( )`, and the lowercase
+/// letters Unicode gives a superscript form -- 25 of 26, there is none for
+/// `q`. U+2212 MINUS SIGN behaves as `-`: it is how typeset mathematics writes
+/// a negative exponent, and left unmapped `10<sup>−9</sup>` read as `10−9`,
+/// "ten minus nine".
+///
+/// Uppercase letters are deliberately absent. Unicode has forms for only some
+/// of them, and an element maps only if **every** character does, so
+/// `x<sup>N</sup>` falls back to the marked form rather than half-map.
 #[inline]
 fn superscript_char(c: char) -> Option<char> {
     Some(match c {
@@ -224,19 +231,48 @@ fn superscript_char(c: char) -> Option<char> {
         '8' => '⁸',
         '9' => '⁹',
         '+' => '⁺',
-        '-' => '⁻',
+        '-' | '\u{2212}' => '⁻',
         '=' => '⁼',
         '(' => '⁽',
         ')' => '⁾',
-        'n' => 'ⁿ',
+        'a' => 'ᵃ',
+        'b' => 'ᵇ',
+        'c' => 'ᶜ',
+        'd' => 'ᵈ',
+        'e' => 'ᵉ',
+        'f' => 'ᶠ',
+        'g' => 'ᵍ',
+        'h' => 'ʰ',
         'i' => 'ⁱ',
+        'j' => 'ʲ',
+        'k' => 'ᵏ',
+        'l' => 'ˡ',
+        'm' => 'ᵐ',
+        'n' => 'ⁿ',
+        'o' => 'ᵒ',
+        'p' => 'ᵖ',
+        'r' => 'ʳ',
+        's' => 'ˢ',
+        't' => 'ᵗ',
+        'u' => 'ᵘ',
+        'v' => 'ᵛ',
+        'w' => 'ʷ',
+        'x' => 'ˣ',
+        'y' => 'ʸ',
+        'z' => 'ᶻ',
         _ => return None,
     })
 }
 
 /// A `<sub>`'s character mapped to Unicode subscript, if it has one (RFC 009
-/// §4.3): digits, `+ - = ( )`, and the Latin letters Unicode gives a
-/// subscript form.
+/// §4.3, widened by RFC 043 §2): digits, `+ - = ( )`, U+2212 as `-`, and the
+/// lowercase letters Unicode gives a subscript form.
+///
+/// **This set is smaller than the superscript one, and that is not an
+/// oversight.** Unicode has 17 subscript letters against 25 superscript ones:
+/// `a e h i j k l m n o p r s t u v x`. There is no subscript form of
+/// `b c d f g q w y z`, so `x<sub>y</sub>` can never map and takes the marked
+/// fallback -- expect that to fire more often for `<sub>` than for `<sup>`.
 #[inline]
 fn subscript_char(c: char) -> Option<char> {
     Some(match c {
@@ -251,22 +287,27 @@ fn subscript_char(c: char) -> Option<char> {
         '8' => '₈',
         '9' => '₉',
         '+' => '₊',
-        '-' => '₋',
+        '-' | '\u{2212}' => '₋',
         '=' => '₌',
         '(' => '₍',
         ')' => '₎',
         'a' => 'ₐ',
         'e' => 'ₑ',
-        'o' => 'ₒ',
-        'x' => 'ₓ',
         'h' => 'ₕ',
+        'i' => 'ᵢ',
+        'j' => 'ⱼ',
         'k' => 'ₖ',
         'l' => 'ₗ',
         'm' => 'ₘ',
         'n' => 'ₙ',
+        'o' => 'ₒ',
         'p' => 'ₚ',
+        'r' => 'ᵣ',
         's' => 'ₛ',
         't' => 'ₜ',
+        'u' => 'ᵤ',
+        'v' => 'ᵥ',
+        'x' => 'ₓ',
         _ => return None,
     })
 }

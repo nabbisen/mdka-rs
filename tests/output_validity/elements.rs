@@ -107,11 +107,15 @@ cells! {
     // but because changing it at all would be the defect, not fixing one.
     non_mappable_citation_marker_is_unchanged: r##"<sup><a href="#c1">[1]</a></sup>"##
         => tree(r#"para(link[#c1]("[1]"))"#);
-    // Not every character of the content maps (`a` has no superscript form):
-    // the whole thing stays exactly as today, not partially converted --
-    // `2⁷a` would be neither the source's `7a` nor a real number.
-    partially_mappable_content_is_unchanged: "<sup>7a</sup>"
-        => tree(r#"para("7a")"#);
+    // The partial-content rule this cell held -- not every character maps, so
+    // the whole thing stays as it was -- was narrowed by RFC 043: `a` now has
+    // a superscript form, so `<sup>7a</sup>` maps whole, and content that
+    // still cannot map takes a visible marker instead of being left to read
+    // as a different statement. The all-or-nothing rule itself is unchanged
+    // and is asserted, with the new shapes, in `sup_sub.rs`
+    // (`a_run_with_one_unmappable_character_is_not_half_mapped`). This cell
+    // is not among `cells!` any more because the marker adds characters the
+    // HTML never had, which `properties()` -- by design -- does not accept.
     empty_superscript_writes_nothing: "a<sup></sup>b"
         => tree(r#"para("ab")"#);
 

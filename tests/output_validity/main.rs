@@ -23,6 +23,9 @@
 //!   same-class emphasis collapses to one level (RFC 037).
 //! - `tables`: an expressible table becomes GFM; everything else falls back
 //!   to a shape that never welds cells (RFC 008 slice `008a`).
+//! - `sup_sub`: `<sup>`/`<sub>` map to Unicode where every character can, are
+//!   left alone when self-delimiting, and take a `^(…)`/`_(…)` marker
+//!   otherwise, in every mode and both readings (RFC 043).
 //! - `elements`: `<dl>` no longer welds, `<del>`/`<s>`/checkbox lists become
 //!   real GFM, `<sup>`/`<sub>` become Unicode where every character maps
 //!   (RFC 009).
@@ -71,6 +74,7 @@ mod inline_in_container;
 mod marker_collisions;
 mod mode_identity;
 mod proofs;
+mod sup_sub;
 mod tables;
 mod well_formedness;
 mod wrappers;
