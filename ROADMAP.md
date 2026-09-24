@@ -639,14 +639,16 @@ This is the architect's discipline, not the implementer's.
 
 **Not scheduled. Needs owner appetite before an RFC is drafted.**
 
-Four additive options requested by bekoedit, listed so they are not lost:
+Four additive options requested by bekoedit, listed so they are not lost. **Re-ranked by them on
+2026-09-24, and the order is not the one we would have guessed** — inline-`style` emphasis is now their top
+gap, `data:` images their lowest:
 
 | Option | Why |
 |---|---|
-| `emit_id_anchors`, independent of mode | `preserve_ids` conflates keeping `id` information with emitting raw HTML to carry it. A caller wanting Balanced's other choices without raw HTML in the output has no way to say so. **A gap RFC 005 created.** |
-| Drop or alt-only `data:` URI images | A pasted screenshot puts megabytes of base64 into the output |
-| Read inline `style` for emphasis (opt-in) | Google Docs and some editors express bold/italic only through `style` |
-| Backslash hard-break instead of two trailing spaces | Editors that strip trailing whitespace silently remove the break |
+| `emit_id_anchors`, independent of mode — *settled 2026-09-24, they no longer need it* | `preserve_ids` conflates keeping `id` information with emitting raw HTML to carry it. A caller wanting Balanced's other choices without raw HTML in the output has no way to say so. **A gap RFC 005 created.** |
+| Drop or alt-only `data:` URI images — *their #3, lowered 2026-09-24* | A pasted screenshot puts megabytes of base64 into the output. **They have solved it on their side** by substituting alt text, so this is now speculative demand unless another consumer asks |
+| **Read inline `style` for emphasis (opt-in)** — *their #1, 2026-09-24* | Google Docs and some editors express bold/italic only through `style`. Their framing is sharper than ours was: **every bold word in a Google Docs paste arrives plain.** Opt-in is acceptable to them |
+| Backslash hard-break instead of two trailing spaces — *their #2* | Editors that strip trailing whitespace silently remove the break. Minor, unchanged |
 
 **Harness limitations recorded, 2026-09-17 (RFC 024 review of `024d`):**
 
@@ -827,6 +829,15 @@ what order, is the owner's call.
 |---|---|
 | **RFC 011** — fuzzing and `MdkaError::Io` error paths | Carries `R-03`: `node/test.js` runs three async IIFEs sharing counters, and the first failure calls `process.exit(1)`, leaving later tests unrun. The gate's exit code stays correct, so CI still fails — it is diagnosis that degrades |
 | **RFC 013** — internal comments to English | **Its inventory is stale and must be re-derived.** `alloc_counter` moved to `benches/`, and `examples/` (`measure_mem`, `quick_bench`, `quick_compare`, `quick_mem`) carries Japanese doc comments that predate the original inventory |
+
+### A constraint on future output changes
+
+**Our only known consumer pins `mdka = "=2.5.1"` exactly, not a caret** (bekoedit, 2026-09-24), because two
+consecutive patches changed output in the mode they use. They will not receive a fix by upgrading, and every
+bump is a deliberate, fixture-checked step on their side.
+
+**The consequence is ours:** an output fix that matters to them has to be *told*, not shipped. Shipping it
+and assuming it lands is no longer true for the one consumer we know about.
 
 ### Recorded, no action intended
 
