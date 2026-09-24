@@ -1,6 +1,6 @@
 # RFC 042 — Assert what is inside a published artifact
 
-**Status.** Proposed
+**Status.** **Accepted (owner, 2026-09-24)** — handoff issued
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** Unassigned → proposed for the next minor. Part of it is a defect fix that could go sooner.
