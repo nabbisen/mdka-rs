@@ -833,6 +833,8 @@ anyone's memory.
 | **R-04(b) — an intentional skip and a real failure look alike.** In the risk register, deferred, not in this list until now | `release-npm.yaml`'s tag check exits 1 to stop the job. It misled the architect twice on 2026-09-24 while reading release rehearsals. Adjacent to the `fail-fast` item above: both make a release's true state hard to read |
 | **`mdka_python` leaks into the Python public namespace** | `dir(mdka)` exposes 14 public names; 13 are documented and the compiled submodule is not. Belongs with RFC 041's surface work |
 
+| **Nothing asserts the corrected mode text.** `cli/tests/rfc039_a7_cli_surface.rs` already asserts on `--help`; two lines rejecting *"debugging"*, *"archiving"*, *"as much of the original"* would stop the promise returning | Raised 2026-09-24 by the dev team, deliberately out of that slice's scope. Same lesson as `2.4.2`'s inertness properties and RFC 042's contract: a corrected statement with nothing asserting it is one waiting to drift back |
+
 ### Reserved numbers, never written
 
 | Item | Note |
