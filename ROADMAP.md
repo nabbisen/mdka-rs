@@ -841,6 +841,8 @@ anyone's memory.
 
 | **Nothing asserts the corrected mode text.** `cli/tests/rfc039_a7_cli_surface.rs` already asserts on `--help`; two lines rejecting *"debugging"*, *"archiving"*, *"as much of the original"* would stop the promise returning | Raised 2026-09-24 by the dev team, deliberately out of that slice's scope. Same lesson as `2.4.2`'s inertness properties and RFC 042's contract: a corrected statement with nothing asserting it is one waiting to drift back |
 
+| **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
+
 ### Reserved numbers, never written
 
 | Item | Note |
