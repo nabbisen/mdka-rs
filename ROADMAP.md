@@ -78,13 +78,11 @@ actually lives.
 - Release archives currently wrap their contents in a directory named after the
   asset, and carry platform and version in both that name and the filename
   (e.g. `mdka@Linux-x64-gnu-2.1.8.tar.gz` → `mdka@Linux-x64-gnu-2.1.8/mdka`).
-  This **contradicts** the packaging rule in
-  the project's internal packaging rule, which forbids an
+  This **contradicts** the project's internal packaging rule, which forbids an
   intermediate parent directory. Recorded, not resolved: `release-executable.yaml`
   is stale and slated for replacement by the CI workflows, so the layout will be
   decided deliberately then. Until that lands, this bullet describes what the
-  archives actually do. See the internal
-  archive-layout decision record.
+  archives actually do; the decision is recorded internally.
 - Scheduling is **sequence-based**, not date-bound. Releases are cut at logical
   breaking points — normally when a milestone's RFCs are all resolved.
 - One milestone maps to one release unless the owner directs otherwise.
@@ -823,6 +821,17 @@ what order, is the owner's call.
 | **`fail-fast` is on in the release build matrices** | One target failing cancels the others, so a release reports one failure and hides the rest. Seen on 2026-09-24: four of five jobs came back `cancelled` rather than giving their own verdict. `fail-fast: false` would let each target report and upload independently — which is what RFC 042's gate is for |
 | **`cargo-zigbuild` and `ziglang` are unpinned in the release path** | Added for the musl cross-builds in `2.5.0`. CI takes whatever is current at release time. Pinning is a deliberate choice, not an oversight to fix silently |
 | **Three stale tracked directories** — `node/linux-x64-gnu/`, `node/darwin-arm64/`, `node/win32-x64-msvc/` | Each holds a `package.json` and README, is bumped by `version.sh`, and is unused: publishing uses the generated, git-ignored `node/npm/`. Probably napi-v2 relics |
+
+### Recorded here because they had stopped being carried, 2026-09-24
+
+Each of these had a home that turned out not to exist, or no home at all. Listed so they no longer depend on
+anyone's memory.
+
+| Item | State |
+|---|---|
+| **A "Docs slice" was named as the home for four `2.3.0` consumer-pass findings and never opened.** All four verified still undone on 2026-09-24 | README's Node Quick Start showcases `htmlToMarkdownWithAsync` — **the one path that cannot emit a deprecation warning** — with no caveat, so a user following our own example is warned about nothing (the limitation itself is a napi-rs constraint); `api/elements.md` never says that mdka reads `style` to *suppress* emphasis; README says *"distinct API"* for *"APIs"*; README mixes `api/modes.html` and `api/modes` link styles |
+| **R-04(b) — an intentional skip and a real failure look alike.** In the risk register, deferred, not in this list until now | `release-npm.yaml`'s tag check exits 1 to stop the job. It misled the architect twice on 2026-09-24 while reading release rehearsals. Adjacent to the `fail-fast` item above: both make a release's true state hard to read |
+| **`mdka_python` leaks into the Python public namespace** | `dir(mdka)` exposes 14 public names; 13 are documented and the compiled submodule is not. Belongs with RFC 041's surface work |
 
 ### Reserved numbers, never written
 
