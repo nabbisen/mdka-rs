@@ -1,0 +1,93 @@
+# RFC 042 — what every published mdka artifact must satisfy.
+#
+# This file is the promise. It is stated, not derived from a build: a change
+# here is a visible decision in review, and reading it answers "what do we
+# promise?" without reading the checker. check-artifact-contract.py asserts it
+# against the built bytes before anything is published, from
+# release-executable.yaml (the CLI binary) and release-npm.yaml (every
+# node/npm/<platform>/*.node).
+#
+# Keys, per target triple:
+#   format          elf | macho | pe — what the file must be.
+#   arch            x86_64 | aarch64 — what it must be built for.
+#   npm_platform    the napi platform name (node/npm/<name>/); the npm check
+#                   requires a package directory for every entry here and
+#                   rejects any directory that is not listed.
+#   max_glibc       glibc targets: no symbol may need a GLIBC_ version above
+#                   this. 2.17 is what the PyPI wheels (manylinux_2_17) already
+#                   promise and what the napi cross toolchain produces. The
+#                   point is not the number, it is that there is one, written
+#                   down.
+#   glibc           "none": no GLIBC_ symbol version at all (musl targets).
+#   needed_allowlist  ELF only: every DT_NEEDED entry must be in this list.
+#                   A new shared-library dependency is a decision, not an
+#                   accident: add it here with a comment saying why.
+#
+# Verified against the published 2.5.1 artifacts and the rebuilt ones; see
+# .git-exclude/review-request/042-artifact-content-gate/ for the evidence.
+
+# Additionally, for napi bindings (*.node): the dynamic exports are exactly this
+# set. Anything more is a symbol the addon leaks; anything less will not load.
+[napi]
+exports = ["napi_register_module_v1"]
+
+[targets."x86_64-unknown-linux-gnu"]
+format = "elf"
+arch = "x86_64"
+npm_platform = "linux-x64-gnu"
+max_glibc = "2.17"
+# libdl / librt / libpthread appear on anything linked against a glibc older
+# than 2.34, which merged them into libc; they exist on every glibc, so the
+# binary still loads on newer systems. ld-linux-x86-64.so.2 is the loader
+# itself, listed by some linkers.
+needed_allowlist = [
+  "libc.so.6",
+  "libgcc_s.so.1",
+  "libm.so.6",
+  "libdl.so.2",
+  "librt.so.1",
+  "libpthread.so.0",
+  "ld-linux-x86-64.so.2",
+]
+
+[targets."aarch64-unknown-linux-gnu"]
+format = "elf"
+arch = "aarch64"
+npm_platform = "linux-arm64-gnu"
+max_glibc = "2.17"
+needed_allowlist = [
+  "libc.so.6",
+  "libgcc_s.so.1",
+  "libm.so.6",
+  "libdl.so.2",
+  "librt.so.1",
+  "libpthread.so.0",
+  "ld-linux-aarch64.so.1",
+]
+
+# musl binaries reference no glibc at all. The CLI is a static executable
+# (nothing needed); the napi addon links musl's libc, whose soname zig and rustc
+# record as libc.so.
+[targets."x86_64-unknown-linux-musl"]
+format = "elf"
+arch = "x86_64"
+npm_platform = "linux-x64-musl"
+glibc = "none"
+needed_allowlist = ["libc.so"]
+
+[targets."aarch64-unknown-linux-musl"]
+format = "elf"
+arch = "aarch64"
+npm_platform = "linux-arm64-musl"
+glibc = "none"
+needed_allowlist = ["libc.so"]
+
+[targets."aarch64-apple-darwin"]
+format = "macho"
+arch = "aarch64"
+npm_platform = "darwin-arm64"
+
+[targets."x86_64-pc-windows-msvc"]
+format = "pe"
+arch = "x86_64"
+npm_platform = "win32-x64-msvc"

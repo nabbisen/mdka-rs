@@ -224,6 +224,21 @@ jobs:
           npx napi create-npm-dirs
           npx napi artifacts
 
+      # RFC 042: before anything is published, open every per-platform addon and
+      # assert what it is against .github/workflows/scripts/artifact-contract.toml
+      # -- the glibc it needs, what it links, what it exports, what it was built
+      # for -- and that all six platform packages are present. Reports every
+      # violation in one run. `npm install gate` cannot see this: it runs on a
+      # glibc newer than the one a binding may wrongly require.
+      - name: Setup Python (artifact contract check)
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Assert every addon satisfies the artifact contract
+        working-directory: node
+        run: python ../.github/workflows/scripts/check-artifact-contract.py napi-dir npm
+
       # RFC 020: this step was missing entirely, which is why `npm install
       # mdka` produced an unusable package for the whole 2.x line -- the
       # per-platform packages were never published past 1.6.9, and the main

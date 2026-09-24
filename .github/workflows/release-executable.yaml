@@ -61,6 +61,12 @@ jobs:
             os: ubuntu-latest
             bin_ext: 
             archive_ext: .tar.gz
+            # RFC 042: built with cargo-zigbuild against glibc 2.17, not natively
+            # on ubuntu-latest, whose glibc (2.39) made this binary require
+            # GLIBC_2.34 and refuse to start on Ubuntu 20.04, Debian 11 and
+            # RHEL 8. The suffix is the glibc floor; the contract in
+            # scripts/artifact-contract.toml is what asserts it.
+            zigbuild_target: x86_64-unknown-linux-gnu.2.17
           - name: Linux-x64-musl
             target: x86_64-unknown-linux-musl
             os: ubuntu-latest
@@ -96,10 +102,41 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      # Python runs the artifact contract check below, and supplies zig (through
+      # cargo-zigbuild on PyPI, which pulls in ziglang) for the entry that
+      # declares a zigbuild_target. cargo-zigbuild is already in the release
+      # path: release-npm.yaml builds its musl bindings with it (RFC 040).
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Install cargo-zigbuild
+        if: ${{ matrix.zigbuild_target }}
+        run: pip install cargo-zigbuild
+
       - name: Build Rust executable
+        if: ${{ !matrix.zigbuild_target }}
         working-directory: cli
         run: |
           cargo build --release --target ${{ matrix.target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
+
+      - name: Build Rust executable (glibc-suffixed target)
+        if: ${{ matrix.zigbuild_target }}
+        working-directory: cli
+        run: |
+          cargo zigbuild --release --target ${{ matrix.zigbuild_target }} --bin ${{ env.PRODUCT_BASENAME }} --locked
+
+      # RFC 042: open the binary that is about to be archived and assert what it
+      # is against .github/workflows/scripts/artifact-contract.toml -- the glibc
+      # it needs, what it links, what it was built for. Every other check asks
+      # whether it works on the runner, which is newer than the systems users
+      # run. Fails the job before anything is uploaded.
+      - name: Assert the built binary satisfies the artifact contract
+        run: |
+          python .github/workflows/scripts/check-artifact-contract.py cli \
+            ${{ matrix.target }} \
+            target/${{ matrix.target }}/release/${{ env.PRODUCT_BASENAME }}${{ matrix.bin_ext }}
 
       # [ release asset ]
       - name: Prepare for release asset
