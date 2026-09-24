@@ -12,13 +12,13 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | State |
 |----|-------|-------|
-| 045 | [`py.typed` without stubs makes a type checker certify wrong code](./proposed/045-python-type-stubs.md) | Awaiting owner acceptance. `mypy --strict` reports **"Success"** on code that assigns `str` to `int` and omits a required argument. Owner accepted shipping stubs on 2026-09-24, with `stubtest` in CI as the mechanism that stops them drifting |
 | 044 | [Emphasis first inside `<strong>` is lost, and leaves a literal `_`](./proposed/044-emphasis-first-inside-strong.md) | Awaiting owner acceptance. `<b><em>q</em>a</b>` → `**_q_a**`, which parses as `strong("_" "q_a")` — live in every published version. Found by the dev team's fuzzer during RFC 043. **P2: real and reproducible, but prevalence is unmeasured — zero in the four-page corpus** |
 
 ## Accepted
 
 | ID | Title | State |
 |----|-------|-------|
+| 045 | [`py.typed` without stubs makes a type checker certify wrong code](./accepted/045-python-type-stubs.md) — [handoff](./handoffs/045-python-type-stubs/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** `mypy --strict` reports "Success" on code assigning `str` to `int`; `stubtest` in CI is the condition |
 | 043 | [`<sup>` and `<sub>` that silently change the meaning](./accepted/043-superscript-and-subscript-fidelity.md) — [handoff](./handoffs/043-superscript-and-subscript-fidelity/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** 102 of 415 real occurrences (24%) are silently wrong; `<sub>` has the identical defect; three map gaps close much of it with a real superscript rather than a notation |
 | 042 | [Assert what is inside a published artifact](./accepted/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | **Accepted (owner, 2026-09-24).** Nothing inspects artifact contents. **The published CLI `Linux-x64-gnu` binary requires glibc 2.34** and the gate must be shown failing on it before the fix lands |
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording slice is handed off**; the structural half stays unscheduled |

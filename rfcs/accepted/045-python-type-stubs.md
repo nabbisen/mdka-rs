@@ -1,6 +1,6 @@
 # RFC 045 — `py.typed` without stubs makes a type checker certify wrong code
 
-**Status.** Proposed
+**Status.** **Accepted (owner, 2026-09-25)** — handoff issued
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. Packaging and typing only; no conversion change.
@@ -83,9 +83,10 @@ already does this for pytest.
 
 `mdka_python`, the compiled submodule, is exported into the public namespace: `dir(mdka)` gives 14 names
 where 13 are documented. It was found in the documentation audit and recorded against RFC 041's structural
-work. **Whatever the stub does about it decides what a type checker thinks the surface is**, so it cannot be
-deferred past this RFC: either exclude it from `__all__` and the stub, or document it. Excluding it is the
-obvious choice; the RFC does not pre-empt the implementer's reading of why it is exported at all.
+work. **Correction, 2026-09-25:** `__init__.py` already declares `__all__` with exactly the thirteen documented
+names, so `mdka_python` is *not* exported — it is bound only as a side effect of `from .mdka_python import …`.
+`from mdka import *` is already correct; only `dir(mdka)` and attribute access show it. The stub should mirror
+the existing `__all__`, which makes this a smaller question than §5 first implied.
 
 ## 6. Not in scope
 
