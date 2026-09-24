@@ -172,12 +172,11 @@ above.** Unwrapping a block-level wrapper (`<div>`, `<section>`, `<article>`,
 `<main>`) removes the tag, but keeps the paragraph break it stood for — the
 same block separation the element would have produced rendered. The tag's
 removal has no Markdown-visible trace either way, so there is currently
-nothing left for this option to change. This is *not* a deprecation: unlike
-the five fields above, `unwrap_unknown_wrappers` is unimplementable for
-nothing — a future mode that preserves raw HTML wrappers would make it
-observable again at once. It carries no `#[deprecated]` attribute and
-triggers no warning; see [Conversion Modes](./modes.md) for how this
-affects the modes.
+nothing left for this option to change: Markdown has no wrapper element to show
+the difference, so nothing about today's output can distinguish it. This is
+*not* a deprecation, unlike the five fields above: `unwrap_unknown_wrappers`
+carries no `#[deprecated]` attribute and triggers no warning. See
+[Conversion Modes](./modes.md) for how this affects the modes.
 
 **`<figure>` and `<figcaption>` are never unwrapped**, in any mode — see
 the [Block Elements table](./elements.md) for why they're excluded even

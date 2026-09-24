@@ -55,11 +55,12 @@ Options:
       --                  End of options; everything after is a path
 
 Modes:
-  balanced  Balances readability with structural fidelity (general purpose, default)
-  strict    Removes as few attributes as possible; for debugging and comparison
-  minimal   Body text and structure only; for LLM preprocessing and compaction
-  semantic  Favours semantic attributes and document structure; for SPAs and accessibility
-  preserve  Retains as much of the original as possible; for archiving and auditing
+  balanced  General use (default)
+  minimal   Body text and structure only, with no shell elements or id anchors;
+            for LLM preprocessing and compaction
+  strict | semantic | preserve
+            Aliases of balanced: identical output, kept for compatibility.
+            Only balanced and minimal convert differently.
 
 Output:
   Without -o, a single file is written beside its input as .md
@@ -74,7 +75,6 @@ Examples:
   mdka index.html                         # → index.md (same directory)
   mdka -o out/ index.html                 # → out/index.md
   mdka --mode minimal --drop-shell -o out/ *.html  # drop nav/header/footer
-  mdka --mode preserve -o archive/ *.html # retain as much as possible
   mdka --no-preserve-ids -o out/ index.html # anchors off, any mode
 ";
 

@@ -4,29 +4,37 @@
 //! [`ConversionOptions`] holds a mode together with its flags, and
 //! `Default` returns the `balanced` mode.
 
-/// Conversion mode. Choose one to suit the input HTML and what it is for.
+/// Conversion mode. There are five, but they make two behaviours.
 ///
-/// | Mode        | Intended for                                  |
-/// |-------------|-----------------------------------------------|
-/// | `Balanced`  | General purpose (default); readable Markdown   |
-/// | `Strict`    | Debugging and comparison; maximum retention    |
-/// | `Minimal`   | LLM preprocessing and compaction; bare extract |
-/// | `Semantic`  | SPAs; document structure first                 |
-/// | `Preserve`  | Archiving; retains as much as possible         |
+/// | Mode                             | Converts                                          |
+/// |----------------------------------|---------------------------------------------------|
+/// | `Balanced`                       | General purpose (default); readable Markdown      |
+/// | `Minimal`                        | LLM preprocessing and compaction; the only mode that converts differently |
+/// | `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility     |
+///
+/// `Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output, and
+/// cannot differ: they vary only in the defaults of options that have no effect
+/// on Markdown, which has no syntax for HTML attributes or wrapper elements.
+/// Choosing between them changes nothing. See the
+/// [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html) page.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum ConversionMode {
     /// Default. Balances readability against structural fidelity.
     #[default]
     Balanced,
-    /// Accuracy first. Removes as few attributes as possible; suits debugging.
+    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
+    /// compatibility. It does not retain more of the input.
     Strict,
     /// Extraction first. Keeps only the body text and the essential structure;
     /// suits LLM preprocessing.
     Minimal,
-    /// Meaning first. Favours accessibility attributes and document structure.
+    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
+    /// compatibility. It treats ARIA attributes and document structure exactly
+    /// as `Balanced` does.
     Semantic,
-    /// Fidelity first. Keeps even hard-to-convert content, as HTML fragments.
+    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
+    /// compatibility. It keeps nothing that `Balanced` drops.
     Preserve,
 }
 
@@ -127,10 +135,10 @@ pub struct ConversionOptions {
     pub drop_interactive_shell: bool,
     /// No effect today. Unwrapping a wrapper element (`<div>`, `<section>`,
     /// `<article>`, `<main>`) removes the tag but keeps the paragraph break
-    /// it stood for, so the tag's removal alone leaves nothing left for this
-    /// option to change. Not deprecated: unlike the fields above, this one is
-    /// inert only because `<div>` has no Markdown form today — a future mode
-    /// that preserves raw HTML wrappers would make it observable again. See
+    /// it stood for, and Markdown has no wrapper element to show the
+    /// difference, so the tag's removal leaves nothing for this option to
+    /// change. Not deprecated, unlike the fields above: it carries no
+    /// `#[deprecated]` attribute and triggers no warning. See
     /// the [options page](https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers).
     pub unwrap_unknown_wrappers: bool,
 }
@@ -184,7 +192,7 @@ impl ConversionOptions {
                 preserve_ids: true,
                 preserve_classes: false,
                 preserve_data_attrs: false,
-                preserve_aria_attrs: true, // retained strongly
+                preserve_aria_attrs: true,
                 preserve_unknown_attrs: false,
                 drop_presentation_attrs: true,
                 drop_interactive_shell: false,
