@@ -39,3 +39,10 @@ python/mdka/*.so
 
 # mdBook build output
 docs/book/
+
+# Internal governance and correspondence: release records, review requests,
+# reviews, handover packages, upstream letters, scratch. Never published.
+# This lives here rather than in .git/info/exclude, which is per-clone and not
+# shared: a fresh clone would not ignore it, and the first `git add -A` could
+# commit third-party correspondence. The rule has to travel with the repository.
+/.git-exclude/

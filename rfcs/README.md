@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-*None.*
+| ID | Title | State |
+|----|-------|-------|
+| 047 | [The release process lives in the repository, and its instructions are verified](./proposed/047-release-process-in-the-repository.md) | Awaiting owner acceptance. The release checklist exists on **one machine** with no history or backup; the README gives Windows users **no command at all** and the gate cannot check one. The repository is public, so executing the remaining three archives costs wall-clock, not money |
 
 ## Accepted
 
