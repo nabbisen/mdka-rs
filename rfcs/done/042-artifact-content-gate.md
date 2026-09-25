@@ -121,3 +121,27 @@ change. It runs once per release, in parallel with work already happening.
 
 **Against:** a dozen releases in which we shipped a binary that could not start on three of the most common
 Linux distributions, and did not know.
+
+---
+
+## Completion note — 2026-09-25, criterion 4
+
+**Criterion 4 is met.** It asked for the contract to be run over *downloaded published* artifacts rather than
+build outputs, and said so because the gate as shipped in `2.6.0`'s code checks what the build made, which is
+not the object a user receives.
+
+At `2.6.0` I downloaded the published archives and ran `check-artifact-contract.py` over them unchanged:
+
+```
+PASS  cli  (x86_64-unknown-linux-gnu)   mdka@Linux-x64-gnu-2.6.0/mdka
+PASS  cli  (x86_64-unknown-linux-musl)  mdka@Linux-x64-musl-2.6.0/mdka
+1 artifact(s) checked, 0 failing, 0 violation(s).   (each)
+```
+
+The published binary requires at most `GLIBC_2.17`, down from `2.34` at `2.5.1` — the defect this RFC was
+written from, confirmed fixed in the artifact rather than in the build.
+
+**It is no longer a manual step.** RFC 046's `release artifact gate` performs it for all five CLI archives,
+every run, against the latest published release. The npm addons' leg stays in `release-npm.yaml`'s
+pre-publish gate and is first exercised by a real tag — which `2.6.0` provided.
+
