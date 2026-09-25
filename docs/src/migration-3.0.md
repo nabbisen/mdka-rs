@@ -14,7 +14,9 @@ If you only call the string functions — `html_to_markdown`,
 with `Balanced`, `Minimal` or no mode, **`3.0` needs nothing from you**. See
 [What did not change](#what-did-not-change).
 
-This is the first breaking release `mdka` has made. It is the price of removing
+This is the first breaking release since `2.0.0`, and the first one `mdka` has
+staged deliberately: `2.0.0` was a rewrite whose changes were reconstructed after
+the fact, with no runway and no guide. It is the price of removing
 things that did nothing and of giving the file functions a result shape that says
 what it means; the release before it (`2.9.0`) changed nothing and warned about the
 last removal, and `3.0` followed it immediately, so **you may not have seen a
