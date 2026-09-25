@@ -880,6 +880,15 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-26, from `3.0` slice 1
+
+| Item | State |
+|---|---|
+| **Node silently ignores an option it does not know**, from plain JavaScript — napi drops unknown fields, so `{preserveClasses: true}` after `3.0` neither errors nor warns. TypeScript users get a compile error from `index.d.ts`; Python raises `TypeError`; the CLI exits 1 | Pinned in `node/test.js` and documented. **Folded into slice 2**, which is already reshaping the options object; closing it needs a check on that object in Rust |
+| **`parse_mode` cannot carry the removed-name message** — it is `s.parse().ok()` and discards the error, so a removed name gives `None`, like any unknown one | RFC 048 §6 corrected. **Slice 2 deprecates it** in favour of `str::parse`; it is not removed, because it was never deprecated |
+| **`check-docs-examples.py:487`** names `preserve_unknown_attrs` in a comment | Slice 3 |
+| **A `Disposition::Unwrap` path now writes the same bytes as `Render`** — kept deliberately in slice 1, so both modes are preserved by construction rather than by a corpus proof | Removable later, once the `2.9.0` equality property has stood for a release |
+
 ### Recorded 2026-09-25, from the `2.9.0` precondition slices
 
 | Item | State |
