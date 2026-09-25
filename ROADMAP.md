@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.6.0 — **shipped 2026-09-25**, tag `da687c4`, complete on all four registries and verified at the destination: the published Linux x64 CLI requires at most `GLIBC_2.17` (it required `2.34` through `2.5.1`), the PyPI wheel's stubs make `mypy --strict` report the three errors it used to pass, and npm resolves all six bindings. `2.5.1` tag `4d7626d`; `2.5.0` tag `872711f`; `2.4.2` tag `0913c7d`; `2.4.1` tag `40b80d4`; `2.4.0` tag `2f72f5b`.
+**Current version.** 2.7.0 — **shipped 2026-09-25**, tag `a488fb4`, complete on all four registries and verified at the destination: the published binary writes `***q*a**` for `<b><em>q</em>a</b>` (parsing as `strong(em("q") "a")`, where `2.6.0` lost the italic), the CLI holds its `GLIBC_2.17` floor, and npm resolves all six bindings. **The first release prepared by the dev team.** `2.6.0` tag `da687c4`; `2.5.1` tag `4d7626d`; `2.5.0` tag `872711f`; `2.4.2` tag `0913c7d`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -47,7 +47,7 @@ Ubuntu 20.04, Debian 11 and RHEL 8. The Python wheel ships type stubs, so `mypy 
 *"Success"* on code that assigns a `str` to an `int`; `stubtest` runs in CI against the built extension.
 `--help` and the `ConversionMode` rustdoc stop promising fidelity the modes cannot deliver.
 
-**`2.7.0` ships RFC 044, 046 and 047** — prepared 2026-09-25, **not yet tagged**; this paragraph becomes a
+**`2.7.0` ships RFC 044, 046 and 047** — prepared 2026-09-25, **shipped 2026-09-25**; this paragraph becomes a
 shipped record when the tag lands. RFC 044 is the only conversion change: `<b><em>q</em>a</b>` stops losing
 its italic and printing a literal `_` (`**_q_a**`, parsing as `strong("_" "q_a")`, becomes `***q*a**`).
 Measured **0 of 424** bold openings on 42 pages of published prose, so it is real, silent and rare. RFC 046
