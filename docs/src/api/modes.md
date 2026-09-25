@@ -10,9 +10,9 @@ traversal — there is no separate pre-processing stage.
 |---|---|---|
 | `Balanced` | ✅ Yes | General use |
 | `Minimal` | | Differently: drops shell elements, emits no `id` anchors |
-| `Strict` | | As `Balanced` — an alias |
-| `Semantic` | | As `Balanced` — an alias |
-| `Preserve` | | As `Balanced` — an alias |
+| `Strict` | | As `Balanced` — an alias. **Deprecated since 2.8.0, removed in 3.0** |
+| `Semantic` | | As `Balanced` — an alias. **Deprecated since 2.8.0, removed in 3.0** |
+| `Preserve` | | As `Balanced` — an alias. **Deprecated since 2.8.0, removed in 3.0** |
 
 ## ⚠ There are five modes but two behaviours
 
@@ -44,10 +44,12 @@ names describe purposes ("for debugging", "for archiving", "for accessibility")
 that the conversion cannot act on, because none of them can be expressed in the
 output format.
 
-This is a statement about how the modes behave, and it says nothing about their
-future: the enum variants, the CLI `--mode` values and the string names in the
-Node.js and Python bindings are all still accepted, and nothing here is
-deprecated.
+Because they cannot differ, `Strict`, `Semantic` and `Preserve` are
+**deprecated since 2.8.0 and will be removed in 3.0**. Until then the enum
+variants, the CLI `--mode` values and the string names in the Node.js and Python
+bindings are all still accepted and keep their output; naming one emits a
+warning (see [Deprecation](#deprecation) below). `Balanced` and `Minimal` are
+not affected.
 
 It is asserted, not just observed. `tests/output_validity/mode_identity.rs`
 runs a corpus of inputs — including wrappers in table cells, list items, quotes
@@ -100,9 +102,10 @@ let md = mdka::html_to_markdown_with(html, &opts);
 
 ## Strict, Semantic and Preserve
 
-**Aliases of `Balanced`.** Each produces exactly `Balanced`'s output, for the
-reasons in the notice above; they are kept so that code and command lines that
-name them keep working. Their names suggest more than they do:
+**Aliases of `Balanced`, deprecated since 2.8.0 and removed in 3.0.** Each
+produces exactly `Balanced`'s output, for the reasons in the notice above; they
+are kept until then so that code and command lines that name them keep working.
+Their names suggest more than they do:
 
 - `Strict` does not retain any more of the input than `Balanced`.
 - `Semantic` does not treat ARIA attributes or document structure any
@@ -111,11 +114,28 @@ name them keep working. Their names suggest more than they do:
 - `Preserve` does not keep anything `Balanced` drops — HTML comments, for
   example, are removed in every mode.
 
+### Deprecation
+
+Each surface warns in its own way, and only when the caller **names** one of the
+three; a call that never names a mode, or names `Balanced` or `Minimal`, is
+silent.
+
+| Surface | What you see |
+|---|---|
+| Rust | A `#[deprecated(since = "2.8.0")]` warning at the use of `ConversionMode::Strict`, `Semantic` or `Preserve` |
+| Node.js | A `DeprecationWarning` from `htmlToMarkdownWith` and `htmlToMarkdownMany`. The `Async` and file functions cannot emit it (they have no access to the runtime's warning channel) but convert identically |
+| Python | A `DeprecationWarning` when `ConversionMode.Strict`, `Semantic` or `Preserve` is passed |
+| CLI | One line on **stderr** — `mdka: warning: --mode strict is an alias of balanced and produces identical output; it is removed in 3.0` — with stdout untouched |
+
+The fix is the same everywhere: use `Balanced` (`"balanced"`, `--mode balanced`),
+or simply name no mode. Output does not change.
+
 ```rust,fragment
 use mdka::options::{ConversionMode, ConversionOptions};
 
-let opts = ConversionOptions::for_mode(ConversionMode::Strict);
-let md = mdka::html_to_markdown_with(html, &opts); // same as Balanced
+// Before: ConversionOptions::for_mode(ConversionMode::Strict) -- deprecated.
+let opts = ConversionOptions::for_mode(ConversionMode::Balanced);
+let md = mdka::html_to_markdown_with(html, &opts); // identical output
 ```
 
 ---
@@ -128,4 +148,5 @@ Everything else                                        → Balanced (default)
 ```
 
 `Strict`, `Semantic` and `Preserve` are not listed above because they behave
-identically to `Balanced`; choosing one of them changes nothing.
+identically to `Balanced` and are deprecated; choosing one of them changes
+nothing except that it warns.

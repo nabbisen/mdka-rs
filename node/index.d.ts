@@ -54,7 +54,7 @@ export declare function htmlToMarkdownWith(html: string, options?: JsConversionO
 export declare function htmlToMarkdownWithAsync(html: string, options?: JsConversionOptions | undefined | null): Promise<string>
 
 export interface JsConversionOptions {
-  /** "balanced" | "strict" | "minimal" | "semantic" | "preserve" */
+  /** "balanced" | "minimal"; "strict", "semantic" and "preserve" are deprecated aliases of "balanced", removed in 3.0 */
   mode?: string
   preserveIds?: boolean
   preserveClasses?: boolean

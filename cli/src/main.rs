@@ -9,7 +9,7 @@
 //!
 //! Options:
 //!   -o, --output <DIR>   Output directory (defaults to the input's directory)
-//!   -m, --mode <MODE>    balanced(default)|strict|minimal|semantic|preserve
+//!   -m, --mode <MODE>    balanced(default)|minimal  (strict|semantic|preserve: deprecated aliases of balanced)
 //!       --preserve-ids   Emit <a id="…"></a> anchors for elements with an id (on by default except in minimal)
 //!       --no-preserve-ids  Turn anchor emission off, in any mode
 //!       --preserve-classes  [deprecated, no effect] Keep class attributes
@@ -41,7 +41,8 @@ Usage:
 
 Options:
   -o, --output <DIR>      Output directory (defaults to the input's directory)
-  -m, --mode <MODE>       Conversion mode: balanced(default) | strict | minimal | semantic | preserve
+  -m, --mode <MODE>       Conversion mode: balanced(default) | minimal
+                          [deprecated] strict | semantic | preserve: aliases of balanced, removed in 3.0
       --preserve-ids      Emit <a id=\"…\"></a> anchors for elements with an id.
                           On by default in every mode except minimal
       --no-preserve-ids   Turn anchor emission off, in any mode
@@ -59,8 +60,9 @@ Modes:
   minimal   Body text and structure only, with no shell elements or id anchors;
             for LLM preprocessing and compaction
   strict | semantic | preserve
-            Aliases of balanced: identical output, kept for compatibility.
-            Only balanced and minimal convert differently.
+            [deprecated, removed in 3.0] Aliases of balanced: identical
+            output, kept for compatibility, and each prints a warning on
+            stderr. Use balanced. Only balanced and minimal convert differently.
 
 Output:
   Without -o, a single file is written beside its input as .md
@@ -88,6 +90,15 @@ fn warn_deprecated_flag(flag: &str) {
          https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has \
          no attribute syntax, so this option was never expressible in the \
          output."
+    );
+}
+
+/// stderr, never stdout: stdout is the converted Markdown, and a warning there
+/// would corrupt a pipe. The mode still works and its output is unchanged.
+fn warn_deprecated_mode(mode: &str) {
+    eprintln!(
+        "mdka: warning: --mode {mode} is an alias of balanced and produces identical output; \
+         it is removed in 3.0"
     );
 }
 
@@ -166,6 +177,14 @@ fn main() {
             }
             _ => file_args.push(arg),
         }
+    }
+
+    // Deprecated alias modes (RFC 041 §9). Only when the caller named one:
+    // `mode` starts as Balanced, so a run with no `--mode` is silent. Matched
+    // on the name, not the variants -- naming a `#[deprecated]` variant would
+    // itself warn, and this is the one place that must not be silenced.
+    if matches!(mode.as_str(), "strict" | "semantic" | "preserve") {
+        warn_deprecated_mode(mode.as_str());
     }
 
     // CLI flags override the mode's defaults

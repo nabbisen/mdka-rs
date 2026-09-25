@@ -7,21 +7,42 @@ use rayon::prelude::*;
 
 pyo3::create_exception!(mdka, MdkaError, pyo3::exceptions::PyException);
 
-/// `warnings.warn(..., DeprecationWarning)` for a field that is
-/// `#[deprecated]` on the Rust side. `#[deprecated]` does not cross FFI, so
-/// Python callers see nothing unless this is emitted explicitly. Only called
+/// `warnings.warn(message, DeprecationWarning)`. `#[deprecated]` does not
+/// cross FFI, so Python callers see nothing unless this is emitted
+/// explicitly.
+fn emit_deprecation_warning(py: Python<'_>, message: String) -> PyResult<()> {
+    let message = CString::new(message).expect("warning message contains no NUL bytes");
+    let category = py.get_type::<pyo3::exceptions::PyDeprecationWarning>();
+    PyErr::warn(py, &category, &message, 1)
+}
+
+/// Warning for a field that is `#[deprecated]` on the Rust side. Only called
 /// when the field was **explicitly passed** (`Some(_)`), never for a default
 /// -- warning on every call regardless of intent would just get the warning
 /// suppressed wholesale.
 fn warn_deprecated_field(py: Python<'_>, field: &str) -> PyResult<()> {
-    let message = CString::new(format!(
-        "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
-         Markdown has no attribute syntax, so this option was never \
-         expressible in the output."
-    ))
-    .expect("warning message contains no NUL bytes");
-    let category = py.get_type::<pyo3::exceptions::PyDeprecationWarning>();
-    PyErr::warn(py, &category, &message, 1)
+    emit_deprecation_warning(
+        py,
+        format!(
+            "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
+             Markdown has no attribute syntax, so this option was never \
+             expressible in the output."
+        ),
+    )
+}
+
+/// Warning for `ConversionMode.Strict`, `Semantic` and `Preserve` (RFC 041
+/// §9), which are aliases of `Balanced`. The default is `Balanced`, so a call
+/// that never names a mode is silent. `name` is the Python attribute name.
+fn warn_deprecated_mode(py: Python<'_>, name: &str) -> PyResult<()> {
+    emit_deprecation_warning(
+        py,
+        format!(
+            "mdka: ConversionMode.{name} is an alias of ConversionMode.Balanced and produces \
+             identical output; it is deprecated and removed in 3.0. Use ConversionMode.Balanced \
+             (see https://nabbisen.github.io/mdka-rs/api/modes.html)."
+        ),
+    )
 }
 
 // ─── ConversionMode ────────────────────────────────────────────────────────
@@ -49,6 +70,8 @@ impl ConversionMode {
     }
 }
 
+// Internal: the mapping must name every variant, deprecated or not.
+#[allow(deprecated)]
 fn to_rust_mode(m: ConversionMode) -> ::mdka::ConversionMode {
     match m {
         ConversionMode::Balanced => ::mdka::ConversionMode::Balanced,
@@ -70,7 +93,19 @@ fn build_opts(
     drop_interactive_shell: Option<bool>,
     unwrap_unknown_wrappers: Option<bool>,
 ) -> PyResult<::mdka::ConversionOptions> {
-    let mut opts = ::mdka::ConversionOptions::for_mode(to_rust_mode(mode));
+    let rust_mode = to_rust_mode(mode);
+    // Matched on the name, not the variants: naming a `#[deprecated]` variant
+    // would itself warn, and this is the one place that must not be silenced.
+    let alias_name = match rust_mode.as_str() {
+        "strict" => Some("Strict"),
+        "semantic" => Some("Semantic"),
+        "preserve" => Some("Preserve"),
+        _ => None,
+    };
+    if let Some(name) = alias_name {
+        warn_deprecated_mode(py, name)?;
+    }
+    let mut opts = ::mdka::ConversionOptions::for_mode(rust_mode);
     if let Some(v) = preserve_ids {
         opts.preserve_ids = v;
     }

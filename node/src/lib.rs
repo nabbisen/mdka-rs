@@ -9,7 +9,7 @@ use napi_derive::napi;
 
 #[napi(object)]
 pub struct JsConversionOptions {
-    /// "balanced" | "strict" | "minimal" | "semantic" | "preserve"
+    /// "balanced" | "minimal"; "strict", "semantic" and "preserve" are deprecated aliases of "balanced", removed in 3.0
     pub mode: Option<String>,
     pub preserve_ids: Option<bool>,
     pub preserve_classes: Option<bool>,
@@ -19,24 +19,45 @@ pub struct JsConversionOptions {
     pub unwrap_unknown_wrappers: Option<bool>,
 }
 
-/// `process.emitWarning(message, 'DeprecationWarning')` for a field that is
-/// `#[deprecated]` on the Rust side. `#[deprecated]` does not cross FFI, so
-/// Node callers see nothing unless this is emitted explicitly. Only called
-/// when the field was **explicitly passed** (`Some(_)`), never for a default
-/// -- warning on every call regardless of intent would just get the warning
-/// suppressed wholesale.
-fn warn_deprecated_field(env: &Env, field: &str) -> Result<()> {
+/// `process.emitWarning(message, 'DeprecationWarning')`. `#[deprecated]` does
+/// not cross FFI, so Node callers see nothing unless this is emitted
+/// explicitly.
+fn emit_deprecation_warning(env: &Env, message: String) -> Result<()> {
     let global = env.get_global()?;
     let process: Object = global.get_named_property("process")?;
     let emit_warning: Function<FnArgs<(String, String)>, Unknown> =
         process.get_named_property("emitWarning")?;
-    let message = format!(
-        "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
-         Markdown has no attribute syntax, so this option was never expressible \
-         in the output."
-    );
     emit_warning.apply(process, (message, "DeprecationWarning".to_string()).into())?;
     Ok(())
+}
+
+/// Warning for a field that is `#[deprecated]` on the Rust side. Only called
+/// when the field was **explicitly passed** (`Some(_)`), never for a default
+/// -- warning on every call regardless of intent would just get the warning
+/// suppressed wholesale.
+fn warn_deprecated_field(env: &Env, field: &str) -> Result<()> {
+    emit_deprecation_warning(
+        env,
+        format!(
+            "mdka: `{field}` has no effect and is deprecated (see https://nabbisen.github.io/mdka-rs/api/options.html). \
+             Markdown has no attribute syntax, so this option was never expressible \
+             in the output."
+        ),
+    )
+}
+
+/// Warning for `mode: 'strict' | 'semantic' | 'preserve'` (RFC 041 §9), which
+/// are aliases of `'balanced'`. Same rule as the fields: only when the caller
+/// named the mode, so a call with no `mode` is silent.
+fn warn_deprecated_mode(env: &Env, mode: &str) -> Result<()> {
+    emit_deprecation_warning(
+        env,
+        format!(
+            "mdka: mode '{mode}' is an alias of 'balanced' and produces identical output; \
+             it is deprecated and removed in 3.0. Use 'balanced' \
+             (see https://nabbisen.github.io/mdka-rs/api/modes.html)."
+        ),
+    )
 }
 
 /// `env: None` for the `_async` entry points: napi-rs requires an async
@@ -63,6 +84,14 @@ fn to_rust_opts(
         },
         None => mdka::ConversionMode::default(),
     };
+
+    // Matched on the name, not the variants: naming a `#[deprecated]` variant
+    // would itself warn, and this is the one place that must not be silenced.
+    if let Some(env) = env
+        && matches!(mode.as_str(), "strict" | "semantic" | "preserve")
+    {
+        warn_deprecated_mode(env, mode.as_str())?;
+    }
 
     let mut opts = mdka::ConversionOptions::for_mode(mode);
 

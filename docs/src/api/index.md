@@ -18,7 +18,7 @@ surface — every function and type you need, nothing you don't.
 
 | Type | Description |
 |---|---|
-| [`ConversionMode`](./modes.md) | Enum: `Balanced` · `Strict` · `Minimal` · `Semantic` · `Preserve` |
+| [`ConversionMode`](./modes.md) | Enum: `Balanced` · `Minimal` · and the deprecated aliases `Strict` · `Semantic` · `Preserve` (removed in 3.0) |
 | [`ConversionOptions`](./options.md) | Controls pre-processing per-call; built via `for_mode()` |
 | [`ConvertResult`](./core.md#convertresult) | Returned by single-file functions: `src` + `dest` paths |
 | [`MdkaError`](./errors.md) | The only error type: wraps `std::io::Error` |

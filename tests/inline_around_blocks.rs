@@ -7,6 +7,8 @@ mod common;
 use common::{conv, conv_with};
 use mdka::options::{ConversionMode, ConversionOptions};
 
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 const MODES: [ConversionMode; 5] = [
     ConversionMode::Balanced,
     ConversionMode::Strict,

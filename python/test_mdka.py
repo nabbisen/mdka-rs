@@ -453,6 +453,8 @@ def test_balanced_keeps_href():
     )
     assert "[Link](https://example.com)" in md, f"got: {md}"
 
+# Names a deprecated alias mode on purpose; the warning itself is asserted below.
+@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
 def test_strict_produces_valid_markdown():
     md = html_to_markdown_with(
         '<p class="intro" data-x="1">Hello <strong>world</strong></p>',
@@ -461,6 +463,8 @@ def test_strict_produces_valid_markdown():
     assert "Hello" in md
     assert "**world**" in md
 
+# Names a deprecated alias mode on purpose; the warning itself is asserted below.
+@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
 def test_semantic_keeps_aria_in_preprocessing():
     # semantic モードは aria-* を前処理で保持する（MD 出力には直接影響しないが）
     md = html_to_markdown_with(
@@ -470,6 +474,8 @@ def test_semantic_keeps_aria_in_preprocessing():
     assert "# Title" in md
     assert "Body" in md
 
+# Names a deprecated alias mode on purpose; the warning itself is asserted below.
+@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
 def test_preserve_mode_basic():
     md = html_to_markdown_with(
         "<h1>Archive</h1><p>Content</p>",
@@ -540,6 +546,37 @@ def test_omitting_deprecated_fields_stays_silent():
         warnings.simplefilter("error")
         # Raises if any warning (including DeprecationWarning) is emitted.
         html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
+
+@pytest.mark.parametrize("alias", ["Strict", "Semantic", "Preserve"])
+def test_alias_mode_emits_one_deprecation_warning_saying_what_to_use(alias):
+    # RFC 041 §9: Strict, Semantic and Preserve are aliases of Balanced. Warned
+    # only when the caller named one; output is unchanged.
+    import re
+    with pytest.warns(DeprecationWarning) as record:
+        html_to_markdown_with("<p>Hi</p>", mode=getattr(ConversionMode, alias))
+    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
+    assert len(messages) == 1, messages
+    assert messages[0].startswith(f"mdka: ConversionMode.{alias} is an alias of ConversionMode.Balanced"), messages[0]
+    assert "Use ConversionMode.Balanced" in messages[0], messages[0]
+    assert "removed in 3.0" in messages[0], messages[0]
+    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
+
+@pytest.mark.parametrize("alias", ["Strict", "Semantic", "Preserve"])
+def test_alias_mode_output_is_byte_identical_to_balanced(alias):
+    html = '<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>'
+    with pytest.warns(DeprecationWarning):
+        got = html_to_markdown_with(html, mode=getattr(ConversionMode, alias))
+    assert got == html_to_markdown_with(html, mode=ConversionMode.Balanced)
+
+def test_no_mode_balanced_and_minimal_stay_silent():
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        # Raises if any warning (including DeprecationWarning) is emitted.
+        html_to_markdown_with("<p>Hi</p>")
+        html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
+        html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Minimal)
+        html_to_markdown_many_with(["<p>Hi</p>"])
 
 def test_html_files_with_mode(tmp_path):
     src = tmp_path / "page.html"

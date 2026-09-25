@@ -311,6 +311,38 @@ async function run(name, fn) {
       assert.equal(warnings.length, 0, `expected no warnings, got ${warnings.length}`)
     })
 
+    // RFC 041 §9: `strict`, `semantic` and `preserve` are deprecated aliases of
+    // `balanced`. Warned only when the caller named one; output is unchanged.
+    for (const alias of ['strict', 'semantic', 'preserve']) {
+      await run(`htmlToMarkdownWith: mode '${alias}' emits one DeprecationWarning saying what to use instead`, () => {
+        const warnings = runWarningCheck(`{ mode: '${alias}' }`)
+        assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
+        assert.equal(warnings[0].name, 'DeprecationWarning')
+        assert.ok(
+          warnings[0].message.startsWith(`mdka: mode '${alias}' is an alias of 'balanced'`),
+          `unexpected message: ${warnings[0].message}`
+        )
+        assert.match(warnings[0].message, /use 'balanced'|Use 'balanced'/)
+        assert.match(warnings[0].message, /removed in 3\.0/)
+        assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
+      })
+
+      await run(`htmlToMarkdownWith: mode '${alias}' output is byte-identical to balanced`, () => {
+        const html = '<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>'
+        assert.strictEqual(
+          htmlToMarkdownWith(html, { mode: alias }),
+          htmlToMarkdownWith(html, { mode: 'balanced' })
+        )
+      })
+    }
+
+    await run('htmlToMarkdownWith: no mode, balanced and minimal stay silent', () => {
+      for (const literal of ['undefined', '{}', "{ mode: 'balanced' }", "{ mode: 'minimal' }"]) {
+        const warnings = runWarningCheck(literal)
+        assert.equal(warnings.length, 0, `${literal}: expected no warnings, got ${JSON.stringify(warnings)}`)
+      }
+    })
+
     await run('htmlToMarkdownWithAsync: mode option respected', async () => {
       const md = await htmlToMarkdownWithAsync(
         '<nav>nav</nav><p>Main</p>',

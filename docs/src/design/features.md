@@ -19,7 +19,7 @@ mdka offers five named modes, of which two convert differently:
 - **Minimal** — body text only, without shell elements or `id` anchors; good for
   LLM input preparation
 - **Strict**, **Semantic**, **Preserve** — aliases of `Balanced`, kept for
-  compatibility. They produce identical output and cannot differ: what would
+  compatibility. **Deprecated since 2.8.0; removed in 3.0.** They produce identical output and cannot differ: what would
   distinguish them is attribute handling, and Markdown has no attribute syntax.
 
 The behaviour of a call can be adjusted further with per-call option flags.

@@ -47,7 +47,7 @@ truth — it is generated from the binary you are running.
 | Flag | Description |
 |---|---|
 | `-o, --output <DIR>` | Output directory (defaults to the input's directory) |
-| `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `strict` · `minimal` · `semantic` · `preserve` |
+| `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `minimal`. `strict` · `semantic` · `preserve` are deprecated aliases of `balanced`: they still work, print a warning on stderr, and are removed in 3.0 |
 | `--preserve-ids` | Emit `<a id="…"></a>` anchors for elements with an `id`. On by default in every mode except `minimal` |
 | `--no-preserve-ids` | Turn anchor emission off, in any mode |
 | `--preserve-classes` | **Deprecated, no effect.** Markdown has no attribute syntax |

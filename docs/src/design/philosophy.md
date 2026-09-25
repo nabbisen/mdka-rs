@@ -49,7 +49,7 @@ default; there is no stronger preset.
 
 Of the five [conversion modes](../api/modes.md), those are the two that
 convert differently; `Strict`, `Semantic` and `Preserve` are aliases of
-`Balanced`. The preset is applied inline during the single tree traversal,
+`Balanced` (deprecated since 2.8.0, removed in 3.0). The preset is applied inline during the single tree traversal,
 filtering as the DOM is walked rather than as a separate step — keeping the
 conversion logic itself simple and mode-agnostic.
 

@@ -133,6 +133,8 @@ fn p1_an_option_documented_as_inert_is_inert() {
 }
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn p2_balanced_strict_semantic_and_preserve_agree() {
     let mut violations = Vec::new();
     let corpus = corpus();

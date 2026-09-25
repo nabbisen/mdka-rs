@@ -25,6 +25,8 @@ mod common;
 use common::conv_with;
 use mdka::options::{ConversionMode, ConversionOptions};
 
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 const MODES: [ConversionMode; 5] = [
     ConversionMode::Balanced,
     ConversionMode::Strict,
@@ -121,6 +123,8 @@ fn unwrap_unknown_wrappers_toggle_no_longer_changes_output_in_any_mode() {
 const DIV_PER_LINE_HTML: &str = "<div>First.</div><div>Second.</div><div>Third.</div>";
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn balanced_and_semantic_are_identical_on_div_per_line_markup() {
     let balanced = conv_with(
         DIV_PER_LINE_HTML,
@@ -207,6 +211,8 @@ fn unwrap_unknown_wrappers_naive_fixture_shows_no_difference() {
 // inferred from scattered assert_matrix arrays elsewhere in the suite.
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn balanced_strict_semantic_preserve_are_identical_on_the_wrapper_fixture() {
     // Both fixtures: `WRAPPER_HTML` alone could not see a dropped `id`.
     for html in [WRAPPER_HTML, WRAPPER_ID_HTML] {
@@ -223,6 +229,8 @@ fn balanced_strict_semantic_preserve_are_identical_on_the_wrapper_fixture() {
 }
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn balanced_strict_semantic_preserve_are_identical_on_an_attribute_rich_element() {
     let html = r#"<p id="pid" class="pclass" data-k="v" aria-label="lbl" style="color:red" foo="bar">Hi</p>"#;
     let balanced = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Balanced));
@@ -288,6 +296,8 @@ const ID_WRAPPER_SHAPES: &[&str] = &[
 ];
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn balanced_strict_semantic_preserve_are_identical_on_id_carrying_wrappers() {
     for html in ID_WRAPPER_SHAPES {
         let balanced = conv_with(html, &ConversionOptions::for_mode(ConversionMode::Balanced));
@@ -303,6 +313,8 @@ fn balanced_strict_semantic_preserve_are_identical_on_id_carrying_wrappers() {
 }
 
 #[test]
+// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
+#[allow(deprecated)]
 fn unwrapped_wrapper_with_an_id_emits_its_anchor_when_preserve_ids_is_on() {
     let html = r#"<main id="x"><p>hi</p></main>"#;
     for mode in [

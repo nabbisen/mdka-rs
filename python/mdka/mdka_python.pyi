@@ -29,7 +29,9 @@ __all__ = [
 @final
 class ConversionMode:
     """How aggressively HTML is pre-processed. Only `Balanced` and `Minimal`
-    convert differently; the other three are aliases of `Balanced`."""
+    convert differently. `Strict`, `Semantic` and `Preserve` are aliases of
+    `Balanced`: deprecated since 2.8.0 and removed in 3.0. Naming one emits a
+    `DeprecationWarning`; the output is unchanged."""
 
     Balanced: ClassVar[ConversionMode]
     Strict: ClassVar[ConversionMode]

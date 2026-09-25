@@ -129,7 +129,7 @@ use mdka::{html_files_to_markdown_with};
 use mdka::options::{ConversionMode, ConversionOptions};
 use std::path::Path;
 
-let opts = ConversionOptions::for_mode(ConversionMode::Semantic);
+let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 let files = vec!["a.html", "b.html"];
 let results = html_files_to_markdown_with(&files, Path::new("out/"), &opts);
 ```
@@ -140,10 +140,11 @@ let results = html_files_to_markdown_with(&files, Path::new("out/"), &opts);
 |---|---|
 | `Balanced` | General use; default |
 | `Minimal` | LLM pre-processing, compression — the only mode that converts differently |
-| `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility |
+| `Strict`, `Semantic`, `Preserve` | **Deprecated since 2.8.0, removed in 3.0.** Aliases of `Balanced`; use `Balanced` |
 
 `Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output and
-cannot differ. See [Conversion Modes](../api/modes.md) for why.
+cannot differ, which is why the three aliases are deprecated: using one is a
+`#[deprecated]` compile warning. See [Conversion Modes](../api/modes.md) for why.
 
 ## Error Handling
 

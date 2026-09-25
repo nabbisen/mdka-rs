@@ -155,3 +155,91 @@ fn file_argument_redirect_is_empty_and_help_says_so() {
 
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+// ── RFC 041 §9: the alias modes are deprecated (2.8.0), removed in 3.0 ───────
+
+const ALIAS_HTML: &str = r#"<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>"#;
+
+/// `--mode strict|semantic|preserve` keeps working and keeps its output; each
+/// prints exactly one line on stderr, and stdout is byte-identical to
+/// `--mode balanced`'s, so a pipe is never corrupted.
+#[test]
+fn alias_modes_warn_on_stderr_and_keep_their_output() {
+    let balanced = run_mdka(&["--mode", "balanced"], ALIAS_HTML);
+    assert!(balanced.status.success());
+    assert!(
+        balanced.stderr.is_empty(),
+        "balanced must be silent: {}",
+        String::from_utf8_lossy(&balanced.stderr)
+    );
+
+    for mode in ["strict", "semantic", "preserve"] {
+        let out = run_mdka(&["--mode", mode], ALIAS_HTML);
+        assert!(out.status.success(), "--mode {mode} must still work");
+        assert_eq!(
+            out.stdout, balanced.stdout,
+            "--mode {mode}: stdout must be identical to balanced's"
+        );
+        assert_eq!(
+            String::from_utf8(out.stderr).unwrap(),
+            format!(
+                "mdka: warning: --mode {mode} is an alias of balanced and produces identical \
+                 output; it is removed in 3.0\n"
+            ),
+            "--mode {mode}: stderr must be exactly the one deprecation line"
+        );
+    }
+}
+
+/// Case-insensitive parsing is unchanged, and the warning names the canonical
+/// mode rather than echoing the caller's spelling.
+#[test]
+fn alias_mode_warning_is_the_same_for_any_spelling() {
+    let out = run_mdka(&["-m", "STRICT"], "<p>Hi</p>");
+    assert!(out.status.success());
+    assert_eq!(String::from_utf8(out.stdout).unwrap(), "Hi\n");
+    assert!(
+        String::from_utf8(out.stderr)
+            .unwrap()
+            .starts_with("mdka: warning: --mode strict is an alias of balanced"),
+    );
+}
+
+/// Warned only when the caller named a deprecated mode: no `--mode`, the two
+/// real modes, and an explicit `--mode balanced` all print nothing.
+#[test]
+fn no_warning_unless_a_deprecated_mode_was_named() {
+    for args in [&[][..], &["--mode", "balanced"], &["-m", "minimal"]] {
+        let out = run_mdka(args, "<p>Hi</p>");
+        assert!(out.status.success(), "{args:?}");
+        assert!(
+            out.stderr.is_empty(),
+            "{args:?} must be silent, got: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
+#[test]
+fn help_marks_the_alias_modes_deprecated() {
+    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
+        .arg("--help")
+        .output()
+        .expect("failed to run mdka --help");
+    assert!(out.status.success());
+    let help = String::from_utf8(out.stdout).unwrap();
+    for name in ["strict", "semantic", "preserve"] {
+        assert!(
+            help.contains(name),
+            "help must still name `{name}`:\n{help}"
+        );
+    }
+    assert!(
+        help.contains("[deprecated] strict | semantic | preserve"),
+        "the Options entry must mark the aliases deprecated:\n{help}"
+    );
+    assert!(
+        help.contains("[deprecated, removed in 3.0] Aliases of balanced"),
+        "the Modes entry must mark the aliases deprecated and say when they go:\n{help}"
+    );
+}

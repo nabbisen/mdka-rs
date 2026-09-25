@@ -60,6 +60,10 @@ let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 
 ## Field Defaults by Mode
 
+`Strict`, `Semantic` and `Preserve` are deprecated aliases of `Balanced` (since
+2.8.0, removed in 3.0); their columns are kept here because the defaults are
+still what they set.
+
 | Field | Balanced | Strict | Minimal | Semantic | Preserve | Effect |
 |---|---|---|---|---|---|---|
 | `preserve_ids` | ✅ | ✅ | ❌ | ✅ | ✅ | Emits anchors |

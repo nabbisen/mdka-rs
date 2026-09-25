@@ -61,15 +61,18 @@ const md = htmlToMarkdownWith(html, {
 
 // Async version
 async function main() {
-  const mdAsync = await htmlToMarkdownWithAsync(html, { mode: 'semantic' })
+  const mdAsync = await htmlToMarkdownWithAsync(html, { mode: 'balanced' })
   console.log(mdAsync)
 }
 main()
 ```
 
-Available mode strings: `"balanced"` (default), `"strict"`, `"minimal"`,
-`"semantic"`, `"preserve"`. Only `"balanced"` and `"minimal"` convert
-differently; the other three are aliases of `"balanced"` — see
+Available mode strings: `"balanced"` (default) and `"minimal"`, which are the two
+that convert differently. `"strict"`, `"semantic"` and `"preserve"` are aliases
+of `"balanced"`, **deprecated since 2.8.0 and removed in 3.0**: passing one
+emits a `DeprecationWarning` from `htmlToMarkdownWith` and `htmlToMarkdownMany`
+and the output is unchanged. The `Async` and file functions accept the same
+strings and convert identically but cannot emit the warning — see
 [Conversion Modes](../api/modes.md).
 
 ## Converting Multiple Strings
@@ -126,7 +129,7 @@ async function main() {
 
   // With options
   const withOpts = await htmlFilesToMarkdownWith(files, 'out/', {
-    mode: 'semantic',
+    mode: 'minimal',
   })
 }
 main()

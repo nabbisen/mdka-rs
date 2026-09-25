@@ -25,6 +25,12 @@ pub enum ConversionMode {
     Balanced,
     /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
     /// compatibility. It does not retain more of the input.
+    ///
+    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
+    #[deprecated(
+        since = "2.8.0",
+        note = "`Strict` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
+    )]
     Strict,
     /// Extraction first. Keeps only the body text and the essential structure;
     /// suits LLM preprocessing.
@@ -32,14 +38,28 @@ pub enum ConversionMode {
     /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
     /// compatibility. It treats ARIA attributes and document structure exactly
     /// as `Balanced` does.
+    ///
+    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
+    #[deprecated(
+        since = "2.8.0",
+        note = "`Semantic` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
+    )]
     Semantic,
     /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
     /// compatibility. It keeps nothing that `Balanced` drops.
+    ///
+    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
+    #[deprecated(
+        since = "2.8.0",
+        note = "`Preserve` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
+    )]
     Preserve,
 }
 
 impl ConversionMode {
     /// Returns the mode's name as a string.
+    // Internal: the mapping must name every variant, deprecated or not.
+    #[allow(deprecated)]
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Balanced => "balanced",
@@ -62,6 +82,8 @@ impl ConversionMode {
 impl std::str::FromStr for ConversionMode {
     type Err = String;
 
+    // Internal: the mapping must name every variant, deprecated or not.
+    #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "balanced" => Ok(Self::Balanced),

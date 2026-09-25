@@ -214,13 +214,15 @@ minimal = mdka.html_to_markdown_with(
 |---|---|
 | `Balanced` | General use — the default |
 | `Minimal` | LLM input, text extraction — the only mode that converts differently |
-| `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility |
+| `Strict`, `Semantic`, `Preserve` | **Deprecated since 2.8.0, removed in 3.0.** Aliases of `Balanced`; use `Balanced` |
 
 **`Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output, and
 cannot differ.** They vary only in the defaults of options that have no effect
 on Markdown — the format has no syntax for HTML attributes or wrapper elements —
 so there is no mechanism by which they could diverge. Choosing between them
-changes nothing. See [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html)
+changes nothing, so the three aliases are deprecated: naming one emits a warning
+(Rust, Node.js, Python, CLI) and they are removed in 3.0. See
+[Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html)
 for the full explanation.
 
 **Tables convert to GFM tables.** Column alignment is carried over, `|` in a
