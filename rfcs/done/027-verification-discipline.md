@@ -1,6 +1,7 @@
 # RFC 027 — Verification discipline: the consumer pass and scope completeness
 
 **Status.** Implemented (2.2.2) — **with one deferred item**, below
+**Amended by.** RFC 046 (2026-09-25) — **Rule 1's manual pass is superseded**; see the amendment at the end. The text of Rule 1 below is left as it was written.
 **Tracks.** M2b · Audit remediation → `2.2.1`
 **Priority.** P1
 **Touches.** `.git-exclude/` governance artifacts (handoff template, review-request format, release checklist), `ROADMAP.md`.
@@ -258,3 +259,37 @@ Governance only. No product change, no CI change (that is RFC 026).
 4. Rule 4's decision is recorded, and Rule 1's not-the-implementer and adversarial-framing amendments are reflected in the release checklist.
 5. Each rule in the governance artifacts names the defect it prevents, so a
    future reader can judge whether it still earns its place.
+
+---
+
+## Amendment — 2026-09-25, RFC 046: Rule 1's manual pass is superseded
+
+**Rule 1 is no longer a per-release requirement.** The text above stands as the record of what was decided in
+2026 and why; it is not edited. What replaces it is RFC 046 and the gates it points at.
+
+**Why.** Rule 1's argument was *position, not diligence*: an internal reviewer reads what we produced, an
+outside user consumes what we shipped. That argument still holds — but every defect the first passes found
+that a machine could find has since become a gate, and the gates run on every push, on a clean machine, with a
+record, instead of once per release on one machine with a scope that depended on who ran it. Five of the six
+findings the rule was written from are gates now (RFC 046 §1). What was left un-gated was one channel — the
+GitHub Releases archives — which RFC 046 closes with the `release artifact gate`.
+
+**What each part of Rule 1 became:**
+
+| Rule 1 step | Now |
+|---|---|
+| 1. Install from each registry as documented | `npm install gate`, `pypi wheel gate`, `pypi published gate`, `crates package gate` — each fetches what the registry serves, on every push |
+| 2. Follow the README Quick Start verbatim, **including the prebuilt-binary path** | `release artifact gate` — downloads the archives from GitHub Releases, does what the README says (extract, `cd` into the folder, `./mdka`), runs the README's own example where the runner can execute it, and applies RFC 042's contract to the downloaded file. Its log states which assets were executed and which were not |
+| 3. Execute every runnable example, each in a fresh process | `docs example gate` (RFC 031, 032) |
+| 4. Convert a real page and read the Markdown as a document | **A voluntary step, owned by nobody, not blocking** (RFC 046 §3.4). No gate can find a defect nobody thought to assert; this is where `A-01` came from and it costs two minutes |
+| The amendments to Rule 1: not the implementer; adversarial framing | Moot for steps 1–3, which have no implementer's context to lose. They remain good advice for the voluntary step |
+
+**What did not change.** Rules 2, 3, 4 and 5 are untouched. The release checklist's §4 is replaced by a pointer to
+the gates and the voluntary step, and carries the four limits of relying on a consumer report that RFC 046 §4
+states — one consumer, one mode, one input class, one binding, late — so the next reader sees what that
+channel does and does not cover.
+
+**A gate reports on the last published release**, like `npm install gate`: before a release it describes the
+previous version. That is inherent (a published archive cannot be checked before it is published) and is why
+the checklist has one step after publishing: dispatch it and read its coverage lines.
+

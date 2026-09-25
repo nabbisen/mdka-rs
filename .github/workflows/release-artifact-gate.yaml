@@ -1,0 +1,90 @@
+name: release artifact gate
+
+# RFC 046. Every distribution channel has a gate that fetches what the registry
+# actually serves -- `npm install gate`, `pypi wheel gate`, `pypi published
+# gate`, `crates package gate` -- except GitHub Releases. This is that gate.
+#
+# It downloads the archives of the LATEST PUBLISHED release with `gh release
+# download` (not a build artifact), and for each asset:
+#   1. checks it was published;
+#   2. follows README.md's own instructions -- extract, `cd` into the folder
+#      the archive created, find `./mdka` -- and asserts that they work. It does
+#      not assert a layout: the wrapper directory is deliberate and documented,
+#      and this fails only if the *documented steps* stop working;
+#   3. runs the binary on the README's own example and compares its output
+#      with the output the README shows -- only for the assets this runner can
+#      execute, and the log says which those are;
+#   4. applies RFC 042's contract (check-artifact-contract.py, unchanged) to
+#      the downloaded binary. This is what makes RFC 042 criterion 4 permanent.
+#
+# The runner is Linux x64: Linux-x64-gnu and Linux-x64-musl are executed;
+# Linux-aarch64-musl, macOS-aarch64 and Windows-x64 get steps 1, 2 and 4 only,
+# and the log states that rather than leaving it implicit. Executing them would
+# need QEMU or two more runners; that is a priced decision for the owner, not
+# one made here (RFC 046 handoff §6).
+#
+# Its own workflow file, not ci.yaml: release-npm.yaml and create-release.yaml
+# gate on ci.yaml's conclusion, so an artifact gate living there can block the
+# very release that would make it pass. That deadlocked 2.2.1. See RFC 020's
+# correction record and RFC 026 §3.5 -- the same reason `npm install gate`
+# and `pypi wheel gate` are separate files.
+#
+# Consequence, stated rather than hidden: like `npm install gate`, this reports
+# on the LAST PUBLISHED release, not on the working tree. Before a release it
+# describes the previous version. That lag is inherent -- a published archive
+# cannot be verified before it is published.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Catch a release page that changed under us even when nobody pushes.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-artifact-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # The checker needs Python >= 3.11 (tomllib, via check-artifact-contract.py).
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Download the latest published release's archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --json tagName --jq .tagName)
+          echo "Latest published release: ${tag}"
+          echo "RELEASE_TAG=${tag}" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          gh release download "${tag}" --pattern 'mdka@*' --dir "$RUNNER_TEMP/release-assets"
+          ls -l "$RUNNER_TEMP/release-assets"
+
+      - name: Check every archive the way the README tells a user to use it
+        run: |
+          python .github/workflows/scripts/check-release-archives.py \
+            --assets-dir "$RUNNER_TEMP/release-assets" \
+            --tag "${RELEASE_TAG}"
