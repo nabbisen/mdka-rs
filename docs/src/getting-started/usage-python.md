@@ -158,6 +158,15 @@ except mdka.MdkaError as e:
 `html_to_markdown` and `html_to_markdown_with` are always safe to call — they
 never raise exceptions regardless of input quality.
 
+## Package Version
+
+```python
+import mdka
+
+print(mdka.version())  # the installed version, e.g. "3.0.0"
+print(mdka.__version__)  # the same string
+```
+
 ## Type Annotations
 
 mdka ships type stubs (`mdka/__init__.pyi` and `mdka/mdka_python.pyi`) next to a
@@ -173,7 +182,7 @@ mdka.html_file_to_markdown()                   # error: missing argument "path"
 ```
 
 The stubs are the reference for every signature; read them, or ask your editor,
-rather than a copy in prose. Three things worth knowing about them:
+rather than a copy in prose. Two things worth knowing about them:
 
 - **They describe what the extension accepts, which is narrower than "anything
   path-like".** File paths are `str`, not `os.PathLike`: pass `str(path)`. The

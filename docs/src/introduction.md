@@ -43,6 +43,8 @@ If raw speed on simple, well-formed HTML is the only concern, a streaming rewrit
 ## Quick Navigation
 
 - New to mdka? Start with [Installation](./getting-started/installation.md).
+- Upgrading from `2.9.0`? Read [Migrating to 3.0](./migration-3.0.md): `3.0` changes no
+  conversion output, but it renames and removes names.
 - Ready to integrate? Jump to [Usage & Examples](./getting-started/usage.md).
 - Evaluating? Read [Design Philosophy](./design/philosophy.md) and
   [Performance Characteristics](./design/performance-characteristics.md).

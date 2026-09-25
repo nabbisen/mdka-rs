@@ -170,7 +170,7 @@ return a `String` and never panic on any input, no matter how malformed.
 ## Crate Version
 
 ```rust
-println!("{}", mdka::version()); // e.g. "2.3.0"
+println!("{}", mdka::version()); // the installed version, e.g. "3.0.0"
 ```
 
 Returns the crate's version as declared in `Cargo.toml`.

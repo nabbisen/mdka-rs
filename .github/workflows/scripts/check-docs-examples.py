@@ -484,8 +484,8 @@ def _python_resolution(b, n, workdir, python):
             names.add(node.attr)
 
     # Keyword arguments, not just symbols. `html_to_markdown_with` resolves
-    # whether or not `preserve_unknown_attrs=True` is a real parameter --
-    # and it is not; it raises TypeError. Documenting a call that raises is
+    # whether or not `preserve_classes=True` is a real parameter -- and since
+    # 3.0 it is not; it raises TypeError. Documenting a call that raises is
     # worse than documenting nothing, so bind the documented kwargs against
     # the installed signature (RFC 029 §4.2).
     calls = []

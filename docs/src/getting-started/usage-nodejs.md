@@ -176,7 +176,7 @@ told you nothing.)
 
 ```js
 const { version } = require('mdka')
-console.log(version()) // e.g. "2.3.0"
+console.log(version()) // the installed version, e.g. "3.0.0"
 ```
 
 ## TypeScript

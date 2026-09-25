@@ -1,5 +1,12 @@
 # Performance Characteristics
 
+> **These figures describe mdka `2.3.0` (`main` @ `c9cbbb8`, measured 2026-09-23) and have not been
+> re-measured since.** Several minors and two conversion milestones have landed in between — GFM
+> tables (RFC 008), element coverage (RFC 009), and the inline-composition work of `2.6.0` and
+> `2.7.0` — and `3.0` removes options and changes the file-function return types. None of that
+> is reflected below, so read every number as the `2.3.0` number. A re-measurement is its own job
+> (RFC 012) and has not been scheduled.
+
 ## The Focus of mdka
 
 The Rust ecosystem offers a variety of excellent HTML-to-Markdown converters. Many of these projects prioritize feature-richness, complex edge-case handling, or high extensibility. 

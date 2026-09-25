@@ -15,6 +15,12 @@
 
 ---
 
+# Migration
+
+- [Migrating to 3.0](./migration-3.0.md)
+
+---
+
 # Reference
 
 - [API](./api/index.md)

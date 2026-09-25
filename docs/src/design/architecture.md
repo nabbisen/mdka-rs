@@ -8,10 +8,12 @@ mdka/
 │   ├── lib.rs             Public API surface
 │   ├── options.rs         ConversionMode, ConversionOptions
 │   ├── traversal.rs       Markdown conversion traversal
+│   ├── table.rs           GFM table conversion (RFC 008; 2.4.0)
 │   ├── renderer.rs        MarkdownRenderer state machine
 │   │   ├── sink.rs            The output sink: the only writer of Markdown
 │   │   └── escape.rs          Escaping by context (RFC 010)
 │   └── utils.rs           Tag classification helpers
+│   (each of traversal, renderer, sink, escape and utils has a `tests.rs` module beside it)
 ├── tests/             integration test modules
 ├── cli/               mdka-cli binary crate
 │   └── src/main.rs        Argument parsing + dispatch
@@ -38,8 +40,8 @@ HTML string
     │             Preprocessing is applied inline during this traversal:
     │               · drops script/style/head/svg/… unconditionally
     │               · drops shell elements when opted in
-    │               · unwraps generic wrappers when opted in (tag removed,
-    │                 separation kept — no output effect today)
+    │               · unwraps generic wrappers in Minimal (tag removed,
+    │                 separation kept — no output effect)
     │             Drives MarkdownRenderer
     ▼
 [3] Finalise     renderer.finish()
