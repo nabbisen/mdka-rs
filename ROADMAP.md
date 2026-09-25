@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.5.1 — **shipped 2026-09-24**, tag `4d7626d`, complete on all four registries: crates.io, PyPI, GitHub and npm, the last declaring six `optionalDependencies` all resolvable. `2.5.0` (tag `872711f`) shipped everywhere except npm — its three new scoped packages could not be created by CI, since npm trusted publishing is attached per package and cannot be configured for a name that does not exist; the owner created them by hand and `2.5.1` completed in place. `2.4.2` tag `0913c7d`; `2.4.1` tag `40b80d4`; `2.4.0` tag `2f72f5b`.
+**Current version.** 2.6.0 — **shipped 2026-09-25**, tag `da687c4`, complete on all four registries and verified at the destination: the published Linux x64 CLI requires at most `GLIBC_2.17` (it required `2.34` through `2.5.1`), the PyPI wheel's stubs make `mypy --strict` report the three errors it used to pass, and npm resolves all six bindings. `2.5.1` tag `4d7626d`; `2.5.0` tag `872711f`; `2.4.2` tag `0913c7d`; `2.4.1` tag `40b80d4`; `2.4.0` tag `2f72f5b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -37,7 +37,7 @@ while the npm binding silently excluded three widely-used distributions. Second,
 platforms and shipped three. Both deserve an RFC; the second also has a one-line checklist remedy, already
 added.
 
-**`2.6.0` ships RFC 042, 043 and 045, plus RFC 041's wording half** — prepared 2026-09-25.
+**`2.6.0` ships RFC 042, 043 and 045, plus RFC 041's wording half** — shipped 2026-09-25, tag `da687c4`.
 `<sup>`/`<sub>` stop silently converting to a different statement: **104 of 417 real occurrences (25%)** did,
 and now reach a real Unicode superscript where one exists or a visible `^(…)` / `_(…)` marker where it does
 not, while the 186 self-delimiting citation markers are untouched. The release asserts what is inside each
