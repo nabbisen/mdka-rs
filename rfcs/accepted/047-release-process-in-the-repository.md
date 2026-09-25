@@ -1,6 +1,6 @@
 # RFC 047 — The release process lives in the repository, and its instructions are verified
 
-**Status.** Proposed
+**Status.** Accepted — owner, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. Governance and CI; no conversion change.
@@ -118,3 +118,22 @@ let it hide behind the two items that have a clear answer. Recorded in `ROADMAP.
 - It does not change the release mechanics themselves — only where they are written down and whether the
   instructions we publish are checked.
 - It does not revisit the archive wrapper directory, which remains the owner's deferred decision.
+
+---
+
+## 6. Owner decision, 2026-09-25
+
+**Accepted as proposed.**
+
+**Split in two, because the halves need different hands:**
+
+- **§3.1, the checklist move — the architect's, done immediately.** It is a governance document and the
+  judgement in it is which pointers describe something internal and which are simply paths. That is not
+  mechanical and should not be handed over as if it were.
+- **§3.2, the gate's platform coverage and the README instructions — the dev team's.** Handoff:
+  `rfcs/handoffs/047-release-process-in-the-repository/platform-coverage-handoff.md`.
+
+The two are independent; §3.2 does not wait on §3.1.
+
+**Criterion 1 binds the first half:** one copy of the checklist, not two. A tracked copy alongside the
+`.git-exclude/` original would be the exact failure this project keeps writing rules about.
