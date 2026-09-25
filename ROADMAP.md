@@ -862,7 +862,7 @@ anyone's memory.
 
 | Item | State |
 |---|---|
-| **Nobody has run the prebuilt macOS binary as a person would.** Apple's `unzip` propagates `com.apple.quarantine` onto the extracted binary; it still **ran from a shell, exit 0**, but `spctl --assess --type execute` calls it **`rejected`** — unsigned and not notarised. The gate proves the archive works from a shell on a macOS runner; it **cannot** reproduce the interactive Gatekeeper experience | Open. **A human check on a Mac**, not something a runner can do. No `xattr -d com.apple.quarantine` line was added to the README, because it has been seen to succeed but never seen to be *needed* — documenting it would be a guess. RFC 047 report §1 |
+| **The macOS binary runs under a real browser quarantine — checked, and closed.** On a macOS 26.6 arm64 runner with assessments enabled, the archive was given a genuine Safari quarantine string (`0083;…;Safari;…`) and the README's own `unzip` propagated it to the binary; it **ran, `# Hello`, exit 0**. Quarantining the binary directly: same. `ditto -xk` (Archive Utility, i.e. double-clicking the zip) propagates it too | **Not a blocker, and no README change.** `spctl --assess --type execute` does say `rejected` — the binary is ad-hoc signed, not notarised — but that assessment models **Launch Services** (double-click, `open`), which the README does not tell anyone to use. The documented path is verified. It becomes live again only if we ever ship an `.app` bundle or tell people to double-click |
 
 ### Recorded 2026-09-25, from the RFC 044 implementation
 
