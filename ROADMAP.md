@@ -870,6 +870,14 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-25, from the `2.9.0` precondition slices
+
+| Item | State |
+|---|---|
+| **Python's `BulkConvertResult.repr()` leaks a Rust `Option`** — `error=Some("…")`, and omits `dest` and `ok`. The accessors are correct; only `repr` | Found on the published `2.8.0` wheel. **Not patched:** RFC 048 renames the type to `FileOutcome`, so the fix belongs with the rename and is now RFC 048 criterion 11 |
+| ~~`options.md` says five of eight options are inert; six are~~ | **Closed** by the `2.9.0` deprecation slice — the page now reads *"Six of the eight fields … have no effect; only two can affect it"* |
+| **Still carried from the pre-`3.0` audit:** `architecture.md` omits `src/table.rs`; `performance-characteristics.md` was measured at `2.3.0` @ `c9cbbb8`; `usage-rust.md:167` and `usage-nodejs.md:188` show `version()` → `"2.3.0"`; `usage-python.md` never mentions `version()` | Four items, none blocking. Deliberately not folded into the `2.9.0` slices — none was a one-line fix in a file already being touched |
+
 ### Recorded 2026-09-25, from the `2.8.0` deprecation slice
 
 | Item | State |
