@@ -140,11 +140,11 @@ let results = html_files_to_markdown_with(&files, Path::new("out/"), &opts);
 |---|---|
 | `Balanced` | General use; default |
 | `Minimal` | LLM pre-processing, compression — the only mode that converts differently |
-| `Strict`, `Semantic`, `Preserve` | **Deprecated since 2.8.0, removed in 3.0.** Aliases of `Balanced`; use `Balanced` |
 
-`Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output and
-cannot differ, which is why the three aliases are deprecated: using one is a
-`#[deprecated]` compile warning. See [Conversion Modes](../api/modes.md) for why.
+There were five modes until 3.0. `Strict`, `Semantic` and `Preserve` were aliases
+of `Balanced` that produced identical output and could not differ; they were
+removed, and `"strict".parse::<ConversionMode>()` now returns an error that says
+so. See [Conversion Modes](../api/modes.md) for why.
 
 ## Error Handling
 

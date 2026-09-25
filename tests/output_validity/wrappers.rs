@@ -1,9 +1,10 @@
 //! RFC 036 §5.2 / slice `036d`: an unwrapped wrapper keeps its block
 //! separation. `docs/src/api/elements.md` documents `<div>`, `<section>`,
 //! `<article>` and `<main>` as acting like paragraph breaks whether or not
-//! `unwrap_unknown_wrappers` removes the tag; each cell here asserts exactly
-//! that, in all five modes, on div-per-line markup with no `<p>` inside --
-//! the shape that used to weld words together under Minimal and Semantic
+//! the mode removes the tag (`Minimal` does; `Balanced` renders it); each
+//! cell here asserts exactly that, in both modes, on div-per-line markup with
+//! no `<p>` inside -- the shape that used to weld words together under
+//! `Minimal` and the since-removed `Semantic`
 //! (`- - -` sharing one line was the list-item analogue RFC 036's earlier
 //! slices fixed; this is the same "the promise and the code disagreed"
 //! defect, one level up, for a documented block rather than a marker).

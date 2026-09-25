@@ -37,17 +37,14 @@ table shows:
   has them.
 - **Node.js's file functions are async-only** — they return a `Promise`. Rust's
   and Python's block until done.
-- **Of Node.js's functions only the synchronous `htmlToMarkdownWith` and
-  `htmlToMarkdownMany` can emit a deprecation warning**; the async and file
-  functions cannot. See [Conversion Modes](./modes.md#deprecation).
 
 ## Types
 
 | Type | Language | Description |
 |---|---|---|
-| [`ConversionMode`](./modes.md) | Rust, Python | Enum (Rust) / class (Python): `Balanced` · `Minimal` · and the deprecated aliases `Strict` · `Semantic` · `Preserve` (removed in 3.0). Node.js has no such type: it passes the mode as a string in `mode` |
+| [`ConversionMode`](./modes.md) | Rust, Python | Enum (Rust) / class (Python): `Balanced` · `Minimal`. Node.js has no such type: it passes the mode as a string in `mode` |
 | [`ConversionOptions`](./options.md) | Rust | Controls pre-processing per call; built via `for_mode()` |
-| `JsConversionOptions` | Node.js | The options object taken by every Node.js `…With` function and by `htmlToMarkdownMany`. Every field is optional: `mode` (a string), `preserveIds`, `dropInteractiveShell`, and the deprecated no-ops `preserveClasses`, `preserveDataAttrs`, `preserveAriaAttrs` and `unwrapUnknownWrappers`. Python takes the same fields as keyword arguments instead |
+| `JsConversionOptions` | Node.js | The options object taken by every Node.js `…With` function and by `htmlToMarkdownMany`. Every field is optional: `mode` (a string), `preserveIds` and `dropInteractiveShell`. Python takes the same fields as keyword arguments instead |
 | [`ConvertResult`](./core.md#convertresult) | Rust, Node.js, Python | **Rust and Python:** returned by the single-file functions, `src` + `dest`. **Node.js:** `src`, optional `dest`, optional `error`, and it is returned by the single-file function *and* by the bulk ones — for a bulk entry, `error` is set and `dest` absent when that file failed |
 | `BulkConvertResult` | Python | One entry per file from `html_files_to_markdown[_with]`: `src`, `dest` (or `None`), `error` (or `None`), and `ok` |
 | [`MdkaError`](./errors.md) | Rust, Python | Rust: the only error type, an enum whose one variant wraps `std::io::Error`. Python: the exception the file functions raise. Node.js has no error class: it rejects with a plain `Error` |

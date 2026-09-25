@@ -188,11 +188,11 @@ cells! {
             r#"table(thead(td("A")), tr(td("x", html("<br>"), "y")))"#,
         );
 
-    // 2.4.2: an unwrapped wrapper (`<div>`, `<section>`, ... in Semantic and
-    // Minimal, which unwrap by default) in a cell is the cell's own `<br>`,
+    // 2.4.2: an unwrapped wrapper (`<div>`, `<section>`, ... in Minimal, which
+    // unwraps them) in a cell is the cell's own `<br>`,
     // not a blank line -- the blank line split the row and lost the second
     // child. The tree, not merely the presence of a table, is the check: a
-    // truncated table still parses as a table. All five modes, so a mode that
+    // truncated table still parses as a table. Both modes, so a mode that
     // diverges from `Balanced` fails here by name.
     sibling_wrappers_in_cell_join_with_br: "<table><tr><th>H</th></tr><tr><td><div>a</div><div>b</div></td></tr></table>"
         => tree_by_reading(
@@ -344,7 +344,7 @@ mod f1_f3_structural_cost {
     }
 
     /// `check`, above, converts with `ConversionOptions::default()` -- one
-    /// mode -- unlike `cells!`, which runs all five. Every `#[test]` in this
+    /// mode -- unlike `cells!`, which runs both modes. Every `#[test]` in this
     /// module rests on F1/F3 output being mode-independent (RFC 008 §4.1's
     /// own mechanisms never read `ConversionOptions`, `008a`'s
     /// `evidence/d-before-after-parses.txt` showed the same for its own

@@ -3,18 +3,8 @@
 ```rust,fragment
 pub struct ConversionOptions {
     pub mode: ConversionMode,
-
-    // Attribute retention
-    pub preserve_ids:             bool,
-    pub preserve_classes:         bool,        // deprecated, no effect
-    pub preserve_data_attrs:      bool,        // deprecated, no effect
-    pub preserve_aria_attrs:      bool,        // deprecated, no effect
-    pub preserve_unknown_attrs:   bool,        // deprecated, no effect
-
-    // Structural behaviour
-    pub drop_presentation_attrs:  bool,        // deprecated, no effect
-    pub drop_interactive_shell:   bool,
-    pub unwrap_unknown_wrappers:  bool,
+    pub preserve_ids:           bool,
+    pub drop_interactive_shell: bool,
 }
 ```
 
@@ -25,14 +15,10 @@ walks the parsed document once. You rarely need to set individual fields —
 start with a mode and override only what differs from the default for
 that mode.
 
-**Six of the eight fields below have no effect on output; only two can
-affect it (`preserve_ids` and `drop_interactive_shell`).** Five are
-deprecated as of `2.2.0`: Markdown has no attribute syntax, so
-"preserve this attribute" was never expressible in the output format —
-see [RFC 005](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/005-conversion-options-semantics.md)
-for the full history. The sixth, `unwrap_unknown_wrappers`, is deprecated as
-of `2.9.0` for a different reason (below). They are marked below; nothing is
-removed yet, and no output changes if you are currently setting them.
+**There are three fields, and two of them act on the output:** `preserve_ids` and
+`drop_interactive_shell`. Six more existed until 3.0 and are described under
+[Removed in 3.0](#removed-in-30) below — none of them ever changed a byte of
+output.
 
 ## Creating Options
 
@@ -62,26 +48,12 @@ let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 
 ## Field Defaults by Mode
 
-`Strict`, `Semantic` and `Preserve` are deprecated aliases of `Balanced` (since
-2.8.0, removed in 3.0); their columns are kept here because the defaults are
-still what they set.
+| Field | Balanced | Minimal | Effect |
+|---|---|---|---|
+| `preserve_ids` | ✅ | ❌ | Emits anchors |
+| `drop_interactive_shell` | ❌ | ✅ | Drops shell elements |
 
-| Field | Balanced | Strict | Minimal | Semantic | Preserve | Effect |
-|---|---|---|---|---|---|---|
-| `preserve_ids` | ✅ | ✅ | ❌ | ✅ | ✅ | Emits anchors |
-| `preserve_classes` | ❌ | ✅ | ❌ | ❌ | ✅ | **None — deprecated** |
-| `preserve_data_attrs` | ❌ | ✅ | ❌ | ❌ | ✅ | **None — deprecated** |
-| `preserve_aria_attrs` | ✅ | ✅ | ❌ | ✅ | ✅ | **None — deprecated** |
-| `preserve_unknown_attrs` | ❌ | ✅ | ❌ | ❌ | ✅ | **None — deprecated** |
-| `drop_presentation_attrs` | ✅ | ❌ | ✅ | ✅ | ❌ | **None — deprecated** |
-| `drop_interactive_shell` | ❌ | ❌ | ✅ | ❌ | ❌ | Drops shell elements |
-| `unwrap_unknown_wrappers` | ❌ | ❌ | ✅ | ✅ | ❌ | **None today — deprecated (2.9.0)** |
-
-Because the five attribute fields have no effect, and `unwrap_unknown_wrappers`
-has no effect *today* for a different reason (below), **`Balanced`, `Strict`,
-`Semantic`, and `Preserve` currently produce byte-identical output** — they
-differ from each other only in these fields' defaults. See
-[Conversion Modes](./modes.md) for what this means when choosing a mode.
+See [Conversion Modes](./modes.md) for what this means when choosing a mode.
 
 ## Field Reference
 
@@ -130,70 +102,39 @@ existing markup through.
 An empty `id=""` emits nothing. `preserve_ids = false` emits nothing
 regardless of `id`.
 
-### `preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`, `preserve_unknown_attrs`, `drop_presentation_attrs`
-**No effect on output. Deprecated since `2.2.0`.** Markdown has no syntax
-for HTML attributes, so "preserve" or "drop" an attribute was never
-expressible in the output — these fields described behaviour the format
-could not represent, and never changed a single byte of Markdown in any
-released version. See
-[RFC 005](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/005-conversion-options-semantics.md)
-for the analysis. They remain present on the struct and accept any value, and
-they change nothing about the output.
-
-Setting one is **not** silent, though: each field is `#[deprecated]`, so it is a
-compile-time warning. **Under `-D warnings` it is a build failure** —
-`RUSTFLAGS="-D warnings"`, or `#![deny(warnings)]` in your crate. Remove the
-assignment; it changes nothing. While migrating, allow it narrowly, around the
-assignment only rather than for the whole crate:
-
-```rust
-use mdka::options::{ConversionMode, ConversionOptions};
-
-let mut opts = ConversionOptions::for_mode(ConversionMode::Balanced);
-#[allow(deprecated)]
-{
-    opts.preserve_classes = true;
-}
-```
-
-This builds under `-D warnings`.
-
-Attribute preservation is a legitimate feature some Markdown flavours
-(Pandoc, kramdown) support. If mdka adds it, it will be a new,
-deliberately designed feature — not a repair of these fields.
-
 ### `drop_interactive_shell`
 Whether to remove `<nav>`, `<header>`, `<footer>`, and `<aside>` elements
 **and all their children**.
 Useful for content extraction from full web pages.
 Enabled by default in `Minimal`; disabled by default in every other mode.
 
-### `unwrap_unknown_wrappers`
-Whether to replace `<div>`, `<span>`, `<section>`, `<article>`, and
-`<main>` with their children, discarding the wrapper tag itself, when
-`unwrap_unknown_wrappers` is enabled. Enabled in `Minimal` and `Semantic`.
+## Removed in 3.0
 
-**Deprecated as of `2.9.0`; no effect today, for a different reason than the five
-attribute fields above.** Unwrapping a block-level wrapper (`<div>`, `<section>`, `<article>`,
-`<main>`) removes the tag, but keeps the paragraph break it stood for — the
-same block separation the element would have produced rendered. The tag's
-removal has no Markdown-visible trace either way, so there is currently
-nothing left for this option to change: Markdown has no wrapper element to show
-the difference, so nothing about today's output can distinguish it.
+Six fields were removed, along with the builder method `preserve_aria_attrs`. **None
+of them ever changed the output**, in any released version, so removing them
+changes nothing about how a document converts — only code that names them has to
+change. Delete the assignment, the keyword argument or the flag.
 
-**The reason is not permanent, and the deprecation says so.** The five
-attribute fields are inert because Markdown has no attribute syntax, which will
-not change. This one is inert because of what today's renderer leaves behind,
-so the note reads: *removed from the 3.0 surface: unwrapping leaves no
-Markdown-visible trace today, so this option cannot change the output. If
-wrapper handling becomes expressible it returns as a new option.*
+| Removed | Where it existed | Why it could not act |
+|---|---|---|
+| `preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`, `preserve_unknown_attrs`, `drop_presentation_attrs` | Rust (all five). Node.js and Python had the first three; the CLI had `--preserve-classes`, `--preserve-data` and `--preserve-aria` | Markdown has no syntax for HTML attributes, so "preserve" or "drop" an attribute was never expressible in the output. Deprecated since `2.2.0`; see [RFC 005](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/005-conversion-options-semantics.md) for the analysis |
+| `unwrap_unknown_wrappers` | Rust; `unwrapUnknownWrappers` in Node.js; `unwrap_unknown_wrappers` in Python; `--unwrap-wrappers` on the CLI | Unwrapping a wrapper element (`<div>`, `<section>`, `<article>`, `<main>`) removes the tag but keeps the paragraph break it stood for, and Markdown has no wrapper element to show the difference. Deprecated since `2.9.0` |
 
-Passing it warns on every surface, and only when you pass it — never for a mode
-that turns it on by default: a `#[deprecated]` warning in Rust, a
-`DeprecationWarning` from `htmlToMarkdownWith` and `htmlToMarkdownMany` in Node
-(the `Async` and file functions cannot emit it) and from Python, and one line on
-stderr from the CLI's `--unwrap-wrappers`. Output is unchanged. Remove it. See
-[Conversion Modes](./modes.md) for how this affects the modes.
+**The two reasons are not the same.** The attribute options can never come back:
+Markdown has no attribute syntax. `unwrap_unknown_wrappers` was inert because of
+what the renderer leaves behind, so **if wrapper handling ever becomes
+expressible it returns as a new option**, designed for what it can then do — not
+as a repair of the old field. (`Minimal` still unwraps wrappers, internally; that
+is a property of the mode, not something you can set.)
+
+What you see if you still use one:
+
+| Surface | What happens |
+|---|---|
+| Rust | Compile error: the field (and `ConversionOptions::preserve_aria_attrs`) no longer exists |
+| Node.js | TypeScript: a compile error. **Plain JavaScript: nothing — the option is ignored, with no error and no warning** |
+| Python | `TypeError: … got an unexpected keyword argument` |
+| CLI | Exit status 1 and one line on stderr saying the flag was removed and what to do |
 
 **`<figure>` and `<figcaption>` are never unwrapped**, in any mode — see
 the [Block Elements table](./elements.md) for why they're excluded even

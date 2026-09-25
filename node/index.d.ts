@@ -54,14 +54,10 @@ export declare function htmlToMarkdownWith(html: string, options?: JsConversionO
 export declare function htmlToMarkdownWithAsync(html: string, options?: JsConversionOptions | undefined | null): Promise<string>
 
 export interface JsConversionOptions {
-  /** "balanced" | "minimal"; "strict", "semantic" and "preserve" are deprecated aliases of "balanced", removed in 3.0 */
+  /** "balanced" | "minimal" */
   mode?: string
   preserveIds?: boolean
-  preserveClasses?: boolean
-  preserveDataAttrs?: boolean
-  preserveAriaAttrs?: boolean
   dropInteractiveShell?: boolean
-  unwrapUnknownWrappers?: boolean
 }
 
 export declare function version(): string

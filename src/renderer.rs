@@ -315,7 +315,7 @@ impl MarkdownRenderer {
 
     /// A block boundary for content whose own element contributed nothing:
     /// an unwrapped wrapper (`<div>`, `<section>`, `<article>`, `<main>`
-    /// with `unwrap_unknown_wrappers` on) still separates its children from
+    /// in `Minimal`) still separates its children from
     /// whatever surrounds them the way it would have as a rendered
     /// `Block::Paragraph`, even though the tag itself is never entered or
     /// left (RFC 036 §5.2, slice `036d`).

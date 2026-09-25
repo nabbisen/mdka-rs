@@ -222,55 +222,36 @@ async function run(name, fn) {
       assert.ok(md.includes('X'), `button text missing: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: strict keeps class in output html (pre-process)', () => {
-      // strict モードは class を保持するが変換後 MD には影響しない
-      const md = htmlToMarkdownWith('<p class="intro">Hello</p>', { mode: 'strict' })
-      assert.ok(md.includes('Hello'), `text missing: ${md}`)
-    })
-
-    await run('htmlToMarkdownWith: preserve mode keeps comments via pre-processing', () => {
-      const md = htmlToMarkdownWith('<!-- meta --><p>Text</p>', { mode: 'preserve' })
-      assert.ok(md.includes('Text'), `text missing: ${md}`)
-    })
-
-    await run('htmlToMarkdownWith: semantic keeps aria-label text', () => {
+    await run('htmlToMarkdownWith: balanced emits the heading anchor', () => {
       // Previously asserted md.includes('# Title'). RFC 005 Slice B1 gave
-      // preserve_ids (default true in semantic mode) a real effect: it now
+      // preserve_ids (default true outside minimal) a real effect: it now
       // emits an anchor as the heading's own leading content, so the
       // substring '# Title' no longer appears -- '# <a id="t"></a>Title'
       // does instead. Asserting the exact string, not a weakened substring,
       // so this test keeps proving what it actually converts to.
       const md = htmlToMarkdownWith(
         '<article aria-labelledby="t"><h1 id="t">Title</h1><p>Body</p></article>',
-        { mode: 'semantic', preserveAriaAttrs: true }
+        { mode: 'balanced' }
       )
       assert.strictEqual(md, '# <a id="t"></a>Title\n\nBody\n', `unexpected output: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: unwrapUnknownWrappers no longer changes output', () => {
-      // Bare-sibling-text fixture, not a block-element fixture: RFC 005
-      // Slice A found block-element fixtures cannot discriminate this
-      // field at all, since neighbouring blocks' own spacing already
-      // dominates the output either way. It was, until RFC 036 §5.2 /
-      // slice 036d: unwrapping was deleting the paragraph break along with
-      // the tag, which is exactly what made this fixture discriminate it.
-      // Fixed, there is nothing left for it to discriminate -- this is now
-      // the strongest evidence for that: the project's one known
-      // discriminating fixture stopped discriminating.
+    await run('htmlToMarkdownWith: a wrapper keeps its separation in both modes', () => {
+      // Bare-sibling-text fixture, not a block-element fixture: neighbouring
+      // blocks' own spacing dominates the output otherwise. Minimal unwraps
+      // the wrapper and balanced renders it; RFC 036 §5.2 / slice 036d made
+      // the two write the same bytes.
       const html = 'Before<div class="wrap"><span>inner</span></div>After'
-      const without = htmlToMarkdownWith(html, { mode: 'balanced' })
-      const withUnwrap = htmlToMarkdownWith(html, { mode: 'balanced', unwrapUnknownWrappers: true })
-      assert.strictEqual(without, withUnwrap, `unwrapUnknownWrappers unexpectedly changed something: ${withUnwrap}`)
-      assert.strictEqual(without, 'Before\n\ninner\n\nAfter\n')
+      for (const mode of ['balanced', 'minimal']) {
+        assert.strictEqual(htmlToMarkdownWith(html, { mode }), 'Before\n\ninner\n\nAfter\n', mode)
+      }
     })
 
-    // Both warning tests run in a fresh child process rather than sharing
-    // this file's process: process.emitWarning delivers the 'warning' event
-    // asynchronously (queued, not inline), and earlier tests in this same
-    // file also pass preserveAriaAttrs/preserveClasses -- their warnings can
-    // still be in flight when a later test's listener attaches, leaking a
-    // count that has nothing to do with the call under test. A clean
-    // subprocess has no such history.
+    // Warnings run in a fresh child process rather than sharing this file's
+    // process: process.emitWarning delivers the 'warning' event
+    // asynchronously (queued, not inline), so a warning from an earlier test
+    // in this same file could still be in flight when a later test's listener
+    // attaches. A clean subprocess has no such history.
     function runWarningCheck(optionsLiteral) {
       const { execFileSync } = require('child_process')
       const indexPath = path.resolve(__dirname, 'index.js')
@@ -285,95 +266,56 @@ async function run(name, fn) {
       return JSON.parse(out)
     }
 
-    await run('htmlToMarkdownWith: explicit deprecated field emits a warning', () => {
-      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true }")
-      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
-      assert.equal(warnings[0].name, 'DeprecationWarning')
-      assert.match(warnings[0].message, /preserveClasses/)
-    })
-
-    // The published narrow suppression in usage-nodejs.md filters on this exact
-    // prefix (`message?.startsWith('mdka: `')`). Rewording the start of the
-    // message would silently break that workaround for every user relying on
-    // it, so the prefix is a contract, not wording.
-    await run('htmlToMarkdownWith: deprecation message keeps the documented prefix', () => {
-      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true }")
-      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
-      assert.ok(
-        warnings[0].message.startsWith('mdka: `preserveClasses`'),
-        `message must start with the documented prefix, got: ${warnings[0].message}`
-      )
-      assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
-    })
-
-    await run('htmlToMarkdownWith: omitting deprecated fields stays silent', () => {
-      const warnings = runWarningCheck("{ mode: 'balanced' }")
-      assert.equal(warnings.length, 0, `expected no warnings, got ${warnings.length}`)
-    })
-
-    // RFC 041 §9: `strict`, `semantic` and `preserve` are deprecated aliases of
-    // `balanced`. Warned only when the caller named one; output is unchanged.
-    for (const alias of ['strict', 'semantic', 'preserve']) {
-      await run(`htmlToMarkdownWith: mode '${alias}' emits one DeprecationWarning saying what to use instead`, () => {
-        const warnings = runWarningCheck(`{ mode: '${alias}' }`)
-        assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
-        assert.equal(warnings[0].name, 'DeprecationWarning')
-        assert.ok(
-          warnings[0].message.startsWith(`mdka: mode '${alias}' is an alias of 'balanced'`),
-          `unexpected message: ${warnings[0].message}`
-        )
-        assert.match(warnings[0].message, /use 'balanced'|Use 'balanced'/)
-        assert.match(warnings[0].message, /removed in 3\.0/)
-        assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
-      })
-
-      await run(`htmlToMarkdownWith: mode '${alias}' output is byte-identical to balanced`, () => {
-        const html = '<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>'
-        assert.strictEqual(
-          htmlToMarkdownWith(html, { mode: alias }),
-          htmlToMarkdownWith(html, { mode: 'balanced' })
-        )
-      })
-    }
-
-    await run('htmlToMarkdownWith: no mode, balanced and minimal stay silent', () => {
+    await run('htmlToMarkdownWith: nothing warns any more -- no options, balanced, minimal', () => {
       for (const literal of ['undefined', '{}', "{ mode: 'balanced' }", "{ mode: 'minimal' }"]) {
         const warnings = runWarningCheck(literal)
         assert.equal(warnings.length, 0, `${literal}: expected no warnings, got ${JSON.stringify(warnings)}`)
       }
     })
 
-    // RFC 048 §7: `unwrapUnknownWrappers` is deprecated (2.9.0). Its own message,
-    // because the attribute options' reason ("no attribute syntax") is false here.
-    await run('htmlToMarkdownWith: unwrapUnknownWrappers emits one DeprecationWarning with the true reason', () => {
-      const warnings = runWarningCheck("{ mode: 'balanced', unwrapUnknownWrappers: true }")
-      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
-      assert.equal(warnings[0].name, 'DeprecationWarning')
-      assert.ok(
-        warnings[0].message.startsWith('mdka: `unwrapUnknownWrappers` has no effect and is deprecated'),
-        `unexpected message: ${warnings[0].message}`
+    // 3.0: `strict`, `semantic` and `preserve` were removed. A removed name is
+    // *obsolete*, not *wrong*, so it gets its own message rather than falling
+    // into "unknown conversion mode" (RFC 048 §6). FromStr is the one place
+    // that message comes from; Node passes it through unchanged.
+    for (const removed of ['strict', 'semantic', 'preserve']) {
+      const message = `conversion mode '${removed}' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'.`
+
+      await run(`htmlToMarkdownWith: mode '${removed}' throws the removed message`, () => {
+        assert.throws(() => htmlToMarkdownWith('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
+      })
+
+      await run(`htmlToMarkdownWithAsync: mode '${removed}' rejects with the removed message`, async () => {
+        await assert.rejects(htmlToMarkdownWithAsync('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
+      })
+    }
+
+    await run('htmlToMarkdownMany: a removed mode throws the removed message too', () => {
+      assert.throws(
+        () => htmlToMarkdownMany(['<p>Hi</p>'], { mode: 'preserve' }),
+        { name: 'Error', message: "conversion mode 'preserve' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'." }
       )
-      assert.match(warnings[0].message, /removed from the 3\.0 surface/)
-      assert.doesNotMatch(warnings[0].message, /attribute syntax/, 'the attribute options\' reason is false here')
-      assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
     })
 
-    await run('htmlToMarkdownWith: unwrapUnknownWrappers stays silent unless passed, even where a mode turns it on', () => {
-      for (const literal of ['undefined', '{}', "{ mode: 'minimal' }", "{ mode: 'balanced' }"]) {
-        const warnings = runWarningCheck(literal)
-        assert.equal(warnings.length, 0, `${literal}: expected no warnings, got ${JSON.stringify(warnings)}`)
+    await run('htmlToMarkdownWith: a removed mode is recognised in any case', () => {
+      assert.throws(
+        () => htmlToMarkdownWith('<p>Hi</p>', { mode: 'STRICT' }),
+        { name: 'Error', message: /^conversion mode 'strict' was removed in 3\.0/ }
+      )
+    })
+
+    // Known gap, pinned so it is a decision and not a discovery: the six
+    // options removed in 3.0 are not on `JsConversionOptions` any more, so a
+    // TypeScript caller gets a compile error -- but a plain JavaScript caller
+    // who still passes one is not told: napi ignores unknown fields. It could
+    // never change the output, so nothing changes; nothing warns either.
+    await run('htmlToMarkdownWith: a removed option passed from JavaScript is ignored, silently', () => {
+      const html = '<p class="x">Hi</p>'
+      const plain = htmlToMarkdownWith(html, { mode: 'balanced' })
+      for (const option of ['preserveClasses', 'preserveDataAttrs', 'preserveAriaAttrs', 'unwrapUnknownWrappers']) {
+        assert.strictEqual(htmlToMarkdownWith(html, { mode: 'balanced', [option]: true }), plain, option)
       }
-    })
-
-    // RFC 048 §2.2, pinned: a mode given as a STRING is accepted and warns in
-    // Node (the CLI does the same; Python raises TypeError; Rust's `FromStr`
-    // is silent). 3.0 removes these names, and what its error message says
-    // depends on knowing exactly who was warned.
-    await run('htmlToMarkdownWith: a string mode is accepted and warns (the pinned string-form behaviour)', () => {
-      const warnings = runWarningCheck("{ mode: 'strict' }")
-      assert.equal(warnings.length, 1)
-      assert.equal(warnings[0].name, 'DeprecationWarning')
-      assert.strictEqual(htmlToMarkdownWith('<p>Hi</p>', { mode: 'strict' }), 'Hi\n')
+      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true, unwrapUnknownWrappers: true }")
+      assert.equal(warnings.length, 0, `expected no warnings, got ${JSON.stringify(warnings)}`)
     })
 
     await run('htmlToMarkdownWithAsync: mode option respected', async () => {
@@ -417,7 +359,7 @@ async function run(name, fn) {
       assert.deepEqual(htmlToMarkdownMany([]), [])
     })
 
-    await run('ConversionOptions: unknown mode falls back to balanced', () => {
+    await run('ConversionOptions: an unknown mode is a hard error, not a fallback', () => {
       assert.throws(
         () => {
           const md = htmlToMarkdownWith('<h1>Hi</h1>', { mode: 'nonexistent' })

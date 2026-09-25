@@ -9,7 +9,7 @@
 //! known: it reverts to `*` (`***q*a**`, which parses as
 //! `strong(em("q") "a")`) and stays `_` everywhere else.
 //!
-//! One cell per row of RFC 044 §2's table, in all five modes and under both
+//! One cell per row of RFC 044 §2's table, in both modes and under both
 //! readings. The three broken shapes are the fix; the four working shapes are
 //! guards, and are also pinned byte for byte to what `2.6.0` wrote.
 

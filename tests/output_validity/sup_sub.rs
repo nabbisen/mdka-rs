@@ -16,7 +16,7 @@
 //! Like `elements::properties_exempt`, these are checked directly against
 //! `structure()`, not through `properties()`: that check assumes the output's
 //! words are the HTML's own, and a mapped superscript or an added marker
-//! differs from the source on purpose. Every case runs in **all five modes**,
+//! differs from the source on purpose. Every case runs in **both modes**,
 //! under **both readings** -- CommonMark and GFM -- since `_` is a CommonMark
 //! character and the escaping differs by context.
 

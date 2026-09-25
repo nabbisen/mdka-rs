@@ -67,13 +67,11 @@ async function main() {
 main()
 ```
 
-Available mode strings: `"balanced"` (default) and `"minimal"`, which are the two
-that convert differently. `"strict"`, `"semantic"` and `"preserve"` are aliases
-of `"balanced"`, **deprecated since 2.8.0 and removed in 3.0**: passing one
-emits a `DeprecationWarning` from `htmlToMarkdownWith` and `htmlToMarkdownMany`
-and the output is unchanged. The `Async` and file functions accept the same
-strings and convert identically but cannot emit the warning — see
-[Conversion Modes](../api/modes.md).
+Available mode strings: `"balanced"` (default) and `"minimal"`. `"strict"`,
+`"semantic"` and `"preserve"` were aliases of `"balanced"` and were removed in
+3.0: passing one **throws** (or, from an `Async` function, **rejects**) with
+`conversion mode 'strict' was removed in 3.0; it was an alias of 'balanced'. Use
+'balanced'.` — see [Conversion Modes](../api/modes.md).
 
 ## Converting Multiple Strings
 
@@ -140,46 +138,21 @@ becoming `out/index.md` — are not both converted. The first in the array wins
 and each later one comes back with `error` set, rather than silently
 overwriting.
 
-**Three** of the deprecated attribute options are accepted here and have **no
-effect**: `preserveClasses`, `preserveDataAttrs` and `preserveAriaAttrs`.
-Markdown has no attribute syntax to carry them into.
-
-Passing any of the three to a **synchronous** function emits a
-`DeprecationWarning`. By default the call still succeeds. **Under
-`node --throw-deprecation` the call still returns, but the warning is thrown as
-an uncaught exception, which ends the process; a `try`/`catch` around the call
-does not see it.** Remove the option; it changes nothing.
-The `Async` functions cannot emit the warning at all, so silence from them is
-not evidence that no deprecated option is in use. While migrating, suppress
-mdka's notices narrowly:
-
-```js
-const { htmlToMarkdownWith } = require('mdka')
-
-// Drop only mdka's own deprecation notices; everything else passes through.
-const emitWarning = process.emitWarning
-process.emitWarning = function (warning, ...rest) {
-  const message = typeof warning === 'string' ? warning : warning?.message
-  if (message?.startsWith('mdka: `')) return
-  return emitWarning.call(process, warning, ...rest)
-}
-
-const md = htmlToMarkdownWith('<p>x</p>', { preserveClasses: true })
-```
-
-This still works under `--throw-deprecation`, and other deprecation warnings
-are thrown as before.
-
-The other two — `preserveUnknownAttrs` and `dropPresentationAttrs` — exist on
-the Rust `ConversionOptions` but are **not fields of `JsConversionOptions`**,
-which has seven. In TypeScript, passing either is a compile error:
+**Four options were removed in 3.0:** `preserveClasses`, `preserveDataAttrs`,
+`preserveAriaAttrs` and `unwrapUnknownWrappers`. None of them ever changed the
+output. In TypeScript, passing one is a compile error:
 
 ```
 TS2353: Object literal may only specify known properties, and
-'preserveUnknownAttrs' does not exist in type 'JsConversionOptions'.
+'preserveClasses' does not exist in type 'JsConversionOptions'.
 ```
 
-Use `mode`.
+**In plain JavaScript it is not an error and not a warning: it is ignored.** Nothing
+tells you an option you still pass is gone, so search your code for these four
+names. The output is the same with or without them.
+
+`JsConversionOptions` now has three fields: `mode`, `preserveIds` and
+`dropInteractiveShell`.
 
 ## Package Version
 

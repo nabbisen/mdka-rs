@@ -2,8 +2,10 @@
 //!
 //! Covers the slice's own criterion 5: `--no-preserve-ids` turns anchors off
 //! in every mode, `--help` documents `--preserve-ids`/`--no-preserve-ids`
-//! correctly, a deprecated flag's notice goes to stderr with stdout left
-//! untouched, and single-file conversion's progress line goes to stderr, so it
+//! correctly, an error or notice goes to stderr with stdout left untouched
+//! (the deprecation notices this file used to assert are gone with the things
+//! they warned about in 3.0; what replaced them is the last section, the
+//! removed-name errors), and single-file conversion's progress line goes to stderr, so it
 //! cannot mix into a redirected stdin conversion. (This header used to claim
 //! `mdka page.html > out.md` leaves `out.md` holding the conversion; a file
 //! argument writes a sibling `.md` and leaves stdout empty, so that redirect
@@ -33,7 +35,7 @@ const HTML_WITH_ID: &str = r#"<h2 id="x">T</h2>"#;
 
 #[test]
 fn no_preserve_ids_turns_anchors_off_in_every_mode() {
-    for mode in ["balanced", "strict", "minimal", "semantic", "preserve"] {
+    for mode in ["balanced", "minimal"] {
         let out = run_mdka(&["--mode", mode, "--no-preserve-ids"], HTML_WITH_ID);
         assert!(out.status.success(), "mdka exited non-zero for mode {mode}");
         let stdout = String::from_utf8(out.stdout).unwrap();
@@ -69,56 +71,6 @@ fn help_documents_preserve_ids_and_no_preserve_ids() {
     assert!(
         help.contains("anchors") || help.contains("anchor"),
         "help text for --preserve-ids should describe anchor emission:\n{help}"
-    );
-}
-
-#[test]
-fn deprecated_flag_notice_goes_to_stderr_stdout_stays_clean() {
-    let out = run_mdka(&["--preserve-classes"], "<p class=\"x\">Hi</p>");
-    assert!(out.status.success());
-    let stdout = String::from_utf8(out.stdout).unwrap();
-    let stderr = String::from_utf8(out.stderr).unwrap();
-    assert_eq!(
-        stdout, "Hi\n",
-        "stdout must hold only the conversion: {stdout}"
-    );
-    assert!(
-        stderr.contains("--preserve-classes") && stderr.contains("deprecated"),
-        "stderr must carry the deprecation notice: {stderr}"
-    );
-}
-
-/// The CLI has one warning shape, `mdka: warning: `, for every deprecation:
-/// the three no-effect flags and the alias modes alike. Each is one line, and
-/// the shape is asserted so a later warning cannot quietly introduce a second.
-#[test]
-fn every_cli_deprecation_warning_has_the_same_shape() {
-    for args in [
-        &["--preserve-classes"][..],
-        &["--preserve-data"],
-        &["--preserve-aria"],
-        &["--unwrap-wrappers"],
-        &["--mode", "strict"],
-    ] {
-        let out = run_mdka(args, "<p>Hi</p>");
-        assert!(out.status.success(), "{args:?}");
-        let stderr = String::from_utf8(out.stderr).unwrap();
-        assert!(
-            stderr.starts_with("mdka: warning: ") && stderr.matches('\n').count() == 1,
-            "{args:?}: expected one line starting `mdka: warning: `, got: {stderr:?}"
-        );
-    }
-}
-
-/// The flag warning keeps its wording; only the prefix moved (2.8.0).
-#[test]
-fn preserve_classes_warning_wording_is_unchanged_after_the_prefix() {
-    let out = run_mdka(&["--preserve-classes"], "<p>Hi</p>");
-    assert_eq!(
-        String::from_utf8(out.stderr).unwrap(),
-        "mdka: warning: `--preserve-classes` has no effect and is deprecated (see \
-         https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has no attribute \
-         syntax, so this option was never expressible in the output.\n"
     );
 }
 
@@ -190,59 +142,119 @@ fn file_argument_redirect_is_empty_and_help_says_so() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-// ── RFC 041 §9: the alias modes are deprecated (2.8.0), removed in 3.0 ───────
+// ── 3.0: removed modes and flags say *removed*, and what to do ──────────────
 
-const ALIAS_HTML: &str = r#"<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>"#;
-
-/// `--mode strict|semantic|preserve` keeps working and keeps its output; each
-/// prints exactly one line on stderr, and stdout is byte-identical to
-/// `--mode balanced`'s, so a pipe is never corrupted.
+/// The CLI's response to a mode name that existed until 2.9.0. `FromStr` says
+/// *removed* for it, and the CLI must not append the "Valid:" list that only
+/// belongs on an *unknown* name (RFC 048 §6). Exit 1, on stderr, nothing on
+/// stdout, exactly one line.
 #[test]
-fn alias_modes_warn_on_stderr_and_keep_their_output() {
-    let balanced = run_mdka(&["--mode", "balanced"], ALIAS_HTML);
-    assert!(balanced.status.success());
-    assert!(
-        balanced.stderr.is_empty(),
-        "balanced must be silent: {}",
-        String::from_utf8_lossy(&balanced.stderr)
-    );
-
+fn a_removed_mode_is_an_obsolete_config_not_a_wrong_one() {
     for mode in ["strict", "semantic", "preserve"] {
-        let out = run_mdka(&["--mode", mode], ALIAS_HTML);
-        assert!(out.status.success(), "--mode {mode} must still work");
-        assert_eq!(
-            out.stdout, balanced.stdout,
-            "--mode {mode}: stdout must be identical to balanced's"
+        let out = run_mdka(&["--mode", mode], "<p>Hi</p>");
+        assert_eq!(out.status.code(), Some(1), "--mode {mode}");
+        assert!(
+            out.stdout.is_empty(),
+            "--mode {mode}: nothing may reach stdout"
         );
         assert_eq!(
             String::from_utf8(out.stderr).unwrap(),
             format!(
-                "mdka: warning: --mode {mode} is an alias of balanced and produces identical \
-                 output; it is removed in 3.0\n"
+                "error: conversion mode '{mode}' was removed in 3.0; it was an alias of \
+                 'balanced'. Use 'balanced'.\n"
             ),
-            "--mode {mode}: stderr must be exactly the one deprecation line"
+            "--mode {mode}"
         );
     }
 }
 
-/// Case-insensitive parsing is unchanged, and the warning names the canonical
-/// mode rather than echoing the caller's spelling.
 #[test]
-fn alias_mode_warning_is_the_same_for_any_spelling() {
+fn a_removed_mode_is_recognised_in_any_case() {
     let out = run_mdka(&["-m", "STRICT"], "<p>Hi</p>");
-    assert!(out.status.success());
-    assert_eq!(String::from_utf8(out.stdout).unwrap(), "Hi\n");
+    assert_eq!(out.status.code(), Some(1));
     assert!(
         String::from_utf8(out.stderr)
             .unwrap()
-            .starts_with("mdka: warning: --mode strict is an alias of balanced"),
+            .starts_with("error: conversion mode 'strict' was removed in 3.0"),
     );
 }
 
-/// Warned only when the caller named a deprecated mode: no `--mode`, the two
-/// real modes, and an explicit `--mode balanced` all print nothing.
+/// A name that never existed keeps the *unknown* message, with the list of the
+/// modes that do exist. Two different errors, both asserted.
 #[test]
-fn no_warning_unless_a_deprecated_mode_was_named() {
+fn an_unknown_mode_still_says_unknown_and_lists_the_valid_ones() {
+    let out = run_mdka(&["--mode", "bogus"], "<p>Hi</p>");
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8(out.stderr).unwrap(),
+        "error: unknown conversion mode: bogus. Valid: balanced|minimal\n"
+    );
+}
+
+/// The four flags removed in 3.0 fail cleanly and say what to do. Not the
+/// generic "unknown option" plus the whole usage text: these were documented
+/// as deprecated for several releases running, and a bare "unknown option"
+/// would not say what to do. One line, on stderr, exit 1, stdout empty -- so a
+/// script that still passes one fails loudly.
+#[test]
+fn a_removed_flag_fails_cleanly_and_says_what_to_do() {
+    for flag in [
+        "--preserve-classes",
+        "--preserve-data",
+        "--preserve-aria",
+        "--unwrap-wrappers",
+    ] {
+        let out = run_mdka(&[flag], "<p>Hi</p>");
+        assert_eq!(out.status.code(), Some(1), "{flag}");
+        assert!(out.stdout.is_empty(), "{flag}: nothing may reach stdout");
+        let stderr = String::from_utf8(out.stderr).unwrap();
+        assert!(
+            stderr.starts_with(&format!("error: `{flag}` was removed in 3.0; ")),
+            "{flag}: {stderr}"
+        );
+        assert!(
+            stderr.contains("Remove it from the command line: the output is the same without it."),
+            "{flag}: must say what to do: {stderr}"
+        );
+        assert_eq!(
+            stderr.matches('\n').count(),
+            1,
+            "{flag}: one line, not the usage text: {stderr}"
+        );
+        assert!(!stderr.contains("Usage:"), "{flag}: {stderr}");
+    }
+}
+
+/// The reason given is the true one for each: an attribute flag never changed
+/// the output because Markdown has no attribute syntax; the wrapper flag could
+/// not change it either, for a different reason.
+#[test]
+fn a_removed_flag_gives_its_own_true_reason() {
+    let attr = run_mdka(&["--preserve-classes"], "<p>Hi</p>");
+    assert!(
+        String::from_utf8(attr.stderr)
+            .unwrap()
+            .contains("Markdown has no attribute syntax")
+    );
+    let wrap = run_mdka(&["--unwrap-wrappers"], "<p>Hi</p>");
+    let wrap = String::from_utf8(wrap.stderr).unwrap();
+    assert!(wrap.contains("it could not change the output"), "{wrap}");
+    assert!(!wrap.contains("attribute syntax"), "{wrap}");
+}
+
+/// A removed flag placed after `--` is a path, as it always was.
+#[test]
+fn a_removed_flag_after_double_dash_is_still_a_file_name() {
+    let out = run_mdka(&["--", "--unwrap-wrappers"], "");
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert!(!stderr.contains("was removed in 3.0"), "{stderr}");
+}
+
+/// No `--mode`, `balanced` and `minimal` print nothing on stderr: there is no
+/// deprecation left to warn about.
+#[test]
+fn the_two_modes_are_silent() {
     for args in [&[][..], &["--mode", "balanced"], &["-m", "minimal"]] {
         let out = run_mdka(args, "<p>Hi</p>");
         assert!(out.status.success(), "{args:?}");
@@ -254,79 +266,30 @@ fn no_warning_unless_a_deprecated_mode_was_named() {
     }
 }
 
+/// `--help` names two modes and none of the removed names or flags.
 #[test]
-fn help_marks_the_alias_modes_deprecated() {
+fn help_lists_two_modes_and_none_of_the_removed_names() {
     let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
         .arg("--help")
         .output()
         .expect("failed to run mdka --help");
     assert!(out.status.success());
     let help = String::from_utf8(out.stdout).unwrap();
-    for name in ["strict", "semantic", "preserve"] {
+    assert!(help.contains("balanced(default) | minimal"), "{help}");
+    for gone in [
+        "strict",
+        "semantic",
+        "--preserve-classes",
+        "--preserve-data",
+        "--preserve-aria",
+        "--unwrap-wrappers",
+        "deprecated",
+    ] {
         assert!(
-            help.contains(name),
-            "help must still name `{name}`:\n{help}"
+            !help.contains(gone),
+            "help still mentions `{gone}`:\n{help}"
         );
     }
-    assert!(
-        help.contains("[deprecated] strict | semantic | preserve"),
-        "the Options entry must mark the aliases deprecated:\n{help}"
-    );
-    assert!(
-        help.contains("[deprecated, removed in 3.0] Aliases of balanced"),
-        "the Modes entry must mark the aliases deprecated and say when they go:\n{help}"
-    );
-}
-
-// ── RFC 048 §7: `--unwrap-wrappers` is deprecated (2.9.0), removed in 3.0 ────
-
-/// Its own wording, not the attribute flags': "Markdown has no attribute
-/// syntax" is false for this flag, and a compiler-grade warning must not say it.
-#[test]
-fn unwrap_wrappers_warning_gives_the_true_reason_and_keeps_stdout_clean() {
-    let plain = run_mdka(&[], "<div><p>Hi</p></div>");
-    let flagged = run_mdka(&["--unwrap-wrappers"], "<div><p>Hi</p></div>");
-    assert!(flagged.status.success());
-    assert_eq!(
-        flagged.stdout, plain.stdout,
-        "the flag must not change the output"
-    );
-    let stderr = String::from_utf8(flagged.stderr).unwrap();
-    assert!(
-        stderr.starts_with("mdka: warning: `--unwrap-wrappers` has no effect and is deprecated"),
-        "{stderr}"
-    );
-    assert!(stderr.contains("removed from the 3.0 surface"), "{stderr}");
-    assert!(stderr.contains("returns as a new option"), "{stderr}");
-    assert!(
-        !stderr.contains("attribute syntax"),
-        "the attribute options' reason is false for this flag: {stderr}"
-    );
-}
-
-/// Warned only when the caller passes the flag. `--mode minimal` turns the
-/// field on internally, and that must stay silent.
-#[test]
-fn unwrap_wrappers_is_silent_unless_passed() {
-    for args in [&[][..], &["--mode", "minimal"], &["--drop-shell"]] {
-        let out = run_mdka(args, "<div><p>Hi</p></div>");
-        assert!(
-            out.stderr.is_empty(),
-            "{args:?}: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-    }
-}
-
-#[test]
-fn help_marks_unwrap_wrappers_deprecated() {
-    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
-        .arg("--help")
-        .output()
-        .unwrap();
-    let help = String::from_utf8(out.stdout).unwrap();
-    assert!(
-        help.contains("--unwrap-wrappers   [deprecated, no effect today]"),
-        "help must mark the flag deprecated:\n{help}"
-    );
+    // `--preserve-ids` stays, and must not be caught by the checks above.
+    assert!(help.contains("--preserve-ids") && help.contains("--no-preserve-ids"));
 }

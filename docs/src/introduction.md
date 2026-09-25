@@ -24,9 +24,8 @@ without sacrificing speed or memory.
   real-world HTML gracefully.
 - **Crash-resistant**: a non-recursive DFS traversal means even 10,000 levels of
   nesting will not overflow the stack.
-- **Configurable**: five [conversion modes](./api/modes.md), of which two convert
-  differently — `Balanced` (the default) and `Minimal`, which strips to body text
-  and structure for LLM input. The other three are aliases of `Balanced`.
+- **Configurable**: two [conversion modes](./api/modes.md) — `Balanced` (the
+  default) and `Minimal`, which strips to body text and structure for LLM input.
 - **Multi-language**: available as a Rust library, a Node.js package (napi-rs),
   and a Python package (PyO3).
 

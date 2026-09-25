@@ -16,15 +16,7 @@ pub use structure::{READINGS, Reading, structure};
 
 /// Every mode. A cell is evaluated in each, so a fix that lands in one mode
 /// only is visible as a partial result rather than a silent pass.
-// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
-#[allow(deprecated)]
-pub const MODES: [ConversionMode; 5] = [
-    ConversionMode::Balanced,
-    ConversionMode::Strict,
-    ConversionMode::Minimal,
-    ConversionMode::Semantic,
-    ConversionMode::Preserve,
-];
+pub const MODES: [ConversionMode; 2] = [ConversionMode::Balanced, ConversionMode::Minimal];
 
 /// A converter under test. Real cells use [`mdka_convert`]; the helper proofs
 /// substitute stubs.

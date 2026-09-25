@@ -442,8 +442,8 @@ fn harness_block_list_agrees_with_what_mdka_renders() {
     // Behavioural agreement: mdka is only converted, never imported. For each
     // tag and each mode where the tag is not dropped, the harness says "starts
     // a block" exactly when mdka's output has more than one top-level block.
-    // The five modes cover both settings of unwrap_unknown_wrappers
-    // (Balanced/Strict/Preserve off; Minimal/Semantic on).
+    // The two modes cover both behaviours a wrapper element has: Balanced
+    // renders it and Minimal unwraps it.
     let mut checked = Vec::new();
     for mode in crate::harness::MODES {
         let opts = ConversionOptions::for_mode(mode);
@@ -575,7 +575,7 @@ fn runner_reports_the_violating_files_and_only_them() {
         !violations.iter().any(|v| v.starts_with("valid.html (")),
         "{violations:#?}"
     );
-    for mode in ["balanced", "strict", "minimal", "semantic", "preserve"] {
+    for mode in ["balanced", "minimal"] {
         for reading in ["commonmark", "gfm"] {
             let has = |prefix: String| violations.iter().any(|v| v.starts_with(&prefix));
             let unterminated = format!("violating.html ({mode}, {reading}): [unterminated]");

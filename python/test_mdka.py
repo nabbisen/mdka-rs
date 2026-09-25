@@ -433,9 +433,15 @@ def test_module_all_exported():
 # ─── ConversionMode / html_to_markdown_with ──────────────────────────────────
 
 def test_mode_enum_values():
-    assert ConversionMode.Balanced != ConversionMode.Strict
-    assert ConversionMode.Minimal  != ConversionMode.Semantic
-    assert ConversionMode.Preserve != ConversionMode.Balanced
+    assert ConversionMode.Balanced != ConversionMode.Minimal
+
+def test_the_removed_modes_are_gone():
+    # 3.0: Strict, Semantic and Preserve were aliases of Balanced. They are not
+    # deprecated any more, they are absent: the attribute does not exist.
+    for name in ("Strict", "Semantic", "Preserve"):
+        assert not hasattr(ConversionMode, name), name
+        with pytest.raises(AttributeError):
+            getattr(ConversionMode, name)
 
 def test_minimal_drops_nav():
     md = html_to_markdown_with(
@@ -453,37 +459,6 @@ def test_balanced_keeps_href():
     )
     assert "[Link](https://example.com)" in md, f"got: {md}"
 
-# Names a deprecated alias mode on purpose; the warning itself is asserted below.
-@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
-def test_strict_produces_valid_markdown():
-    md = html_to_markdown_with(
-        '<p class="intro" data-x="1">Hello <strong>world</strong></p>',
-        mode=ConversionMode.Strict,
-    )
-    assert "Hello" in md
-    assert "**world**" in md
-
-# Names a deprecated alias mode on purpose; the warning itself is asserted below.
-@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
-def test_semantic_keeps_aria_in_preprocessing():
-    # semantic モードは aria-* を前処理で保持する（MD 出力には直接影響しないが）
-    md = html_to_markdown_with(
-        '<article><h1>Title</h1><p>Body</p></article>',
-        mode=ConversionMode.Semantic,
-    )
-    assert "# Title" in md
-    assert "Body" in md
-
-# Names a deprecated alias mode on purpose; the warning itself is asserted below.
-@pytest.mark.filterwarnings("ignore:mdka. ConversionMode:DeprecationWarning")
-def test_preserve_mode_basic():
-    md = html_to_markdown_with(
-        "<h1>Archive</h1><p>Content</p>",
-        mode=ConversionMode.Preserve,
-    )
-    assert "# Archive" in md
-    assert "Content" in md
-
 def test_with_drop_shell_flag():
     md = html_to_markdown_with(
         "<header>HEADER</header><h1>Title</h1><footer>FOOTER</footer>",
@@ -494,120 +469,45 @@ def test_with_drop_shell_flag():
     assert "HEADER" not in md, f"header leaked: {md}"
     assert "FOOTER" not in md, f"footer leaked: {md}"
 
-def test_with_preserve_classes_flag():
-    # preserve_classes=True でも変換出力の Markdown は同じだが前処理は保持
-    md = html_to_markdown_with(
-        '<p class="intro">Hello</p>',
-        mode=ConversionMode.Balanced,
-        preserve_classes=True,
-    )
-    assert "Hello" in md
-
-# Passes a deprecated option on purpose; the warning itself is asserted below.
-@pytest.mark.filterwarnings("ignore:mdka. `unwrap_unknown_wrappers`:DeprecationWarning")
-def test_with_unwrap_unknown_wrappers_flag():
-    # Bare-sibling-text fixture, not a block-element fixture: RFC 005 Slice A
-    # found block-element fixtures cannot discriminate this field at all,
-    # since neighbouring blocks' own spacing already dominates the output
-    # either way. It was, until RFC 036 §5.2 / slice 036d: unwrapping was
-    # deleting the paragraph break along with the tag, which is exactly what
-    # made this fixture discriminate it. Fixed, there is nothing left for it
-    # to discriminate -- this is now the strongest evidence for that: the
-    # project's one known discriminating fixture stopped discriminating.
+def test_a_wrapper_keeps_its_separation_in_both_modes():
+    # Bare-sibling-text fixture, not a block-element fixture: neighbouring
+    # blocks' own spacing dominates the output otherwise. Minimal unwraps the
+    # wrapper and Balanced renders it; RFC 036 §5.2 / slice 036d made the two
+    # write the same bytes.
     html = 'Before<div class="wrap"><span>inner</span></div>After'
-    without = html_to_markdown_with(html, mode=ConversionMode.Balanced)
-    with_unwrap = html_to_markdown_with(
-        html, mode=ConversionMode.Balanced, unwrap_unknown_wrappers=True
-    )
-    assert without == with_unwrap, f"unwrap_unknown_wrappers unexpectedly changed something: {with_unwrap}"
-    assert without == "Before\n\ninner\n\nAfter\n"
+    for mode in (ConversionMode.Balanced, ConversionMode.Minimal):
+        assert html_to_markdown_with(html, mode=mode) == "Before\n\ninner\n\nAfter\n", mode
 
-def test_explicit_deprecated_field_emits_warning():
-    with pytest.warns(DeprecationWarning, match="preserve_classes"):
-        html_to_markdown_with(
-            '<p class="x">Hi</p>', mode=ConversionMode.Balanced, preserve_classes=True
-        )
+def test_the_removed_keyword_arguments_are_a_type_error():
+    # 3.0: preserve_classes, preserve_data_attrs, preserve_aria_attrs and
+    # unwrap_unknown_wrappers were removed. Python reports an unknown keyword
+    # loudly, so unlike Node nothing needs to be pinned as a known gap.
+    for kwarg in (
+        "preserve_classes",
+        "preserve_data_attrs",
+        "preserve_aria_attrs",
+        "preserve_unknown_attrs",
+        "drop_presentation_attrs",
+        "unwrap_unknown_wrappers",
+    ):
+        with pytest.raises(TypeError):
+            html_to_markdown_with("<p>Hi</p>", **{kwarg: True})
 
-def test_deprecation_message_keeps_the_documented_prefix():
-    # The published narrow suppression in usage-python.md filters on this exact
-    # prefix (message=r"mdka: `preserve_"). Rewording the start of the message
-    # would silently break that workaround, so the prefix is a contract.
-    import re
-    with pytest.warns(DeprecationWarning) as record:
-        html_to_markdown_with(
-            '<p class="x">Hi</p>', mode=ConversionMode.Balanced, preserve_classes=True
-        )
-    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
-    assert len(messages) == 1, messages
-    assert messages[0].startswith("mdka: `preserve_classes`"), messages[0]
-    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
-
-def test_omitting_deprecated_fields_stays_silent():
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        # Raises if any warning (including DeprecationWarning) is emitted.
-        html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
-
-@pytest.mark.parametrize("alias", ["Strict", "Semantic", "Preserve"])
-def test_alias_mode_emits_one_deprecation_warning_saying_what_to_use(alias):
-    # RFC 041 §9: Strict, Semantic and Preserve are aliases of Balanced. Warned
-    # only when the caller named one; output is unchanged.
-    import re
-    with pytest.warns(DeprecationWarning) as record:
-        html_to_markdown_with("<p>Hi</p>", mode=getattr(ConversionMode, alias))
-    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
-    assert len(messages) == 1, messages
-    assert messages[0].startswith(f"mdka: ConversionMode.{alias} is an alias of ConversionMode.Balanced"), messages[0]
-    assert "Use ConversionMode.Balanced" in messages[0], messages[0]
-    assert "removed in 3.0" in messages[0], messages[0]
-    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
-
-@pytest.mark.parametrize("alias", ["Strict", "Semantic", "Preserve"])
-def test_alias_mode_output_is_byte_identical_to_balanced(alias):
-    html = '<h1 id="t">T</h1><p class="c">a <strong>b</strong></p>'
-    with pytest.warns(DeprecationWarning):
-        got = html_to_markdown_with(html, mode=getattr(ConversionMode, alias))
-    assert got == html_to_markdown_with(html, mode=ConversionMode.Balanced)
-
-def test_no_mode_balanced_and_minimal_stay_silent():
+def test_nothing_warns_any_more():
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         # Raises if any warning (including DeprecationWarning) is emitted.
         html_to_markdown_with("<p>Hi</p>")
         html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
-        html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Minimal)
+        html_to_markdown_with("<div><p>Hi</p></div>", mode=ConversionMode.Minimal)
         html_to_markdown_many_with(["<p>Hi</p>"])
 
-def test_unwrap_unknown_wrappers_emits_one_warning_with_the_true_reason():
-    # RFC 048 §7: deprecated 2.9.0. Its own message: the attribute options'
-    # reason ("no attribute syntax") is false for this option.
-    import re
-    with pytest.warns(DeprecationWarning) as record:
-        html_to_markdown_with(
-            "<p>Hi</p>", mode=ConversionMode.Balanced, unwrap_unknown_wrappers=True
-        )
-    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
-    assert len(messages) == 1, messages
-    assert messages[0].startswith("mdka: `unwrap_unknown_wrappers` has no effect and is deprecated"), messages[0]
-    assert "removed from the 3.0 surface" in messages[0], messages[0]
-    assert "attribute syntax" not in messages[0], messages[0]
-    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
-
-def test_unwrap_unknown_wrappers_is_silent_unless_passed():
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        # Raises if any warning is emitted. Minimal turns the field on
-        # internally; that must stay silent.
-        html_to_markdown_with("<div><p>Hi</p></div>")
-        html_to_markdown_with("<div><p>Hi</p></div>", mode=ConversionMode.Minimal)
-
-def test_a_string_mode_is_a_type_error_not_a_warning():
-    # RFC 048 §2.2, pinned: Python does not accept a mode as a string at all.
-    # (The CLI and Node accept "strict" and warn; Rust's `FromStr` accepts it
-    # silently.) 3.0 removes the names, so who was warned must be known.
+def test_a_string_mode_is_a_type_error():
+    # RFC 048 §2.2: Python has never accepted a mode as a string, so the removed
+    # names ("strict", ...) never reached it and there is no "removed" message
+    # to give -- a str where a ConversionMode belongs is a TypeError, whatever
+    # the string says.
     for bad in ("strict", "balanced"):
         with pytest.raises(TypeError):
             html_to_markdown_with("<p>Hi</p>", mode=bad)
@@ -795,4 +695,4 @@ def test_stub_class_variables_exist_at_runtime():
                     assert hasattr(getattr(runtime, node.name), stmt.target.id), (
                         f"stub declares {node.name}.{stmt.target.id}, which the runtime lacks"
                     )
-    assert declared == 5, "expected the five ConversionMode members to be checked"
+    assert declared == 2, "expected the two ConversionMode members to be checked"

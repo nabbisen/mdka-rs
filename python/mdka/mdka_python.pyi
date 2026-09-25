@@ -28,16 +28,12 @@ __all__ = [
 
 @final
 class ConversionMode:
-    """How aggressively HTML is pre-processed. Only `Balanced` and `Minimal`
-    convert differently. `Strict`, `Semantic` and `Preserve` are aliases of
-    `Balanced`: deprecated since 2.8.0 and removed in 3.0. Naming one emits a
-    `DeprecationWarning`; the output is unchanged."""
+    """How aggressively HTML is pre-processed: `Balanced` (the default) or
+    `Minimal`. The former aliases `Strict`, `Semantic` and `Preserve` were
+    removed in 3.0."""
 
     Balanced: ClassVar[ConversionMode]
-    Strict: ClassVar[ConversionMode]
     Minimal: ClassVar[ConversionMode]
-    Semantic: ClassVar[ConversionMode]
-    Preserve: ClassVar[ConversionMode]
     def __int__(self) -> int: ...
 
 @final
@@ -68,74 +64,48 @@ class MdkaError(Exception):
 def version() -> str: ...
 def html_to_markdown(html: str) -> str: ...
 
-# The `_with` functions share one keyword tail. `preserve_classes`,
-# `preserve_data_attrs`, `preserve_aria_attrs` and (since 2.9.0)
-# `unwrap_unknown_wrappers` are deprecated, have no effect and emit a
-# DeprecationWarning when passed, but are still accepted, so they are part of
-# the signature. There is deliberately no
-# `preserve_unknown_attrs`: passing it raises TypeError.
+# The `_with` functions share one keyword tail: `mode`, `preserve_ids` and
+# `drop_interactive_shell`. The keyword arguments removed in 3.0
+# (`preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`,
+# `unwrap_unknown_wrappers`) now raise TypeError like any unknown keyword.
 def html_to_markdown_with(
     html: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> str: ...
 def html_to_markdown_many(html_list: Sequence[str]) -> list[str]: ...
 def html_to_markdown_many_with(
     html_list: Sequence[str],
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> list[str]: ...
 def html_file_to_markdown(
     path: str,
     out_dir: str | None = None,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> ConvertResult: ...
 def html_file_to_markdown_with(
     path: str,
     out_dir: str | None = None,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> ConvertResult: ...
 def html_files_to_markdown(
     paths: Sequence[str],
     out_dir: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> list[BulkConvertResult]: ...
 def html_files_to_markdown_with(
     paths: Sequence[str],
     out_dir: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
-    preserve_classes: bool | None = None,
-    preserve_data_attrs: bool | None = None,
-    preserve_aria_attrs: bool | None = None,
     drop_interactive_shell: bool | None = None,
-    unwrap_unknown_wrappers: bool | None = None,
 ) -> list[BulkConvertResult]: ...

@@ -44,48 +44,25 @@ md = mdka.html_to_markdown_with(
 )
 ```
 
-**Three** of the deprecated attribute options are accepted here and have **no
-effect**: `preserve_classes`, `preserve_data_attrs` and `preserve_aria_attrs`.
-Markdown has no attribute syntax to carry them into.
-
-Passing any of the three emits a `DeprecationWarning`. By default that is only a
-warning and the call succeeds — but **under warnings-as-errors it fails**:
-`python -W error`, or pytest with `filterwarnings = error`, turns the call into
-a raised `DeprecationWarning`. Remove the argument; it changes nothing. While
-migrating, suppress it narrowly — for mdka's notices only, for one block:
-
-```python
-import warnings
-import mdka
-
-with warnings.catch_warnings():
-    warnings.filterwarnings(
-        "ignore",
-        category=DeprecationWarning,
-        message=r"mdka: `preserve_",
-    )
-    md = mdka.html_to_markdown_with("<p>x</p>", preserve_classes=True)
-```
-
-This still works under `python -W error`, and leaves every other library's
-deprecation warnings raising as before.
-
-The other two — `preserve_unknown_attrs` and `drop_presentation_attrs` — exist
-on the Rust `ConversionOptions` but are **not exposed by this binding at all**.
-Passing either raises:
+**Four keyword arguments were removed in 3.0:** `preserve_classes`,
+`preserve_data_attrs`, `preserve_aria_attrs` and `unwrap_unknown_wrappers`. None of
+them ever changed the output. Passing one is now a `TypeError`, like any unknown
+keyword:
 
 ```
 TypeError: html_to_markdown_with() got an unexpected keyword argument
-'preserve_unknown_attrs'
+'preserve_classes'
 ```
 
-Use `mode` to influence the output.
+Remove it. (`preserve_unknown_attrs` and `drop_presentation_attrs` were never
+exposed by this binding.) The `_with` functions now take `mode`, `preserve_ids`
+and `drop_interactive_shell`.
 
-Available modes: `ConversionMode.Balanced` (default) and `Minimal`, which are the
-two that convert differently. `Strict`, `Semantic` and `Preserve` are aliases of
-`Balanced`, **deprecated since 2.8.0 and removed in 3.0**: naming one emits a
-`DeprecationWarning` and the output is unchanged — see
-[Conversion Modes](../api/modes.md).
+Available modes: `ConversionMode.Balanced` (default) and `ConversionMode.Minimal`.
+`Strict`, `Semantic` and `Preserve` were aliases of `Balanced` and were removed in
+3.0: `ConversionMode.Strict` is now an `AttributeError`. A mode is never a string
+in Python — `mode="balanced"` is a `TypeError` — so there is no string form to
+migrate. See [Conversion Modes](../api/modes.md).
 
 ## Parallel Batch Conversion (GIL released)
 
@@ -189,10 +166,6 @@ rather than a copy in prose. Three things worth knowing about them:
   path-like".** File paths are `str`, not `os.PathLike`: pass `str(path)`. The
   list arguments (`html_list`, `paths`) take any sequence of `str` — but a bare
   `str` is rejected at runtime, which a type checker cannot express.
-- **The three deprecated keywords are in the signature.** `preserve_classes`,
-  `preserve_data_attrs` and `preserve_aria_attrs` are still accepted, have no
-  effect and emit a `DeprecationWarning`; see [Conversion Options](../api/options.md).
-  `preserve_unknown_attrs` is not accepted and is not in the stubs.
 - **They are checked against the built extension in CI** (`python -m
   mypy.stubtest mdka`), so a signature that changes in Rust without the stub
   changing fails the build rather than misleading a type checker.

@@ -39,10 +39,9 @@ no matter the nesting depth. That is a claim about crashing, not speed —
 deep nesting still costs real time, quadratically; see
 [Scaling: Depth and Width](https://nabbisen.github.io/mdka-rs/design/performance-characteristics.html#scaling-depth-and-width).
 - **Configurable pre-processing.**
-    Five [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html), of which **two convert
-differently**: `Balanced` (the default) and `Minimal`, which strips to body text and structure for LLM
-input. The other three are aliases of `Balanced` — see
-[Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html).
+    Two [conversion modes](https://nabbisen.github.io/mdka-rs/api/modes.html): `Balanced` (the default) and
+`Minimal`, which strips to body text and structure for LLM input. (Until 3.0 there were five; the other
+three were aliases of `Balanced`, and were removed.)
 - **Multi-language.**
     The same Rust implementation is accessible from Node.js (napi-rs) and
 Python (PyO3).
@@ -182,10 +181,6 @@ async function main() {
 main()
 ```
 
-The `Async` functions cannot emit deprecation warnings, so an option that has been
-deprecated is reported only by the synchronous form (`htmlToMarkdownWith`). See
-[Usage — Node.js](https://nabbisen.github.io/mdka-rs/getting-started/usage-nodejs.html).
-
 ### Add to a Python project
 
 ```bash
@@ -214,14 +209,10 @@ minimal = mdka.html_to_markdown_with(
 |---|---|
 | `Balanced` | General use — the default |
 | `Minimal` | LLM input, text extraction — the only mode that converts differently |
-| `Strict`, `Semantic`, `Preserve` | **Deprecated since 2.8.0, removed in 3.0.** Aliases of `Balanced`; use `Balanced` |
 
-**`Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output, and
-cannot differ.** They vary only in the defaults of options that have no effect
-on Markdown — the format has no syntax for HTML attributes or wrapper elements —
-so there is no mechanism by which they could diverge. Choosing between them
-changes nothing, so the three aliases are deprecated: naming one emits a warning
-(Rust, Node.js, Python, CLI) and they are removed in 3.0. See
+**There were five modes until 3.0.** `Strict`, `Semantic` and `Preserve` were
+aliases of `Balanced` — byte-for-byte the same output — and were removed; asking
+for one by name is now an error that says so. See
 [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html)
 for the full explanation.
 

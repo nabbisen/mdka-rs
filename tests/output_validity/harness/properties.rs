@@ -127,7 +127,7 @@ pub fn emphasis_negated_by_own_style(name: &str, style: Option<&str>) -> bool {
 /// Elements that start a Markdown block inside a link (RFC 028 criterion 7:
 /// "paragraphs, headings, list items, blockquotes, and `<pre>`", and the
 /// other elements rendered as blocks). `div`, `article`, `section` and `main`
-/// still start one even when `unwrap_unknown_wrappers` removes the tag
+/// still start one even when the mode (`Minimal`) removes the tag
 /// itself: unwrapping drops the element, not the paragraph break it stood
 /// for (RFC 036 §5.2, slice `036d`) -- `opts` is threaded through for that
 /// history, though every branch is now independent of it.

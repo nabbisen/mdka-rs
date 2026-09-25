@@ -47,9 +47,9 @@ extraction pipeline wants to remove — that is `Minimal`. A document being
 archived for audit purposes wants nothing removed — that is `Balanced`, the
 default; there is no stronger preset.
 
-Of the five [conversion modes](../api/modes.md), those are the two that
-convert differently; `Strict`, `Semantic` and `Preserve` are aliases of
-`Balanced` (deprecated since 2.8.0, removed in 3.0). The preset is applied inline during the single tree traversal,
+Those are the two [conversion modes](../api/modes.md). (There were five until
+3.0; the other three were aliases of `Balanced` and were removed.) The preset is
+applied inline during the single tree traversal,
 filtering as the DOM is walked rather than as a separate step — keeping the
 conversion logic itself simple and mode-agnostic.
 

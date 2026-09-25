@@ -59,13 +59,10 @@ fn task_checkbox(li: ego_tree::NodeRef<'_, scraper::Node>) -> Option<bool> {
     None
 }
 
-// Internal: this is the one place the deprecated field is read; deprecating it
-// must not stop it working until 3.0 removes it.
-#[allow(deprecated)]
 fn disposition(tag: &str, opts: &ConversionOptions) -> Disposition {
     if utils::is_skip_tag(tag) || (opts.drop_interactive_shell && utils::is_shell_tag(tag)) {
         Disposition::Skip
-    } else if opts.unwrap_unknown_wrappers
+    } else if opts.unwraps_wrappers()
         && utils::is_wrapper_tag(tag)
         && !utils::is_structural_tag(tag)
     {
@@ -326,7 +323,7 @@ pub(crate) fn drive<'a>(
                             }
                             // ...and not the anchor it carried either (2.4.1):
                             // `preserve_ids` asks for one for every element with
-                            // an `id`, and a wrapper Semantic/Minimal unwrap is
+                            // an `id`, and a wrapper Minimal unwrap is
                             // still such an element. Placed after the separator,
                             // as a rendered wrapper's is after its `begin_block`.
                             renderer.emit_id_anchor(elem, opts.preserve_ids);

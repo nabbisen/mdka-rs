@@ -4,69 +4,34 @@
 //! [`ConversionOptions`] holds a mode together with its flags, and
 //! `Default` returns the `balanced` mode.
 
-/// Conversion mode. There are five, but they make two behaviours.
+/// Conversion mode. There are two, and they make two behaviours.
 ///
-/// | Mode                             | Converts                                          |
-/// |----------------------------------|---------------------------------------------------|
-/// | `Balanced`                       | General purpose (default); readable Markdown      |
-/// | `Minimal`                        | LLM preprocessing and compaction; the only mode that converts differently |
-/// | `Strict`, `Semantic`, `Preserve` | Aliases of `Balanced`; kept for compatibility     |
+/// | Mode       | Converts                                                      |
+/// |------------|---------------------------------------------------------------|
+/// | `Balanced` | General purpose (default); readable Markdown                  |
+/// | `Minimal`  | LLM preprocessing and compaction: body text and structure only |
 ///
-/// `Balanced`, `Strict`, `Semantic` and `Preserve` produce identical output, and
-/// cannot differ: they vary only in the defaults of options that have no effect
-/// on Markdown, which has no syntax for HTML attributes or wrapper elements.
-/// Choosing between them changes nothing. See the
-/// [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html) page.
+/// The three former aliases of `Balanced` — `Strict`, `Semantic` and `Preserve` —
+/// were removed in 3.0. They produced identical output and could not differ, so
+/// nothing that used one converts differently; the name only has to change. See
+/// the [Conversion Modes](https://nabbisen.github.io/mdka-rs/api/modes.html) page.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum ConversionMode {
     /// Default. Balances readability against structural fidelity.
     #[default]
     Balanced,
-    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
-    /// compatibility. It does not retain more of the input.
-    ///
-    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
-    #[deprecated(
-        since = "2.8.0",
-        note = "`Strict` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
-    )]
-    Strict,
     /// Extraction first. Keeps only the body text and the essential structure;
     /// suits LLM preprocessing.
     Minimal,
-    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
-    /// compatibility. It treats ARIA attributes and document structure exactly
-    /// as `Balanced` does.
-    ///
-    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
-    #[deprecated(
-        since = "2.8.0",
-        note = "`Semantic` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
-    )]
-    Semantic,
-    /// An alias of [`Balanced`](Self::Balanced): identical output, kept for
-    /// compatibility. It keeps nothing that `Balanced` drops.
-    ///
-    /// **Deprecated since 2.8.0; removed in 3.0.** Use [`Balanced`](Self::Balanced).
-    #[deprecated(
-        since = "2.8.0",
-        note = "`Preserve` is an alias of `Balanced` and produces identical output; use `Balanced`. It is removed in 3.0. See https://nabbisen.github.io/mdka-rs/api/modes.html"
-    )]
-    Preserve,
 }
 
 impl ConversionMode {
     /// Returns the mode's name as a string.
-    // Internal: the mapping must name every variant, deprecated or not.
-    #[allow(deprecated)]
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Balanced => "balanced",
-            Self::Strict => "strict",
             Self::Minimal => "minimal",
-            Self::Semantic => "semantic",
-            Self::Preserve => "preserve",
         }
     }
 
@@ -79,18 +44,28 @@ impl ConversionMode {
     }
 }
 
+/// Mode names that existed until 2.9.0 and were removed in 3.0. All three were
+/// aliases of `Balanced`.
+///
+/// `FromStr` is the one place the CLI, the Node.js binding and `parse_mode` all
+/// route a mode string through, so this table gives every one of them the right
+/// message — including a Rust caller who reads a mode from a config file, whom
+/// no compiler warning could ever reach. A removed name is **obsolete**, not
+/// **wrong**, and the message has to say so.
+const REMOVED_MODES: [&str; 3] = ["strict", "semantic", "preserve"];
+
 impl std::str::FromStr for ConversionMode {
     type Err = String;
 
-    // Internal: the mapping must name every variant, deprecated or not.
-    #[allow(deprecated)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_ascii_lowercase().as_str() {
+        let name = s.to_ascii_lowercase();
+        match name.as_str() {
             "balanced" => Ok(Self::Balanced),
-            "strict" => Ok(Self::Strict),
             "minimal" => Ok(Self::Minimal),
-            "semantic" => Ok(Self::Semantic),
-            "preserve" => Ok(Self::Preserve),
+            removed if REMOVED_MODES.contains(&removed) => Err(format!(
+                "conversion mode '{removed}' was removed in 3.0; it was an alias of 'balanced'. \
+                 Use 'balanced'."
+            )),
             other => Err(format!("unknown conversion mode: {other}")),
         }
     }
@@ -111,7 +86,6 @@ pub struct ConversionOptions {
     /// The conversion mode.
     pub mode: ConversionMode,
 
-    // ── Attribute-retention flags ──────────────────────────────────────────
     /// Whether to keep `id` attributes. When enabled, an
     /// `<a id="...">...</a>` anchor is emitted for an element carrying a
     /// non-empty `id`, as the element's leading content: after a heading
@@ -119,60 +93,9 @@ pub struct ConversionOptions {
     /// and code blocks is described on the
     /// [options page](https://nabbisen.github.io/mdka-rs/api/options.html#preserve_ids).
     pub preserve_ids: bool,
-    /// Inert. Markdown has no syntax for class attributes, so this has no effect.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    pub preserve_classes: bool,
-    /// Inert. Markdown has no syntax for data-* attributes, so this has no effect.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    pub preserve_data_attrs: bool,
-    /// Inert. Markdown has no syntax for aria-* attributes, so this has no effect.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    pub preserve_aria_attrs: bool,
-    /// Inert. Markdown has no syntax for unknown attributes, so this has no effect.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    pub preserve_unknown_attrs: bool,
-
-    // ── Preprocessing flags ────────────────────────────────────────────────
-    /// Inert. No code path emits presentational attributes at all, so this has
-    /// no effect.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    pub drop_presentation_attrs: bool,
     /// Whether to drop shell elements such as `nav`, `header`, `footer` and
     /// `aside`.
     pub drop_interactive_shell: bool,
-    /// No effect today. Unwrapping a wrapper element (`<div>`, `<section>`,
-    /// `<article>`, `<main>`) removes the tag but keeps the paragraph break
-    /// it stood for, and Markdown has no wrapper element to show the
-    /// difference, so the tag's removal leaves nothing for this option to
-    /// change.
-    ///
-    /// Deprecated since 2.9.0, for a different reason from the five attribute
-    /// fields above. Those are inert because Markdown has no attribute
-    /// syntax, which is permanent. This one is inert because unwrapping leaves
-    /// no observable trace in today's renderer, which is a fact about that
-    /// renderer and not about Markdown, so its note does not claim
-    /// permanence. See
-    /// the [options page](https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers).
-    #[deprecated(
-        since = "2.9.0",
-        note = "removed from the 3.0 surface: unwrapping leaves no Markdown-visible trace today, so this option cannot change the output. If wrapper handling becomes expressible it returns as a new option. See https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers"
-    )]
-    pub unwrap_unknown_wrappers: bool,
 }
 
 impl Default for ConversionOptions {
@@ -183,65 +106,33 @@ impl Default for ConversionOptions {
 
 impl ConversionOptions {
     /// Builds the options with the recommended settings for the given mode.
-    #[allow(deprecated)]
     pub fn for_mode(mode: ConversionMode) -> Self {
         match mode {
             ConversionMode::Balanced => Self {
                 mode,
                 preserve_ids: true, // anchors only
-                preserve_classes: false,
-                preserve_data_attrs: false,
-                preserve_aria_attrs: true,
-                preserve_unknown_attrs: false,
-                drop_presentation_attrs: true,
                 drop_interactive_shell: false,
-                unwrap_unknown_wrappers: false,
-            },
-            ConversionMode::Strict => Self {
-                mode,
-                preserve_ids: true,
-                preserve_classes: true,
-                preserve_data_attrs: true,
-                preserve_aria_attrs: true,
-                preserve_unknown_attrs: true,
-                drop_presentation_attrs: false,
-                drop_interactive_shell: false,
-                unwrap_unknown_wrappers: false,
             },
             ConversionMode::Minimal => Self {
                 mode,
                 preserve_ids: false,
-                preserve_classes: false,
-                preserve_data_attrs: false,
-                preserve_aria_attrs: false,
-                preserve_unknown_attrs: false,
-                drop_presentation_attrs: true,
                 drop_interactive_shell: true,
-                unwrap_unknown_wrappers: true,
-            },
-            ConversionMode::Semantic => Self {
-                mode,
-                preserve_ids: true,
-                preserve_classes: false,
-                preserve_data_attrs: false,
-                preserve_aria_attrs: true,
-                preserve_unknown_attrs: false,
-                drop_presentation_attrs: true,
-                drop_interactive_shell: false,
-                unwrap_unknown_wrappers: true,
-            },
-            ConversionMode::Preserve => Self {
-                mode,
-                preserve_ids: true,
-                preserve_classes: true,
-                preserve_data_attrs: true,
-                preserve_aria_attrs: true,
-                preserve_unknown_attrs: true,
-                drop_presentation_attrs: false,
-                drop_interactive_shell: false,
-                unwrap_unknown_wrappers: false,
             },
         }
+    }
+
+    /// Whether a wrapper element (`<div>`, `<section>`, `<article>`, `<main>`)
+    /// has its tag removed, keeping its children and the paragraph break it stood
+    /// for.
+    ///
+    /// Not an option. It could never change the output -- Markdown has no
+    /// wrapper element to show the difference -- and the field that exposed it,
+    /// `unwrap_unknown_wrappers`, was removed in 3.0. It stays a property of the
+    /// mode, exactly as it was: `Minimal` unwrapped and `Balanced` rendered, so
+    /// each mode converts precisely as it did in 2.9.0 without anyone having to
+    /// prove that the two paths agree on every possible input.
+    pub(crate) fn unwraps_wrappers(&self) -> bool {
+        self.mode == ConversionMode::Minimal
     }
 
     /// Builder: sets the mode.
@@ -253,17 +144,6 @@ impl ConversionOptions {
     /// Builder: sets whether `id` attributes are kept.
     pub fn preserve_ids(mut self, v: bool) -> Self {
         self.preserve_ids = v;
-        self
-    }
-
-    /// Builder: sets whether `aria-*` attributes are kept.
-    #[deprecated(
-        since = "2.2.0",
-        note = "no effect: Markdown has no attribute syntax. See https://nabbisen.github.io/mdka-rs/api/options.html"
-    )]
-    #[allow(deprecated)]
-    pub fn preserve_aria_attrs(mut self, v: bool) -> Self {
-        self.preserve_aria_attrs = v;
         self
     }
 

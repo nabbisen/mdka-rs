@@ -47,14 +47,10 @@ truth — it is generated from the binary you are running.
 | Flag | Description |
 |---|---|
 | `-o, --output <DIR>` | Output directory (defaults to the input's directory) |
-| `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `minimal`. `strict` · `semantic` · `preserve` are deprecated aliases of `balanced`: they still work, print a warning on stderr, and are removed in 3.0 |
+| `-m, --mode <MODE>` | Conversion mode: `balanced` (default) · `minimal`. `strict`, `semantic` and `preserve` were removed in 3.0; asking for one is an error that says so |
 | `--preserve-ids` | Emit `<a id="…"></a>` anchors for elements with an `id`. On by default in every mode except `minimal` |
 | `--no-preserve-ids` | Turn anchor emission off, in any mode |
-| `--preserve-classes` | **Deprecated, no effect.** Markdown has no attribute syntax |
-| `--preserve-data` | **Deprecated, no effect.** Same reason |
-| `--preserve-aria` | **Deprecated, no effect.** Same reason |
 | `--drop-shell` | Drop `nav`, `header`, `footer`, `aside` |
-| `--unwrap-wrappers` | **Deprecated (2.9.0); no effect today** — passing it prints a warning on stderr. Unwraps `div`, `span`, `section`, `article`, `main` tags, keeping their content and separation — see [Conversion Options](../api/options.md#unwrap_unknown_wrappers) |
 | `-h, --help` | Show this help |
 | `-V, --version` | Show the version |
 | `--` | End of options; everything after is a path |
@@ -63,17 +59,22 @@ An unrecognised `-`-prefixed argument is rejected rather than treated as a
 filename. If you genuinely have a file whose name begins with `-`, put `--`
 before it: `mdka -- -weird.html`.
 
-The three deprecated flags are still accepted, so existing command lines keep
-working, but they change nothing about the output. They are documented here
-only so that you can recognise them; do not reach for them expecting an
-effect. See [`ConversionOptions`](../api/options.md).
+**Four flags were removed in 3.0:** `--preserve-classes`, `--preserve-data`,
+`--preserve-aria` and `--unwrap-wrappers`. None of them ever changed the output.
+Passing one now fails with exit status 1 and a single line on stderr that says so
+— for example ``error: `--preserve-classes` was removed in 3.0; Markdown has no
+attribute syntax, so it never changed the output. Remove it from the command
+line: the output is the same without it.`` — so a script that still passes one
+fails loudly instead of appearing to work. Remove the flag; nothing else changes.
+Likewise `--mode strict`, `--mode semantic` and `--mode preserve` fail with
+``error: conversion mode 'strict' was removed in 3.0; it was an alias of
+'balanced'. Use 'balanced'.``
 
-**Deprecation notices and per-file progress go to stderr, not stdout.** A
-deprecated flag's warning and the `in.html -> in.md` progress line printed for
-each converted file never mix into stdout. That is what makes the stdin form
-safe to redirect: `echo '<h1>Hi</h1>' | mdka --preserve-classes > out.md`
-leaves `out.md` holding only the converted Markdown, with the warning on the
-terminal.
+**Errors and per-file progress go to stderr, not stdout.** The
+`in.html -> in.md` progress line printed for each converted file, and every error,
+never mix into stdout. That is what makes the stdin form safe to redirect:
+`echo '<h1>Hi</h1>' | mdka > out.md` leaves `out.md` holding only the converted
+Markdown.
 
 A file argument is a different mode: `mdka page.html` writes `page.md` beside
 its input and prints only the progress line (to stderr), so stdout is empty.

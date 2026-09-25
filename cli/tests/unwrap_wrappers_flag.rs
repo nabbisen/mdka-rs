@@ -1,16 +1,14 @@
-//! Integration test: RFC 006 Slice C — `--unwrap-wrappers` CLI flag.
+//! What `--unwrap-wrappers` and `unwrap_unknown_wrappers` used to guard: a wrapper
+//! element keeps its paragraph break.
 //!
-//! Uses a bare-sibling-text fixture, not a block-element fixture: RFC 005
-//! Slice A found that block-element fixtures (e.g. `<p>` on either side of
-//! the wrapper) cannot discriminate `unwrap_unknown_wrappers` at all, since
-//! the neighbouring blocks' own spacing already dominates the output either
-//! way. See tests/characterisation_structural.rs in the workspace root for
-//! the full explanation.
-//!
-//! **Update, RFC 036 §5.2 / slice `036d`.** The flag no longer changes this
-//! fixture's output either — unwrapping used to delete the paragraph break
-//! along with the tag, which is exactly what made this fixture discriminate
-//! it; fixed, there is nothing left to discriminate.
+//! The flag was removed in 3.0 (it could not change the output), so this no
+//! longer runs it; `rfc039_a7_cli_surface.rs` asserts the removed-flag error.
+//! What is kept is the behaviour the flag existed around, on the fixture that
+//! can see it -- bare sibling text, not a block-element fixture, because the
+//! neighbouring blocks' own spacing dominates the output otherwise (see
+//! `tests/characterisation_structural.rs` in the workspace root for the full
+//! explanation). `Minimal` unwraps the wrapper and `Balanced` renders it, and
+//! RFC 036 §5.2 / slice `036d` made the two write the same bytes.
 
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -36,12 +34,12 @@ fn run_mdka(args: &[&str], input: &str) -> String {
 }
 
 #[test]
-fn unwrap_wrappers_flag_no_longer_changes_output() {
-    let without = run_mdka(&[], HTML);
-    let with = run_mdka(&["--unwrap-wrappers"], HTML);
-    assert_eq!(
-        without, with,
-        "--unwrap-wrappers unexpectedly changed something on this fixture"
-    );
-    assert_eq!(without, "Before\n\ninner\n\nAfter\n");
+fn a_wrapper_keeps_its_separation_in_both_modes() {
+    for args in [&[][..], &["--mode", "balanced"], &["--mode", "minimal"]] {
+        assert_eq!(
+            run_mdka(args, HTML),
+            "Before\n\ninner\n\nAfter\n",
+            "{args:?}"
+        );
+    }
 }

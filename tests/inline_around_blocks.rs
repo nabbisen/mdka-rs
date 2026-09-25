@@ -7,15 +7,7 @@ mod common;
 use common::{conv, conv_with};
 use mdka::options::{ConversionMode, ConversionOptions};
 
-// Internal: this asserts the deprecated alias modes are still aliases of Balanced.
-#[allow(deprecated)]
-const MODES: [ConversionMode; 5] = [
-    ConversionMode::Balanced,
-    ConversionMode::Strict,
-    ConversionMode::Minimal,
-    ConversionMode::Semantic,
-    ConversionMode::Preserve,
-];
+const MODES: [ConversionMode; 2] = [ConversionMode::Balanced, ConversionMode::Minimal];
 
 // ── criterion 1: emphasis around blocks writes no delimiters ───────────────
 
@@ -41,7 +33,7 @@ fn any_block_counts_not_only_paragraphs() {
 
 #[test]
 fn a_mode_unwrapping_a_div_is_still_a_block() {
-    // Previously named "...is not a block", asserting Minimal/Semantic kept
+    // Previously named "...is not a block", asserting Minimal kept
     // "**x**\n" (delimiters) because unwrapping <div> was believed to remove
     // its block-ness along with the tag. RFC 036 §5.2 / slice 036d corrected
     // that: unwrapping drops the element, not the paragraph break it stood

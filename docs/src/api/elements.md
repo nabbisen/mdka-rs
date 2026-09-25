@@ -19,8 +19,8 @@ Markdown it produces. Elements not listed are either silently removed
 | `<hr>` | `---` | |
 | `<dl>` | — | Not itself rendered; a transparent container. `<dt>`/`<dd>` do the work, below |
 | `<dt>`, `<dd>` | Block separator | Each its own paragraph-like block, in source order. A `<dl>` therefore reads as a run of paragraphs — Markdown has no definition-list syntax, and inventing one (bolding the term, a `- ` prefix) would assert a structure the source never had |
-| `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) when [`unwrap_unknown_wrappers`](./options.md) is on — Minimal and Semantic by default |
-| `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning `unwrap_unknown_wrappers` is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
+| `<div>`, `<article>`, `<section>`, `<main>` | Block separator | Act as paragraph breaks; unwrapped (tag removed, children kept) in `Minimal`, rendered in `Balanced`; the output is the same either way |
+| `<figure>`, `<figcaption>` | Block separator | **Never unwrapped, in any mode.** These carry structural meaning that unwrapping is not meant to discard — they're excluded from the wrapper-candidate set entirely, not merely blocked by a secondary check |
 | `<table>` | GFM table, or a non-welding fallback | See [Tables](#tables) |
 
 ## Inline Elements
@@ -177,7 +177,7 @@ the item's content:
 
 A block is a paragraph, heading, blockquote, code block or rule, and anything
 else the chosen mode renders as a block: `<div>` counts in every mode,
-including Minimal and Semantic, which unwrap it — unwrapping removes the tag,
+including Minimal, which unwraps it — unwrapping removes the tag,
 not the paragraph break it stood for; an element the mode drops counts as
 nothing.
 
@@ -274,8 +274,8 @@ regardless of conversion mode:
 `<script>` · `<style>` · `<meta>` · `<link>` · `<template>` ·
 `<iframe>` · `<object>` · `<embed>` · `<noscript>` · `<head>` · `<svg>`
 
-HTML comments are removed in **all** conversion modes, including
-`Preserve`. No mode retains comment content.
+HTML comments are removed in **all** conversion modes. No mode retains comment
+content.
 
 ## Shell Elements
 
