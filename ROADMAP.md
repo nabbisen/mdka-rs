@@ -858,6 +858,12 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-25, from RFC 047's platform coverage
+
+| Item | State |
+|---|---|
+| **Nobody has run the prebuilt macOS binary as a person would.** Apple's `unzip` propagates `com.apple.quarantine` onto the extracted binary; it still **ran from a shell, exit 0**, but `spctl --assess --type execute` calls it **`rejected`** — unsigned and not notarised. The gate proves the archive works from a shell on a macOS runner; it **cannot** reproduce the interactive Gatekeeper experience | Open. **A human check on a Mac**, not something a runner can do. No `xattr -d com.apple.quarantine` line was added to the README, because it has been seen to succeed but never seen to be *needed* — documenting it would be a guess. RFC 047 report §1 |
+
 ### Recorded 2026-09-25, from the RFC 044 implementation
 
 | Item | State |
