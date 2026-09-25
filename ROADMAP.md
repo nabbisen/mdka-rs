@@ -858,6 +858,14 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-25, from the RFC 046 review and the owner's challenge to it
+
+| Item | State |
+|---|---|
+| **The release checklist exists on one machine**, and the README gives Windows users no command the gate can verify | **RFC 047**, proposed. The `.gitignore` half — the ignore rule was per-clone, so a fresh clone could have committed the upstream correspondence — is **already fixed** |
+| **Checklist §1's remaining checks could be a preflight program** — the four crate versions, tree clean, `HEAD` == `origin/main`, CI green on the full SHA, the gates with their two standing explanations, the RFC moves, the CHANGELOG section | **Not started, deliberately out of RFC 047 §3.3.** It is a separate design and would have hidden inside an RFC that has a clear answer without it. The argument for it is the same as RFC 046's: a prose step performed by hand is unbounded in cost and varies with who performs it |
+| **`release artifact gate` is red on a release-prep commit**, by design — it checks published archives against the tree's README and contract | Recorded as the second standing explanation in the release checklist §1. Not a defect; it must not be explained away twice |
+
 ### Reserved numbers, never written
 
 | Item | Note |
