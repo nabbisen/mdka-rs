@@ -26,7 +26,9 @@ reader deciding whether to stop here should know what is scheduled to go:
   `2.8.0`);
 - the five attribute options **`preserve_classes`, `preserve_data_attrs`,
   `preserve_aria_attrs`, `preserve_unknown_attrs` and `drop_presentation_attrs`**
-  (deprecated in `2.2.0`);
+  (deprecated in `2.2.0`). Named as in Rust; **Node.js, Python and the CLI expose
+  only the first three** — `preserve_unknown_attrs` and `drop_presentation_attrs`
+  have always been Rust-only, so there is nothing to change in the other three;
 - **`unwrap_unknown_wrappers`** (deprecated in this release, below).
 
 `3.0` also reshapes the result types and the per-language function conventions;
