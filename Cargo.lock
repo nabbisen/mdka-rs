@@ -1179,7 +1179,7 @@ dependencies = [
 
 [[package]]
 name = "mdka"
-version = "2.7.0"
+version = "2.8.0"
 dependencies = [
  "criterion",
  "dom_smoothie",
@@ -1199,16 +1199,16 @@ dependencies = [
 
 [[package]]
 name = "mdka-cli"
-version = "2.7.0"
+version = "2.8.0"
 dependencies = [
- "mdka 2.7.0",
+ "mdka 2.8.0",
 ]
 
 [[package]]
 name = "mdka-node"
-version = "2.7.0"
+version = "2.8.0"
 dependencies = [
- "mdka 2.7.0",
+ "mdka 2.8.0",
  "napi",
  "napi-build",
  "napi-derive",
@@ -1217,9 +1217,9 @@ dependencies = [
 
 [[package]]
 name = "mdka-python"
-version = "2.7.0"
+version = "2.8.0"
 dependencies = [
- "mdka 2.7.0",
+ "mdka 2.8.0",
  "pyo3",
  "rayon",
 ]

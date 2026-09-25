@@ -9,6 +9,52 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.8.0] - 2026-09-25
+
+**`2.8.0` — `Strict`, `Semantic` and `Preserve` are deprecated, with a warning on
+every surface. Nothing is removed and no output changes.** No API change: every
+export, signature and option is the same as `2.7.0`, and each of the three names
+keeps working and keeps producing exactly what it produced. They go at `3.0`.
+
+### Deprecated
+
+- **`ConversionMode::Strict`, `Semantic` and `Preserve` — aliases of `Balanced`.**
+  They produce byte-for-byte the same output as `Balanced` and cannot differ:
+  what would distinguish them is attribute handling, and Markdown has no
+  attribute syntax. Their documented purposes promised more than the conversion
+  could deliver. A `3.0` that deleted public names nobody had been warned about
+  would be a break this project does not make, so this release is the warning.
+  Each surface warns in its own way, and **only when you name one of the three**;
+  a call that names no mode, or names `Balanced` or `Minimal`, is silent:
+  - **Rust:** `#[deprecated(since = "2.8.0")]` on the three variants — a compiler
+    warning at each use.
+  - **Node.js:** a `DeprecationWarning` from `htmlToMarkdownWith` and
+    `htmlToMarkdownMany`. **The `Async` and file functions cannot emit it** (no
+    access to the runtime's warning channel) but convert identically, so Node
+    file conversion is never warned.
+  - **Python:** a `DeprecationWarning` when `ConversionMode.Strict`, `Semantic`
+    or `Preserve` is passed.
+  - **CLI:** one line on **stderr**, never stdout, so a pipe is unaffected —
+    `mdka: warning: --mode strict is an alias of balanced and produces identical
+    output; it is removed in 3.0`. `--mode strict` still works.
+
+  **What to do:** use `Balanced`, or name no mode. If you wanted something
+  genuinely different, `Minimal` is the one other mode that converts differently.
+
+  **If you read the mode from a string, act now — nothing will remind you.** The
+  string forms `"strict"`, `"semantic"` and `"preserve"` — from a config file,
+  `--mode`, a binding argument or `ConversionMode::from_str` — are deprecated in
+  the same way, but a string is invisible to the compiler and a library does not
+  print, so a Rust caller who parses one is not warned at all. Change them to
+  `"balanced"`. What they do at `3.0` is decided with the removal.
+
+### Changed
+
+- **The CLI's deprecation warnings now share one shape, `mdka: warning: …`.** The
+  `--preserve-classes`, `--preserve-data` and `--preserve-aria` warning read
+  `warning: mdka: …`; only the prefix changed, the wording after it is the same.
+  **A script that matches the old prefix on stderr needs updating.**
+
 ## [2.7.0] - 2026-09-25
 
 **`2.7.0` — one conversion fix, and a README that tells Windows and macOS users

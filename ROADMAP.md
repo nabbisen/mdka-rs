@@ -56,6 +56,15 @@ retires the manual consumer pass. RFC 047 moves the release checklist into the r
 archives on runners for their own platform, and gives the README a verified block for Linux, macOS and
 Windows. No API change.
 
+**`2.8.0` ships RFC 041's deprecation slice** — prepared 2026-09-25, **not yet tagged**; this paragraph becomes a
+shipped record when the tag lands. `ConversionMode::Strict`, `Semantic` and `Preserve` — byte-for-byte aliases
+of `Balanced` — are deprecated on all four surfaces (a Rust `#[deprecated]`, a Node and a Python
+`DeprecationWarning`, one CLI stderr line), only when a caller names one. **Nothing is removed and no output
+changes**; they go at `3.0`, and this release is the warning that lets `3.0` remove them. The CLI's two
+deprecation warnings were given one shape. A mode read from a *string* cannot be warned about at compile
+time, so the CHANGELOG says to act now. **RFC 041 stays in `accepted/`**: §9's removal and §10's `parse_mode`
+decision are `3.0`.
+
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
 aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute
@@ -867,7 +876,7 @@ anyone's memory.
 | Item | State |
 |---|---|
 | **The string form of a deprecated mode warns nobody.** `"strict".parse::<ConversionMode>()` maps silently, so a Rust caller reading the mode from config is unwarned today and breaks at `3.0` at runtime — the *worst*-served caller, not the best | **A constraint on `3.0`, recorded in RFC 041 §10.** `parse_mode` must deliberately accept-and-map or reject-with-a-message; a bare `unknown conversion mode` error tells the user their config is wrong rather than obsolete |
-| **The CLI has two warning shapes** — `mdka: warning: --mode strict …` (new) and `warning: mdka: \`--preserve-classes\` …` (existing) | **My handoff prescribed the new one without checking the old.** The new shape is the ordinary Unix form; the older one changes to match, in `2.8.0` |
+| ~~**The CLI has two warning shapes** — `mdka: warning: --mode strict …` (new) and `warning: mdka: \`--preserve-classes\` …` (existing)~~ — **fixed, in `2.8.0`** | **My handoff prescribed the new one without checking the old.** The new shape is the ordinary Unix form; the older one changed to match at `5a87914`, and two tests now pin the shape |
 | **Node's async and file paths cannot warn about a mode** (no `Env`, not `Send`). Node file conversion is async-only, so a Node user converting files with `mode: 'strict'` is never warned | Pre-existing napi constraint, same as the inert-field warnings; documented in `usage-nodejs.md` and `modes.md`. Its own slice if ever |
 
 ### Recorded 2026-09-25, from RFC 047's platform coverage
