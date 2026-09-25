@@ -22,12 +22,15 @@ fn run_mdka(args: &[&str], input: &str) -> std::process::Output {
         .stderr(Stdio::piped())
         .spawn()
         .expect("failed to spawn mdka");
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(input.as_bytes())
-        .unwrap();
+    // A write error is ignored on purpose. Several tests below provoke a
+    // command line mdka rejects (a removed mode or flag) *before* it reads
+    // stdin, so it can exit -- and close the pipe -- before this write lands.
+    // That is a broken pipe here, and a race: the tests passed on a fast
+    // machine and failed on CI (2.9.0 -> 3.0 slice 2's first push). What is
+    // asserted is mdka's exit status and output, not whether it read the input.
+    let mut stdin = child.stdin.take().unwrap();
+    let _ = stdin.write_all(input.as_bytes());
+    drop(stdin);
     child.wait_with_output().expect("failed to wait on mdka")
 }
 
