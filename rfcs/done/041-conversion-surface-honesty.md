@@ -1,6 +1,6 @@
 # RFC 041 — The conversion surface: options that cannot act, modes that cannot differ
 
-**Status.** **Accepted (owner, 2026-09-24); §6 answered the same day — see §9.** The direction is chosen: **§5.1, collapse to what is real** — deprecate the alias modes and the permanently-inert options in a minor, remove at `3.0`, decided together with RFC 039 Half B. **§6.2 shipped in `2.6.0`** (the `--help` and rustdoc wording). **The deprecation minor is authorised and unscheduled**; the removal is `3.0`.
+**Status.** Implemented — the wording half shipped in `2.6.0`, the deprecations in `2.8.0` and the removals in `3.0.0`, 2026-09-26
 **Author.** Architect
 **Created.** 2026-09-24
 **Milestone.** Unscheduled → `3.0` (breaking). Nothing here belongs in a patch or a minor.

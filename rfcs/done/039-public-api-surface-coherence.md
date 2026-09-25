@@ -1,6 +1,6 @@
 # RFC 039 — Public API surface coherence
 
-**Status.** Accepted (owner, 2026-09-22) — **Half A scheduled for `2.4.0`; Half B specified, unscheduled**
+**Status.** Implemented — Half A shipped in `2.4.0`; Half B (one result type, one convention per language, an option surface showing only what works) was delivered by RFC 048 in `3.0.0`, 2026-09-26
 **Author.** Architect
 **Created.** 2026-09-22
 **Milestone.** M4 · Coverage and durability → `2.4.0` (Half A); `3.0` (Half B)

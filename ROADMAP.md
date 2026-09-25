@@ -74,10 +74,23 @@ names what it removes. **RFC 048, 041 and 039 stay in `accepted/`**: 048 is a `3
 ships only its precondition. **Still open:** RFC 048's criteria, the `FileOutcome` repr item, and the four
 carried audit items below.
 
-**Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
-**RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
-aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute
-fidelity Markdown cannot carry. RFC 041 §6 asks whether the two should be decided together.
+**`3.0.0` ships RFC 048, and with it RFC 041's removals and RFC 039 Half B** — prepared 2026-09-26, **not yet
+tagged**; this paragraph becomes a shipped record when the tag lands. **No conversion output changes**, asserted
+against published `2.9.0` by `mode_identity.rs` P3's goldens; everything is compile-and-rename. Three modes and
+six options are removed, `FromStr` says *removed* rather than *unknown* for the three mode names, the file
+functions return the destination path (single) or `FileOutcome` (bulk) in all three bindings, and Node folds its
+four `…With` functions away and now rejects an unrecognised option key by name. Its migration guide is
+`docs/src/migration-3.0.md`. **RFC 039, 041 and 048 moved to `done/` in the prep commit; `accepted/` and
+`proposed/` are both empty for the first time.** All eleven of RFC 048's acceptance criteria are met (criterion 6
+on `FromStr` and the CLI and Node surfaces only — `parse_mode` returns an `Option` and cannot carry a message, so
+it was deprecated instead, and RFC 048 §6 corrected). **Still open after it:** the performance page's staleness
+(labelled, not re-measured), the `ci.yaml` cache-key hazard (untested), and the `Disposition::Unwrap` path that
+now writes the same bytes as `Render`.
+
+~~**Unscheduled, both `3.0` and both needing a direction:** RFC 039 Half B, and **RFC 041** — after `2.4.2`, six of
+eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to
+diverge, while their documented purposes promise attribute fidelity Markdown cannot carry.~~ **Decided together and
+delivered by RFC 048 in `3.0.0`.**
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -844,8 +857,8 @@ what order, is the owner's call.
 
 | Item | What is open |
 |---|---|
-| **RFC 041 §6** — the conversion surface | Direction (collapse to what is real, keep names honestly, or build a real axis); ~~whether the *wording* half ships early in a minor~~ — it did, in `2.6.0`; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
-| **RFC 039 Half B** — public API coherence | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
+| ~~**RFC 041 §6** — the conversion surface~~ — **decided and delivered, in `3.0.0`** | Direction (collapse to what is real, keep names honestly, or build a real axis); ~~whether the *wording* half ships early in a minor~~ — it did, in `2.6.0`; whether to decide it together with RFC 039 Half B. RFC 041 §8 carries a recommendation |
+| ~~**RFC 039 Half B** — public API coherence~~ — **delivered by RFC 048, in `3.0.0`** | Specified, unscheduled, `3.0`. Should be decided with RFC 041, since both rewrite the same surface and deciding apart risks two migrations |
 | ~~**`<sup>` and `<sub>` that change meaning**~~ — **RFC 043, shipped in `2.6.0`** | `2<sup>n − 1</sup>` converts to `2n − 1`. Owner chose the visible fallback on 2026-09-24. Measuring before writing the RFC corrected my own earlier figure: **104 of 417 real occurrences (25%) are silently wrong, not 1%** — my first corpus had no mathematical prose. `<sub>` has the identical defect (`x<sub>i</sub>` → `xi`), and three map gaps (U+2212, unmapped letters, emphasis-wrapped variables) close much of it with a correct superscript rather than a notation |
 | ~~**`py.typed` without stubs**~~ — **RFC 045, shipped in `2.6.0`** | **`mypy --strict` reports "Success: no issues found"** on code that assigns a `str` to an `int`, passes an `int` where a `str` is required and omits a required argument — verified against the published `2.5.1` wheel. Without the marker mypy would say *"missing library stubs"*, which is true, so we replaced a correct warning with a false clearance. Owner accepted shipping stubs, with `stubtest` in CI so the second surface cannot drift. **The false all-clear was live in every wheel through `2.5.1`** |
 
@@ -891,24 +904,24 @@ anyone's memory.
 
 | Item | State |
 |---|---|
-| **Node silently ignores an option it does not know**, from plain JavaScript — napi drops unknown fields, so `{preserveClasses: true}` after `3.0` neither errors nor warns. TypeScript users get a compile error from `index.d.ts`; Python raises `TypeError`; the CLI exits 1 | Pinned in `node/test.js` and documented. **Folded into slice 2**, which is already reshaping the options object; closing it needs a check on that object in Rust |
-| **`parse_mode` cannot carry the removed-name message** — it is `s.parse().ok()` and discards the error, so a removed name gives `None`, like any unknown one | RFC 048 §6 corrected. **Slice 2 deprecates it** in favour of `str::parse`; it is not removed, because it was never deprecated |
-| **`check-docs-examples.py:487`** names `preserve_unknown_attrs` in a comment | Slice 3 |
+| ~~**Node silently ignores an option it does not know**~~ — **fixed in `3.0.0`** (slice 2) |, from plain JavaScript — napi drops unknown fields, so `{preserveClasses: true}` after `3.0` neither errors nor warns. TypeScript users get a compile error from `index.d.ts`; Python raises `TypeError`; the CLI exits 1 | Pinned in `node/test.js` and documented. **Folded into slice 2**, which is already reshaping the options object; closing it needs a check on that object in Rust |
+| ~~**`parse_mode` cannot carry the removed-name message**~~ — **deprecated since `3.0.0`** (slice 2), not removed | — it is `s.parse().ok()` and discards the error, so a removed name gives `None`, like any unknown one | RFC 048 §6 corrected. **Slice 2 deprecates it** in favour of `str::parse`; it is not removed, because it was never deprecated |
+| ~~**`check-docs-examples.py:487`** names `preserve_unknown_attrs` in a comment~~ — **done** (slice 3) | | Slice 3 |
 | **A `Disposition::Unwrap` path now writes the same bytes as `Render`** — kept deliberately in slice 1, so both modes are preserved by construction rather than by a corpus proof | Removable later, once the `2.9.0` equality property has stood for a release |
 
 ### Recorded 2026-09-25, from the `2.9.0` precondition slices
 
 | Item | State |
 |---|---|
-| **Python's `BulkConvertResult.repr()` leaks a Rust `Option`** — `error=Some("…")`, and omits `dest` and `ok`. The accessors are correct; only `repr` | Found on the published `2.8.0` wheel. **Not patched:** RFC 048 renames the type to `FileOutcome`, so the fix belongs with the rename and is now RFC 048 criterion 11 |
+| ~~**Python's `BulkConvertResult.repr()` leaks a Rust `Option`**~~ — **fixed in `3.0.0`**: `FileOutcome`'s repr shows all four fields | — `error=Some("…")`, and omits `dest` and `ok`. The accessors are correct; only `repr` | Found on the published `2.8.0` wheel. **Not patched:** RFC 048 renames the type to `FileOutcome`, so the fix belongs with the rename and is now RFC 048 criterion 11 |
 | ~~`options.md` says five of eight options are inert; six are~~ | **Closed** by the `2.9.0` deprecation slice — the page now reads *"Six of the eight fields … have no effect; only two can affect it"* |
-| **Still carried from the pre-`3.0` audit:** `architecture.md` omits `src/table.rs`; `performance-characteristics.md` was measured at `2.3.0` @ `c9cbbb8`; `usage-rust.md:167` and `usage-nodejs.md:188` show `version()` → `"2.3.0"`; `usage-python.md` never mentions `version()` | Four items, none blocking. Deliberately not folded into the `2.9.0` slices — none was a one-line fix in a file already being touched |
+| ~~**Still carried from the pre-`3.0` audit:**~~ — **done in slice 3, except the performance page**, which is now *labelled* stale (its figures describe `2.3.0`) and still awaits a re-measurement:  `architecture.md` omits `src/table.rs`; `performance-characteristics.md` was measured at `2.3.0` @ `c9cbbb8`; `usage-rust.md:167` and `usage-nodejs.md:188` show `version()` → `"2.3.0"`; `usage-python.md` never mentions `version()` | Four items, none blocking. Deliberately not folded into the `2.9.0` slices — none was a one-line fix in a file already being touched |
 
 ### Recorded 2026-09-25, from the `2.8.0` deprecation slice
 
 | Item | State |
 |---|---|
-| **The string form of a deprecated mode warns nobody.** `"strict".parse::<ConversionMode>()` maps silently, so a Rust caller reading the mode from config is unwarned today and breaks at `3.0` at runtime — the *worst*-served caller, not the best | **A constraint on `3.0`, recorded in RFC 041 §10.** `parse_mode` must deliberately accept-and-map or reject-with-a-message; a bare `unknown conversion mode` error tells the user their config is wrong rather than obsolete |
+| ~~**The string form of a deprecated mode warns nobody.**~~ — **closed by `3.0.0`**: `FromStr` says *removed* for the three names | `"strict".parse::<ConversionMode>()` maps silently, so a Rust caller reading the mode from config is unwarned today and breaks at `3.0` at runtime — the *worst*-served caller, not the best | **A constraint on `3.0`, recorded in RFC 041 §10.** `parse_mode` must deliberately accept-and-map or reject-with-a-message; a bare `unknown conversion mode` error tells the user their config is wrong rather than obsolete |
 | ~~**The CLI has two warning shapes** — `mdka: warning: --mode strict …` (new) and `warning: mdka: \`--preserve-classes\` …` (existing)~~ — **fixed, in `2.8.0`** | **My handoff prescribed the new one without checking the old.** The new shape is the ordinary Unix form; the older one changed to match at `5a87914`, and two tests now pin the shape |
 | **Node's async and file paths cannot warn about a mode** (no `Env`, not `Send`). Node file conversion is async-only, so a Node user converting files with `mode: 'strict'` is never warned | Pre-existing napi constraint, same as the inert-field warnings; documented in `usage-nodejs.md` and `modes.md`. Its own slice if ever |
 

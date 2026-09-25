@@ -1,6 +1,6 @@
 {
   "name": "@mdka/lib-darwin-arm64",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "os": [
     "darwin"
   ],
