@@ -72,8 +72,7 @@ jobs:
       #    dependents against `mdka` from a local registry at the workspace
       #    version, and cargo treats a registry-sourced crate as immutable per name
       #    and version, so a restored target/debug/**/*mdka* is reused as "fresh"
-      #    (the mechanism is inferred from the measurements below, not read from
-      #    cargo) and the dependents are compiled against the OLD mdka: slice 2's
+      #    and the dependents are compiled against the OLD mdka: slice 2's
       #    API change made mdka-cli fail with "no method named `display` found
       #    for struct `ConvertResult`" -- a struct that no longer existed.
       #    Third-party dependency builds are what the cache is for and are kept.
@@ -81,6 +80,16 @@ jobs:
       #    excluding it alone still fails. Measured, not assumed: restoring the
       #    pre-change target/ with and without target/package fails both times,
       #    and passes once target/debug/**/*mdka* is dropped.)
+      #
+      #    Observed in the run logs, not only inferred: in BOTH the failing run
+      #    (36198816984) and the passing one (36200365824 attempt 2), verifying
+      #    mdka-cli prints `Unpacking mdka ... (registry .../tmp-registry)` and
+      #    then compiles only mdka-cli -- there is NO `Compiling mdka` for the
+      #    registry copy in either. The dependents are therefore ALWAYS linked
+      #    against a compiled mdka that came from target/debug; the only
+      #    difference is whether it was built in this run or restored stale. That
+      #    is why excluding it is necessary and not merely sufficient: there is no
+      #    later point at which a stale artifact would be corrected.
       #
       #    The key carries a -v2- namespace, on both `key` and `restore-keys`, and
       #    that is what makes the exclusion take effect. actions/cache does not
