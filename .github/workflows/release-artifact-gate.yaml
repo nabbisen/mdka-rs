@@ -11,9 +11,10 @@ name: release artifact gate
 #      the archive created, find `./mdka` -- and asserts that they work. It does
 #      not assert a layout: the wrapper directory is deliberate and documented,
 #      and this fails only if the *documented steps* stop working;
-#   3. runs the binary on the README's own example and compares its output
-#      with the output the README shows -- only for the assets this runner can
-#      execute, and the log says which those are;
+#   3. runs the README's own commands for the platform (the extract, `cd` and
+#      run lines, parsed from README.md and executed verbatim in the platform's
+#      shell) on the downloaded archive and compares the output with the output
+#      the README shows;
 #   4. applies RFC 042's contract (check-artifact-contract.py, unchanged) to
 #      the downloaded binary. This is what makes RFC 042 criterion 4 permanent.
 #
@@ -27,8 +28,9 @@ name: release artifact gate
 # README's own commands for that platform, parsed from README.md.
 #
 # Cost: this is a public repository, where GitHub Actions minutes for
-# GitHub-hosted runners remain free (checked against GitHub's billing
-# documentation when this was added; see RFC 047), so the price is wall-clock.
+# GitHub-hosted runners remain free (GitHub's "About billing for GitHub
+# Actions", checked 2026-09-25), so the price is wall-clock: the four jobs
+# together took 38 seconds, measured on the first run.
 #
 # Its own workflow file, not ci.yaml: release-npm.yaml and create-release.yaml
 # gate on ci.yaml's conclusion, so an artifact gate living there can block the

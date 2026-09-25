@@ -10,16 +10,23 @@ Per asset:
 
   1. the archive was downloaded (the workflow does that with `gh release
      download`; a missing asset fails here);
-  2. **follow the README's own instructions**: extract, `cd` into the folder the
-     archive created (named after the asset -- derived, not hardcoded), and find
-     `./mdka` there. What is asserted is that the *documented steps work*, not any
-     particular layout: if the layout changes and the README follows, this still
-     passes; if the README stops being true, it fails;
-  3. run the binary on the README's own example and compare its output with the
-     output the README shows -- only where this machine can execute it, and the
-     log says which assets were and were not;
+  2. the archive holds what the README says it does: the folder the README's
+     `cd` names (derived from the asset name, not hardcoded), with `mdka` in it
+     -- what is asserted is that the *documented steps* work, not any particular
+     layout;
+  3. **do what the README says, verbatim**: the block for the asset's platform
+     (bash on Linux and macOS, PowerShell on Windows) is parsed out of README.md
+     and its extract, `cd` and run lines are executed as written, in a directory
+     holding only the downloaded archive; the output is compared with the output
+     the README shows. Only where this host can execute the binary -- natively,
+     or under QEMU for the aarch64 archive -- and the log says which. A README
+     that has no block for a platform fails: a reader of that archive is given
+     nothing to follow;
   4. apply RFC 042's contract to the extracted binary, by running
      check-artifact-contract.py unchanged. There is one contract, not two.
+
+`--require-executed NAME` makes step 3 mandatory for an asset on this host: a
+leg that cannot run fails, with the reason, instead of being reported and passed.
 
 Nothing here is written to be a second source of truth: the assets expected come
 from the release workflow's own matrix, the instructions and expected output
