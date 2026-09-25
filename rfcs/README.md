@@ -16,9 +16,6 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | State |
 |----|-------|-------|
-| 047 | [The release process lives in the repository, and its instructions are verified](./accepted/047-release-process-in-the-repository.md) — [platform-coverage handoff](./handoffs/047-release-process-in-the-repository/platform-coverage-handoff.md) | **Accepted (owner, 2026-09-25).** Split: §3.1, moving the checklist into the repository, is the architect's and is done; §3.2, executing all five archives and writing the README's per-platform commands from what a runner verifies, is handed off |
-| 046 | [Retire the manual consumer pass; gate the one channel that has none](./accepted/046-retire-the-manual-consumer-pass.md) — [handoff](./handoffs/046-retire-the-manual-consumer-pass/implementation-handoff.md) | **Accepted (owner, 2026-09-25).** Five of the six things the manual pass caught are gates now. **GitHub Releases is the only channel with no published-artifact gate**, verified by grep. Replaces RFC 027 Rule 1 and makes RFC 042 criterion 4 permanent. **Implemented and landed at `1ccfe3f`**; the gate's first runner run passed against `2.6.0` in 13 seconds. Rule 1's manual pass is retired on `main` now; this row moves to `done/` at the next release, which is when it ships |
-| 044 | [Emphasis first inside `<strong>` is lost, and leaves a literal `_`](./accepted/044-emphasis-first-inside-strong.md) | **Accepted (owner, 2026-09-25).** `<b><em>q</em>a</b>` → `**_q_a**`, which parses as `strong("_" "q_a")` — live in every published version. **Deliberately not in `2.6.0`** (§8); the handoff follows that tag and leads with a prose-heavy corpus measurement, since prevalence is unmeasured — zero in the four-page corpus |
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./accepted/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) | **Accepted; §6 answered 2026-09-24** — collapse at `3.0`, decided with RFC 039 Half B, and the honest wording ships early. **The §6.2 wording half shipped in `2.6.0`**; the structural half stays unscheduled and is decided with RFC 039 Half B |
 | 039 | [Public API surface coherence](./accepted/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) | **Half A shipped in 2.4.0**; Half B specifies the `3.0` target and is **unscheduled**, needing its own acceptance |
 
@@ -73,6 +70,9 @@ corrupted tables in two default modes —
 | 042 | [Assert what is inside a published artifact](./done/042-artifact-content-gate.md) — [handoff](./handoffs/042-artifact-content-gate/implementation-handoff.md) | 2.6.0 |
 | 043 | [`<sup>` and `<sub>` that silently change the meaning](./done/043-superscript-and-subscript-fidelity.md) — [handoff](./handoffs/043-superscript-and-subscript-fidelity/implementation-handoff.md) | 2.6.0 |
 | 045 | [`py.typed` without stubs makes a type checker certify wrong code](./done/045-python-type-stubs.md) — [handoff](./handoffs/045-python-type-stubs/implementation-handoff.md) | 2.6.0 |
+| 044 | [Emphasis first inside `<strong>` is lost, and leaves a literal `_`](./done/044-emphasis-first-inside-strong.md) — [handoff](./handoffs/044-emphasis-first-inside-strong/implementation-handoff.md) | 2.7.0 |
+| 046 | [Retire the manual consumer pass; gate the one channel that has none](./done/046-retire-the-manual-consumer-pass.md) — [handoff](./handoffs/046-retire-the-manual-consumer-pass/implementation-handoff.md) | 2.7.0 |
+| 047 | [The release process lives in the repository, and its instructions are verified](./done/047-release-process-in-the-repository.md) — [platform-coverage handoff](./handoffs/047-release-process-in-the-repository/platform-coverage-handoff.md) | 2.7.0 |
 
 ## Archive
 

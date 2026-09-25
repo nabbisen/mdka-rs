@@ -1,6 +1,6 @@
 # RFC 047 — The release process lives in the repository, and its instructions are verified
 
-**Status.** Accepted — owner, 2026-09-25
+**Status.** Implemented — shipped in `2.7.0`, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. Governance and CI; no conversion change.

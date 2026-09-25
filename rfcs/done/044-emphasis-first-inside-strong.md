@@ -1,6 +1,6 @@
 # RFC 044 — Emphasis first inside `<strong>` is lost, and leaves a literal `_`
 
-**Status.** Accepted — owner, 2026-09-25
+**Status.** Implemented — shipped in `2.7.0`, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. An output-correctness fix; a patch or a minor. **Scheduled after `2.6.0`** — see §8.

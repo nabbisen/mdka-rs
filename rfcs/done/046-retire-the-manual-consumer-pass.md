@@ -1,6 +1,6 @@
 # RFC 046 — Retire the manual consumer pass; gate the one channel that has none
 
-**Status.** Accepted — owner, 2026-09-25
+**Status.** Implemented — shipped in `2.7.0`, 2026-09-25
 **Author.** Architect
 **Created.** 2026-09-25
 **Milestone.** Unassigned. Process and CI; no conversion change.

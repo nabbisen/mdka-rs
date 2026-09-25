@@ -9,6 +9,54 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.7.0] - 2026-09-25
+
+**`2.7.0` — one conversion fix, and a README that tells Windows and macOS users
+what to type.** No API change: every export, signature and option is the same as
+`2.6.0`. One conversion behaviour changes, described first.
+
+### Fixed
+
+- **Emphasis that opens a bold is no longer lost, and no longer leaves a
+  literal `_`.** `<b><em>q</em>a</b>` — also `<b><i>q</i>a</b>` and
+  `<strong><em>q</em>1</strong>` — converted to `**_q_a**`. CommonMark does not
+  let an intraword `_` close, so that parses as `strong("_" "q_a")`: the italic
+  is gone and an underscore is printed in the text. It is now `***q*a**`, which
+  parses as `strong(em("q") "a")`, the structure the HTML had. Output for every
+  shape that already worked is byte-identical to `2.6.0`, and the four
+  conversion modes still produce identical output.
+  The trigger is narrow: emphasis as the *first* child of a bold, closed
+  immediately against a letter or digit. Measured over 424 bold openings on 42
+  pages of published prose it was **zero** occurrences, so this is a real and
+  silent defect that is rare in that kind of text; editor-generated HTML has
+  not been measured.
+  Two neighbouring shapes are **unchanged and still wrong**, and are recorded in
+  the roadmap rather than hidden: `<b><em>q.</em>a</b>` cannot be fixed by
+  choosing a delimiter, and `<b><em>q</em>a<em>r</em></b>` is fixable but is
+  not fixed by this release.
+
+### Changed
+
+- **The README's prebuilt-binary Quick Start now has a block for each
+  platform.** It had one Linux-only block ending in a POSIX pipeline into
+  `./mdka`, which a Windows user, whose archive holds `mdka.exe`, could not
+  follow. There are now Linux (`tar`), macOS (`unzip`) and Windows
+  (PowerShell, `Expand-Archive`, `.\mdka.exe`) blocks, each showing the output
+  to expect. Each is executed verbatim, on its own operating system, against
+  the published archives (see below), so the instructions cannot drift from
+  what the archives contain.
+
+### Added
+
+- **The release now has a gate on the GitHub Release archives.** Every other
+  channel — npm, PyPI, crates.io — already had a gate that fetched what the
+  registry actually serves; GitHub Releases had none. `release artifact gate`
+  downloads the latest published release and, for each of the five archives,
+  follows the README's own steps and runs the binary on a runner for its
+  platform (Linux natively, `aarch64` musl under QEMU, macOS, Windows), then
+  applies the artifact contract from `2.6.0`. It replaces a manual step that
+  depended on who performed it. This changes nothing in what you install.
+
 ## [2.6.0] - 2026-09-25
 
 **`2.6.0` — superscripts that no longer change the meaning, a CLI that starts on

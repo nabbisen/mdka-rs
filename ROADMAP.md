@@ -47,10 +47,14 @@ Ubuntu 20.04, Debian 11 and RHEL 8. The Python wheel ships type stubs, so `mypy 
 *"Success"* on code that assigns a `str` to an `int`; `stubtest` runs in CI against the built extension.
 `--help` and the `ConversionMode` rustdoc stop promising fidelity the modes cannot deliver.
 
-**RFC 044 is accepted and deliberately not in it** — emphasis first inside `<strong>` is lost and leaves a
-literal `_`. Real, reproducible and live in every published version, but its prevalence is unmeasured, and
-`2.6.0` carries two defects that are live in public. Its handoff follows the tag and leads with the corpus
-measurement RFC 044 §5 says it needs.
+**`2.7.0` ships RFC 044, 046 and 047** — prepared 2026-09-25, **not yet tagged**; this paragraph becomes a
+shipped record when the tag lands. RFC 044 is the only conversion change: `<b><em>q</em>a</b>` stops losing
+its italic and printing a literal `_` (`**_q_a**`, parsing as `strong("_" "q_a")`, becomes `***q*a**`).
+Measured **0 of 424** bold openings on 42 pages of published prose, so it is real, silent and rare. RFC 046
+adds `release artifact gate` — GitHub Releases was the one channel with no published-artifact gate — and
+retires the manual consumer pass. RFC 047 moves the release checklist into the repository, executes all five
+archives on runners for their own platform, and gives the README a verified block for Linux, macOS and
+Windows. No API change.
 
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
@@ -841,7 +845,7 @@ what order, is the owner's call.
 
 | Item | State |
 |---|---|
-| **Emphasis first inside `<strong>` is lost and leaves a literal `_`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")` | **RFC 044**, accepted (owner, 2026-09-25) and deliberately held out of `2.6.0`; handoff follows that tag. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
+| ~~**Emphasis first inside `<strong>` is lost and leaves a literal `_`**~~ — **RFC 044, in `2.7.0`** — `<b><em>q</em>a</b>` → `**_q_a**`, parsing as `strong("_" "q_a")`; now `***q*a**` | **RFC 044**, accepted (owner, 2026-09-25); implemented at `6b8d961`, ships in `2.7.0`. Originally held out of `2.6.0`. Live in every published version. Trigger is narrow: emphasis as the first child, closed immediately against a word character, where CommonMark will not let an intraword `_` close. Found by the dev team's fuzzer while building an unrelated guard during RFC 043, reproduced on the published binary. Prevalence unmeasured — **zero** in the four-page corpus, so P2 until a prose-heavy corpus says otherwise |
 
 ### Recorded here because they had stopped being carried, 2026-09-24
 
@@ -877,7 +881,7 @@ anyone's memory.
 
 | Item | State |
 |---|---|
-| **The release checklist exists on one machine**, and the README gives Windows users no command the gate can verify | **RFC 047**, proposed. The `.gitignore` half — the ignore rule was per-clone, so a fresh clone could have committed the upstream correspondence — is **already fixed** |
+| ~~**The release checklist exists on one machine**, and the README gives Windows users no command the gate can verify~~ — **RFC 047, in `2.7.0`** | **RFC 047**, implemented: the checklist is tracked as `RELEASE-CHECKLIST.md` (`82fd657`) and the README carries a per-platform block that the gate executes on all five archives (`3ecaabf`, `cd7d460`). The `.gitignore` half — the ignore rule was per-clone, so a fresh clone could have committed the upstream correspondence — is **already fixed** |
 | **Checklist §1's remaining checks could be a preflight program** — the four crate versions, tree clean, `HEAD` == `origin/main`, CI green on the full SHA, the gates with their two standing explanations, the RFC moves, the CHANGELOG section | **Not started, deliberately out of RFC 047 §3.3.** It is a separate design and would have hidden inside an RFC that has a clear answer without it. The argument for it is the same as RFC 046's: a prose step performed by hand is unbounded in cost and varies with who performs it |
 | **`release artifact gate` is red on a release-prep commit**, by design — it checks published archives against the tree's README and contract | Recorded as the second standing explanation in the release checklist §1. Not a defect; it must not be explained away twice |
 
