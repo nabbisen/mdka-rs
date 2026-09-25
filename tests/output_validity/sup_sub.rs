@@ -346,16 +346,20 @@ fn subscript_marker_inside_emphasis_does_not_close_it() {
     check_both("<em>x<sub>y</sub> z</em>", r#"para(em("x_(y) z"))"#);
 }
 
-/// Found by fuzzing, and not caused by this RFC: `<b><em>q</em>a</b>` is
-/// written `**_q_a**` (RFC 037's `_` swap), whose closing `_` sits against a
-/// letter and so never closes -- a stray opener is left in the paragraph. An
+/// Found by fuzzing, and not caused by this RFC: an emphasis span whose closing
+/// `_` cannot close leaves a stray `_` opener in the paragraph, and an
 /// unescaped subscript marker glued to a word could then *close* it, eating the
 /// marker and italicising what lay between. The marker is escaped whenever an
 /// unescaped `_` earlier in the paragraph could still be waiting.
+///
+/// The original trigger, `<b><em>q</em>a</b>` (written `**_q_a**`), is fixed by
+/// RFC 044; `<b><em>q.</em>a</b>` -- an italic run ending in punctuation, which
+/// no delimiter choice can close against a letter -- still writes one, and is
+/// the input here.
 #[test]
 fn subscript_marker_cannot_close_a_stray_underscore_opener() {
-    let html = "<b><em>q</em>a</b>snake_case<sub>1/2</sub>x";
-    assert_eq!(markdown(html), "**_q_a**snake_case\\_(1/2)x\n");
+    let html = "<b><em>q.</em>a</b>snake_case<sub>1/2</sub>x";
+    assert_eq!(markdown(html), "**_q._a**snake_case\\_(1/2)x\n");
     for mode in MODES {
         let md = mdka_convert(html, &ConversionOptions::for_mode(mode));
         let tree = structure(&md, Reading::CommonMark, true);

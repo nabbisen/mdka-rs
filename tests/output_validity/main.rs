@@ -67,6 +67,7 @@ mod code_context;
 mod corpus;
 mod elements;
 mod emphasis_fidelity;
+mod emphasis_first_in_strong;
 mod escaping;
 mod field_reports;
 mod gfm;

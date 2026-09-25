@@ -63,6 +63,21 @@ use super::escape::{self, Decision, FenceScan, Head, Line, Wait};
 #[cfg(test)]
 mod tests;
 
+/// RFC 044: see [`Dest::em_guard`].
+#[derive(Clone, Copy)]
+struct EmGuard {
+    /// Offsets of the one-byte `_` opening and closing the swapped span.
+    open: usize,
+    close: usize,
+    /// Opening offset of the Bold ancestor the swap was made against: the
+    /// span whose own close settles this guard.
+    strong_open: usize,
+    /// Whether the character written right after the span's close is known.
+    decided: bool,
+    /// ... and was a letter or digit.
+    word_follows: bool,
+}
+
 /// One destination and its line state.
 struct Dest {
     buf: String,
@@ -99,6 +114,12 @@ struct Dest {
     /// span" fixed; resolved the same way [`wait`](Self::wait) is, by
     /// whatever writes next.
     flank_guard: Option<(usize, usize)>,
+    /// RFC 044: a `<strong><em>`-order `_`-swapped span that has closed, whose
+    /// closing `_` may land against a letter or digit that follows it *inside*
+    /// the strong -- where an intraword `_` cannot close, so the emphasis
+    /// would be lost and the underscore left literal. See
+    /// [`Sink::emphasis_close`] for how it is settled.
+    em_guard: Option<EmGuard>,
     /// RFC 009 addendum, 2026-09-23: the last `~~` span that closed with
     /// real delimiters, and nothing written since -- its opening offset and
     /// its closing offset (just past the closing `~~`). `~~` has no second
@@ -131,6 +152,7 @@ impl Dest {
             emphasis_opens: Vec::new(),
             last_emphasis: None,
             flank_guard: None,
+            em_guard: None,
             last_strike: None,
         }
     }
@@ -154,6 +176,18 @@ impl Dest {
     /// (whitespace, punctuation, or nothing) counts as safe: the swap
     /// stays.
     fn settle_flank(&mut self, next: Option<char>) {
+        // RFC 044: the first thing written after a swapped span closes decides
+        // whether its closing `_` would land against a word character.
+        if let Some(guard) = self.em_guard.as_mut()
+            && !guard.decided
+        {
+            if escape::class(next) == escape::Class::Word {
+                guard.decided = true;
+                guard.word_follows = true;
+            } else {
+                self.em_guard = None;
+            }
+        }
         if let Some((open, close)) = self.flank_guard.take()
             && escape::class(next) == escape::Class::Word
         {
@@ -220,7 +254,7 @@ impl Dest {
                 if self.wait.is_some() {
                     self.settle(Some(c));
                 }
-                if self.flank_guard.is_some() {
+                if self.flank_guard.is_some() || self.em_guard.is_some() {
                     self.settle_flank(Some(c));
                 }
                 self.buf.push(c);
@@ -253,7 +287,7 @@ impl Dest {
         if self.wait.is_some() {
             self.settle(Some(c));
         }
-        if self.flank_guard.is_some() {
+        if self.flank_guard.is_some() || self.em_guard.is_some() {
             self.settle_flank(Some(c));
         }
         self.buf.push(c);
@@ -918,6 +952,22 @@ impl Sink {
     /// (always punctuation), never learning what genuinely comes after.
     fn emphasis_close(&mut self, delimiter: &str, intraword_candidate: bool) {
         let dest = self.dest();
+        // RFC 044: the Bold a swapped span was made against is closing now, so
+        // everything that follows the span inside it is written. If a word
+        // character followed the span's close, and nothing between it and here
+        // is another delimiter (a second emphasis inside the Bold makes
+        // `***q*a*r***`, which reads back worse than what it replaces), the
+        // swap reverts to `*` at both ends.
+        if let Some(guard) = dest.em_guard
+            && guard.decided
+            && dest.emphasis_opens.last() == Some(&guard.strong_open)
+        {
+            dest.em_guard = None;
+            if guard.word_follows && !dest.buf[guard.close + 1..].contains(['*', '_', '~']) {
+                dest.buf.replace_range(guard.open..guard.open + 1, "*");
+                dest.buf.replace_range(guard.close..guard.close + 1, "*");
+            }
+        }
         let pending = dest
             .last_emphasis
             .and_then(|(open, len, end, was_candidate)| {
@@ -928,10 +978,41 @@ impl Sink {
         if let Some(guard) = pending {
             dest.flank_guard = Some(guard);
         }
-        dest.last_emphasis = dest
-            .emphasis_opens
-            .pop()
-            .map(|open| (open, delimiter.len(), dest.buf.len(), intraword_candidate));
+        let opened_at = dest.emphasis_opens.pop();
+        // RFC 044: this span's own close, if it is a `_`-swapped one. A closing
+        // `_` cannot close against a letter or digit that follows it, so
+        // `<b><em>q</em>a</b>` written `**_q_a**` loses the emphasis and leaves
+        // the underscore literal. The swap was chosen when the span opened,
+        // before that next character existed, so it is settled later: guard
+        // the pair, let the next write say whether a word character follows,
+        // and revert both `_` to `*` when the Bold closes (below) -- `***q*a**`
+        // reads back as `strong(em("q") "a")`.
+        //
+        // Only where `*` would do better: the character before the close must
+        // itself be a letter or digit, or a closing `*` cannot close either; and
+        // the span must not start with whitespace, where no delimiter opens
+        // (`*** a*b**` opens nothing, and would lose the Bold along with it).
+        if intraword_candidate
+            && dest.em_guard.is_none()
+            && let Some(open) = opened_at
+            && let Some(&strong_open) = dest.emphasis_opens.last()
+            && escape::class(
+                dest.buf[..dest.buf.len() - delimiter.len()]
+                    .chars()
+                    .next_back(),
+            ) == escape::Class::Word
+            && escape::class(dest.buf[open + 1..].chars().next()) != escape::Class::Whitespace
+        {
+            dest.em_guard = Some(EmGuard {
+                open,
+                close: dest.buf.len() - delimiter.len(),
+                strong_open,
+                decided: false,
+                word_follows: false,
+            });
+        }
+        dest.last_emphasis =
+            opened_at.map(|open| (open, delimiter.len(), dest.buf.len(), intraword_candidate));
     }
 
     /// Closes the emphasis `mark` records, or -- if nothing was written
