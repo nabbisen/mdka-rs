@@ -862,6 +862,14 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-25, from the `2.8.0` deprecation slice
+
+| Item | State |
+|---|---|
+| **The string form of a deprecated mode warns nobody.** `"strict".parse::<ConversionMode>()` maps silently, so a Rust caller reading the mode from config is unwarned today and breaks at `3.0` at runtime — the *worst*-served caller, not the best | **A constraint on `3.0`, recorded in RFC 041 §10.** `parse_mode` must deliberately accept-and-map or reject-with-a-message; a bare `unknown conversion mode` error tells the user their config is wrong rather than obsolete |
+| **The CLI has two warning shapes** — `mdka: warning: --mode strict …` (new) and `warning: mdka: \`--preserve-classes\` …` (existing) | **My handoff prescribed the new one without checking the old.** The new shape is the ordinary Unix form; the older one changes to match, in `2.8.0` |
+| **Node's async and file paths cannot warn about a mode** (no `Env`, not `Send`). Node file conversion is async-only, so a Node user converting files with `mode: 'strict'` is never warned | Pre-existing napi constraint, same as the inert-field warnings; documented in `usage-nodejs.md` and `modes.md`. Its own slice if ever |
+
 ### Recorded 2026-09-25, from RFC 047's platform coverage
 
 | Item | State |

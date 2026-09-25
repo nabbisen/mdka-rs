@@ -215,3 +215,31 @@ Also folded in, from the documentation audit: **`mdka_python` leaks into the Pyt
 namespace** — `dir(mdka)` exposes 14 names where 13 are documented. It belongs to this RFC's surface work,
 not to a patch.
 
+---
+
+## 10. A constraint on the `3.0` removal, found by the `2.8.0` deprecation slice
+
+**When the alias variants are removed, `parse_mode` / `FromStr` must do something deliberate with the
+strings, and it must not be a silent behaviour change.**
+
+The deprecation warns the caller who *names* `ConversionMode::Strict` — a compile warning now, a compile
+error at `3.0`, impossible to miss. It does **not** warn the caller who reads `mode = "strict"` from a
+config file: `FromStr::from_str` carries an internal `#[allow(deprecated)]` and maps the string to the
+variant silently. A library must not print, and adding a logging dependency for one notice is out of
+proportion, so `2.8.0` correctly left it.
+
+**That makes the string caller the worst-served one:** no warning at all today, and at `3.0` whatever
+`parse_mode` then does, at runtime, in production.
+
+So `3.0` must choose, and record the choice in the migration guide:
+
+- **Accept and map** — `"strict"` continues to parse as `Balanced`. Nothing breaks; the names live on in
+  string form, which partly defeats the collapse.
+- **Reject with a message that names the replacement** — `Err("conversion mode 'strict' was removed in 3.0;
+  it was an alias of 'balanced'")`. Honest, and a runtime break for callers who were never warned.
+
+**Returning a bare `Err` with the existing `unknown conversion mode: strict` text is the one unacceptable
+option**: it tells a user their config is wrong rather than that it is obsolete.
+
+The same question applies to the CLI's `--mode` and to both bindings, which parse strings too.
+
