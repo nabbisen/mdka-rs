@@ -216,7 +216,10 @@ run('every export of index.js is exported by loader.js, and is the same value', 
 run('every function declared in index.d.ts is exported by loader.js', () => {
   const dts = fs.readFileSync(path.join(__dirname, 'index.d.ts'), 'utf8')
   const declared = [...dts.matchAll(/^export declare function (\w+)/gm)].map((m) => m[1])
-  assert.ok(declared.length >= 10, `only found ${declared.length}`)
+  // A sanity floor, so an empty match cannot pass. Ten until 3.0 folded the four
+  // `…With` twins away (RFC 048 §4), six after: htmlToMarkdown, htmlToMarkdownAsync,
+  // htmlToMarkdownMany, htmlFileToMarkdown, htmlFilesToMarkdown and version.
+  assert.ok(declared.length >= 6, `only found ${declared.length}`)
   const loader = require('./loader')
   for (const name of declared) assert.equal(typeof loader[name], 'function', `${name} is not exported`)
 })

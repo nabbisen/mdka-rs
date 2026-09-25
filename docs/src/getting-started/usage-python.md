@@ -94,20 +94,24 @@ results = mdka.html_to_markdown_many_with(pages, mode=mdka.ConversionMode.Minima
 import mdka
 
 # Output to same directory: page.html → page.md
-result = mdka.html_file_to_markdown("page.html")
-print(f"{result.src} → {result.dest}")
+# Returns the path that was written, as a str.
+dest = mdka.html_file_to_markdown("page.html")
+print(f"page.html → {dest}")
 
 # Output to a specific directory
-result = mdka.html_file_to_markdown("page.html", "out/")
+dest = mdka.html_file_to_markdown("page.html", "out/")
 
 # With options
-result = mdka.html_file_to_markdown(
+dest = mdka.html_file_to_markdown(
     "page.html",
     "out/",
     mode=mdka.ConversionMode.Minimal,
     drop_interactive_shell=True,
 )
 ```
+
+A single file **fails the call**: if it cannot be read or written it raises
+`MdkaError` (`IO error: …`). There is no result object to inspect.
 
 `html_file_to_markdown_with` is the same function under the name the
 `_with` convention would predict, accepting the same keyword arguments.
@@ -120,12 +124,21 @@ import mdka
 files = ["a.html", "b.html", "c.html"]
 results = mdka.html_files_to_markdown(files, "out/")
 
+# One FileOutcome per input, in input order: src, dest, error and ok — exactly
+# one of dest and error is set, and ok says which.
 for r in results:
     if r.ok:
         print(f"{r.src} → {r.dest}")
     else:
         print(f"Error: {r.src}: {r.error}")
 ```
+
+**A failing file does not raise and does not stop the others**; its entry has
+`ok == False`. `MdkaError` is raised only if the call as a whole cannot proceed —
+the output directory cannot be created. That is the difference from
+`html_file_to_markdown`, on purpose: with one file, failing the call is the answer;
+with many, one bad file must not hide the rest. (`ConvertResult` and
+`BulkConvertResult` were removed in 3.0; `FileOutcome` is the one result type.)
 
 `html_files_to_markdown_with` is the same function under the `_with` name,
 accepting `mode` and the other conversion options.

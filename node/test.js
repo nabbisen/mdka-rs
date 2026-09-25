@@ -183,6 +183,61 @@ async function run(name, fn) {
     fs.rmSync(tmp, { recursive: true })
   })
 
+  // ── 3.0: FileOutcome, and one failing file does not abort the batch ───────
+  await run('htmlFilesToMarkdown: every entry is a FileOutcome with src, dest|error and ok', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-'))
+    const outDir = path.join(tmp, 'out')
+    const good = path.join(tmp, 'good.html')
+    const missing = path.join(tmp, 'missing.html')
+    fs.writeFileSync(good, '<h1>Good</h1>')
+
+    const [a, b] = await htmlFilesToMarkdown([good, missing], outDir)
+
+    // The outcome names its own file, so a failure needs no lookup.
+    assert.equal(a.src, good)
+    assert.equal(b.src, missing)
+    // `ok` is present in Node (it was not before 3.0) and says which of dest/error is set.
+    assert.strictEqual(a.ok, true)
+    assert.strictEqual(a.dest, path.join(outDir, 'good.md'))
+    assert.strictEqual(a.error, undefined)
+    assert.strictEqual(b.ok, false)
+    assert.strictEqual(b.dest, undefined)
+    assert.match(b.error, /^IO error: /)
+    for (const o of [a, b]) {
+      assert.strictEqual(o.ok, o.dest !== undefined, 'ok must equal (dest is set)')
+      assert.strictEqual(o.ok, o.error === undefined, 'exactly one of dest and error is set')
+    }
+    fs.rmSync(tmp, { recursive: true })
+  })
+
+  await run('htmlFilesToMarkdown: a failing file does not reject or abort the batch; survivors keep their destinations', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-'))
+    const outDir = path.join(tmp, 'out')
+    const files = ['a', 'missing', 'b'].map((n) => path.join(tmp, `${n}.html`))
+    fs.writeFileSync(files[0], '<h1>A</h1>')
+    fs.writeFileSync(files[2], '<h1>B</h1>')
+
+    const results = await htmlFilesToMarkdown(files, outDir) // must resolve, not reject
+    assert.deepEqual(results.map((r) => r.src), files, 'outcomes come back in input order')
+    assert.deepEqual(results.map((r) => r.ok), [true, false, true])
+    assert.ok(fs.existsSync(path.join(outDir, 'a.md')) && fs.existsSync(path.join(outDir, 'b.md')))
+    assert.equal(results[2].dest, path.join(outDir, 'b.md'), 'the file after the failure was still converted')
+    fs.rmSync(tmp, { recursive: true })
+  })
+
+  // What differs by arity, on purpose: one file rejects, many report per file --
+  // but a failure of the *call* (the output directory cannot be created) still
+  // rejects, since there is no per-file outcome to put it in.
+  await run('htmlFilesToMarkdown: an uncreatable outDir rejects the call', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-'))
+    const blocker = path.join(tmp, 'blocker')
+    fs.writeFileSync(blocker, 'not a directory')
+    const f = path.join(tmp, 'a.html')
+    fs.writeFileSync(f, '<h1>A</h1>')
+    await assert.rejects(htmlFilesToMarkdown([f], path.join(blocker, 'out')), /^Error: cannot create out_dir: /)
+    fs.rmSync(tmp, { recursive: true })
+  })
+
   // ── 結果サマリ ────────────────────────────────────────────────────────
   console.log(`\n${'─'.repeat(40)}`)
   console.log(`  passed: ${passed}  failed: ${failed}`)
@@ -197,15 +252,15 @@ async function run(name, fn) {
   // ── ConversionOptions / モード別テスト ───────────────────────────────────
   ; (async () => {
     const {
-      htmlToMarkdownWith, htmlToMarkdownWithAsync, htmlFilesToMarkdownWith,
+      htmlToMarkdown, htmlToMarkdownAsync, htmlFilesToMarkdown, htmlFileToMarkdown,
       htmlToMarkdownMany
     } = require('./index')
     const fs = require('fs'), path = require('path'), os = require('os')
 
     console.log('\n=== ConversionOptions / mode tests ===\n')
 
-    await run('htmlToMarkdownWith: minimal drops nav', () => {
-      const md = htmlToMarkdownWith(
+    await run('htmlToMarkdown: minimal drops nav', () => {
+      const md = htmlToMarkdown(
         '<nav><a href="/">Home</a></nav><main><p>Content</p></main>',
         { mode: 'minimal', dropInteractiveShell: true }
       )
@@ -213,8 +268,8 @@ async function run(name, fn) {
       assert.ok(md.includes('Content'), `content missing: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: balanced keeps aria', () => {
-      const md = htmlToMarkdownWith(
+    await run('htmlToMarkdown: balanced keeps aria', () => {
+      const md = htmlToMarkdown(
         '<button aria-label="close">X</button>',
         { mode: 'balanced' }
       )
@@ -222,28 +277,28 @@ async function run(name, fn) {
       assert.ok(md.includes('X'), `button text missing: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: balanced emits the heading anchor', () => {
+    await run('htmlToMarkdown: balanced emits the heading anchor', () => {
       // Previously asserted md.includes('# Title'). RFC 005 Slice B1 gave
       // preserve_ids (default true outside minimal) a real effect: it now
       // emits an anchor as the heading's own leading content, so the
       // substring '# Title' no longer appears -- '# <a id="t"></a>Title'
       // does instead. Asserting the exact string, not a weakened substring,
       // so this test keeps proving what it actually converts to.
-      const md = htmlToMarkdownWith(
+      const md = htmlToMarkdown(
         '<article aria-labelledby="t"><h1 id="t">Title</h1><p>Body</p></article>',
         { mode: 'balanced' }
       )
       assert.strictEqual(md, '# <a id="t"></a>Title\n\nBody\n', `unexpected output: ${md}`)
     })
 
-    await run('htmlToMarkdownWith: a wrapper keeps its separation in both modes', () => {
+    await run('htmlToMarkdown: a wrapper keeps its separation in both modes', () => {
       // Bare-sibling-text fixture, not a block-element fixture: neighbouring
       // blocks' own spacing dominates the output otherwise. Minimal unwraps
       // the wrapper and balanced renders it; RFC 036 §5.2 / slice 036d made
       // the two write the same bytes.
       const html = 'Before<div class="wrap"><span>inner</span></div>After'
       for (const mode of ['balanced', 'minimal']) {
-        assert.strictEqual(htmlToMarkdownWith(html, { mode }), 'Before\n\ninner\n\nAfter\n', mode)
+        assert.strictEqual(htmlToMarkdown(html, { mode }), 'Before\n\ninner\n\nAfter\n', mode)
       }
     })
 
@@ -256,17 +311,17 @@ async function run(name, fn) {
       const { execFileSync } = require('child_process')
       const indexPath = path.resolve(__dirname, 'index.js')
       const script = `
-        const { htmlToMarkdownWith } = require(${JSON.stringify(indexPath)})
+        const { htmlToMarkdown } = require(${JSON.stringify(indexPath)})
         const warnings = []
         process.on('warning', (w) => warnings.push({ name: w.name, message: w.message }))
-        htmlToMarkdownWith('<p class="x">Hi</p>', ${optionsLiteral})
+        htmlToMarkdown('<p class="x">Hi</p>', ${optionsLiteral})
         setImmediate(() => { process.stdout.write(JSON.stringify(warnings)) })
       `
       const out = execFileSync(process.execPath, ['-e', script], { encoding: 'utf8' })
       return JSON.parse(out)
     }
 
-    await run('htmlToMarkdownWith: nothing warns any more -- no options, balanced, minimal', () => {
+    await run('htmlToMarkdown: nothing warns any more -- no options, balanced, minimal', () => {
       for (const literal of ['undefined', '{}', "{ mode: 'balanced' }", "{ mode: 'minimal' }"]) {
         const warnings = runWarningCheck(literal)
         assert.equal(warnings.length, 0, `${literal}: expected no warnings, got ${JSON.stringify(warnings)}`)
@@ -280,12 +335,12 @@ async function run(name, fn) {
     for (const removed of ['strict', 'semantic', 'preserve']) {
       const message = `conversion mode '${removed}' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'.`
 
-      await run(`htmlToMarkdownWith: mode '${removed}' throws the removed message`, () => {
-        assert.throws(() => htmlToMarkdownWith('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
+      await run(`htmlToMarkdown: mode '${removed}' throws the removed message`, () => {
+        assert.throws(() => htmlToMarkdown('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
       })
 
-      await run(`htmlToMarkdownWithAsync: mode '${removed}' rejects with the removed message`, async () => {
-        await assert.rejects(htmlToMarkdownWithAsync('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
+      await run(`htmlToMarkdownAsync: mode '${removed}' rejects with the removed message`, async () => {
+        await assert.rejects(htmlToMarkdownAsync('<p>Hi</p>', { mode: removed }), { name: 'Error', message })
       })
     }
 
@@ -296,30 +351,79 @@ async function run(name, fn) {
       )
     })
 
-    await run('htmlToMarkdownWith: a removed mode is recognised in any case', () => {
+    await run('htmlToMarkdown: a removed mode is recognised in any case', () => {
       assert.throws(
-        () => htmlToMarkdownWith('<p>Hi</p>', { mode: 'STRICT' }),
+        () => htmlToMarkdown('<p>Hi</p>', { mode: 'STRICT' }),
         { name: 'Error', message: /^conversion mode 'strict' was removed in 3\.0/ }
       )
     })
 
-    // Known gap, pinned so it is a decision and not a discovery: the six
-    // options removed in 3.0 are not on `JsConversionOptions` any more, so a
-    // TypeScript caller gets a compile error -- but a plain JavaScript caller
-    // who still passes one is not told: napi ignores unknown fields. It could
-    // never change the output, so nothing changes; nothing warns either.
-    await run('htmlToMarkdownWith: a removed option passed from JavaScript is ignored, silently', () => {
-      const html = '<p class="x">Hi</p>'
-      const plain = htmlToMarkdownWith(html, { mode: 'balanced' })
-      for (const option of ['preserveClasses', 'preserveDataAttrs', 'preserveAriaAttrs', 'unwrapUnknownWrappers']) {
-        assert.strictEqual(htmlToMarkdownWith(html, { mode: 'balanced', [option]: true }), plain, option)
-      }
-      const warnings = runWarningCheck("{ mode: 'balanced', preserveClasses: true, unwrapUnknownWrappers: true }")
-      assert.equal(warnings.length, 0, `expected no warnings, got ${JSON.stringify(warnings)}`)
+    // 3.0 (RFC 048 §4.2): napi drops object keys it has no field for, which after
+    // the removals would have left `{ preserveClasses: true }` from plain
+    // JavaScript with no error and no warning, while TypeScript rejects it,
+    // Python raises TypeError and the CLI exits 1. An unrecognised key is now an
+    // error that names it, and a key removed in 3.0 says *removed*, as a removed
+    // mode name does. Checked as the argument crosses, so it holds for every
+    // function that takes options -- including the async ones.
+    const REMOVED_OPTIONS = {
+      preserveClasses: 'Markdown has no attribute syntax, so it never changed the output',
+      preserveDataAttrs: 'Markdown has no attribute syntax, so it never changed the output',
+      preserveAriaAttrs: 'Markdown has no attribute syntax, so it never changed the output',
+      preserveUnknownAttrs: 'Markdown has no attribute syntax, so it never changed the output',
+      dropPresentationAttrs: 'Markdown has no attribute syntax, so it never changed the output',
+      unwrapUnknownWrappers: 'it could not change the output',
+    }
+    for (const [option, why] of Object.entries(REMOVED_OPTIONS)) {
+      await run(`htmlToMarkdown: removed option '${option}' throws, naming it, and says removed`, () => {
+        assert.throws(
+          () => htmlToMarkdown('<p>Hi</p>', { mode: 'balanced', [option]: true }),
+          {
+            name: 'Error',
+            message: `option '${option}' was removed in 3.0; ${why}. Remove it: the output is the same without it.`
+          }
+        )
+      })
+    }
+
+    await run('htmlToMarkdown: an unknown option throws, naming it and the valid ones', () => {
+      assert.throws(
+        () => htmlToMarkdown('<p>Hi</p>', { mdoe: 'minimal' }),
+        { name: 'Error', message: "unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell" }
+      )
     })
 
-    await run('htmlToMarkdownWithAsync: mode option respected', async () => {
-      const md = await htmlToMarkdownWithAsync(
+    await run('every options-taking function rejects a bad key, sync or async', async () => {
+      const bad = { preserveClasses: true }
+      const removed = /option 'preserveClasses' was removed in 3\.0/
+      assert.throws(() => htmlToMarkdown('<p>Hi</p>', bad), removed)
+      assert.throws(() => htmlToMarkdownMany(['<p>Hi</p>'], bad), removed)
+      await assert.rejects(htmlToMarkdownAsync('<p>Hi</p>', bad), removed)
+      await assert.rejects(htmlFileToMarkdown('/no/such/file.html', null, bad), removed)
+      await assert.rejects(htmlFilesToMarkdown([], os.tmpdir(), bad), removed)
+    })
+
+    await run('the three valid keys, null and undefined are all accepted', () => {
+      const html = '<nav>n</nav><h1 id="x">T</h1>'
+      assert.strictEqual(htmlToMarkdown(html, null), htmlToMarkdown(html))
+      assert.strictEqual(htmlToMarkdown(html, undefined), htmlToMarkdown(html))
+      assert.strictEqual(htmlToMarkdown(html, {}), htmlToMarkdown(html))
+      assert.doesNotThrow(() => htmlToMarkdown(html, { mode: 'minimal', preserveIds: false, dropInteractiveShell: true }))
+    })
+
+    // 3.0 (RFC 048 §4): Node folds `With` away -- JavaScript has optional
+    // arguments, so `htmlToMarkdown(html, options?)` is the idiom. Rust and
+    // Python keep their `_with` pairs on purpose.
+    await run('no `…With` function is exported, and every options-taking one takes them optionally', () => {
+      const exported = Object.keys(require('./index'))
+      assert.deepStrictEqual(exported.filter((n) => /With/.test(n)), [], 'a …With name is still exported')
+      for (const gone of ['htmlToMarkdownWith', 'htmlToMarkdownWithAsync', 'htmlFileToMarkdownWith', 'htmlFilesToMarkdownWith']) {
+        assert.strictEqual(require('./index')[gone], undefined, gone)
+      }
+      assert.strictEqual(htmlToMarkdown('<p>Hi</p>'), htmlToMarkdown('<p>Hi</p>', { mode: 'balanced' }))
+    })
+
+    await run('htmlToMarkdownAsync: mode option respected', async () => {
+      const md = await htmlToMarkdownAsync(
         '<nav>nav</nav><p>Main</p>',
         { mode: 'minimal', dropInteractiveShell: true }
       )
@@ -327,13 +431,13 @@ async function run(name, fn) {
       assert.ok(!md.includes('nav'), `nav leaked: ${md}`)
     })
 
-    await run('htmlFilesToMarkdownWith: minimal mode', async () => {
+    await run('htmlFilesToMarkdown: minimal mode', async () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-mode-'))
       const out = path.join(tmp, 'out')
       fs.mkdirSync(out)
       const f = path.join(tmp, 'test.html')
       fs.writeFileSync(f, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
-      const results = await htmlFilesToMarkdownWith([f], out, {
+      const results = await htmlFilesToMarkdown([f], out, {
         mode: 'minimal', dropInteractiveShell: true
       })
       assert.equal(results.length, 1)
@@ -348,11 +452,11 @@ async function run(name, fn) {
       assert.deepEqual(many, inputs.map((h) => htmlToMarkdown(h)))
     })
 
-    await run('htmlToMarkdownMany: options apply the same as htmlToMarkdownWith', () => {
+    await run('htmlToMarkdownMany: options apply the same as htmlToMarkdown', () => {
       const inputs = ['<nav><a href="/">Home</a></nav><main><p>Content</p></main>']
       const opts = { mode: 'minimal', dropInteractiveShell: true }
       const many = htmlToMarkdownMany(inputs, opts)
-      assert.deepEqual(many, inputs.map((h) => htmlToMarkdownWith(h, opts)))
+      assert.deepEqual(many, inputs.map((h) => htmlToMarkdown(h, opts)))
     })
 
     await run('htmlToMarkdownMany: empty input returns empty array', () => {
@@ -362,7 +466,7 @@ async function run(name, fn) {
     await run('ConversionOptions: an unknown mode is a hard error, not a fallback', () => {
       assert.throws(
         () => {
-          const md = htmlToMarkdownWith('<h1>Hi</h1>', { mode: 'nonexistent' })
+          const md = htmlToMarkdown('<h1>Hi</h1>', { mode: 'nonexistent' })
         },
         {
           name: 'Error',
@@ -378,7 +482,7 @@ async function run(name, fn) {
 
   // ── htmlFileToMarkdown テスト ──────────────────────────────────────────────
   ; (async () => {
-    const { htmlFileToMarkdown, htmlFileToMarkdownWith } = require('./index')
+    const { htmlFileToMarkdown } = require('./index')
     const fs = require('fs'), path = require('path'), os = require('os')
 
     console.log('\n=== htmlFileToMarkdown tests ===\n')
@@ -388,11 +492,12 @@ async function run(name, fn) {
       const src = path.join(tmp, 'page.html')
       fs.writeFileSync(src, '<h1>Single File</h1><p>Content</p>')
 
-      const r = await htmlFileToMarkdown(src)
-      assert.ok(r.src, 'src missing')
-      assert.ok(r.dest, 'dest missing')
+      // 3.0: a single file resolves to the destination path -- a string, not an
+      // object with an `error` field that could never be set.
+      const dest = await htmlFileToMarkdown(src)
+      assert.equal(typeof dest, 'string', `expected the destination path, got ${JSON.stringify(dest)}`)
       const expectedDest = path.join(tmp, 'page.md')
-      assert.equal(r.dest, expectedDest, `expected ${expectedDest}, got ${r.dest}`)
+      assert.equal(dest, expectedDest, `expected ${expectedDest}, got ${dest}`)
       assert.ok(fs.existsSync(expectedDest), 'output file not created')
       const content = fs.readFileSync(expectedDest, 'utf8')
       assert.ok(content.includes('# Single File'), `got: ${content}`)
@@ -406,31 +511,36 @@ async function run(name, fn) {
       const src = path.join(tmp, 'article.html')
       fs.writeFileSync(src, '<h2>Article</h2><p>Body</p>')
 
-      const r = await htmlFileToMarkdown(src, outDir)
-      assert.equal(r.dest, path.join(outDir, 'article.md'))
-      const content = fs.readFileSync(r.dest, 'utf8')
+      const dest = await htmlFileToMarkdown(src, outDir)
+      assert.equal(dest, path.join(outDir, 'article.md'))
+      const content = fs.readFileSync(dest, 'utf8')
       assert.ok(content.includes('## Article'), `got: ${content}`)
       fs.rmSync(tmp, { recursive: true })
     })
 
-    await run('htmlFileToMarkdown: nonexistent file rejects', async () => {
-      try {
-        await htmlFileToMarkdown('/no/such/file.html')
-        assert.fail('should have thrown')
-      } catch (e) {
-        assert.ok(e instanceof Error, `expected Error, got ${e}`)
-      }
+    // 3.0: a single file fails *the call*, through JavaScript's own channel -- a
+    // rejection -- not through a result object. (The bulk function reports per file.)
+    await run('htmlFileToMarkdown: a nonexistent file rejects with an Error naming the IO failure', async () => {
+      await assert.rejects(
+        htmlFileToMarkdown('/no/such/file.html'),
+        (e) => {
+          assert.ok(e instanceof Error, `expected Error, got ${e}`)
+          assert.match(e.message, /^IO error: /)
+          return true
+        }
+      )
+      await assert.rejects(htmlFileToMarkdown('/no/such/file.html', null, { mode: 'minimal' }), /^Error: IO error: /)
     })
 
-    await run('htmlFileToMarkdownWith: mode option', async () => {
+    await run('htmlFileToMarkdown: mode option', async () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mdka-single-'))
       const src = path.join(tmp, 'spa.html')
       fs.writeFileSync(src, '<nav>nav</nav><h1>Title</h1><p>Body</p>')
 
-      const r = await htmlFileToMarkdownWith(src, null, {
+      const dest = await htmlFileToMarkdown(src, null, {
         mode: 'minimal', dropInteractiveShell: true
       })
-      const content = fs.readFileSync(r.dest, 'utf8')
+      const content = fs.readFileSync(dest, 'utf8')
       assert.ok(content.includes('# Title'), `title missing: ${content}`)
       assert.ok(!content.includes('nav'), `nav leaked: ${content}`)
       fs.rmSync(tmp, { recursive: true })
@@ -445,10 +555,10 @@ async function run(name, fn) {
       fs.writeFileSync(src, '<h1>Hello</h1><p>World <strong>bold</strong></p>')
 
       const { htmlFilesToMarkdown } = require('./index')
-      const r1 = await htmlFileToMarkdown(src, out1)
+      const d1 = await htmlFileToMarkdown(src, out1)
       const results = await htmlFilesToMarkdown([src], out2)
 
-      const c1 = fs.readFileSync(r1.dest, 'utf8')
+      const c1 = fs.readFileSync(d1, 'utf8')
       const c2 = fs.readFileSync(results[0].dest, 'utf8')
       assert.equal(c1, c2, `single vs bulk output mismatch:\n${c1}\nvs\n${c2}`)
       fs.rmSync(tmp, { recursive: true })

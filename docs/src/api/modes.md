@@ -36,8 +36,8 @@ configuration, not a wrong one:
 
 | Surface | What happens |
 |---|---|
-| Rust, `"strict".parse::<ConversionMode>()` | `Err("conversion mode 'strict' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'.")`. The variants `ConversionMode::Strict`, `Semantic` and `Preserve` no longer exist, so naming one is a compile error. `ConversionMode::parse_mode` returns `None`, as it does for any name it does not accept |
-| Node.js | `htmlToMarkdownWith`, `htmlToMarkdownMany` **throw** and the `Async` functions **reject** with the same message |
+| Rust, `"strict".parse::<ConversionMode>()` | `Err("conversion mode 'strict' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'.")`. The variants `ConversionMode::Strict`, `Semantic` and `Preserve` no longer exist, so naming one is a compile error. `ConversionMode::parse_mode` returns `None` and no message, as it does for any name it does not accept — which is why it is **deprecated since 3.0.0** in favour of `str::parse`, which reports why a name was rejected |
+| Node.js | `htmlToMarkdown` and `htmlToMarkdownMany` **throw**, and `htmlToMarkdownAsync` and the file functions **reject**, with the same message |
 | Python | `ConversionMode.Strict`, `Semantic` and `Preserve` do not exist: `AttributeError`. A mode is never a string in Python, so there is no string form |
 | CLI | `mdka --mode strict` exits with status 1 and prints `error: conversion mode 'strict' was removed in 3.0; it was an alias of 'balanced'. Use 'balanced'.` on stderr |
 

@@ -577,12 +577,8 @@ if (!nativeBinding) {
 
 module.exports = nativeBinding
 module.exports.htmlFilesToMarkdown = nativeBinding.htmlFilesToMarkdown
-module.exports.htmlFilesToMarkdownWith = nativeBinding.htmlFilesToMarkdownWith
 module.exports.htmlFileToMarkdown = nativeBinding.htmlFileToMarkdown
-module.exports.htmlFileToMarkdownWith = nativeBinding.htmlFileToMarkdownWith
 module.exports.htmlToMarkdown = nativeBinding.htmlToMarkdown
 module.exports.htmlToMarkdownAsync = nativeBinding.htmlToMarkdownAsync
 module.exports.htmlToMarkdownMany = nativeBinding.htmlToMarkdownMany
-module.exports.htmlToMarkdownWith = nativeBinding.htmlToMarkdownWith
-module.exports.htmlToMarkdownWithAsync = nativeBinding.htmlToMarkdownWithAsync
 module.exports.version = nativeBinding.version

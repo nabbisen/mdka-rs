@@ -42,15 +42,28 @@ pub enum MdkaError {
     Io(#[from] std::io::Error),
 }
 
-// ── Conversion result type ─────────────────────────────────────────────────
+// ── Bulk conversion outcome ────────────────────────────────────────────────
 
-/// Result of a file conversion: the input path and the output path.
-#[derive(Debug, Clone)]
-pub struct ConvertResult {
-    /// Path of the input file that was converted.
+/// What happened to one file in a bulk conversion.
+///
+/// The distinction that shapes this type is *can it fail*, not *one or many*.
+/// A string conversion cannot fail, so it returns a string. A single file can,
+/// and the caller asked about exactly one thing, so failing the call is right:
+/// [`html_file_to_markdown`] returns the destination path or an error. Many
+/// files can each fail, and one failure must not abort the batch, so each file
+/// gets its own outcome -- and the outcome says which file it belongs to, which
+/// is why it carries `src`.
+///
+/// `result` is `Ok` with the path that was written, or `Err` with why not: exactly
+/// one of the two, which the type expresses. (The Node.js and Python bindings
+/// flatten it to `src`, `dest`, `error` and `ok`, since neither can export a
+/// Rust `Result`.)
+#[derive(Debug)]
+pub struct FileOutcome {
+    /// The input path, as it was passed in.
     pub src: PathBuf,
-    /// Path of the output file that was written.
-    pub dest: PathBuf,
+    /// The output path that was written, or the error that stopped this file.
+    pub result: Result<PathBuf, MdkaError>,
 }
 
 // ── String conversion API ──────────────────────────────────────────────────
@@ -163,27 +176,31 @@ pub fn version() -> &'static str {
 ///
 /// ```rust,no_run
 /// // writes index.md into the same directory
-/// let result = mdka::html_file_to_markdown("index.html", None::<&str>).unwrap();
+/// let dest = mdka::html_file_to_markdown("index.html", None::<&str>).unwrap();
 ///
 /// // writes into a different directory
-/// let result = mdka::html_file_to_markdown("index.html", Some("out/")).unwrap();
-/// println!("{} -> {}", result.src.display(), result.dest.display());
+/// let dest = mdka::html_file_to_markdown("index.html", Some("out/")).unwrap();
+/// println!("wrote {}", dest.display());
 /// ```
+///
+/// Returns the path that was written. The caller already has the input path,
+/// and a failure is the `Err`, so there is nothing else to return.
 pub fn html_file_to_markdown(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
-) -> Result<ConvertResult, MdkaError> {
+) -> Result<PathBuf, MdkaError> {
     html_file_to_markdown_with(path, out_dir, &ConversionOptions::default())
 }
 
 /// Converts a single HTML file to Markdown with the given [`ConversionOptions`].
 ///
 /// When `out_dir` is `None`, the output is written next to the input file.
+/// Returns the path that was written.
 pub fn html_file_to_markdown_with(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
     opts: &ConversionOptions,
-) -> Result<ConvertResult, MdkaError> {
+) -> Result<PathBuf, MdkaError> {
     let path = path.as_ref();
     let resolved_out_dir = match out_dir {
         Some(d) => d.as_ref().to_path_buf(),
@@ -192,11 +209,7 @@ pub fn html_file_to_markdown_with(
             .unwrap_or_else(|| Path::new("."))
             .to_path_buf(),
     };
-    let dest = do_convert_file(path, &resolved_out_dir, opts)?;
-    Ok(ConvertResult {
-        src: path.to_path_buf(),
-        dest,
-    })
+    do_convert_file(path, &resolved_out_dir, opts)
 }
 
 // ── Bulk file conversion API ────────────────────────────────────────────────
@@ -206,10 +219,9 @@ pub fn html_file_to_markdown_with(
 /// default); sequential otherwise -- this function exists either way (RFC
 /// 039 §2.4, §3 A4): opting out of parallelism changes only how the work is
 /// done, never which functions are available.
-pub fn html_files_to_markdown<'a, P>(
-    paths: &'a [P],
-    out_dir: &Path,
-) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+///
+/// Returns one [`FileOutcome`] per input, in input order.
+pub fn html_files_to_markdown<P>(paths: &[P], out_dir: &Path) -> Vec<FileOutcome>
 where
     P: AsRef<Path> + Sync,
 {
@@ -230,11 +242,11 @@ where
 /// win, silently destroying the other inputs' content -- a rule the
 /// sequential path honours identically, not merely as a side effect of
 /// running in order.
-pub fn html_files_to_markdown_with<'a, P>(
-    paths: &'a [P],
+pub fn html_files_to_markdown_with<P>(
+    paths: &[P],
     out_dir: &Path,
     opts: &ConversionOptions,
-) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+) -> Vec<FileOutcome>
 where
     P: AsRef<Path> + Sync,
 {
@@ -288,7 +300,10 @@ where
                     Some(err) => Err(err),
                     None => do_convert_file(path.as_ref(), out_dir, opts),
                 };
-                (path, result)
+                FileOutcome {
+                    src: path.as_ref().to_path_buf(),
+                    result,
+                }
             })
             .collect()
     }
@@ -302,7 +317,10 @@ where
                     Some(err) => Err(err),
                     None => do_convert_file(path.as_ref(), out_dir, opts),
                 };
-                (path, result)
+                FileOutcome {
+                    src: path.as_ref().to_path_buf(),
+                    result,
+                }
             })
             .collect()
     }

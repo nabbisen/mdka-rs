@@ -38,7 +38,18 @@ impl ConversionMode {
     /// Parses a mode from a string, case-insensitively.
     ///
     /// `std::str::FromStr` is implemented as well, so
-    /// `"balanced".parse::<ConversionMode>()` works too.
+    /// `"balanced".parse::<ConversionMode>()` works too -- and **that is the one
+    /// to use**: it reports *why* a name was rejected, including that a mode
+    /// removed in 3.0 (`"strict"`, `"semantic"`, `"preserve"`) was removed rather
+    /// than never existed. This function discards that message and answers `None`
+    /// for both.
+    ///
+    /// Deprecated since 3.0.0. It was never warned about before, so it is not
+    /// removed in this release.
+    #[deprecated(
+        since = "3.0.0",
+        note = "use `str::parse`, which reports why a name was rejected; `parse_mode` discards that message"
+    )]
     pub fn parse_mode(s: &str) -> Option<Self> {
         s.parse().ok()
     }

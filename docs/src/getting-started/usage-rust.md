@@ -89,11 +89,11 @@ use mdka::html_file_to_markdown;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Output goes to the same directory as the input: page.html → page.md
-    let result = html_file_to_markdown("page.html", None::<&str>)?;
-    println!("{} → {}", result.src.display(), result.dest.display());
+    let dest = html_file_to_markdown("page.html", None::<&str>)?;
+    println!("page.html → {}", dest.display());
 
     // Output goes to a specific directory
-    let result = html_file_to_markdown("page.html", Some("out/"))?;
+    let dest = html_file_to_markdown("page.html", Some("out/"))?;
     Ok(())
 }
 ```
@@ -109,15 +109,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = Path::new("out/");
     std::fs::create_dir_all(out_dir)?;
 
-    for (src, result) in html_files_to_markdown(&files, out_dir) {
-        match result {
-            Ok(dest) => println!("{} → {}", src, dest.display()),
+    // One `FileOutcome` per input, in input order: a failing file does not stop
+    // the others, and the outcome names the file it belongs to.
+    for outcome in html_files_to_markdown(&files, out_dir) {
+        let src = outcome.src.display();
+        match outcome.result {
+            Ok(dest) => println!("{src} → {}", dest.display()),
             Err(e)   => eprintln!("Error: {src}: {e}"),
         }
     }
     Ok(())
 }
 ```
+
+A single file returns the destination path or an error; only the bulk function
+reports per file, because one failure must not hide the rest.
 
 Conversion runs in parallel using [rayon](https://crates.io/crates/rayon).
 The number of threads defaults to the number of logical CPU cores.
@@ -152,7 +158,7 @@ so. See [Conversion Modes](../api/modes.md) for why.
 use mdka::{html_file_to_markdown, MdkaError};
 
 match html_file_to_markdown("missing.html", None::<&str>) {
-    Ok(result) => println!("→ {}", result.dest.display()),
+    Ok(dest) => println!("→ {}", dest.display()),
     Err(MdkaError::Io(e)) => eprintln!("IO error: {e}"),
 }
 ```

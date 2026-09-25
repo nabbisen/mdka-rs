@@ -48,20 +48,23 @@ main()
 
 ## Conversion with Options
 
+Every Node.js function takes its options as an optional last argument — there is no
+separate `…With` function (they were removed in 3.0):
+
 ```js
-const { htmlToMarkdownWith, htmlToMarkdownWithAsync } = require('mdka')
+const { htmlToMarkdown, htmlToMarkdownAsync } = require('mdka')
 
 const html = '<nav>menu</nav><h1>Title</h1><p>Body</p>'
 
 // Strip nav/header/footer — useful for content extraction
-const md = htmlToMarkdownWith(html, {
+const md = htmlToMarkdown(html, {
   mode: 'minimal',
   dropInteractiveShell: true,
 })
 
 // Async version
 async function main() {
-  const mdAsync = await htmlToMarkdownWithAsync(html, { mode: 'balanced' })
+  const mdAsync = await htmlToMarkdownAsync(html, { mode: 'balanced' })
   console.log(mdAsync)
 }
 main()
@@ -69,7 +72,7 @@ main()
 
 Available mode strings: `"balanced"` (default) and `"minimal"`. `"strict"`,
 `"semantic"` and `"preserve"` were aliases of `"balanced"` and were removed in
-3.0: passing one **throws** (or, from an `Async` function, **rejects**) with
+3.0: passing one **throws** (or, from `htmlToMarkdownAsync` and the file functions, **rejects**) with
 `conversion mode 'strict' was removed in 3.0; it was an alias of 'balanced'. Use
 'balanced'.` — see [Conversion Modes](../api/modes.md).
 
@@ -82,7 +85,7 @@ const pages = ['<h1>A</h1>', '<p>B</p>', '<ul><li>C</li></ul>']
 const results = htmlToMarkdownMany(pages)
 // ['# A\n', 'B\n', '- C\n']
 
-// With options — the same shape as htmlToMarkdownWith's
+// With options — the same shape as htmlToMarkdown's
 const withOpts = htmlToMarkdownMany(pages, { mode: 'minimal' })
 ```
 
@@ -91,18 +94,19 @@ Each input is converted independently and the results keep the input order.
 ## Single File Conversion
 
 ```js
-const { htmlFileToMarkdown, htmlFileToMarkdownWith } = require('mdka')
+const { htmlFileToMarkdown } = require('mdka')
 
 async function main() {
   // Output to same directory: page.html → page.md
-  const sameDir = await htmlFileToMarkdown('page.html')
-  console.log(`${sameDir.src} → ${sameDir.dest}`)
+  // Resolves to the path that was written — a string.
+  const dest = await htmlFileToMarkdown('page.html')
+  console.log(`page.html → ${dest}`)
 
   // Output to specific directory
   const outDir = await htmlFileToMarkdown('page.html', 'out/')
 
-  // With options
-  const withOpts = await htmlFileToMarkdownWith('page.html', 'out/', {
+  // With options (outDir may be null to keep the default)
+  const withOpts = await htmlFileToMarkdown('page.html', 'out/', {
     mode: 'minimal',
     dropInteractiveShell: true,
   })
@@ -110,33 +114,44 @@ async function main() {
 main()
 ```
 
+A single file **fails the call**: if it cannot be read or written, the promise
+**rejects** with an `Error` (`IO error: …`). There is no result object to inspect.
+
 ## Bulk Parallel Conversion
 
 ```js
-const { htmlFilesToMarkdown, htmlFilesToMarkdownWith } = require('mdka')
+const { htmlFilesToMarkdown } = require('mdka')
 
 const files = ['a.html', 'b.html', 'c.html']
 
 async function main() {
   const results = await htmlFilesToMarkdown(files, 'out/')
 
+  // One FileOutcome per input, in input order: src, ok, and exactly one of
+  // dest (when ok) and error (when not).
   for (const r of results) {
-    if (r.error) console.error(`${r.src}: ${r.error}`)
-    else         console.log(`${r.src} → ${r.dest}`)
+    if (r.ok) console.log(`${r.src} → ${r.dest}`)
+    else      console.error(`${r.src}: ${r.error}`)
   }
 
   // With options
-  const withOpts = await htmlFilesToMarkdownWith(files, 'out/', {
+  const withOpts = await htmlFilesToMarkdown(files, 'out/', {
     mode: 'minimal',
   })
 }
 main()
 ```
 
+**A failing file does not reject the promise and does not stop the others**; its entry
+has `ok: false`. The promise rejects only if the call as a whole cannot proceed —
+the output directory cannot be created. That is the difference from
+`htmlFileToMarkdown`, on purpose: with one file, failing the call is the answer; with
+many, one bad file must not hide the rest.
+
 Two inputs whose output names collide — `a/index.html` and `b/index.html` both
 becoming `out/index.md` — are not both converted. The first in the array wins
-and each later one comes back with `error` set, rather than silently
-overwriting.
+and each later one comes back with `ok: false` and `error` set, rather than
+silently overwriting.
 
 **Four options were removed in 3.0:** `preserveClasses`, `preserveDataAttrs`,
 `preserveAriaAttrs` and `unwrapUnknownWrappers`. None of them ever changed the
@@ -147,12 +162,15 @@ TS2353: Object literal may only specify known properties, and
 'preserveClasses' does not exist in type 'JsConversionOptions'.
 ```
 
-**In plain JavaScript it is not an error and not a warning: it is ignored.** Nothing
-tells you an option you still pass is gone, so search your code for these four
-names. The output is the same with or without them.
+**In plain JavaScript it is an error too, from 3.0.** An option key that is not
+recognised is rejected with a message that **names it** — a key removed in 3.0 says
+`option 'preserveClasses' was removed in 3.0; …` and a misspelt one says
+`unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell`. The
+synchronous functions throw it and the Promise-returning ones reject with it. (Until
+3.0 napi silently dropped unknown keys, so a removed option that was still passed
+told you nothing.)
 
-`JsConversionOptions` now has three fields: `mode`, `preserveIds` and
-`dropInteractiveShell`.
+`JsConversionOptions` has three fields: `mode`, `preserveIds` and `dropInteractiveShell`.
 
 ## Package Version
 
@@ -168,13 +186,12 @@ Type definitions are bundled. No `@types/` package is needed:
 ```ts
 import {
   htmlToMarkdown,
-  htmlToMarkdownWith,
   htmlToMarkdownAsync,
   htmlToMarkdownMany,
   htmlFileToMarkdown,
   htmlFilesToMarkdown,
   type JsConversionOptions,
-  type ConvertResult,
+  type FileOutcome,
 } from 'mdka'
 
 const html: string = '<h1>Title</h1>'
@@ -183,7 +200,7 @@ const opts: JsConversionOptions = {
   mode: 'minimal',
   dropInteractiveShell: true,
 }
-const md: string = htmlToMarkdownWith(html, opts)
+const md: string = htmlToMarkdown(html, opts)
 ```
 
 The options type is exported as **`JsConversionOptions`**, not

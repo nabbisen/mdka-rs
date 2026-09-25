@@ -6,9 +6,8 @@ Checked against the built module in CI (`python -m mypy.stubtest mdka`).
 """
 
 from .mdka_python import (
-    BulkConvertResult as BulkConvertResult,
     ConversionMode as ConversionMode,
-    ConvertResult as ConvertResult,
+    FileOutcome as FileOutcome,
     MdkaError as MdkaError,
     html_file_to_markdown as html_file_to_markdown,
     html_file_to_markdown_with as html_file_to_markdown_with,
@@ -32,8 +31,7 @@ __all__ = [
     "html_files_to_markdown",
     "html_files_to_markdown_with",
     "ConversionMode",
-    "ConvertResult",
-    "BulkConvertResult",
+    "FileOutcome",
     "MdkaError",
     "version",
 ]

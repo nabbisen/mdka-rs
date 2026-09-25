@@ -5,7 +5,7 @@ mdka Python バインディング テストスイート (pytest)
   - html_to_markdown    : 全主要タグ・エスケープ・エッジケース
   - html_to_markdown_many : 並列変換・順序保証
   - html_files_to_markdown: ファイル変換・エラーハンドリング
-  - ConvertResult        : ok プロパティ・repr
+  - FileOutcome          : ok プロパティ・repr
   - MdkaError            : 例外送出
   - version              : バージョン文字列
 """
@@ -26,8 +26,7 @@ from mdka import (
     html_files_to_markdown,
     html_files_to_markdown_with,
     ConversionMode,
-    ConvertResult,
-    BulkConvertResult,
+    FileOutcome,
     MdkaError,
     version,
 )
@@ -379,29 +378,67 @@ def test_files_with_error_result(tmp_path):
     assert results[0].error is not None
 
 
-# ─── BulkConvertResult ───────────────────────────────────────────────────────────
+# ─── FileOutcome ─────────────────────────────────────────────────────────────
 
-def test_convert_result_ok_property(tmp_path):
+def test_file_outcome_ok_property(tmp_path):
     src = tmp_path / "x.html"
     src.write_text("<p>x</p>")
     results = html_files_to_markdown([str(src)], str(tmp_path))
     r = results[0]
+    assert isinstance(r, FileOutcome)
     assert r.ok is True
 
-def test_convert_result_repr(tmp_path):
+def test_file_outcome_has_exactly_one_of_dest_and_error(tmp_path):
+    good = tmp_path / "good.html"
+    good.write_text("<p>x</p>")
+    ok, bad = html_files_to_markdown([str(good), str(tmp_path / "ghost.html")], str(tmp_path / "out"))
+    assert ok.ok is True and ok.dest is not None and ok.error is None
+    assert bad.ok is False and bad.dest is None and isinstance(bad.error, str)
+    for o in (ok, bad):
+        assert o.ok == (o.dest is not None)
+        assert o.ok == (o.error is None)
+
+def test_file_outcome_names_its_own_file(tmp_path):
+    # The outcome says which file it belongs to, so a failure needs no lookup.
+    good = tmp_path / "good.html"
+    good.write_text("<p>x</p>")
+    missing = str(tmp_path / "missing.html")
+    results = html_files_to_markdown([str(good), missing], str(tmp_path / "out"))
+    assert [r.src for r in results] == [str(good), missing]
+
+def test_file_outcome_repr_shows_all_four_fields_in_python_form(tmp_path):
+    # RFC 048 criterion 11. It used to print a Rust Option -- error=Some("...") --
+    # and omit dest and ok entirely.
     src = tmp_path / "r.html"
     src.write_text("<p>r</p>")
-    results = html_files_to_markdown([str(src)], str(tmp_path))
-    r = results[0]
-    rep = repr(r)
-    assert "BulkConvertResult" in rep
-    assert "src=" in rep
+    ok = html_files_to_markdown([str(src)], str(tmp_path / "out"))[0]
+    assert repr(ok) == f"FileOutcome(src={str(src)!r}, dest={ok.dest!r}, error=None, ok=True)"
 
-def test_convert_result_error_repr(tmp_path):
-    results = html_files_to_markdown(["/no/such/file.html"], str(tmp_path))
-    r = results[0]
-    assert not r.ok
-    assert "error=" in repr(r)
+    bad = html_files_to_markdown(["/no/such/file.html"], str(tmp_path / "out"))[0]
+    rep = repr(bad)
+    assert rep.startswith("FileOutcome(src='/no/such/file.html', dest=None, error='IO error: "), rep
+    assert rep.endswith(", ok=False)"), rep
+    for r in (ok, bad):
+        assert "Some(" not in repr(r), repr(r)
+
+def test_file_outcome_is_the_only_result_type():
+    # ConvertResult and BulkConvertResult were removed in 3.0.
+    assert not hasattr(mdka, "ConvertResult")
+    assert not hasattr(mdka, "BulkConvertResult")
+    assert not hasattr(mdka.mdka_python, "ConvertResult")
+    assert not hasattr(mdka.mdka_python, "BulkConvertResult")
+
+def test_a_failing_file_does_not_abort_the_batch(tmp_path):
+    files = []
+    for name in ("a", "missing", "b"):
+        f = tmp_path / f"{name}.html"
+        if name != "missing":
+            f.write_text(f"<h1>{name}</h1>")
+        files.append(str(f))
+    results = html_files_to_markdown(files, str(tmp_path / "out"))  # must not raise
+    assert [r.ok for r in results] == [True, False, True]
+    assert (tmp_path / "out" / "a.md").exists() and (tmp_path / "out" / "b.md").exists()
+    assert results[2].dest == str(tmp_path / "out" / "b.md"), "the file after the failure was converted"
 
 
 # ─── MdkaError ───────────────────────────────────────────────────────────────
@@ -423,7 +460,7 @@ def test_module_all_exported():
         "html_to_markdown",
         "html_to_markdown_many",
         "html_files_to_markdown",
-        "ConvertResult",
+        "FileOutcome",
         "MdkaError",
         "version",
     }
@@ -546,7 +583,7 @@ def test_module_all_has_new_exports():
     assert "html_file_to_markdown"       in mdka.__all__
     assert "html_file_to_markdown_with"  in mdka.__all__
     assert "html_files_to_markdown_with" in mdka.__all__
-    assert "BulkConvertResult"           in mdka.__all__
+    assert "FileOutcome"                 in mdka.__all__
 
 
 # ─── html_file_to_markdown ────────────────────────────────────────────────────
@@ -556,10 +593,12 @@ def test_file_to_markdown_same_dir(tmp_path):
     src = tmp_path / "page.html"
     src.write_text("<h1>Single File</h1><p>Content</p>")
 
-    result = html_file_to_markdown(str(src))  # out_dir 省略
+    dest = html_file_to_markdown(str(src))  # out_dir 省略
 
-    assert result.src  == str(src)
-    assert result.dest == str(tmp_path / "page.md")
+    # 3.0: a single file returns the destination path, as a str -- not a result
+    # object with an `error` that could never be set.
+    assert isinstance(dest, str), f"expected the destination path, got {dest!r}"
+    assert dest == str(tmp_path / "page.md")
     assert (tmp_path / "page.md").exists(), "output file not created"
     content = (tmp_path / "page.md").read_text()
     assert "# Single File" in content, f"got: {content}"
@@ -572,9 +611,9 @@ def test_file_to_markdown_explicit_out_dir(tmp_path):
     out_dir.mkdir()
     src.write_text("<h2>Article</h2><p>Body</p>")
 
-    result = html_file_to_markdown(str(src), str(out_dir))
+    dest = html_file_to_markdown(str(src), str(out_dir))
 
-    assert result.dest == str(out_dir / "article.md")
+    assert dest == str(out_dir / "article.md")
     content = (out_dir / "article.md").read_text()
     assert "## Article" in content, f"got: {content}"
 
@@ -590,9 +629,12 @@ def test_file_to_markdown_out_dir_created_automatically(tmp_path):
     assert (out_dir / "test.md").exists(), "output file not created"
 
 def test_file_to_markdown_nonexistent_raises():
-    """存在しないファイルを渡すと MdkaError が送出される。"""
-    import pytest
-    with pytest.raises(MdkaError):
+    """存在しないファイルを渡すと MdkaError が送出される。
+
+    3.0: a single file fails the call through Python's own channel -- it raises --
+    rather than returning a result object. (The bulk function reports per file.)
+    """
+    with pytest.raises(MdkaError, match=r"^IO error: "):
         html_file_to_markdown("/no/such/file.html")
 
 def test_file_to_markdown_with_mode(tmp_path):
@@ -610,16 +652,14 @@ def test_file_to_markdown_with_mode(tmp_path):
     assert "# Title"                  in content, f"got: {content}"
     assert "nav" not in content.lower(),           f"nav leaked: {content}"
 
-def test_file_to_markdown_returns_correct_types(tmp_path):
-    """ConvertResult は src と dest を str として持つ。"""
+def test_file_to_markdown_returns_the_destination_as_str_and_nothing_else(tmp_path):
     src = tmp_path / "x.html"
     src.write_text("<p>x</p>")
 
-    result = html_file_to_markdown(str(src))
+    dest = html_file_to_markdown(str(src))
 
-    assert isinstance(result.src,  str), f"src should be str, got {type(result.src)}"
-    assert isinstance(result.dest, str), f"dest should be str, got {type(result.dest)}"
-    assert repr(result).startswith("ConvertResult(")
+    assert type(dest) is str
+    assert not hasattr(dest, "src") and not hasattr(dest, "ok")
 
 def test_file_to_markdown_consistency_with_bulk(tmp_path):
     """html_file_to_markdown と html_files_to_markdown が同じ出力を生成する。"""
@@ -647,22 +687,22 @@ def test_file_with_matches_html_file_to_markdown_default(tmp_path):
     out_a = tmp_path / "out_a"
     out_b = tmp_path / "out_b"
 
-    r_with = html_file_to_markdown_with(str(src), str(out_a))
-    r_plain = html_file_to_markdown(str(src), str(out_b))
+    d_with = html_file_to_markdown_with(str(src), str(out_a))
+    d_plain = html_file_to_markdown(str(src), str(out_b))
 
-    assert Path(r_with.dest).read_text() == Path(r_plain.dest).read_text()
+    assert Path(d_with).read_text() == Path(d_plain).read_text()
 
 def test_file_with_mode_option(tmp_path):
     src = tmp_path / "spa.html"
     src.write_text("<nav>nav</nav><h1>Title</h1><p>Body</p>")
 
-    result = html_file_to_markdown_with(
+    dest = html_file_to_markdown_with(
         str(src),
         mode=ConversionMode.Minimal,
         drop_interactive_shell=True,
     )
 
-    content = (tmp_path / "spa.md").read_text()
+    content = Path(dest).read_text()
     assert "# Title" in content, f"got: {content}"
     assert "nav" not in content.lower(), f"nav leaked: {content}"
 

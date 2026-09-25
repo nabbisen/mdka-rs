@@ -80,7 +80,12 @@ fn the_two_surviving_modes_still_parse_in_any_case() {
 /// answers `None` for a removed name and for an unknown one alike. Callers who
 /// want the message use `FromStr` (`.parse()`), which is what the CLI and Node.js
 /// do. Asserted so the difference is deliberate rather than discovered.
+///
+/// It is **deprecated since 3.0.0** for exactly that reason (RFC 048 §6), not
+/// removed -- it was never warned about before, so removing it would break the
+/// rule this release is built on. This test names it on purpose, hence the allow.
 #[test]
+#[allow(deprecated)] // Internal: asserts what the deprecated function still does.
 fn parse_mode_is_none_for_a_removed_name_and_carries_no_message() {
     for name in REMOVED {
         assert_eq!(ConversionMode::parse_mode(name), None, "{name}");
@@ -88,5 +93,30 @@ fn parse_mode_is_none_for_a_removed_name_and_carries_no_message() {
     assert_eq!(
         ConversionMode::parse_mode("balanced"),
         Some(ConversionMode::Balanced)
+    );
+}
+
+/// `#[deprecated]` has no runtime footprint, so the attribute is asserted by
+/// reading it out of `src/options.rs`; the note must say what to use instead and
+/// why. If someone drops the attribute, `3.x` loses the runway to remove it.
+#[test]
+fn parse_mode_is_deprecated_since_3_0_0_and_points_at_str_parse() {
+    let src = include_str!("../src/options.rs");
+    let at = src
+        .find("pub fn parse_mode")
+        .expect("parse_mode not found in src/options.rs");
+    let attrs = &src[at.saturating_sub(500)..at];
+    assert!(
+        attrs.contains("#[deprecated("),
+        "parse_mode lost its #[deprecated]:\n{attrs}"
+    );
+    assert!(attrs.contains(r#"since = "3.0.0""#), "{attrs}");
+    assert!(
+        attrs.contains("use `str::parse`"),
+        "the note must say what to use: {attrs}"
+    );
+    assert!(
+        attrs.contains("discards that message"),
+        "the note must say why: {attrs}"
     );
 }

@@ -13,8 +13,7 @@ from typing import ClassVar, final
 __all__ = [
     "MdkaError",
     "ConversionMode",
-    "ConvertResult",
-    "BulkConvertResult",
+    "FileOutcome",
     "html_to_markdown",
     "html_to_markdown_with",
     "html_to_markdown_many",
@@ -37,17 +36,12 @@ class ConversionMode:
     def __int__(self) -> int: ...
 
 @final
-class ConvertResult:
-    """Result of a file conversion."""
+class FileOutcome:
+    """What happened to one file in a bulk conversion, successful or not.
 
-    @property
-    def src(self) -> str: ...
-    @property
-    def dest(self) -> str: ...
-
-@final
-class BulkConvertResult:
-    """Result for one file in a bulk conversion, successful or not."""
+    Exactly one of `dest` and `error` is set, and `ok` says which. A single-file
+    call returns the destination `str` or raises `MdkaError`; only a bulk call
+    reports per file, so one failure cannot hide the others."""
 
     @property
     def src(self) -> str: ...
@@ -87,25 +81,25 @@ def html_file_to_markdown(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
-) -> ConvertResult: ...
+) -> str: ...
 def html_file_to_markdown_with(
     path: str,
     out_dir: str | None = None,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
-) -> ConvertResult: ...
+) -> str: ...
 def html_files_to_markdown(
     paths: Sequence[str],
     out_dir: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
-) -> list[BulkConvertResult]: ...
+) -> list[FileOutcome]: ...
 def html_files_to_markdown_with(
     paths: Sequence[str],
     out_dir: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
-) -> list[BulkConvertResult]: ...
+) -> list[FileOutcome]: ...

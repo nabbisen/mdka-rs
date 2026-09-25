@@ -103,7 +103,7 @@ assert_eq!(mds.len(), 2);
 pub fn html_file_to_markdown(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
-) -> Result<ConvertResult, MdkaError>
+) -> Result<PathBuf, MdkaError>
 ```
 
 Reads one HTML file, converts it, and writes a `.md` file.
@@ -113,17 +113,17 @@ Reads one HTML file, converts it, and writes a `.md` file.
 - `None` → the `.md` file is written alongside the input (same directory, stem unchanged).
 - `Some(dir)` → the `.md` file is written into `dir`. The directory is created automatically if it does not exist.
 
-**Returns:** [`ConvertResult`](#convertresult) with the resolved `src` and `dest` paths.  
-**Errors:** `MdkaError::Io` if the file cannot be read or the output cannot be written.
+**Returns:** the path of the `.md` file that was written. The caller already has the input path, and a failure is the `Err`, so there is nothing else to return.  
+**Errors:** `MdkaError::Io` if the file cannot be read or the output cannot be written. A single file fails *the call*; only [`html_files_to_markdown`](#html_files_to_markdown) reports per file.
 
 ```rust,no_run
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // page.html → page.md in the same folder
-    let r = mdka::html_file_to_markdown("page.html", None::<&str>)?;
+    let dest = mdka::html_file_to_markdown("page.html", None::<&str>)?;
 
     // page.html → out/page.md
-    let r = mdka::html_file_to_markdown("page.html", Some("out/"))?;
-    println!("{} → {}", r.src.display(), r.dest.display());
+    let dest = mdka::html_file_to_markdown("page.html", Some("out/"))?;
+    println!("wrote {}", dest.display());
     Ok(())
 }
 ```
@@ -137,7 +137,7 @@ pub fn html_file_to_markdown_with(
     path: impl AsRef<Path>,
     out_dir: Option<impl AsRef<Path>>,
     opts: &ConversionOptions,
-) -> Result<ConvertResult, MdkaError>
+) -> Result<PathBuf, MdkaError>
 ```
 
 Same as `html_file_to_markdown`, but applies the given `ConversionOptions`.
@@ -147,10 +147,7 @@ Same as `html_file_to_markdown`, but applies the given `ConversionOptions`.
 ## `html_files_to_markdown`
 
 ```rust,fragment
-pub fn html_files_to_markdown<'a, P>(
-    paths: &'a [P],
-    out_dir: &Path,
-) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+pub fn html_files_to_markdown<P>(paths: &[P], out_dir: &Path) -> Vec<FileOutcome>
 where
     P: AsRef<Path> + Sync,
 ```
@@ -159,7 +156,7 @@ Converts multiple HTML files in parallel using [rayon](https://crates.io/crates/
 
 **`paths`:** Slice of paths to input HTML files.  
 **`out_dir`:** Directory for all output `.md` files. Created automatically if it does not exist, as with the single-file variants.  
-**Returns:** A `Vec` of `(input_path, Result<output_path, error>)` pairs in the **same order** as `paths`. Each element represents the outcome for one file independently.
+**Returns:** a `Vec` of [`FileOutcome`](#fileoutcome) in the **same order** as `paths`. Each element is the outcome for one file independently: a failing file does not stop the others, and the outcome names the file it belongs to.
 
 ```rust,no_run
 use std::path::Path;
@@ -168,9 +165,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let files = vec!["a.html", "b.html", "c.html"];
     std::fs::create_dir_all("out/")?;
 
-    for (src, result) in mdka::html_files_to_markdown(&files, Path::new("out/")) {
-        match result {
-            Ok(dest) => println!("{} → {}", src, dest.display()),
+    for outcome in mdka::html_files_to_markdown(&files, Path::new("out/")) {
+        let src = outcome.src.display();
+        match outcome.result {
+            Ok(dest) => println!("{src} → {}", dest.display()),
             Err(e)   => eprintln!("{src}: {e}"),
         }
     }
@@ -183,11 +181,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## `html_files_to_markdown_with`
 
 ```rust,fragment
-pub fn html_files_to_markdown_with<'a, P>(
-    paths: &'a [P],
+pub fn html_files_to_markdown_with<P>(
+    paths: &[P],
     out_dir: &Path,
     opts: &ConversionOptions,
-) -> Vec<(&'a P, Result<PathBuf, MdkaError>)>
+) -> Vec<FileOutcome>
 where
     P: AsRef<Path> + Sync,
 ```
@@ -212,22 +210,24 @@ assert!(!mdka::version().is_empty());
 
 ---
 
-## `ConvertResult`
+## `FileOutcome`
 
 ```rust,fragment
-pub struct ConvertResult {
-    pub src:  PathBuf,
-    pub dest: PathBuf,
+pub struct FileOutcome {
+    pub src:    PathBuf,
+    pub result: Result<PathBuf, MdkaError>,
 }
 ```
 
-Returned by the single-file functions. Both fields are absolute or relative paths
-depending on how `path` was passed in.
+What happened to one file in a bulk conversion. `src` is the input path as it was
+passed in; `result` is the path that was written, or the error that stopped that
+file — exactly one of the two, which the type expresses.
 
-> **Note:** The bulk functions (`html_files_to_markdown*`) return
-> `(&P, Result<PathBuf, MdkaError>)` tuples rather than `ConvertResult`,
-> because individual files within a batch may fail independently.
->
-> The Node.js and Python `ConvertResult` types differ from this one (and Python's
-> bulk functions return `BulkConvertResult`); see the [Types
-> table](./index.md#types).
+The distinction behind it is **can it fail**, not one versus many. A string
+conversion cannot fail, so it returns a string. A single file can, and you asked
+about exactly one thing, so it fails the call: `html_file_to_markdown` returns the
+destination path or an `Err`. Many files can each fail, and one failure must not
+abort the batch, so each gets its own outcome.
+
+The Node.js and Python bindings cannot export a Rust `Result`, so they flatten it
+to `src`, `dest`, `error` and `ok`; see the [Types table](./index.md#types).

@@ -13,12 +13,11 @@ fn file_to_markdown_same_dir() {
     let src = dir.join("page.html");
     std::fs::write(&src, "<h1>Same Dir</h1><p>Content</p>").unwrap();
 
-    let result = mdka::html_file_to_markdown(&src, None::<&str>).unwrap();
+    let dest = mdka::html_file_to_markdown(&src, None::<&str>).unwrap();
 
-    assert_eq!(result.src, src);
-    assert_eq!(result.dest, dir.join("page.md"));
-    assert!(result.dest.exists(), "output file not created");
-    let content = std::fs::read_to_string(&result.dest).unwrap();
+    assert_eq!(dest, dir.join("page.md"));
+    assert!(dest.exists(), "output file not created");
+    let content = std::fs::read_to_string(&dest).unwrap();
     assert!(content.contains("# Same Dir"), "got: {content}");
     assert!(content.contains("Content"), "got: {content}");
 
@@ -34,10 +33,10 @@ fn file_to_markdown_with_out_dir() {
     let src = dir.join("article.html");
     std::fs::write(&src, "<h2>Article</h2><p>Body</p>").unwrap();
 
-    let result = mdka::html_file_to_markdown(&src, Some(&out)).unwrap();
+    let dest = mdka::html_file_to_markdown(&src, Some(&out)).unwrap();
 
-    assert_eq!(result.dest, out.join("article.md"));
-    let content = std::fs::read_to_string(&result.dest).unwrap();
+    assert_eq!(dest, out.join("article.md"));
+    let content = std::fs::read_to_string(&dest).unwrap();
     assert!(content.contains("## Article"), "got: {content}");
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -54,8 +53,8 @@ fn file_to_markdown_with_opts() {
     let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
     opts.drop_interactive_shell = true;
 
-    let result = mdka::html_file_to_markdown_with(&src, None::<&str>, &opts).unwrap();
-    let content = std::fs::read_to_string(&result.dest).unwrap();
+    let dest = mdka::html_file_to_markdown_with(&src, None::<&str>, &opts).unwrap();
+    let content = std::fs::read_to_string(&dest).unwrap();
 
     assert!(content.contains("# Title"), "got: {content}");
     assert!(
@@ -66,10 +65,22 @@ fn file_to_markdown_with_opts() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
+/// 3.0: a single file fails *the call*, through Rust's own channel -- the `Err`.
+/// There is no result struct with an unused `error` field to check instead.
 #[test]
 fn file_to_markdown_nonexistent_returns_err() {
-    let result = mdka::html_file_to_markdown("/no/such/file.html", None::<&str>);
-    assert!(result.is_err(), "expected Err for missing file");
+    let result: Result<std::path::PathBuf, mdka::MdkaError> =
+        mdka::html_file_to_markdown("/no/such/file.html", None::<&str>);
+    let err = result.expect_err("expected Err for missing file");
+    assert!(matches!(err, mdka::MdkaError::Io(_)), "{err:?}");
+    assert!(err.to_string().starts_with("IO error: "), "{err}");
+}
+
+#[test]
+fn file_with_options_nonexistent_returns_err_too() {
+    let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+    let result = mdka::html_file_to_markdown_with("/no/such/file.html", None::<&str>, &opts);
+    assert!(matches!(result, Err(mdka::MdkaError::Io(_))));
 }
 
 #[test]
@@ -87,8 +98,8 @@ fn file_to_markdown_same_dir_vs_bulk_consistency() {
     let paths = vec![src.clone()];
     let r2 = mdka::html_files_to_markdown(&paths, &out2);
 
-    let c1 = std::fs::read_to_string(&r1.dest).unwrap();
-    let c2 = std::fs::read_to_string(r2[0].1.as_ref().unwrap()).unwrap();
+    let c1 = std::fs::read_to_string(&r1).unwrap();
+    let c2 = std::fs::read_to_string(r2[0].result.as_ref().unwrap()).unwrap();
     assert_eq!(c1, c2, "single and bulk outputs differ");
 
     std::fs::remove_dir_all(&dir).unwrap();
@@ -118,10 +129,11 @@ fn html_files_to_markdown_stem_collision_first_wins() {
     let results = mdka::html_files_to_markdown(&paths, &out);
 
     assert_eq!(results.len(), 2);
-    let (first_src, first_res) = &results[0];
-    let (second_src, second_res) = &results[1];
-    assert_eq!(*first_src, &src_a);
-    assert_eq!(*second_src, &src_b);
+    // The outcome names the file it belongs to, so a failure needs no lookup.
+    assert_eq!(results[0].src, src_a);
+    assert_eq!(results[1].src, src_b);
+    let first_res = &results[0].result;
+    let second_res = &results[1].result;
 
     let dest = first_res
         .as_ref()
@@ -167,12 +179,12 @@ fn html_files_to_markdown_stem_collision_deterministic_over_many_runs() {
         let out = dir.join(format!("out{i}"));
         std::fs::create_dir_all(&out).unwrap();
         let results = mdka::html_files_to_markdown(&paths, &out);
-        assert!(results[0].1.is_ok(), "run {i}: first input must win");
+        assert!(results[0].result.is_ok(), "run {i}: first input must win");
         assert!(
-            results[1].1.is_err(),
+            results[1].result.is_err(),
             "run {i}: second input must be rejected"
         );
-        let content = std::fs::read_to_string(results[0].1.as_ref().unwrap()).unwrap();
+        let content = std::fs::read_to_string(results[0].result.as_ref().unwrap()).unwrap();
         assert_eq!(content.trim(), "# FROM A", "run {i}: got {content}");
     }
 
@@ -198,13 +210,79 @@ fn html_files_to_markdown_parallel() {
     let results = mdka::html_files_to_markdown(&files, &out);
 
     assert_eq!(results.len(), 4);
-    for (src, res) in &results {
-        let dest = res
+    for (outcome, file) in results.iter().zip(&files) {
+        assert_eq!(&outcome.src, file, "outcomes come back in input order");
+        let dest = outcome
+            .result
             .as_ref()
-            .unwrap_or_else(|e| panic!("{}: {e}", src.display()));
+            .unwrap_or_else(|e| panic!("{}: {e}", outcome.src.display()));
         let content = std::fs::read_to_string(dest).unwrap();
         assert!(content.contains("File"), "output missing: {content}");
     }
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+// ─── 3.0: one failing file does not abort the batch ───────────────────────
+
+#[test]
+fn a_failing_file_does_not_abort_the_batch_and_survivors_keep_their_destinations() {
+    let dir = std::env::temp_dir().join("mdka_test_partial_failure");
+    let out = dir.join("out");
+    std::fs::create_dir_all(&out).unwrap();
+    let good_a = dir.join("a.html");
+    let good_b = dir.join("b.html");
+    let missing = dir.join("missing.html");
+    std::fs::write(&good_a, "<h1>A</h1>").unwrap();
+    std::fs::write(&good_b, "<h1>B</h1>").unwrap();
+
+    let paths = vec![good_a.clone(), missing.clone(), good_b.clone()];
+    let results = mdka::html_files_to_markdown(&paths, &out);
+
+    assert_eq!(results.len(), 3);
+    assert_eq!(results[0].src, good_a);
+    assert_eq!(results[1].src, missing, "the failure names its own file");
+    assert_eq!(results[2].src, good_b);
+
+    assert_eq!(results[0].result.as_ref().unwrap(), &out.join("a.md"));
+    assert!(
+        matches!(results[1].result, Err(mdka::MdkaError::Io(_))),
+        "{:?}",
+        results[1].result
+    );
+    assert_eq!(
+        results[2].result.as_ref().unwrap(),
+        &out.join("b.md"),
+        "the file after the failure must still be converted"
+    );
+    assert!(out.join("a.md").exists() && out.join("b.md").exists());
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+/// The output directory cannot be created: Rust reports it on **every** file's
+/// outcome, since `create_dir_all` is part of converting each one. (The CLI and
+/// the bindings check the directory once, up front, and fail the call instead;
+/// each binding's own test says how.)
+#[test]
+fn an_uncreatable_out_dir_is_an_error_on_every_outcome() {
+    let dir = std::env::temp_dir().join("mdka_test_uncreatable_out_dir");
+    std::fs::create_dir_all(&dir).unwrap();
+    // A regular file where the directory's parent should be.
+    let blocker = dir.join("blocker");
+    std::fs::write(&blocker, "not a directory").unwrap();
+    let src = dir.join("page.html");
+    std::fs::write(&src, "<h1>x</h1>").unwrap();
+
+    let results = mdka::html_files_to_markdown(std::slice::from_ref(&src), &blocker.join("out"));
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].src, src);
+    assert!(
+        matches!(results[0].result, Err(mdka::MdkaError::Io(_))),
+        "{:?}",
+        results[0].result
+    );
 
     std::fs::remove_dir_all(&dir).unwrap();
 }

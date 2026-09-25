@@ -1,6 +1,7 @@
 //! Python bindings for mdka (PyO3 0.28)
 
 use pyo3::prelude::*;
+use pyo3::types::PyString;
 use rayon::prelude::*;
 
 pyo3::create_exception!(mdka, MdkaError, pyo3::exceptions::PyException);
@@ -46,50 +47,50 @@ fn build_opts(
     opts
 }
 
-// ─── ConvertResult ────────────────────────────────────────────────────────
+// ─── FileOutcome ──────────────────────────────────────────────────────────
 
-/// Result of a file conversion.
+/// What happened to one file in a bulk conversion, successful or not.
+///
+/// The distinction that shapes this type is *can it fail*, not *one or many*.
+/// A single-file call can fail and the caller asked about exactly one thing, so
+/// `html_file_to_markdown` returns the destination path or raises `MdkaError`.
+/// A bulk call must not let one bad file hide the others, so each file gets its
+/// own outcome -- and the outcome says which file it belongs to.
+///
+/// Exactly one of `dest` and `error` is set, and `ok` says which.
 ///
 /// Attributes:
-///     src (str): path of the input file that was converted
-///     dest (str): path of the output file that was written
-#[pyclass(get_all)]
-pub struct ConvertResult {
-    pub src: String,
-    pub dest: String,
-}
-
-#[pymethods]
-impl ConvertResult {
-    fn __repr__(&self) -> String {
-        format!("ConvertResult(src={:?}, dest={:?})", self.src, self.dest)
-    }
-}
-
-/// Result for one file in a bulk conversion, successful or not.
-///
-/// Attributes:
-///     src (str): input file path
-///     dest (str | None): output file path, on success
-///     error (str | None): error message, on failure
+///     src (str): input file path, as it was passed in
+///     dest (str | None): output file path, when `ok`
+///     error (str | None): error message, when not `ok`
 ///     ok (bool): whether the conversion succeeded
-#[pyclass(get_all)]
-pub struct BulkConvertResult {
+#[pyclass(get_all, frozen)]
+pub struct FileOutcome {
     pub src: String,
     pub dest: Option<String>,
     pub error: Option<String>,
 }
 
 #[pymethods]
-impl BulkConvertResult {
-    fn __repr__(&self) -> String {
-        match &self.dest {
-            Some(d) => format!("BulkConvertResult(src={:?}, dest={:?})", self.src, d),
-            None => format!(
-                "BulkConvertResult(src={:?}, error={:?})",
-                self.src, self.error
-            ),
-        }
+impl FileOutcome {
+    /// Python's own `repr`, with all four fields: `FileOutcome(src='a.html',
+    /// dest='out/a.md', error=None, ok=True)`. (It used to print a Rust
+    /// `Option` -- `error=Some("...")` -- and omit `dest` and `ok`.)
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        let py_str = |s: &str| -> PyResult<String> { Ok(PyString::new(py, s).repr()?.to_string()) };
+        let opt = |o: &Option<String>| -> PyResult<String> {
+            match o {
+                Some(s) => py_str(s),
+                None => Ok("None".to_string()),
+            }
+        };
+        Ok(format!(
+            "FileOutcome(src={}, dest={}, error={}, ok={})",
+            py_str(&self.src)?,
+            opt(&self.dest)?,
+            opt(&self.error)?,
+            if self.dest.is_some() { "True" } else { "False" },
+        ))
     }
 
     #[getter]
@@ -163,16 +164,17 @@ fn html_to_markdown_many_with(
 ///         written next to the input file
 ///
 /// Returns:
-///     ConvertResult: the conversion result (src, dest)
+///     str: the path of the file that was written
 ///
 /// Raises:
-///     MdkaError: if reading or writing fails
+///     MdkaError: if reading or writing fails. A single file fails the call,
+///         through Python's own channel; there is no result object to inspect.
+///         (`html_files_to_markdown` reports per file instead.)
 ///
 /// Example:
 ///     >>> import mdka
-///     >>> r = mdka.html_file_to_markdown("index.html")          # same directory
-///     >>> r = mdka.html_file_to_markdown("index.html", "out/")  # another directory
-///     >>> print(r.src, "->", r.dest)
+///     >>> dest = mdka.html_file_to_markdown("index.html")          # same directory
+///     >>> dest = mdka.html_file_to_markdown("index.html", "out/")  # another directory
 fn html_file_to_markdown_impl(
     py: Python<'_>,
     path: String,
@@ -180,17 +182,14 @@ fn html_file_to_markdown_impl(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<ConvertResult> {
+) -> PyResult<String> {
     let opts = build_opts(mode, preserve_ids, drop_interactive_shell);
     let out_dir_ref: Option<&str> = out_dir.as_deref();
 
     let result = py.detach(|| ::mdka::html_file_to_markdown_with(&path, out_dir_ref, &opts));
 
     result
-        .map(|r| ConvertResult {
-            src: r.src.to_string_lossy().into_owned(),
-            dest: r.dest.to_string_lossy().into_owned(),
-        })
+        .map(|dest| dest.to_string_lossy().into_owned())
         .map_err(|e| MdkaError::new_err(e.to_string()))
 }
 
@@ -204,7 +203,7 @@ fn html_file_to_markdown(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<ConvertResult> {
+) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
         path,
@@ -232,7 +231,7 @@ fn html_file_to_markdown_with(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<ConvertResult> {
+) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
         path,
@@ -252,7 +251,7 @@ fn html_files_to_markdown_impl(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<Vec<BulkConvertResult>> {
+) -> PyResult<Vec<FileOutcome>> {
     use std::path::Path;
     let out = Path::new(&out_dir);
     std::fs::create_dir_all(out)
@@ -265,17 +264,20 @@ fn html_files_to_markdown_impl(
 
     Ok(results
         .into_iter()
-        .map(|(p, res)| match res {
-            Ok(dest) => BulkConvertResult {
-                src: p.to_string_lossy().into_owned(),
-                dest: Some(dest.to_string_lossy().into_owned()),
-                error: None,
-            },
-            Err(e) => BulkConvertResult {
-                src: p.to_string_lossy().into_owned(),
-                dest: None,
-                error: Some(e.to_string()),
-            },
+        .map(|o| {
+            let src = o.src.to_string_lossy().into_owned();
+            match o.result {
+                Ok(dest) => FileOutcome {
+                    src,
+                    dest: Some(dest.to_string_lossy().into_owned()),
+                    error: None,
+                },
+                Err(e) => FileOutcome {
+                    src,
+                    dest: None,
+                    error: Some(e.to_string()),
+                },
+            }
         })
         .collect())
 }
@@ -290,7 +292,7 @@ fn html_files_to_markdown(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<Vec<BulkConvertResult>> {
+) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
         paths,
@@ -314,7 +316,7 @@ fn html_files_to_markdown_with(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
-) -> PyResult<Vec<BulkConvertResult>> {
+) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
         paths,
@@ -342,8 +344,7 @@ fn version() -> &'static str {
 fn mdka_python(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("MdkaError", py.get_type::<MdkaError>())?;
     m.add_class::<ConversionMode>()?;
-    m.add_class::<ConvertResult>()?;
-    m.add_class::<BulkConvertResult>()?;
+    m.add_class::<FileOutcome>()?;
     m.add_function(wrap_pyfunction!(html_to_markdown, m)?)?;
     m.add_function(wrap_pyfunction!(html_to_markdown_with, m)?)?;
     m.add_function(wrap_pyfunction!(html_to_markdown_many, m)?)?;

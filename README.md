@@ -165,14 +165,14 @@ Windows ARM are not supported; the
 lists what does work there.
 
 ```js
-const { htmlToMarkdown, htmlToMarkdownWithAsync } = require('mdka')
+const { htmlToMarkdown, htmlToMarkdownAsync } = require('mdka')
 
 const md = htmlToMarkdown('<h1>Hello</h1>')
 // "# Hello\n"
 
 async function main() {
   const html = '<nav>menu</nav><h1>Hello</h1>'
-  const minimal = await htmlToMarkdownWithAsync(html, {
+  const minimal = await htmlToMarkdownAsync(html, {
     mode: 'minimal',
     dropInteractiveShell: true,
   })

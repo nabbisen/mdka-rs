@@ -188,7 +188,7 @@ fn main() {
                 // Progress, not output (RFC 039 §3 A7): stderr, so it cannot mix
                 // into a redirected stdin conversion. A file argument's
                 // conversion is the file written, not stdout.
-                Ok(r) => eprintln!("{} -> {}", r.src.display(), r.dest.display()),
+                Ok(dest) => eprintln!("{} -> {}", file_args[0], dest.display()),
                 Err(e) => {
                     eprintln!("error: {e}");
                     process::exit(1);
@@ -208,12 +208,13 @@ fn main() {
             let paths: Vec<PathBuf> = file_args.iter().map(PathBuf::from).collect();
             let results = mdka::html_files_to_markdown_with(&paths, dir, &opts);
             let mut had_error = false;
-            for (src, res) in results {
-                match res {
+            for outcome in results {
+                let src = outcome.src.display();
+                match outcome.result {
                     // Progress, not output -- see the single-file case above.
-                    Ok(dest) => eprintln!("{} -> {}", src.display(), dest.display()),
+                    Ok(dest) => eprintln!("{src} -> {}", dest.display()),
                     Err(e) => {
-                        eprintln!("error: {}: {e}", src.display());
+                        eprintln!("error: {src}: {e}");
                         had_error = true;
                     }
                 }

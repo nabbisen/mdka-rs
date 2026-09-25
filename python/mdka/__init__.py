@@ -12,8 +12,7 @@ from .mdka_python import (  # noqa: F401
     html_files_to_markdown,
     html_files_to_markdown_with,
     ConversionMode,
-    ConvertResult,
-    BulkConvertResult,
+    FileOutcome,
     MdkaError,
     version,
 )
@@ -29,8 +28,7 @@ __all__ = [
     "html_files_to_markdown",
     "html_files_to_markdown_with",
     "ConversionMode",
-    "ConvertResult",
-    "BulkConvertResult",
+    "FileOutcome",
     "MdkaError",
     "version",
 ]
