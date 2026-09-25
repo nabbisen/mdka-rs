@@ -1,5 +1,9 @@
 # Core Functions
 
+This page is the **Rust** reference. Every Rust function below has a Node.js and
+a Python counterpart, and some operations exist in only one binding — the table
+on the [API Reference](./index.md) lists all three side by side.
+
 ## `html_to_markdown`
 
 ```rust,fragment
@@ -38,6 +42,57 @@ use mdka::options::{ConversionMode, ConversionOptions};
 let mut opts = ConversionOptions::for_mode(ConversionMode::Minimal);
 opts.drop_interactive_shell = true;
 let md = mdka::html_to_markdown_with(html, &opts);
+```
+
+---
+
+## `html_to_markdown_many`
+
+```rust,fragment
+pub fn html_to_markdown_many<S>(htmls: &[S]) -> Vec<String>
+where
+    S: AsRef<str> + Sync,
+```
+
+Converts many HTML strings, each independently, with the default **`Balanced`**
+mode. Equivalent to calling [`html_to_markdown`](#html_to_markdown) on each.
+
+**Input:** A slice of anything that is `AsRef<str>` — `&[&str]`, `&[String]`.  
+**Output:** A `Vec<String>` in the **same order** and of the **same length** as
+the input. An empty slice gives an empty `Vec`.  
+**Errors:** None — this function is infallible, so it returns plain strings and
+not a `Result`.
+
+The conversions run in parallel across CPU cores when the `parallel` feature is on
+(the default), and sequentially otherwise. The function exists either way; only
+*how* it runs changes.
+
+```rust
+let mds = mdka::html_to_markdown_many(&["<h1>A</h1>", "<h1>B</h1>"]);
+assert_eq!(mds, vec!["# A\n", "# B\n"]);
+```
+
+---
+
+## `html_to_markdown_many_with`
+
+```rust,fragment
+pub fn html_to_markdown_many_with<S>(htmls: &[S], opts: &ConversionOptions) -> Vec<String>
+where
+    S: AsRef<str> + Sync,
+```
+
+Same as `html_to_markdown_many`, but applies the given
+[`ConversionOptions`](./options.md) to every string.
+
+**Errors:** None.
+
+```rust
+use mdka::options::{ConversionMode, ConversionOptions};
+
+let opts = ConversionOptions::for_mode(ConversionMode::Minimal);
+let mds = mdka::html_to_markdown_many_with(&["<p>a</p>", "<p>b</p>"], &opts);
+assert_eq!(mds.len(), 2);
 ```
 
 ---
@@ -141,6 +196,22 @@ Same as `html_files_to_markdown`, but applies the given `ConversionOptions` to e
 
 ---
 
+## `version`
+
+```rust,fragment
+pub fn version() -> &'static str
+```
+
+The crate's version, as declared in `Cargo.toml`.
+
+**Errors:** None.
+
+```rust
+assert!(!mdka::version().is_empty());
+```
+
+---
+
 ## `ConvertResult`
 
 ```rust,fragment
@@ -156,3 +227,7 @@ depending on how `path` was passed in.
 > **Note:** The bulk functions (`html_files_to_markdown*`) return
 > `(&P, Result<PathBuf, MdkaError>)` tuples rather than `ConvertResult`,
 > because individual files within a batch may fail independently.
+>
+> The Node.js and Python `ConvertResult` types differ from this one (and Python's
+> bulk functions return `BulkConvertResult`); see the [Types
+> table](./index.md#types).
