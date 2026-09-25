@@ -10,7 +10,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-*None.*
+| ID | Title | State |
+|----|-------|-------|
+| 048 | [The `3.0` surface: one result model, one convention per language, two modes](./proposed/048-the-3.0-surface.md) | Awaiting owner acceptance. **Resolves RFC 039 Half B and RFC 041 §5.1 together**, as the owner decided on 2026-09-24. No conversion output changes. Three open questions in §11, and a `2.9.0` precondition |
 
 ## Accepted
 
