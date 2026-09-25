@@ -17,11 +17,18 @@ name: release artifact gate
 #   4. applies RFC 042's contract (check-artifact-contract.py, unchanged) to
 #      the downloaded binary. This is what makes RFC 042 criterion 4 permanent.
 #
-# The runner is Linux x64: Linux-x64-gnu and Linux-x64-musl are executed;
-# Linux-aarch64-musl, macOS-aarch64 and Windows-x64 get steps 1, 2 and 4 only,
-# and the log states that rather than leaving it implicit. Executing them would
-# need QEMU or two more runners; that is a priced decision for the owner, not
-# one made here (RFC 046 handoff §6).
+# All five archives are EXECUTED (RFC 047 §3.2), each on the OS it is for:
+# the Linux job runs Linux-x64-gnu and Linux-x64-musl natively and
+# Linux-aarch64-musl under QEMU user-mode emulation; the macos job runs
+# macOS-aarch64 and the windows job Windows-x64. Each job passes
+# --require-executed for the assets it owns, so a leg that cannot run FAILS
+# with the reason instead of being reported and passed; the coverage block in
+# every log still states what was and was not executed. What is run is the
+# README's own commands for that platform, parsed from README.md.
+#
+# Cost: this is a public repository, where GitHub Actions minutes for
+# GitHub-hosted runners remain free (checked against GitHub's billing
+# documentation when this was added; see RFC 047), so the price is wall-clock.
 #
 # Its own workflow file, not ci.yaml: release-npm.yaml and create-release.yaml
 # gate on ci.yaml's conclusion, so an artifact gate living there can block the
@@ -56,7 +63,8 @@ defaults:
     shell: bash
 
 jobs:
-  release-artifact-gate:
+  linux:
+    name: linux (x64 gnu and musl native; aarch64 musl under QEMU)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -69,6 +77,16 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.x
+
+      # qemu-user-static registers a binfmt_misc handler, so `./mdka` in the
+      # aarch64 archive runs exactly as the README says to run it, just slower.
+      - name: Register QEMU user-mode emulation
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-user-static
+          echo "binfmt_misc qemu-aarch64:"
+          head -3 /proc/sys/fs/binfmt_misc/qemu-aarch64
 
       - name: Download the latest published release's archives
         env:
@@ -83,8 +101,101 @@ jobs:
           gh release download "${tag}" --pattern 'mdka@*' --dir "$RUNNER_TEMP/release-assets"
           ls -l "$RUNNER_TEMP/release-assets"
 
+      # All five assets get steps 1, 2 and 4 here (presence, the README's folder,
+      # the contract), which also asserts the release holds exactly the assets
+      # the build matrix declares. Step 3 -- the README's commands -- is
+      # required for the three Linux archives; macOS and Windows are executed
+      # by their own jobs, on their own OS.
       - name: Check every archive the way the README tells a user to use it
         run: |
           python .github/workflows/scripts/check-release-archives.py \
             --assets-dir "$RUNNER_TEMP/release-assets" \
-            --tag "${RELEASE_TAG}"
+            --tag "${RELEASE_TAG}" \
+            --require-executed Linux-x64-gnu \
+            --require-executed Linux-x64-musl \
+            --require-executed Linux-aarch64-musl
+
+  macos:
+    name: macos (macOS-aarch64)
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Download the latest published release's macOS archive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --json tagName --jq .tagName)
+          echo "Latest published release: ${tag}"
+          echo "RELEASE_TAG=${tag}" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          gh release download "${tag}" --pattern 'mdka@macOS-aarch64-*' --dir "$RUNNER_TEMP/release-assets"
+          ls -l "$RUNNER_TEMP/release-assets"
+
+      - name: Run the README's macOS instructions on the downloaded archive
+        run: |
+          python .github/workflows/scripts/check-release-archives.py \
+            --assets-dir "$RUNNER_TEMP/release-assets" \
+            --tag "${RELEASE_TAG}" \
+            --only macOS-aarch64 \
+            --require-executed macOS-aarch64
+
+  windows:
+    name: windows (Windows-x64)
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+
+      - name: Download the latest published release's Windows archive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --json tagName --jq .tagName)
+          echo "Latest published release: ${tag}"
+          echo "RELEASE_TAG=${tag}" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          gh release download "${tag}" --pattern 'mdka@Windows-x64-*' --dir "$RUNNER_TEMP/release-assets"
+          ls -l "$RUNNER_TEMP/release-assets"
+
+      - name: Run the README's Windows instructions on the downloaded archive
+        run: |
+          python .github/workflows/scripts/check-release-archives.py \
+            --assets-dir "$RUNNER_TEMP/release-assets" \
+            --tag "${RELEASE_TAG}" \
+            --only Windows-x64 \
+            --require-executed Windows-x64
+
+  # Each job above fails unless the binaries it owns were executed, so this job
+  # can only run when all five were: it states that, it does not compute it.
+  all-five-executed:
+    name: all five archives executed
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Coverage
+        run: |
+          echo "Linux-x64-gnu, Linux-x64-musl   executed natively        (linux job)"
+          echo "Linux-aarch64-musl               executed under QEMU      (linux job)"
+          echo "macOS-aarch64                    executed on macOS        (macos job)"
+          echo "Windows-x64                      executed on Windows      (windows job)"

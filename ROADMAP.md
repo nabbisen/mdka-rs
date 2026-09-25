@@ -858,6 +858,15 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-25, from the RFC 044 implementation
+
+| Item | State |
+|---|---|
+| **`<b><em>q</em></b>x` still inverts** — `***q***x` parses `em(strong("q"))`, the nesting the `_` swap exists to prevent, surviving where the outer flank guard reverts to `*` | Pre-existing, byte-identical through `2.6.0`, **out of RFC 044's scope**. Visually identical, structurally wrong. RFC 044 §9.3 |
+| **`<b><em>q</em>a<em>r</em></b>` is fixable and unfixed** — `__*q*a*r*__` parses correctly; applying it means swapping the **outer** delimiter, which RFC 037's addendum owns | RFC 044 §9.2. **Work, not an impossibility** — the distinction matters, since a residual filed as impossible is never looked at again |
+| **`<b><em>q.</em>a</b>` cannot be fixed by delimiter choice** | RFC 044 §9.1. A `*` preceded by punctuation and followed by a letter is not right-flanking, so it cannot close either. Nothing to schedule |
+| **The paste corpus is still the open question on RFC 044's prevalence.** 0 of 424 bold openings over 42 published pages; editor-generated HTML is unmeasured and bekoedit is paused until `3.0.0` | RFC 044 §10 |
+
 ### Recorded 2026-09-25, from the RFC 046 review and the owner's challenge to it
 
 | Item | State |

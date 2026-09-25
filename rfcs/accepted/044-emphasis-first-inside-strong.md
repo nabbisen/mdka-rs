@@ -121,3 +121,69 @@ wrong trade.
 
 Nothing in §1–§7 changes. The fix in §4 stands as proposed and was verified before the RFC was written.
 
+---
+
+## 9. Residuals, recorded 2026-09-25 after implementation
+
+The fix covers §2's three broken shapes. Three shapes remain wrong and are **not** covered. They are split
+here because "cannot be fixed" and "not fixed yet" are different claims and the difference decides whether
+anyone looks again.
+
+### 9.1 Unfixable by delimiter choice — `<b><em>q.</em>a</b>`
+
+```
+**_q._a**   ->   strong("_" "q." "_" "a")
+```
+
+An italic run ending in punctuation, closed against a letter. **No delimiter works.** A closing `*` here is
+preceded by punctuation (`.`) and followed by an alphanumeric (`a`), which under CommonMark is **not
+right-flanking**, so `*` cannot close either — verified: `***q.*a**` → `"*" "*" em("q." em("a"))`, and
+`__*q.*a__` → `strong("*" "q." "*" "a")`.
+
+Closing this needs something other than a delimiter choice — raw HTML passthrough, which RFC 008 §4 and
+RFC 009 §4.3 both declined. **Nothing to schedule.**
+
+### 9.2 Fixable, unscheduled — `<b><em>q</em>a<em>r</em></b>`
+
+```
+**_q_a*r***   ->   strong("_" "q_a" em("r"))
+```
+
+**A working encoding exists:** `__*q*a*r*__` parses as `strong(em("q") "a" em("r"))`, correctly. It is not
+applied because it swaps the **outer** delimiter rather than the inner one, which is a larger change than
+this RFC's rule and needs its own design — the outer `__` has its own flanking constraints, and RFC 037's
+addendum owns that choice.
+
+**This is work, not an impossibility.** It belongs to whoever next touches the delimiter machinery.
+
+### 9.3 Pre-existing, in the other direction — `<b><em>q</em></b>x`
+
+```
+***q***x   ->   em(strong("q")) "x"
+```
+
+**The inverted nesting the `_` swap exists to prevent**, surviving where the swap does not reach: the outer
+flank guard (RFC 037's addendum, which looks at what follows the whole bold) reverts to `*`. The source is
+`strong(em(…))`; the output reads `em(strong(…))`. Bold-italic either way, so visually identical and
+structurally wrong.
+
+Byte-identical to `2.6.0` and untouched by this RFC. Found by the dev team while implementing it.
+
+---
+
+## 10. Prevalence, measured 2026-09-25 — the answer is zero
+
+**0 of 424** `<b>`/`<strong>` openings match the trigger, over **42 pages** of editorial prose, blogs,
+essays, news and how-to. Confirmed two independent ways: a spec-compliant DOM parse, and the output the
+published `2.6.0` binary actually writes, parsed. A positive control shows the detector fires.
+
+Four openings had emphasis first; three were *whole-bold-is-italic* (which parses correctly) and one was
+followed by a space (also correct). **Rule of three: a 95 % upper bound of about 0.7 %** of bold openings.
+
+**What it does not measure.** These are published web pages, which have been through a CMS that normalises
+markup. §5's plausibility argument was about **editor-generated paste HTML**, and that remains unmeasured —
+bekoedit's corpus is the representative sample and correspondence with them is paused until `3.0.0`.
+
+**So the priority stands at P2** and this ships in whatever release is next, not one of its own. The defect
+is real, silent and reproduced on the published binary; it is simply not common in published prose.
+

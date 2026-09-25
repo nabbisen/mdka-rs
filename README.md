@@ -71,12 +71,38 @@ requirement at all.
 Other platforms (macOS Intel, Windows ARM, Linux aarch64 glibc) aren't built
 as binaries — use `cargo install mdka-cli` below instead.
 
-Extract the archive; it contains one folder holding the `mdka` binary:
+Extract the archive; it contains one folder holding the `mdka` binary. Replace
+`<version>` with the release you downloaded (for example `2.6.0`).
+
+**Linux** — use your archive's name (`Linux-x64-gnu`, `Linux-x64-musl` or
+`Linux-aarch64-musl`) in the first two lines:
 
 ```bash
-cd mdka@Linux-x64-gnu-<version>  # the folder the archive extracted to
-
+tar xzf mdka@Linux-x64-gnu-<version>.tar.gz
+cd mdka@Linux-x64-gnu-<version>
 echo '<h1>Hello</h1><p><strong>world</strong></p>' | ./mdka
+# # Hello
+#
+# **world**
+```
+
+**macOS**:
+
+```bash
+unzip mdka@macOS-aarch64-<version>.zip
+cd mdka@macOS-aarch64-<version>
+echo '<h1>Hello</h1><p><strong>world</strong></p>' | ./mdka
+# # Hello
+#
+# **world**
+```
+
+**Windows** (PowerShell):
+
+```powershell
+Expand-Archive mdka@Windows-x64-<version>.zip -DestinationPath .
+cd mdka@Windows-x64-<version>
+'<h1>Hello</h1><p><strong>world</strong></p>' | .\mdka.exe
 # # Hello
 #
 # **world**
