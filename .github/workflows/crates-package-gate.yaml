@@ -54,18 +54,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # RFC 030 addendum, 2026-09-22: ~/.cargo/registry/src (the extracted
-      # packages `cargo package --workspace` builds the dependents against)
-      # must never be cached. Cargo never re-extracts while a version is
-      # unchanged, so a cached extraction from before a source-only change
-      # (no new dependency, so the Cargo.lock-keyed cache entry is unchanged
-      # too) verifies stale source under the current version number -- this
-      # is exactly how RFC 039's `html_to_markdown_many_with` read as "cannot
-      # find function" against a pre-RFC-039 extraction. Caching only
-      # registry/index and registry/cache (the crates.io download cache, no
-      # tmp-registry entries) keeps the download-avoidance this cache exists
-      # for, at zero cost, without ever caching an extraction. ~/.cargo/git
-      # is dropped entirely: Cargo.lock has zero git-sourced entries.
+      # Two exclusions, and each is a stale-source defect the cache key cannot see.
+      # The key is hashFiles('**/Cargo.lock'); a change to mdka's source that adds
+      # no dependency leaves it unchanged, so the restored cache predates the change.
+      #
+      # 1. RFC 030 addendum, 2026-09-22: ~/.cargo/registry/src (the extracted
+      #    packages `cargo package --workspace` builds the dependents against)
+      #    must never be cached. Cargo never re-extracts while a version is
+      #    unchanged, so a cached extraction verifies stale source under the
+      #    current version number -- this is how RFC 039's
+      #    `html_to_markdown_many_with` read as "cannot find function". Only
+      #    registry/index and registry/cache (the crates.io download cache) are
+      #    cached. ~/.cargo/git is dropped: Cargo.lock has zero git entries.
+      #
+      # 2. RFC 048 slice 2, 2026-09-26: the COMPILED workspace crates in target/
+      #    must not be restored either. `cargo package --workspace` builds the
+      #    dependents against `mdka` from a local registry at the workspace
+      #    version, and cargo treats a registry-sourced crate as immutable per name
+      #    and version, so a restored target/debug/**/*mdka* is reused as "fresh"
+      #    (the mechanism is inferred from the measurements below, not read from
+      #    cargo) and the dependents are compiled against the OLD mdka: slice 2's
+      #    API change made mdka-cli fail with "no method named `display` found
+      #    for struct `ConvertResult`" -- a struct that no longer existed.
+      #    Third-party dependency builds are what the cache is for and are kept.
+      #    (target/package is NOT the cause: it is rewritten on every run, and
+      #    excluding it alone still fails. Measured, not assumed: restoring the
+      #    pre-change target/ with and without target/package fails both times,
+      #    and passes once target/debug/**/*mdka* is dropped.)
+      #
+      #    The key carries a -v2- namespace, on both `key` and `restore-keys`, and
+      #    that is what makes the exclusion take effect. actions/cache does not
+      #    save when the primary key hits exactly, and this key cannot move on a
+      #    source-only change, so the entry saved before the exclusion existed was
+      #    frozen: changing `path` alone only changes what a future save would
+      #    hold, and no save happens. restore-keys would also have pulled the old
+      #    entry back had the key moved. Bump the namespace whenever what the
+      #    cache must not hold changes.
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
@@ -73,9 +97,10 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             target
-          key: ${{ runner.os }}-cargo-package-gate-${{ hashFiles('**/Cargo.lock') }}
+            !target/debug/**/*mdka*
+          key: ${{ runner.os }}-cargo-package-gate-v2-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-package-gate-
+            ${{ runner.os }}-cargo-package-gate-v2-
 
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
