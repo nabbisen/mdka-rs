@@ -88,6 +88,39 @@ fn deprecated_flag_notice_goes_to_stderr_stdout_stays_clean() {
     );
 }
 
+/// The CLI has one warning shape, `mdka: warning: `, for every deprecation:
+/// the three no-effect flags and the alias modes alike. Each is one line, and
+/// the shape is asserted so a later warning cannot quietly introduce a second.
+#[test]
+fn every_cli_deprecation_warning_has_the_same_shape() {
+    for args in [
+        &["--preserve-classes"][..],
+        &["--preserve-data"],
+        &["--preserve-aria"],
+        &["--mode", "strict"],
+    ] {
+        let out = run_mdka(args, "<p>Hi</p>");
+        assert!(out.status.success(), "{args:?}");
+        let stderr = String::from_utf8(out.stderr).unwrap();
+        assert!(
+            stderr.starts_with("mdka: warning: ") && stderr.matches('\n').count() == 1,
+            "{args:?}: expected one line starting `mdka: warning: `, got: {stderr:?}"
+        );
+    }
+}
+
+/// The flag warning keeps its wording; only the prefix moved (2.8.0).
+#[test]
+fn preserve_classes_warning_wording_is_unchanged_after_the_prefix() {
+    let out = run_mdka(&["--preserve-classes"], "<p>Hi</p>");
+    assert_eq!(
+        String::from_utf8(out.stderr).unwrap(),
+        "mdka: warning: `--preserve-classes` has no effect and is deprecated (see \
+         https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has no attribute \
+         syntax, so this option was never expressible in the output.\n"
+    );
+}
+
 #[test]
 fn single_file_progress_goes_to_stderr_not_stdout() {
     let dir = std::env::temp_dir().join("mdka_cli_test_a7_progress");

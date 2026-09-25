@@ -130,6 +130,13 @@ silent.
 The fix is the same everywhere: use `Balanced` (`"balanced"`, `--mode balanced`),
 or simply name no mode. Output does not change.
 
+The string forms — `"strict"`, `"semantic"`, `"preserve"`, as accepted by
+`--mode`, by the bindings and by `ConversionMode::from_str` — are deprecated in
+the same way, but **nothing can warn you about them at compile time**: a mode
+read from a config file or a variable is a string the compiler never sees, and a
+library does not print. Change them to `"balanced"` now; what they do at `3.0`
+is decided with the removal.
+
 ```rust,fragment
 use mdka::options::{ConversionMode, ConversionOptions};
 

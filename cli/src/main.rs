@@ -80,13 +80,16 @@ Examples:
   mdka --no-preserve-ids -o out/ index.html # anchors off, any mode
 ";
 
-/// Matches Node's and Python's own deprecation-warning wording exactly (see
-/// `node/src/lib.rs`'s and `python/src/lib.rs`'s `warn_deprecated_field`) --
-/// one message, three surfaces, so a user moving between bindings does not
-/// find a different story on each.
+/// The wording after the prefix matches Node's and Python's own
+/// deprecation-warning wording (see `node/src/lib.rs`'s and
+/// `python/src/lib.rs`'s `warn_deprecated_field`), so a user moving between
+/// bindings does not find a different story on each. The prefix is the CLI's
+/// one warning shape, `mdka: warning: `, shared with `warn_deprecated_mode`:
+/// `progname: warning:` is the ordinary Unix form, and `warning: mdka:` read as
+/// though mdka were the subject.
 fn warn_deprecated_flag(flag: &str) {
     eprintln!(
-        "warning: mdka: `{flag}` has no effect and is deprecated (see \
+        "mdka: warning: `{flag}` has no effect and is deprecated (see \
          https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has \
          no attribute syntax, so this option was never expressible in the \
          output."
