@@ -64,6 +64,16 @@ deprecation warnings were given one shape. A mode read from a *string* cannot be
 time, so the CHANGELOG says to act now. **RFC 041 stays in `accepted/`**: §9's removal and §10's `parse_mode`
 decision are `3.0`.
 
+**`2.9.0` ships RFC 048's precondition** — prepared 2026-09-25, **not yet tagged**; this paragraph becomes a
+shipped record when the tag lands. `unwrap_unknown_wrappers` is deprecated on all four surfaces with a note that
+says it is *removed from the `3.0` surface* and returns as a new option if wrapper handling becomes expressible —
+not the attribute-syntax reason, which is false for this field. The string-form behaviour of a mode is pinned by
+tests on every surface, and the API reference is tri-lingual (9 Rust, 10 Node, 9 Python functions; errors for all
+three bindings). **No output changes and nothing is removed.** `3.0` ships immediately after; the CHANGELOG
+names what it removes. **RFC 048, 041 and 039 stay in `accepted/`**: 048 is a `3.0` document and this release
+ships only its precondition. **Still open:** RFC 048's criteria, the `FileOutcome` repr item, and the four
+carried audit items below.
+
 **Unscheduled, both `3.0` and both needing a direction before they can produce work:** RFC 039 Half B, and
 **RFC 041** — after `2.4.2`, six of eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are
 aliases of `Balanced` with no mechanism to diverge, while their documented purposes promise attribute

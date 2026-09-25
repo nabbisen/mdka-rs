@@ -9,6 +9,76 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [2.9.0] - 2026-09-25
+
+**`2.9.0` — a stepping stone to `3.0`, which follows within days.** It changes **no
+output** and **removes nothing**: every function, option and mode keeps working
+exactly as in `2.8.0`. Upgrading to it is free, and it is the cheapest way to find
+out whether `3.0` will touch your code — **fix what warns, and `3.0` is a smaller
+step.**
+
+### What `3.0` will remove
+
+Nothing here is removed yet. `3.0` is a breaking release and it is next, so a
+reader deciding whether to stop here should know what is scheduled to go:
+
+- the three alias modes **`Strict`, `Semantic` and `Preserve`** (deprecated in
+  `2.8.0`);
+- the five attribute options **`preserve_classes`, `preserve_data_attrs`,
+  `preserve_aria_attrs`, `preserve_unknown_attrs` and `drop_presentation_attrs`**
+  (deprecated in `2.2.0`);
+- **`unwrap_unknown_wrappers`** (deprecated in this release, below).
+
+`3.0` also reshapes the result types and the per-language function conventions;
+that is a larger change than the removals and is not described here. See
+[RFC 048](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/accepted/048-the-3.0-surface.md)
+for its shape.
+
+### Deprecated
+
+- **`unwrap_unknown_wrappers` — `unwrapUnknownWrappers` in Node.js, `--unwrap-wrappers`
+  on the CLI.** It cannot change the output: unwrapping a `<div>`, `<section>`,
+  `<article>` or `<main>` removes the tag but keeps the paragraph break it stood
+  for, and Markdown has no wrapper element to show the difference. It warns on every
+  surface, and **only when you pass it** — a mode that turns it on by default
+  (`Minimal`, `Semantic`) stays silent:
+  - **Rust:** `#[deprecated(since = "2.9.0")]` on the field.
+  - **Node.js:** a `DeprecationWarning` from `htmlToMarkdownWith` and
+    `htmlToMarkdownMany`. The `Async` and file functions cannot emit it, but convert
+    identically.
+  - **Python:** a `DeprecationWarning` when `unwrap_unknown_wrappers` is passed.
+  - **CLI:** one line on stderr, `` mdka: warning: `--unwrap-wrappers` has no effect
+    and is deprecated: … ``, with stdout untouched.
+
+  **The reason differs from the five attribute options'.** Those are inert because
+  Markdown has no attribute syntax, which is permanent. This one is inert because of
+  what today's renderer leaves behind, so its note says so: it is *removed from the
+  `3.0` surface*, and *if wrapper handling becomes expressible it returns as a new
+  option*. **What to do:** stop passing it. Nothing changes in your output.
+
+### Documentation
+
+- **The API reference now covers all three bindings.** `docs/src/api/` listed only
+  the Rust functions under a heading that called them "the complete surface". It now
+  lists all 9 Rust, 10 Node.js and 9 Python functions in one table, one row per
+  operation with each language's name and a dash where a language lacks it, so the
+  differences are visible: Node.js has no `htmlToMarkdownManyWith`, only Node.js has
+  the `…Async` string functions, and Node.js's file functions are async-only. It is
+  the page to read while migrating.
+- **Three statements on that page were wrong and are corrected.** `ConvertResult`
+  is not only returned by single-file functions in Node.js (the bulk functions
+  return it too, with an `error` field); "file functions propagate IO errors via
+  `Result`" is true of Rust only — Python raises `MdkaError` and Node.js rejects or
+  returns `error`; and the surface was not complete.
+- **Errors are documented for all three bindings**, from observed behaviour, and
+  `html_to_markdown_many`, `html_to_markdown_many_with` and `version()` have
+  reference entries for the first time.
+- **How a mode given as a string behaves is now stated and tested** on every
+  surface: the CLI and Node.js accept `"strict"`, `"semantic"` and `"preserve"` and
+  warn; Python does not accept a mode as a string at all (`TypeError`); Rust's
+  `"strict".parse()` accepts it **silently**, because a library must not print.
+  If you read a mode from a config file, change it to `"balanced"`.
+
 ## [2.8.0] - 2026-09-25
 
 **`2.8.0` — `Strict`, `Semantic` and `Preserve` are deprecated, with a warning on
