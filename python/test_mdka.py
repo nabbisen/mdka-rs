@@ -503,6 +503,8 @@ def test_with_preserve_classes_flag():
     )
     assert "Hello" in md
 
+# Passes a deprecated option on purpose; the warning itself is asserted below.
+@pytest.mark.filterwarnings("ignore:mdka. `unwrap_unknown_wrappers`:DeprecationWarning")
 def test_with_unwrap_unknown_wrappers_flag():
     # Bare-sibling-text fixture, not a block-element fixture: RFC 005 Slice A
     # found block-element fixtures cannot discriminate this field at all,
@@ -577,6 +579,38 @@ def test_no_mode_balanced_and_minimal_stay_silent():
         html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Balanced)
         html_to_markdown_with("<p>Hi</p>", mode=ConversionMode.Minimal)
         html_to_markdown_many_with(["<p>Hi</p>"])
+
+def test_unwrap_unknown_wrappers_emits_one_warning_with_the_true_reason():
+    # RFC 048 §7: deprecated 2.9.0. Its own message: the attribute options'
+    # reason ("no attribute syntax") is false for this option.
+    import re
+    with pytest.warns(DeprecationWarning) as record:
+        html_to_markdown_with(
+            "<p>Hi</p>", mode=ConversionMode.Balanced, unwrap_unknown_wrappers=True
+        )
+    messages = [str(w.message) for w in record if issubclass(w.category, DeprecationWarning)]
+    assert len(messages) == 1, messages
+    assert messages[0].startswith("mdka: `unwrap_unknown_wrappers` has no effect and is deprecated"), messages[0]
+    assert "removed from the 3.0 surface" in messages[0], messages[0]
+    assert "attribute syntax" not in messages[0], messages[0]
+    assert not re.search(r"RFC \d{3}", messages[0]), "no internal RFC IDs in user-facing text"
+
+def test_unwrap_unknown_wrappers_is_silent_unless_passed():
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        # Raises if any warning is emitted. Minimal turns the field on
+        # internally; that must stay silent.
+        html_to_markdown_with("<div><p>Hi</p></div>")
+        html_to_markdown_with("<div><p>Hi</p></div>", mode=ConversionMode.Minimal)
+
+def test_a_string_mode_is_a_type_error_not_a_warning():
+    # RFC 048 §2.2, pinned: Python does not accept a mode as a string at all.
+    # (The CLI and Node accept "strict" and warn; Rust's `FromStr` accepts it
+    # silently.) 3.0 removes the names, so who was warned must be known.
+    for bad in ("strict", "balanced"):
+        with pytest.raises(TypeError):
+            html_to_markdown_with("<p>Hi</p>", mode=bad)
 
 def test_html_files_with_mode(tmp_path):
     src = tmp_path / "page.html"

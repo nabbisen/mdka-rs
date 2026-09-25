@@ -46,6 +46,20 @@ fn warn_deprecated_field(env: &Env, field: &str) -> Result<()> {
     )
 }
 
+/// Warning for `unwrapUnknownWrappers` (deprecated 2.9.0). Its own message, not
+/// `warn_deprecated_field`'s: that one says Markdown has no attribute syntax,
+/// which is false for this option. Only when the caller passed it.
+fn warn_deprecated_unwrap_wrappers(env: &Env) -> Result<()> {
+    emit_deprecation_warning(
+        env,
+        "mdka: `unwrapUnknownWrappers` has no effect and is deprecated: unwrapping leaves no \
+         Markdown-visible trace today, so this option cannot change the output. It is removed \
+         from the 3.0 surface; if wrapper handling becomes expressible it returns as a new \
+         option (see https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers)."
+            .to_string(),
+    )
+}
+
 /// Warning for `mode: 'strict' | 'semantic' | 'preserve'` (RFC 041 §9), which
 /// are aliases of `'balanced'`. Same rule as the fields: only when the caller
 /// named the mode, so a call with no `mode` is silent.
@@ -125,7 +139,12 @@ fn to_rust_opts(
     if let Some(v) = js.drop_interactive_shell {
         opts.drop_interactive_shell = v;
     }
+    // Deprecated no-op (RFC 048 §7); kept as a passthrough until 3.0 removes it.
+    #[allow(deprecated)]
     if let Some(v) = js.unwrap_unknown_wrappers {
+        if let Some(env) = env {
+            warn_deprecated_unwrap_wrappers(env)?;
+        }
         opts.unwrap_unknown_wrappers = v;
     }
 

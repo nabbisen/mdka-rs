@@ -25,12 +25,14 @@ walks the parsed document once. You rarely need to set individual fields —
 start with a mode and override only what differs from the default for
 that mode.
 
-**Five of the eight fields below have no effect on output and are
-deprecated as of `2.2.0`.** Markdown has no attribute syntax, so
+**Six of the eight fields below have no effect on output; only two can
+affect it (`preserve_ids` and `drop_interactive_shell`).** Five are
+deprecated as of `2.2.0`: Markdown has no attribute syntax, so
 "preserve this attribute" was never expressible in the output format —
 see [RFC 005](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/005-conversion-options-semantics.md)
-for the full history. They are marked below; nothing is removed, and no
-output changes if you are currently setting them.
+for the full history. The sixth, `unwrap_unknown_wrappers`, is deprecated as
+of `2.9.0` for a different reason (below). They are marked below; nothing is
+removed yet, and no output changes if you are currently setting them.
 
 ## Creating Options
 
@@ -73,9 +75,9 @@ still what they set.
 | `preserve_unknown_attrs` | ❌ | ✅ | ❌ | ❌ | ✅ | **None — deprecated** |
 | `drop_presentation_attrs` | ✅ | ❌ | ✅ | ✅ | ❌ | **None — deprecated** |
 | `drop_interactive_shell` | ❌ | ❌ | ✅ | ❌ | ❌ | Drops shell elements |
-| `unwrap_unknown_wrappers` | ❌ | ❌ | ✅ | ✅ | ❌ | No effect today |
+| `unwrap_unknown_wrappers` | ❌ | ❌ | ✅ | ✅ | ❌ | **None today — deprecated (2.9.0)** |
 
-Because the five deprecated fields have no effect, and `unwrap_unknown_wrappers`
+Because the five attribute fields have no effect, and `unwrap_unknown_wrappers`
 has no effect *today* for a different reason (below), **`Balanced`, `Strict`,
 `Semantic`, and `Preserve` currently produce byte-identical output** — they
 differ from each other only in these fields' defaults. See
@@ -171,15 +173,26 @@ Whether to replace `<div>`, `<span>`, `<section>`, `<article>`, and
 `<main>` with their children, discarding the wrapper tag itself, when
 `unwrap_unknown_wrappers` is enabled. Enabled in `Minimal` and `Semantic`.
 
-**No effect today, for a different reason than the five deprecated fields
-above.** Unwrapping a block-level wrapper (`<div>`, `<section>`, `<article>`,
+**Deprecated as of `2.9.0`; no effect today, for a different reason than the five
+attribute fields above.** Unwrapping a block-level wrapper (`<div>`, `<section>`, `<article>`,
 `<main>`) removes the tag, but keeps the paragraph break it stood for — the
 same block separation the element would have produced rendered. The tag's
 removal has no Markdown-visible trace either way, so there is currently
 nothing left for this option to change: Markdown has no wrapper element to show
-the difference, so nothing about today's output can distinguish it. This is
-*not* a deprecation, unlike the five fields above: `unwrap_unknown_wrappers`
-carries no `#[deprecated]` attribute and triggers no warning. See
+the difference, so nothing about today's output can distinguish it.
+
+**The reason is not permanent, and the deprecation says so.** The five
+attribute fields are inert because Markdown has no attribute syntax, which will
+not change. This one is inert because of what today's renderer leaves behind,
+so the note reads: *removed from the 3.0 surface: unwrapping leaves no
+Markdown-visible trace today, so this option cannot change the output. If
+wrapper handling becomes expressible it returns as a new option.*
+
+Passing it warns on every surface, and only when you pass it — never for a mode
+that turns it on by default: a `#[deprecated]` warning in Rust, a
+`DeprecationWarning` from `htmlToMarkdownWith` and `htmlToMarkdownMany` in Node
+(the `Async` and file functions cannot emit it) and from Python, and one line on
+stderr from the CLI's `--unwrap-wrappers`. Output is unchanged. Remove it. See
 [Conversion Modes](./modes.md) for how this affects the modes.
 
 **`<figure>` and `<figcaption>` are never unwrapped**, in any mode — see

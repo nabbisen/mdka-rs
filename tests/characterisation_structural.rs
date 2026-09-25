@@ -89,6 +89,8 @@ fn drop_interactive_shell_toggle_changes_output_in_every_mode() {
 }
 
 #[test]
+// Internal: toggles the deprecated field to prove it is still inert.
+#[allow(deprecated)]
 fn unwrap_unknown_wrappers_toggle_no_longer_changes_output_in_any_mode() {
     // Previously named "...changes output in every mode", with a baseline of
     // "BeforeinnerAfter\n" for Minimal/Semantic (welded) and "flipped" values
@@ -145,6 +147,8 @@ fn balanced_and_semantic_are_identical_on_div_per_line_markup() {
 }
 
 #[test]
+// Internal: toggles the deprecated field to prove it is still inert.
+#[allow(deprecated)]
 fn unwrap_unknown_wrappers_toggle_is_inert_with_ids_too() {
     // The same inertness claim, on the fixture that can falsify it for
     // `preserve_ids`: an unwrapped wrapper keeps its anchor.
@@ -167,6 +171,8 @@ fn unwrap_unknown_wrappers_toggle_is_inert_with_ids_too() {
 }
 
 #[test]
+// Internal: toggles the deprecated field to prove it is still inert.
+#[allow(deprecated)]
 fn unwrap_unknown_wrappers_naive_fixture_shows_no_difference() {
     // Recorded deliberately: this is the fixture the discovery pass tried
     // first, and it demonstrates why WRAPPER_HTML above had to be different.

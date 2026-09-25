@@ -16,7 +16,7 @@
 //!       --preserve-data  [deprecated, no effect] Keep data-* attributes
 //!       --preserve-aria  [deprecated, no effect] Keep aria-* attributes
 //!       --drop-shell     Drop nav/header/footer/aside
-//!       --unwrap-wrappers  [no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
+//!       --unwrap-wrappers  [deprecated, no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
 //!   -h, --help           Show this help
 //!   -V, --version        Show the version
 //!       --               End of options; everything after is a path
@@ -50,7 +50,7 @@ Options:
       --preserve-data     [deprecated, no effect] Keep data-* attributes (same reason)
       --preserve-aria     [deprecated, no effect] Keep aria-* attributes (same reason)
       --drop-shell        Drop nav/header/footer/aside
-      --unwrap-wrappers   [no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
+      --unwrap-wrappers   [deprecated, no effect today] Unwrap div/span/section/article/main tags, keeping their content and separation
   -h, --help              Show this help
   -V, --version           Show the version
       --                  End of options; everything after is a path
@@ -93,6 +93,18 @@ fn warn_deprecated_flag(flag: &str) {
          https://nabbisen.github.io/mdka-rs/api/options.html). Markdown has \
          no attribute syntax, so this option was never expressible in the \
          output."
+    );
+}
+
+/// `--unwrap-wrappers` (deprecated 2.9.0). Its own wording, not
+/// `warn_deprecated_flag`'s: that one says Markdown has no attribute syntax,
+/// which is false for this flag. Same `mdka: warning: ` shape.
+fn warn_deprecated_unwrap_flag() {
+    eprintln!(
+        "mdka: warning: `--unwrap-wrappers` has no effect and is deprecated: unwrapping leaves \
+         no Markdown-visible trace today, so this option cannot change the output. It is removed \
+         from the 3.0 surface; if wrapper handling becomes expressible it returns as a new option \
+         (see https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers)."
     );
 }
 
@@ -221,7 +233,10 @@ fn main() {
     if drop_shell {
         opts.drop_interactive_shell = true;
     }
+    // Deprecated no-op (RFC 048 §7), warned only when the flag was passed.
+    #[allow(deprecated)]
     if unwrap_wrappers {
+        warn_deprecated_unwrap_flag();
         opts.unwrap_unknown_wrappers = true;
     }
 

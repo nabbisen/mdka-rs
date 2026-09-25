@@ -69,9 +69,10 @@ def version() -> str: ...
 def html_to_markdown(html: str) -> str: ...
 
 # The `_with` functions share one keyword tail. `preserve_classes`,
-# `preserve_data_attrs` and `preserve_aria_attrs` are deprecated, have no
-# effect and emit a DeprecationWarning when passed, but are still accepted, so
-# they are part of the signature. There is deliberately no
+# `preserve_data_attrs`, `preserve_aria_attrs` and (since 2.9.0)
+# `unwrap_unknown_wrappers` are deprecated, have no effect and emit a
+# DeprecationWarning when passed, but are still accepted, so they are part of
+# the signature. There is deliberately no
 # `preserve_unknown_attrs`: passing it raises TypeError.
 def html_to_markdown_with(
     html: str,

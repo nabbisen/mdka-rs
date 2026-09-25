@@ -59,6 +59,9 @@ fn task_checkbox(li: ego_tree::NodeRef<'_, scraper::Node>) -> Option<bool> {
     None
 }
 
+// Internal: this is the one place the deprecated field is read; deprecating it
+// must not stop it working until 3.0 removes it.
+#[allow(deprecated)]
 fn disposition(tag: &str, opts: &ConversionOptions) -> Disposition {
     if utils::is_skip_tag(tag) || (opts.drop_interactive_shell && utils::is_shell_tag(tag)) {
         Disposition::Skip

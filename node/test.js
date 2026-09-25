@@ -343,6 +343,39 @@ async function run(name, fn) {
       }
     })
 
+    // RFC 048 §7: `unwrapUnknownWrappers` is deprecated (2.9.0). Its own message,
+    // because the attribute options' reason ("no attribute syntax") is false here.
+    await run('htmlToMarkdownWith: unwrapUnknownWrappers emits one DeprecationWarning with the true reason', () => {
+      const warnings = runWarningCheck("{ mode: 'balanced', unwrapUnknownWrappers: true }")
+      assert.equal(warnings.length, 1, `expected exactly one warning, got ${warnings.length}`)
+      assert.equal(warnings[0].name, 'DeprecationWarning')
+      assert.ok(
+        warnings[0].message.startsWith('mdka: `unwrapUnknownWrappers` has no effect and is deprecated'),
+        `unexpected message: ${warnings[0].message}`
+      )
+      assert.match(warnings[0].message, /removed from the 3\.0 surface/)
+      assert.doesNotMatch(warnings[0].message, /attribute syntax/, 'the attribute options\' reason is false here')
+      assert.doesNotMatch(warnings[0].message, /RFC \d{3}/, 'no internal RFC IDs in user-facing text')
+    })
+
+    await run('htmlToMarkdownWith: unwrapUnknownWrappers stays silent unless passed, even where a mode turns it on', () => {
+      for (const literal of ['undefined', '{}', "{ mode: 'minimal' }", "{ mode: 'balanced' }"]) {
+        const warnings = runWarningCheck(literal)
+        assert.equal(warnings.length, 0, `${literal}: expected no warnings, got ${JSON.stringify(warnings)}`)
+      }
+    })
+
+    // RFC 048 §2.2, pinned: a mode given as a STRING is accepted and warns in
+    // Node (the CLI does the same; Python raises TypeError; Rust's `FromStr`
+    // is silent). 3.0 removes these names, and what its error message says
+    // depends on knowing exactly who was warned.
+    await run('htmlToMarkdownWith: a string mode is accepted and warns (the pinned string-form behaviour)', () => {
+      const warnings = runWarningCheck("{ mode: 'strict' }")
+      assert.equal(warnings.length, 1)
+      assert.equal(warnings[0].name, 'DeprecationWarning')
+      assert.strictEqual(htmlToMarkdownWith('<p>Hi</p>', { mode: 'strict' }), 'Hi\n')
+    })
+
     await run('htmlToMarkdownWithAsync: mode option respected', async () => {
       const md = await htmlToMarkdownWithAsync(
         '<nav>nav</nav><p>Main</p>',

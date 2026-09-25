@@ -31,10 +31,11 @@ defaults of six fields — `preserve_classes`, `preserve_data_attrs`,
   attributes, so there is nothing in the output that could carry them. They are
   deprecated and have no effect at all — see the
   [Field Reference](./options.md#field-reference).
-- `unwrap_unknown_wrappers` is not deprecated, but it has no effect either:
-  unwrapping a `<div>`, `<section>`, `<article>` or `<main>` removes the tag
-  while keeping the paragraph break it stood for, and Markdown has no wrapper
-  element to show the difference. The tag's removal leaves no trace.
+- `unwrap_unknown_wrappers` is inert for a different reason, and is deprecated as
+  of `2.9.0` with a note that does not claim permanence: unwrapping a `<div>`,
+  `<section>`, `<article>` or `<main>` removes the tag while keeping the
+  paragraph break it stood for, and Markdown has no wrapper element to show the
+  difference. The tag's removal leaves no trace.
 - The fields that **do** affect output — `preserve_ids` and
   `drop_interactive_shell` — have the same value in all four modes.
 

@@ -159,9 +159,19 @@ pub struct ConversionOptions {
     /// `<article>`, `<main>`) removes the tag but keeps the paragraph break
     /// it stood for, and Markdown has no wrapper element to show the
     /// difference, so the tag's removal leaves nothing for this option to
-    /// change. Not deprecated, unlike the fields above: it carries no
-    /// `#[deprecated]` attribute and triggers no warning. See
+    /// change.
+    ///
+    /// Deprecated since 2.9.0, for a different reason from the five attribute
+    /// fields above. Those are inert because Markdown has no attribute
+    /// syntax, which is permanent. This one is inert because unwrapping leaves
+    /// no observable trace in today's renderer, which is a fact about that
+    /// renderer and not about Markdown, so its note does not claim
+    /// permanence. See
     /// the [options page](https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers).
+    #[deprecated(
+        since = "2.9.0",
+        note = "removed from the 3.0 surface: unwrapping leaves no Markdown-visible trace today, so this option cannot change the output. If wrapper handling becomes expressible it returns as a new option. See https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers"
+    )]
     pub unwrap_unknown_wrappers: bool,
 }
 

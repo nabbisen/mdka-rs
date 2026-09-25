@@ -97,6 +97,7 @@ fn every_cli_deprecation_warning_has_the_same_shape() {
         &["--preserve-classes"][..],
         &["--preserve-data"],
         &["--preserve-aria"],
+        &["--unwrap-wrappers"],
         &["--mode", "strict"],
     ] {
         let out = run_mdka(args, "<p>Hi</p>");
@@ -274,5 +275,58 @@ fn help_marks_the_alias_modes_deprecated() {
     assert!(
         help.contains("[deprecated, removed in 3.0] Aliases of balanced"),
         "the Modes entry must mark the aliases deprecated and say when they go:\n{help}"
+    );
+}
+
+// ── RFC 048 §7: `--unwrap-wrappers` is deprecated (2.9.0), removed in 3.0 ────
+
+/// Its own wording, not the attribute flags': "Markdown has no attribute
+/// syntax" is false for this flag, and a compiler-grade warning must not say it.
+#[test]
+fn unwrap_wrappers_warning_gives_the_true_reason_and_keeps_stdout_clean() {
+    let plain = run_mdka(&[], "<div><p>Hi</p></div>");
+    let flagged = run_mdka(&["--unwrap-wrappers"], "<div><p>Hi</p></div>");
+    assert!(flagged.status.success());
+    assert_eq!(
+        flagged.stdout, plain.stdout,
+        "the flag must not change the output"
+    );
+    let stderr = String::from_utf8(flagged.stderr).unwrap();
+    assert!(
+        stderr.starts_with("mdka: warning: `--unwrap-wrappers` has no effect and is deprecated"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("removed from the 3.0 surface"), "{stderr}");
+    assert!(stderr.contains("returns as a new option"), "{stderr}");
+    assert!(
+        !stderr.contains("attribute syntax"),
+        "the attribute options' reason is false for this flag: {stderr}"
+    );
+}
+
+/// Warned only when the caller passes the flag. `--mode minimal` turns the
+/// field on internally, and that must stay silent.
+#[test]
+fn unwrap_wrappers_is_silent_unless_passed() {
+    for args in [&[][..], &["--mode", "minimal"], &["--drop-shell"]] {
+        let out = run_mdka(args, "<div><p>Hi</p></div>");
+        assert!(
+            out.stderr.is_empty(),
+            "{args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
+#[test]
+fn help_marks_unwrap_wrappers_deprecated() {
+    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
+        .arg("--help")
+        .output()
+        .unwrap();
+    let help = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        help.contains("--unwrap-wrappers   [deprecated, no effect today]"),
+        "help must mark the flag deprecated:\n{help}"
     );
 }

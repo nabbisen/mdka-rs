@@ -31,6 +31,20 @@ fn warn_deprecated_field(py: Python<'_>, field: &str) -> PyResult<()> {
     )
 }
 
+/// Warning for `unwrap_unknown_wrappers` (deprecated 2.9.0). Its own message,
+/// not `warn_deprecated_field`'s: that one says Markdown has no attribute
+/// syntax, which is false for this option. Only when the caller passed it.
+fn warn_deprecated_unwrap_wrappers(py: Python<'_>) -> PyResult<()> {
+    emit_deprecation_warning(
+        py,
+        "mdka: `unwrap_unknown_wrappers` has no effect and is deprecated: unwrapping leaves no \
+         Markdown-visible trace today, so this option cannot change the output. It is removed \
+         from the 3.0 surface; if wrapper handling becomes expressible it returns as a new \
+         option (see https://nabbisen.github.io/mdka-rs/api/options.html#unwrap_unknown_wrappers)."
+            .to_string(),
+    )
+}
+
 /// Warning for `ConversionMode.Strict`, `Semantic` and `Preserve` (RFC 041
 /// §9), which are aliases of `Balanced`. The default is `Balanced`, so a call
 /// that never names a mode is silent. `name` is the Python attribute name.
@@ -130,7 +144,10 @@ fn build_opts(
     if let Some(v) = drop_interactive_shell {
         opts.drop_interactive_shell = v;
     }
+    // Deprecated no-op (RFC 048 §7); kept as a passthrough until 3.0 removes it.
+    #[allow(deprecated)]
     if let Some(v) = unwrap_unknown_wrappers {
+        warn_deprecated_unwrap_wrappers(py)?;
         opts.unwrap_unknown_wrappers = v;
     }
     Ok(opts)
