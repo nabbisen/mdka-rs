@@ -880,6 +880,13 @@ anyone's memory.
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
 
+### Recorded 2026-09-26, from `3.0` slice 2
+
+| Item | State |
+|---|---|
+| **`ci.yaml`'s node and python jobs cache `target` on a `hashFiles('**/Cargo.lock')` key** — the same shape as the hazard that made `crates package gate` verify stale source for an unknown number of releases | **Untested, not a known defect.** The reasoning that it does not bite: those tests build in-workspace from path dependencies, where cargo fingerprints by mtime rather than treating the crate as immutable per name and version. Nobody has checked. Raised by the dev team, `3.0` slice 2 Part 3 |
+| **A cache-key namespace must be bumped whenever what the cache may not hold changes** | Learned the hard way: `actions/cache` does not save on an exact key hit, so a `path:` exclusion alone is inert, and `restore-keys` would pull the old entry back regardless. Written into `crates-package-gate.yaml`'s comment |
+
 ### Recorded 2026-09-26, from `3.0` slice 1
 
 | Item | State |
