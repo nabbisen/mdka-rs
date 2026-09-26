@@ -6,6 +6,12 @@ governed by [RFC 000](./done/000-rfc-lifecycle-policy.md).
 **The folder is the source of truth for an RFC's state.** Each file's `Status`
 field mirrors its folder; if the two ever disagree, the folder wins.
 
+**A stage folder with nothing in it is absent**, because git does not track empty
+directories — at `3.0.0` both `proposed/` and `accepted/` emptied for the first
+time and disappeared from a fresh clone. That misstates nothing: no RFC is in a
+state the tree fails to show, and the tables below read *None.* Recreate the
+folder by putting an RFC in it; no `.gitkeep` is kept for the purpose.
+
 Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
