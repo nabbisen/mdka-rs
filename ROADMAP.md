@@ -1,7 +1,7 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 2.9.0 — **shipped 2026-09-25**, tag `5efc0a5`, complete on all four registries and verified at the destination: the published CLI, wheel and npm package each warn once on `unwrap_unknown_wrappers` and are silent without it, and **102 comparisons against the published `2.8.0` binary differ in nothing**. **RFC 048's precondition; `3.0` is next.** `2.8.0` tag `d26f51b`; `2.7.0` tag `a488fb4`; `2.6.0` tag `da687c4`; `2.5.1` tag `4d7626d`.
+**Current version.** 3.0.0 — **shipped 2026-09-26**, tag `73fe606`, complete on all four registries and verified at the destination. **The first deliberately staged breaking release**: two modes, two options, one result model, and `ConvertResult` gone. **Conversion output is unchanged from `2.9.0`** — 102 comparisons of the published `3.0.0` binary against the published `2.9.0` one, 0 differing. **No external dependent breaks**, and none can resolve `3.0.0` without editing its own manifest. `2.9.0` tag `5efc0a5`; `2.8.0` tag `d26f51b`; `2.7.0` tag `a488fb4`; `2.6.0` tag `da687c4`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
