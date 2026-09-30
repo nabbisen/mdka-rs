@@ -40,7 +40,7 @@ able to tell "the library got slower" apart from "the room got noisier," which i
 the RFC 012 amendment above closes. Read this page's `2.9.0` vs `3.0.0` string-conversion delta as
 **not measurable** going forward, not as "small but real."
 
-### Bulk file conversion: a small allocation, and a real slowdown that grows with concurrency
+### Bulk file conversion: one measured allocation, and a wall-time result we could not reproduce
 
 `html_files_to_markdown` returned `Vec<(&P, Result<PathBuf, MdkaError>)>` — a **borrowed** key —
 through `2.9.0`. It now returns `Vec<FileOutcome>` with an **owned** `PathBuf`. That is one
@@ -49,7 +49,7 @@ all, so both the allocation and any effect on wall time were measured directly.
 
 **Bytes allocated**, converting 10/100/1000 copies of `small.html`, measured with this project's
 own counting allocator (`benches/alloc_counter.rs`) — this figure does not depend on scheduling and
-needed no re-run:
+has been stable across every sitting:
 
 | Files | `2.9.0` | `3.0.0` | delta | per file |
 |---:|---:|---:|---:|---:|
@@ -57,47 +57,45 @@ needed no re-run:
 | 100 | 13,458,340–13,461,840 B | 13,474,440–13,478,440 B | +0.12% | **+161–166 B** |
 | 1000 | 134,615,600–134,650,600 B | 134,777,600–134,817,600 B | +0.12% | **+162–167 B** |
 
-Flat across a 100× range in file count, both runs — exactly what "one more small owned allocation
-per `FileOutcome`" predicts, and this is the whole allocation-side mechanism, quantified rather
-than guessed at.
+Flat across a 100× range in file count — exactly what "one more small owned allocation per
+`FileOutcome`" predicts. **This is the one solid result in this section**, and it is the whole of
+the allocation-side story: `3.0.0` allocates about 165 bytes more per file, permanently and by
+design.
 
-**The first sitting's wall-time finding was the opposite of the truth.** It reported `3.0.0`
-finishing the same batch *faster* by up to 37%, growing with thread count, and offered "the removed
-borrow parallelizes more cleanly" as an unconfirmed candidate mechanism. That mechanism was
-rejected on review: a removed borrow does not explain an effect that scales with thread count, and
-the new `FileOutcome` is the *larger* type (48 B vs. the old tuple's 32 B) — it should cost more,
-not less. **A confirmed-quiet re-run, with a filesystem-write/no-write control added at each thread
-count and the whole sweep repeated twice for reproducibility, found the review was right**:
+#### The wall-time story, and why this page will not tell you one
 
-| Threads | with writes (run 1) | with writes (run 2) | no writes (run 1) | no writes (run 2) |
-|---:|---:|---:|---:|---:|
-| 1 | +0.45% | −0.05% | +3.33% | +0.01% |
-| 2 | +2.39% | +1.82% | −3.49% | +4.37% |
-| 4 | +12.47% | −2.00% | +17.46% | +12.95% |
-| 8 | +11.51% | +32.21% | +14.27% | +20.67% |
-| 16 | +70.20% | +57.85% | +82.69% | +60.89% |
-| 32 | +52.48% | +64.79% | +66.10% | +65.80% |
+This section has now reported three different answers, and honesty is worth more here than a
+conclusion:
 
-(A positive delta here means `3.0.0` is **slower**, matching the sign convention used above.)
+| Sitting | What it measured at 16–32 threads |
+|---|---|
+| First regeneration | `3.0.0` **faster** by up to 37%, growing with thread count |
+| Second, on a machine with load logged throughout, twice | `3.0.0` **slower** by 50–80%, growing with thread count |
+| Third, six independent re-measurements | **No difference beyond noise** — ±5%, occasionally +15%, never monotonic |
 
-**At 1–4 threads the delta is noise: it is under ±2% in most cells, and it is not even
-monotonic between the two runs** (e.g. 4 threads goes from +12.47% to −2.00% with writes) —
-consistent with the string-conversion finding above, where the same small per-file cost is present
-but too small for this harness to separate from scheduling noise. **From 8 threads upward a large,
-reproducible slowdown appears in both runs and grows with thread count**, roughly doubling from 8
-to 16 threads before easing slightly at 32 — and **it is present, at similar or larger magnitude,
-with filesystem writes removed.** That answers the filesystem-vs-library question directly: this is
-not an I/O effect, since it survives when the only thing left running is parallel in-memory
-conversion. `3.0.0` is measurably **slower** at bulk conversion under real parallelism, not faster,
-and the gap widens rather than narrows with more threads.
+The third sitting included one run that reproduced the second's setup exactly, down to installing
+the same counting allocator in both probes, and one run taken immediately after four minutes of
+sustained 32-thread allocation-heavy load, in case the second sitting's preceding 40 minutes of
+benchmarking had left the machine in some worse state. Neither reproduced it. A 20-round
+distribution check at 16 threads shows the two versions' individual measurements fully overlapping.
 
-**A plausible, structurally consistent candidate — not confirmed by profiling**: building an owned
-`FileOutcome` means cloning the source `PathBuf` once per file, an allocation the old borrowed tuple
-never needed. A single global allocator serving many concurrent short-lived allocations is a known
-place for contention to grow with thread count rather than stay flat, which is the shape seen here
-(negligible at 1–4 threads, large and still growing at 8–16). This is offered as a candidate the
-data does not rule out, not as a proven cause; confirming it would mean profiling allocator
-contention directly, which is out of scope for a measurement-and-documentation handoff.
+**What is odd, and unexplained:** `2.9.0`'s own numbers are consistent across all three sittings.
+`3.0.0`'s were roughly twice as slow in the second sitting as in every measurement before or since.
+Whatever happened was specific to one version in one sitting, not a general drift that would have
+moved both together. Ambient load, the counting allocator's own overhead (real, but a flat 2–9%),
+and prior sustained load were each tested and none reproduced it. The two releases resolve
+**identical dependency versions** — the lockfiles differ only in this project's own four crate
+versions — so the comparison was isolating this project's code change and nothing else.
+
+**So: no wall-time regression is demonstrated, and none is ruled out.** The extra allocation is
+real and is a plausible source of *some* cost under heavy parallelism; nobody has measured that
+cost as anything but noise on this machine, and the one sitting that measured something large has
+not been reproduced in six attempts.
+
+**Why this is reported rather than quietly dropped:** the second sitting's finding was reviewed,
+believed, and escalated as a shipped regression. It was measured twice — but twice *within one
+sitting*, which the first sitting had already shown is not reproduction. A page that only printed
+the answer that survived would teach nobody that.
 
 ### Node.js: rejecting an unrecognised option key
 
