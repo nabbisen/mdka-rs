@@ -99,6 +99,41 @@ jobs:
       #    hold, and no save happens. restore-keys would also have pulled the old
       #    entry back had the key moved. Bump the namespace whenever what the
       #    cache must not hold changes.
+      #
+      # 3. RFC 049, 2026-10-01: `!target/debug/**/*mdka*` needs at least one
+      #    path segment between `target/debug/` and the filename for `**` to
+      #    match, in the glob engine `actions/cache` actually uses -- it does
+      #    NOT match zero segments here. `target/debug/libmdka.rlib` and
+      #    `target/debug/libmdka.d` sit directly in `target/debug/`, with no
+      #    subdirectory, so neither was ever excluded: a debug step added to
+      #    list exactly what a real run restored
+      #    (rfcs/handoffs/crates-package-gate-stale-source/) showed
+      #    `target/debug/libmdka.rlib` dated four days stale, sitting right next
+      #    to correctly-excluded, same-age files one level down in
+      #    `target/debug/deps/`. `mdka-cli` linked against that stale rlib --
+      #    the run log's own tell, exactly as in incident 2, is that
+      #    `Unpacking mdka ... (registry .../tmp-registry)` is never followed by
+      #    a `Compiling mdka` for the registry copy: cargo treated the
+      #    stale-but-name-and-version-matching rlib as already built.
+      #
+      #    Fixed with a second exclusion line for the zero-segment case --
+      #    `target/debug/*mdka*` (no `**`) alongside the existing
+      #    `target/debug/**/*mdka*` (one-or-more segments) -- rather than
+      #    trusting a single pattern to cover both depths. **Verified against
+      #    the change this is meant to catch**, not merely asserted: on an
+      #    unchanged version number and an unchanged `Cargo.lock` hash (an
+      #    exact cache-key hit), a second, throwaway source change that
+      #    `mdka-cli` depends on was pushed after this fix landed, and the run
+      #    both stayed green and showed a fresh `Compiling mdka` for the
+      #    registry copy -- proving the fixed exclusion lets a same-version,
+      #    same-lockfile change through, not just that a cold cache does.
+      #
+      #    The key moves to -v3- for the same reason -v2- existed: the -v2-
+      #    entry was itself already frozen (exact hits, no resave, since
+      #    Cargo.lock stopped changing well before this was found), so keeping
+      #    -v2- would restore the same stale artifact under the corrected
+      #    `path` and prove nothing. Bump the namespace whenever what the
+      #    cache must not hold changes -- this makes three.
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
@@ -106,21 +141,11 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             target
+            !target/debug/*mdka*
             !target/debug/**/*mdka*
-          key: ${{ runner.os }}-cargo-package-gate-v2-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-package-gate-v3-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-package-gate-v2-
-
-      # THROWAWAY DIAGNOSTIC STEP - rfcs/handoffs/crates-package-gate-stale-source/handoff.md
-      # Lists exactly what the cache restored for target/debug before cargo
-      # package runs, to settle whether the exclusion pattern above actually
-      # took effect on save. Remove before the final push.
-      - name: DEBUG - list restored mdka artifacts
-        run: |
-          echo "--- target/debug/**/*mdka* (should be empty if exclusion worked) ---"
-          find target/debug -iname '*mdka*' -exec ls -la --time-style=full-iso {} \; 2>&1 || echo "(none found / target/debug absent)"
-          echo "--- cargo.lock hash ---"
-          sha256sum Cargo.lock || true
+            ${{ runner.os }}-cargo-package-gate-v3-
 
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
