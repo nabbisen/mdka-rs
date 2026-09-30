@@ -1,97 +1,131 @@
 //! Allocation gate — the one performance property this project has ever
 //! measured reliably.
 //!
+//! **Couples to RFC 049.** This file sits on commit `96c9a28` (RFC 049,
+//! inline `style` emphasis), and the string baseline below already includes
+//! its rewrite of the emphasis-tracking data structures. The two land
+//! together, in that order — this file is not meaningful checked out on top
+//! of a commit that predates RFC 049.
+//!
 //! **Why allocation, and not wall time.** This project tried wall-time gates
 //! three times over (`rfcs/handoffs/3.0.0-bulk-regression/`,
 //! `rfcs/handoffs/perf-method-calibration/`) and cancelled all of them: zero
 //! performance defects in this project's history were ever caught by a timing
 //! measurement, the noise floor on a shared, ordinary machine is fat-tailed,
 //! and a "confirmed quiet" sitting still failed to reproduce its own finding a
-//! second time. Allocation does not have this problem — it is a property of
-//! the code path taken, not of the CPU scheduler, and it does not vary with
-//! machine, load, or which process happens to share a core.
+//! second time. Allocation does not have this problem *once it is measured
+//! correctly* — see below for what "correctly" took three attempts to reach.
 //!
-//! **Measured, not assumed — twice, because the first measurement was wrong.**
-//! A standalone `--release` probe showed zero variance over 60 separate
-//! process invocations per workload, and that number was committed here
-//! first. It was wrong for *this* file: `ci.yaml` runs `cargo test` without
-//! `--release` (debug profile), and debug-mode codegen allocates a different
-//! byte count for the bulk workload than release mode does (the release-mode
-//! parallel-dispatch machinery inlines away some bookkeeping that debug mode
-//! does not). Worse, the first version of this file ran both workloads as two
-//! separate `#[test]` functions, which `cargo test` runs concurrently on
-//! separate threads **by default** — and `CountingAllocator`'s counters
-//! (`benches/alloc_counter.rs`) are process-global, not per-thread, so each
-//! test's "before/after" snapshot window was catching allocations made by the
-//! *other* test running at the same time on another thread. That produced
-//! wildly non-deterministic numbers (string conversion swung between roughly
-//! 110 KB and 157 KB across five consecutive runs) that looked exactly like
-//! "the bulk workload's variance can't be separated from the signal" — the
-//! outcome §3 of the handoff explicitly allows for — right up until running
-//! with `--test-threads=1` made both workloads perfectly stable, which is
-//! what exposed the real cause. **The fix is structural, not a flag this
-//! project cannot pass from outside `cargo test --workspace`:** both
-//! workloads are measured inside **one** `#[test]` function, sequentially, so
-//! there is no second test in this binary to race against and no thread-count
-//! flag for CI to remember.
+//! **Attempt 1, wrong: release-mode numbers under a debug-mode CI.** A
+//! standalone `--release` probe showed zero variance over 60 separate
+//! process invocations per workload. `ci.yaml` runs `cargo test` with no
+//! `--release` flag, and debug-mode codegen allocates differently.
 //!
-//! **Re-measured correctly, under the real conditions** (debug profile,
-//! single test, `cargo test --test allocation_gate` run repeatedly as
-//! separate process invocations, matching what a CI job actually does):
+//! **Attempt 2, wrong: two `#[test]` functions racing on one process-global
+//! counter.** `cargo test` runs multiple tests in one binary concurrently, on
+//! separate threads, by default; `CountingAllocator`'s counters
+//! (`benches/alloc_counter.rs`) are process-global atomics, not per-thread.
+//! Each test's before/after window was catching the *other* test's
+//! allocations. Fixed by moving both workloads into **one** `#[test]`
+//! function — correct, and still true below.
 //!
-//! - **String conversion: zero variance.** One value, every one of 260+
-//!   repeats. Tolerance **0** — any deviation at all is either a real change
-//!   or a change in the measurement itself.
-//! - **Bulk file conversion: a small, bounded, bimodal spread, not
-//!   unbounded noise.** 260+ repeats produced exactly **two** distinct
-//!   values, 544 B apart — the common one 148/150 times in the largest
-//!   single batch (~98.7%), the lower one the rest — never a third value,
-//!   never a wider spread. This is consistent with a discrete, one-time
-//!   cost (plausibly a per-thread initialization allocation inside rayon's
-//!   pool that only happens when a given worker thread is used for the
-//!   first time in a process, which depends on how the 5-file workload
-//!   happens to get scheduled across it) rather than with genuinely
-//!   unbounded scheduling noise. **Tolerance 600 B**: comfortably above the
-//!   observed 544 B step with margin, and comfortably below the 1764 B real
-//!   signal measured against `2.9.0` (below) — a ~2.9× separation between
-//!   tolerance and signal.
+//! **Attempt 3, wrong in a way review caught and attempt 2's own fix could
+//! not: the bulk measurement window opened on the *first*
+//! `html_files_to_markdown` call in the process, so it counted rayon's
+//! entire global thread-pool construction, not just the conversion.** This
+//! is a one-time, per-process cost that scales with worker-thread count —
+//! roughly **7 KB per thread** — so the "baseline" was really "conversion
+//! plus however many workers this machine happens to spin up." Measured
+//! cold (no warm-up call before the snapshot), debug profile, this project's
+//! own machine (32 logical CPUs) against `ubuntu-latest` (4 vCPUs) and every
+//! point between:
 //!
-//! **Validated against the change this exists for.** The same two workloads,
-//! same allocator, same `cargo build` (debug) profile, run against the
-//! published `2.9.0` source (`Vec<(&P, Result<PathBuf, MdkaError>)>` — a
-//! borrowed return — instead of `3.0.0`'s owned `Vec<FileOutcome>`), from a
-//! standalone probe crate (`2.9.0`'s different API shape means the literal
-//! test in this file cannot compile against it, so this is the same
-//! measurement logic against a different dependency, not this exact file):
+//! | `RAYON_NUM_THREADS` | 1 | 2 | 4 (`ubuntu-latest`) | 8 | 16 | 32 (this machine) |
+//! |---|---:|---:|---:|---:|---:|---:|
+//! | bulk, cold (B) | 46126 | 53190 | 67318 | 95958 | 154423 | 270615 |
 //!
-//! | | `2.9.0` | current `HEAD` | diff | vs. tolerance |
-//! |---|---:|---:|---:|---|
-//! | string | 10507 B | 10319 B | 188 B | tolerance is 0 — **would fail** |
-//! | bulk | 271633 B | 273397 B | 1764 B | tolerance is 600 — **would fail** |
+//! **A gate built on the cold number passes only on a machine with as many
+//! threads as it happened to be measured on, and goes red on
+//! `ubuntu-latest` on the first push.** The "bimodal 544 B step" an earlier
+//! version of this header attributed to per-thread first-touch noise *worth
+//! tolerating* was this same cause, correctly identified as thread
+//! initialisation and then wrongly treated as an irreducible cost to widen
+//! the tolerance around, rather than as setup to warm past.
 //!
-//! Both workloads separate `2.9.0` from current `HEAD` well outside their
-//! tolerances — the string difference `188 B` is itself `2.9.0`'s
-//! allocation being *smaller* than current `HEAD`'s common value even though
-//! the gate's own contribution here is RFC 049's internal rewrite, not the
-//! `FileOutcome` change this gate was proposed for (that change is isolated
-//! to the bulk path only). A baseline is a **number**, not a claim about
-//! which version should be bigger.
+//! **The fix: one warm-up call before the snapshot, discarded**, paying the
+//! pool-construction cost once, outside the measured window. A first version
+//! of this fix warmed with the *same 5 files* the measured call uses, which
+//! removed the 7 KB/thread scaling above but left a smaller, rarer residual:
+//! about 1 run in 300 (observed once at 8 threads, once at 2, different
+//! magnitudes each time — not a fixed step) still measured several KB high.
+//! **Cause: 5 files may not exercise every worker thread rayon's pool spins
+//! up**, so the warm-up call can touch a different, smaller subset of
+//! threads than the later measured call happens to land on — the *pool* was
+//! warm, but not every *thread in it*. Fixed by warming with
+//! `WARMUP_FILE_COUNT` (64) files, more than any realistic thread count, so
+//! the warm-up call is overwhelmingly likely to touch every thread the
+//! measured call could possibly use. Same sweep, warmed with 64 files:
+//!
+//! | `RAYON_NUM_THREADS` | 1 | 2 | 4 | 8 | 16 | 32 |
+//! |---|---:|---:|---:|---:|---:|---:|
+//! | bulk, warm (B) | 34205 | 34205 | 34205 | 34205 | 34205 | 34205 |
+//!
+//! **Identical at every thread count — machine-independent, which is what
+//! the module's opening claim requires and did not, before this, have
+//! evidence for.** Re-confirmed over 300 repeated process invocations (50 at
+//! each of the six thread counts above, this exact compiled test binary):
+//! zero variance, zero failures, one value. `RAYON_NUM_THREADS` does not
+//! affect the string workload either (checked at 1, 4, and 32 threads:
+//! `10319` B every time), which never touches rayon.
+//!
+//! **Validated against the change this exists for, using the same warmed
+//! methodology (both probes, 64-file warm-up)**, against the published
+//! `2.9.0` source (`Vec<(&P, Result<PathBuf, MdkaError>)>` — a borrowed
+//! return — instead of `3.0.0`'s owned `Vec<FileOutcome>`; `2.9.0`'s
+//! different API shape means the literal test in this file cannot compile
+//! against it, so this is the same measurement logic against a different
+//! dependency, not this exact file — both sides are standalone probes, not
+//! `cargo test` binaries, since a `cargo test` binary's own harness
+//! overhead is a separate, fixed offset that does not change what either
+//! version of the library itself allocates):
+//!
+//! | | `2.9.0` | current `HEAD` | diff |
+//! |---|---:|---:|---:|
+//! | string | 10507 B | 10319 B | 188 B |
+//! | bulk, warm | 34605 B | 33845 B | **760 B** |
+//!
+//! **760 B over 5 files is 152 B/file — in the same range as the `+160`–
+//! `167 B/file` this gate exists to catch** (first measured during the
+//! `3.0.0` benchmark regeneration, independent of this file), now visible
+//! cleanly because pool-construction noise no longer swamps it. The string
+//! difference (`188 B`) is RFC 049's internal rewrite, unrelated to the
+//! `FileOutcome` change this gate targets — both differences are real, both
+//! would fail a tolerance of 0, and a baseline is a **number**, not a claim
+//! about which version should be bigger.
+//!
+//! **Tolerances, re-derived from the warmed spread: both 0.** Neither
+//! workload showed any variance once measured correctly — not "small
+//! enough to tolerate," actually zero across every repeat and every thread
+//! count tried. Any deviation at all is either a real change or a change in
+//! the measurement itself.
 //!
 //! **Changing a baseline is a decision, not a fix** — the same discipline
-//! `tests/output_validity/mode_identity.rs`'s P3 goldens already use. A commit
-//! that changes what either workload allocates must change the number below
-//! in that same commit, with the reason stated in the commit message. Editing
-//! this file to make a failing run pass without that reason is exactly the
-//! failure this gate exists to prevent.
+//! `tests/output_validity/mode_identity.rs`'s P3 goldens already use. A
+//! commit that changes what either workload allocates must change the
+//! number below in that same commit, with the reason stated in the commit
+//! message. Editing this file to make a failing run pass without that
+//! reason is exactly the failure this gate exists to prevent.
 //!
 //! **Mechanics.** `#[global_allocator]` applies to the whole test binary, so
 //! this lives in its own file rather than alongside any other integration
-//! test — and, per the above, only one `#[test]` function may ever live in
-//! it. `benches/alloc_counter.rs` is reached via `#[path = ...]`, the same
-//! `examples/`→`benches/` coupling this project already flagged
+//! test — and only one `#[test]` function may ever live in it, per attempt 2
+//! above. `benches/alloc_counter.rs` is reached via `#[path = ...]`, the
+//! same `examples/`→`benches/` coupling this project already flagged
 //! (`project_alloc_counter_removed_rfc012_unblocked`) and did not fix —
 //! moving the allocator is a separate decision, not worth making for this
-//! one include.
+//! one include. Fixture directories are suffixed with `std::process::id()`
+//! so two concurrent runs on one machine cannot delete each other's files
+//! mid-test.
 
 #[path = "../benches/alloc_counter.rs"]
 mod alloc_counter;
@@ -108,11 +142,10 @@ use std::path::PathBuf;
 /// small enough that the byte count is a value, not a benchmark.
 const STRING_HTML: &str = "<h1>Title</h1><p>A <b>bold</b> and <i>italic</i> paragraph with a <a href=\"https://example.com\">link</a>.</p><ul><li>one</li><li>two</li></ul>";
 
-/// Measured under `cargo test`'s own debug profile, single test in this
-/// binary, repeated `cargo test --test allocation_gate` invocations: zero
-/// variance. (Coincides exactly with the release-mode probe's number for
-/// this workload; the two profiles diverge on the bulk workload below, not
-/// this one.)
+/// Measured under `cargo test`'s own debug profile: zero variance across
+/// every repeat and every `RAYON_NUM_THREADS` value tried (this workload
+/// never touches rayon, so thread count is not expected to matter, and
+/// measurement confirmed it does not).
 const STRING_BASELINE_BYTES: usize = 10319;
 const STRING_TOLERANCE_BYTES: usize = 0;
 
@@ -120,13 +153,25 @@ const STRING_TOLERANCE_BYTES: usize = 0;
 const BULK_HTML: &str = "<h2>File</h2><p>Some <b>content</b> for a bulk conversion probe.</p>";
 const BULK_FILE_COUNT: usize = 5;
 
-/// Measured under `cargo test`'s own debug profile: the common value across
-/// 260+ repeated `cargo test --test allocation_gate` invocations (~98.7% of
-/// runs; see the module doc for the rare second value and why 600 B below
-/// covers it). Differs from a `--release` probe's 270853 B by 2544 B —
-/// debug-mode codegen for the parallel dispatch path, not measurement noise.
-const BULK_BASELINE_BYTES: usize = 273397;
-const BULK_TOLERANCE_BYTES: usize = 600;
+/// Files used only for the discarded warm-up call, not the measured one.
+/// Larger than any thread count this gate is likely to run under, so every
+/// worker thread rayon spins up gets touched during warm-up rather than
+/// possibly for the first time during the measured call — see the module
+/// doc for the residual flake this specifically fixes.
+const WARMUP_FILE_COUNT: usize = 64;
+
+/// Measured **after** a warm-up call that pays rayon's one-time pool
+/// construction cost outside the snapshot window (see the module doc for
+/// why this matters and the thread-count sweep that proves it): zero
+/// variance across every `RAYON_NUM_THREADS` value from 1 to 32, measured
+/// against this exact compiled test binary (a standalone probe crate with
+/// the same logic measures 400 B lower — `cargo test`'s own harness
+/// overhead, fixed and consistent, not noise; the baseline below is from
+/// this file's own binary, not the probe). Without the warm-up call, this
+/// number grows by roughly 7 KB per worker thread and the gate is not
+/// portable across machines.
+const BULK_BASELINE_BYTES: usize = 34205;
+const BULK_TOLERANCE_BYTES: usize = 0;
 
 fn assert_within_tolerance(
     errors: &mut Vec<String>,
@@ -169,9 +214,28 @@ fn allocation_is_unchanged() {
         STRING_TOLERANCE_BYTES,
     );
 
-    let dir = std::env::temp_dir().join("mdka_allocation_gate_in");
-    let out_dir = std::env::temp_dir().join("mdka_allocation_gate_out");
+    let pid = std::process::id();
+    let dir = std::env::temp_dir().join(format!("mdka_allocation_gate_in_{pid}"));
+    let out_dir = std::env::temp_dir().join(format!("mdka_allocation_gate_out_{pid}"));
     std::fs::create_dir_all(&dir).unwrap();
+
+    // Warm-up call over WARMUP_FILE_COUNT files, discarded: pays rayon's
+    // one-time global thread-pool construction cost, and uses enough files
+    // that every worker thread rayon might spin up (not just as many as the
+    // measured workload itself needs) gets its own one-time per-thread
+    // first-use cost paid here too — see the module doc for why 5 files
+    // alone were not enough to make this reliable at every thread count.
+    let warm_paths: Vec<PathBuf> = (0..WARMUP_FILE_COUNT)
+        .map(|i| {
+            let p = dir.join(format!("warm{i}.html"));
+            std::fs::write(&p, BULK_HTML).unwrap();
+            p
+        })
+        .collect();
+    let warm = std::hint::black_box(mdka::html_files_to_markdown(&warm_paths, &out_dir));
+    std::hint::black_box(&warm);
+    let _ = std::fs::remove_dir_all(&out_dir);
+
     let paths: Vec<PathBuf> = (0..BULK_FILE_COUNT)
         .map(|i| {
             let p = dir.join(format!("f{i}.html"));
