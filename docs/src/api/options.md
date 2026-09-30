@@ -152,9 +152,11 @@ option off:
 ```
 → `not actually bold` (no `**`), with `emphasis_from_style` either way.
 
-With the option on, a declaration on a container reaches every descendant
-block, the same way a browser would render it — a `style` on a `<div>`
-applies to the `<p>`s inside it, each opening and closing its own bold:
+With the option on, a declaration on a container reaches **paragraphs and
+headings among its descendants, including one nested inside a quote or a
+list item** — not every descendant a browser would render bold. A `style`
+on a `<div>` applies to the `<p>`s inside it, each opening and closing its
+own bold:
 
 ```html
 <div style="font-weight:700"><p>a</p><p>b</p></div>
@@ -165,6 +167,38 @@ applies to the `<p>`s inside it, each opening and closing its own bold:
 
 **b**
 ```
+
+**Two boundaries worth knowing, both invisible in rendered HTML:**
+
+- **Whether a list item or a quote is emphasised depends on whether its text
+  is wrapped in `<p>`.** `<blockquote style="font-weight:700">a</blockquote>`
+  stays plain (`> a`); `<blockquote style="font-weight:700"><p>a</p></blockquote>`
+  is emphasised (`> **a**`). A browser renders both the same; mdka's rule is
+  about the `Block` kind the traversal already builds, not about how the
+  bare text would look on screen.
+- **Table cells never receive it, even wrapped in `<p>`.**
+  `<div style="font-weight:700"><table><tr><td><p>a</p></td></tr></table></div>`
+  converts with `a` plain in its cell, same as without the `<p>`.
+
+Neither is planned to widen: the option's decided cases are met, it is off
+by default, and output with it off is byte-identical to `3.0.0`.
+
+**In `Minimal` mode, the option does nothing for its own motivating case.**
+`Minimal` unwraps `<span>`/`<div>`/`<section>`/`<article>`/`<main>` before
+this option — or anything else — can read their `style`; a discarded tag
+carries no declaration to read. The Google Docs paste shape this option was
+built for:
+
+```html
+<b style="font-weight:normal" id="…"><span style="font-weight:700">bold</span> plain</b>
+```
+
+→ `**bold** plain` in `Balanced`, but plain `bold plain` in `Minimal` — the
+`<span>` that carried the bold declaration is gone by the time anything
+downstream could read it. **This follows from `Minimal`'s own wrapper
+unwrapping, not from a limit of this option**: see
+[Conversion Modes](./modes.md#minimal) for why. A reader converting Google
+Docs pastes in `Minimal` should not expect this option to help.
 
 ## Removed in 3.0
 

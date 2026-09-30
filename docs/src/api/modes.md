@@ -75,8 +75,17 @@ let md = mdka::html_to_markdown(html); // Balanced is the default
 
 **What it does:** drops shell elements (`nav`/`header`/`footer`/`aside`
 and their children), does not emit `id` anchors, and unwraps wrapper elements —
-which changes nothing in the output, since unwrapping keeps the paragraph break
-the wrapper stood for.
+which changes nothing in the output on its own, since unwrapping keeps the
+paragraph break the wrapper stood for.
+
+**One thing it does change:** with [`emphasis_from_style`](./options.md#emphasis_from_style)
+on, a wrapper's own inline `style` is what would have carried the bold/italic —
+unwrapping discards the tag, and there is nothing left to read it from. A
+`<span style="font-weight:700">` that would gain bold in `Balanced` gains
+nothing in `Minimal`, including the Google Docs paste shape the option exists
+for (see that page for the example). This is not a limit of the option; it
+follows from `Minimal` unwrapping the element before anything downstream can
+read it.
 
 The most aggressive mode for extracting body content — useful for piping
 into an LLM prompt or a search index, where surrounding navigation chrome
