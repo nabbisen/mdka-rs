@@ -79,12 +79,18 @@ pub struct MarkdownRenderer {
     links: Vec<LinkState>,
     /// Per open inline `<code>`: whether it opened a code-span capture.
     code_captures: Vec<bool>,
-    /// Per open `<strong>`/`<b>`/`<em>`/`<i>`: `None` if it wrote no
-    /// delimiters at all (inside code, around blocks, style-negated, or
-    /// collapsed into a same-class ancestor, RFC 037); `Some` records what
-    /// it wrote, so leaving can close it -- or, if it turns out empty,
-    /// remove it instead (RFC 037).
-    emphasis: Vec<Option<EmphasisFrame>>,
+    /// Bold, inherited (RFC 049): every open element pushes what it declares
+    /// -- its own tag default, its `style` when that disagrees or (with the
+    /// option on) adds emphasis a tag would not otherwise carry, or nothing,
+    /// in which case it inherits its parent's -- and a span opens or closes
+    /// whenever that effective value changes. Crosses block boundaries the
+    /// same way CSS inheritance would (a `style`'d container's declaration
+    /// reaches every descendant block's own inline content), which is why
+    /// this is not scoped to inline elements the way `strikethrough` below
+    /// is.
+    bold: StyleEmphasis,
+    /// Italic, the same shape as `bold`, independent of it.
+    italic: StyleEmphasis,
     /// Per open `<del>`/`<s>` (RFC 009 §4.2): `None` if it wrote no `~~` at
     /// all (inside code or around blocks -- the same two reasons emphasis
     /// suppresses its own delimiters); `Some` records what
@@ -143,8 +149,95 @@ enum EmphasisClass {
 }
 
 struct EmphasisFrame {
-    class: EmphasisClass,
     mark: sink::EmphasisMark,
+}
+
+/// Per-node facts the traversal's one bottom-up pass already knows before
+/// [`MarkdownRenderer::enter_element`] is ever called, bundled so the
+/// function takes one argument for them instead of one each (`clippy`'s
+/// `too_many_arguments`, tripped exactly here by RFC 049's own addition).
+pub(crate) struct ElementHints {
+    /// The element has a rendered block among its descendants (RFC 028).
+    pub wraps_blocks: bool,
+    /// The element is a list that is loose (RFC 035 §3.1).
+    pub loose_list: bool,
+    /// The element is a list whose own first item is empty, so entering it
+    /// nested may need a blank line first (RFC 038).
+    pub needs_disambiguation: bool,
+    /// The element is a `<li>` whose own first rendered child is an
+    /// `<input type="checkbox">` -- `Some(checked)` writes a task marker
+    /// instead of a plain one (RFC 009 §4.2); meaningless for anything else.
+    pub checkbox: Option<bool>,
+    /// The element has a rendered block among its descendants, whether or
+    /// not it is an inline wrapper (RFC 049) -- there is no inline run at
+    /// its own boundary, so any bold/italic it declares must not emit
+    /// there; only a genuine leaf block does. Identical to `wraps_blocks`
+    /// for the tags `wraps_blocks` itself covers; the two remain separate
+    /// fields because they gate different things (RFC 028's suppression --
+    /// stops propagation too -- versus RFC 049's deferral -- propagation
+    /// continues, only the emitting is deferred to a leaf descendant).
+    pub has_block_descendant: bool,
+}
+
+/// One class's (bold or italic) inherited state through the traversal (RFC
+/// 049). `effective` is the value in force at each currently-open element --
+/// index 0 is the document root, "nothing has ever declared" (`false`) --
+/// pushed on every element's enter and popped on its leave, block or inline
+/// alike. `open` is the span currently open for it, if the effective value is
+/// `true` and nothing is suppressing emission (code, a table cell, `<pre>`,
+/// or -- for a plain tag-default declaration only -- RFC 028 criterion 1's
+/// existing around-blocks suppression).
+struct StyleEmphasis {
+    effective: Vec<bool>,
+    open: Option<EmphasisFrame>,
+}
+
+impl StyleEmphasis {
+    fn new() -> Self {
+        Self {
+            effective: vec![false],
+            open: None,
+        }
+    }
+
+    fn current(&self) -> bool {
+        *self.effective.last().unwrap_or(&false)
+    }
+}
+
+/// RFC 049, the one rule: what does this element itself declare for one
+/// class -- bold, or independently, italic? `None` means it says nothing at
+/// all (inherit whatever is already in effect); the caller does not need to
+/// know why.
+///
+/// A tag's own default (`b`/`strong` -> bold, `i`/`em` -> italic) holds
+/// unless the `style` disagrees. A `style` that *removes* the tag's own
+/// default (RFC 028 Amendment 1: `<b style="font-weight:normal">`) always
+/// wins -- that shipped in `3.0.0` and stays on with the option off. A
+/// `style` that *adds* emphasis a tag would not otherwise carry -- any
+/// element the option makes bold or italic on its own account -- only wins
+/// when `emphasis_from_style` is on; with it off this function returns
+/// exactly what `3.0.0` already computed, tag default alone.
+fn own_emphasis(
+    tag: &str,
+    style: Option<&str>,
+    class: EmphasisClass,
+    emphasis_from_style: bool,
+) -> Option<bool> {
+    let tag_default = matches!(
+        (tag, class),
+        ("b" | "strong", EmphasisClass::Bold) | ("i" | "em", EmphasisClass::Italic)
+    );
+    let style_says = match class {
+        EmphasisClass::Bold => utils::style_font_weight(style),
+        EmphasisClass::Italic => utils::style_font_style(style),
+    };
+    match style_says {
+        Some(false) => Some(false),
+        Some(true) if emphasis_from_style => Some(true),
+        _ if tag_default => Some(true),
+        _ => None,
+    }
 }
 
 /// Elements that leave a `<sup>`/`<sub>` "emphasis only" (RFC 043 §2.3):
@@ -225,7 +318,8 @@ impl MarkdownRenderer {
             fence: Fence::None,
             links: Vec::new(),
             code_captures: Vec::new(),
-            emphasis: Vec::new(),
+            bold: StyleEmphasis::new(),
+            italic: StyleEmphasis::new(),
             strikethrough: Vec::new(),
             cell_lists: Vec::new(),
             cell_after_marker: false,
@@ -258,6 +352,147 @@ impl MarkdownRenderer {
     /// `<br>` there is literal `<br>`, not a hard break.
     fn in_table_cell(&self) -> bool {
         self.sink.in_table_cell()
+    }
+
+    // ─── Emphasis (RFC 049) ──────────────────────────────────────────────
+
+    /// Pushes this element's contribution to one class's inherited state and,
+    /// if `sync`, opens or closes a span to match. `sync` is false for a
+    /// container with a rendered block among its descendants (RFC 049): there
+    /// is no inline run at its own boundary to wrap, only nested blocks that
+    /// each open and close their own -- pushing still makes the value
+    /// available to inherit, it just never itself opens or closes anything.
+    fn push_emphasis(&mut self, class: EmphasisClass, own: Option<bool>, sync: bool) {
+        let state = self.emphasis_state_mut(class);
+        let effective = own.unwrap_or_else(|| state.current());
+        state.effective.push(effective);
+        if sync {
+            self.sync_emphasis(class);
+        }
+    }
+
+    /// Pops one class's state, mirroring [`Self::push_emphasis`].
+    fn pop_emphasis(&mut self, class: EmphasisClass, sync: bool) {
+        self.emphasis_state_mut(class).effective.pop();
+        if sync {
+            self.sync_emphasis(class);
+        }
+    }
+
+    fn emphasis_state_mut(&mut self, class: EmphasisClass) -> &mut StyleEmphasis {
+        match class {
+            EmphasisClass::Bold => &mut self.bold,
+            EmphasisClass::Italic => &mut self.italic,
+        }
+    }
+
+    /// Opens or closes this class's span so it matches the effective value
+    /// now on top of its stack -- a no-op unless that value differs from
+    /// whether a span is currently open, which is what makes an
+    /// already-open same-class ancestor collapse (RFC 037) and a negating
+    /// descendant close early and, once it ends, reopen for what follows
+    /// within the same still-declaring ancestor.
+    ///
+    /// `in_code()` (verbatim `<pre>`, a code span, a table cell's own
+    /// flattened `<pre>`) gates only a *new* open, the same "no delimiters
+    /// inside code" rule this project always had -- it does not close an
+    /// already-open ancestor span. An ancestor opened before code started
+    /// stays open (mechanically untouched) straight through it, exactly as
+    /// it always has, because code never contributes its own frame; only a
+    /// declaration made *while* inside code (a nested tag-default `<b>`, or,
+    /// with the option on, a nested `style`) is the one suppressed, and it
+    /// re-evaluates -- and opens, if still wanted -- the moment code's own
+    /// capture ends and something calls this again (the popped element
+    /// itself, or its own next sibling).
+    fn sync_emphasis(&mut self, class: EmphasisClass) {
+        let effective = self.emphasis_state_mut(class).current();
+        let is_open = self.emphasis_state_mut(class).open.is_some();
+        if effective == is_open {
+            return;
+        }
+        if effective {
+            if !self.in_code() {
+                self.open_emphasis(class);
+            }
+        } else {
+            self.close_emphasis(class);
+        }
+    }
+
+    /// A leaf block's own boundary (RFC 049): unlike `sync_emphasis`, not
+    /// gated on the effective value having *changed* -- a block boundary
+    /// always closes an open span (Markdown has no way to write one across a
+    /// blank line), whether or not the declaration that opened it is still
+    /// in force afterward. Called before a leaf paragraph-like block's own
+    /// closing blank line; the container that declared it (if any) never
+    /// opened one itself to close.
+    fn force_close_for_block(&mut self, class: EmphasisClass) {
+        if self.emphasis_state_mut(class).open.is_some() {
+            self.close_emphasis(class);
+        }
+    }
+
+    /// The other half of [`Self::force_close_for_block`]: called after a leaf
+    /// paragraph-like block's own opening blank line (and any marker, for a
+    /// block that has one), opening a fresh span for just this block's own
+    /// content if the effective value inherited into it is `true` -- the
+    /// mechanism behind a `style`'d container's declaration reaching each of
+    /// its descendant blocks independently (RFC 049 handoff §2, last row).
+    fn force_reopen_for_block(&mut self, class: EmphasisClass) {
+        let effective = self.emphasis_state_mut(class).current();
+        let is_open = self.emphasis_state_mut(class).open.is_some();
+        if effective && !is_open && !self.in_code() {
+            self.open_emphasis(class);
+        }
+    }
+
+    fn open_emphasis(&mut self, class: EmphasisClass) {
+        let _ = self.open_distributed_link();
+        // `emphasis_open` flushes any pending space itself, as part of what
+        // it can undo if this span turns out empty (RFC 037 finding C) --
+        // not done here first.
+        let start = self.sink.dest_len();
+        // A same-class ancestor aside, an *open*, differently classed
+        // ancestor immediately adjacent (nothing written since its own
+        // delimiter) risks the opposite problem: `**` then `*` (or vice
+        // versa) concatenate into one run that reparses the same way
+        // regardless of which order wrote it. `<em><strong>` already
+        // reparses correctly as plain `*`/`**`; only `<strong><em>` does
+        // not, so only that one direction (opening italic while bold is
+        // open) swaps to `_` here (RFC 037 addendum).
+        let (delimiter, intraword_candidate) = if class == EmphasisClass::Bold {
+            ("**", false)
+        } else {
+            let bold_ancestor = self.bold.open.as_ref();
+            let touching_bold_ancestor = bold_ancestor.is_some_and(|f| f.mark.end() == start);
+            // Swapping to `_` only helps if `**` can still open where it is
+            // -- CommonMark requires a delimiter run followed by punctuation
+            // (here, the `_` this swap is about to write) to be preceded by
+            // whitespace, punctuation, or nothing. Preceded by a letter or
+            // digit instead, `**` cannot open at all, and the bold is lost
+            // outright: worse than the order-inverted bug this swap exists
+            // to fix (RFC 037 review, 2026-09-22). Checked against the
+            // character before the Bold ancestor's own opening delimiter --
+            // already-written history, not a lookahead. What follows the
+            // whole nested span's *close* is not knowable here;
+            // `Sink::emphasis_close` confirms that half once it can.
+            let intraword_candidate = touching_bold_ancestor
+                && bold_ancestor.is_some_and(|f| {
+                    escape::class(self.sink.char_before(f.mark.start())) != escape::Class::Word
+                });
+            (
+                if intraword_candidate { "_" } else { "*" },
+                intraword_candidate,
+            )
+        };
+        let (_, mark) = self.sink.emphasis_open(delimiter, intraword_candidate);
+        self.emphasis_state_mut(class).open = Some(EmphasisFrame { mark });
+    }
+
+    fn close_emphasis(&mut self, class: EmphasisClass) {
+        if let Some(frame) = self.emphasis_state_mut(class).open.take() {
+            self.sink.emphasis_close_or_remove(frame.mark);
+        }
     }
 
     pub(crate) fn begin_block(&mut self) {
@@ -549,29 +784,61 @@ impl MarkdownRenderer {
 
     // ─── Enter ─────────────────────────────────────────────────────────────
 
-    /// `wraps_blocks`: the element has a rendered block among its descendants.
-    /// `loose_list`: the element is a list that is loose (RFC 035 §3.1).
-    /// `needs_disambiguation`: the element is a list whose own first item is
-    /// empty, so entering it nested may need a blank line first (RFC 038).
-    /// `checkbox`: the element is a `<li>` whose own first rendered child is
-    /// an `<input type="checkbox">` -- `Some(checked)` writes a task marker
-    /// instead of a plain one (RFC 009 §4.2); meaningless for anything else.
-    /// All four are computed once per document by the traversal.
+    /// `hints`, computed once per document by the traversal, per node --
+    /// see [`ElementHints`]. `emphasis_from_style` is the option (RFC 049):
+    /// whether an inline `style` can add bold/italic a tag would not
+    /// otherwise carry.
     pub fn enter_element(
         &mut self,
         elem: &scraper::node::Element,
         preserve_ids: bool,
-        wraps_blocks: bool,
-        loose_list: bool,
-        needs_disambiguation: bool,
-        checkbox: Option<bool>,
+        hints: ElementHints,
+        emphasis_from_style: bool,
     ) {
+        let ElementHints {
+            wraps_blocks,
+            loose_list,
+            needs_disambiguation,
+            checkbox,
+            has_block_descendant,
+        } = hints;
         let tag = elem.name();
         // Any element other than emphasis inside a `<sup>`/`<sub>` means its
         // content is not just a raised letter (RFC 043 §2.3).
         if !self.script.is_empty() && !is_transparent_in_script(tag) {
             self.mark_script_not_emphasis_only();
         }
+        // RFC 049: every element -- block or inline -- pushes its own
+        // contribution to bold and italic before anything else, so a
+        // container's declaration reaches descendants the traversal has not
+        // reached yet, the same as CSS inheritance would. A classic
+        // tag-default wrapper (`<b>`/`<strong>`/`<em>`/`<i>`) directly
+        // wrapping block content is the one existing exception (RFC 028
+        // criterion 1, unchanged by this option): it contributes nothing at
+        // all here, exactly as it contributed no delimiters before this RFC.
+        let style = elem.attr("style");
+        let mut bold_own = own_emphasis(tag, style, EmphasisClass::Bold, emphasis_from_style);
+        let mut italic_own = own_emphasis(tag, style, EmphasisClass::Italic, emphasis_from_style);
+        if wraps_blocks {
+            bold_own = None;
+            italic_own = None;
+        }
+        // `sync_emphasis` itself already suppresses emission with
+        // `in_code()` (verbatim `<pre>`, a code span, a table cell's own
+        // flattened `<pre>`) -- a table cell's ordinary flattened capture is
+        // not code and keeps emphasis exactly as it always has.
+        //
+        // A block-kind element never syncs here, regardless of
+        // `has_block_descendant`: even a genuine leaf block's own opening
+        // blank line has not been written yet at this point (this prelude
+        // runs before `enter_block` dispatches), so opening here would put
+        // the delimiter on the wrong side of it. `enter_block`'s own
+        // `Block::Paragraph` arm does the leaf case's opening explicitly,
+        // once its blank line (and any marker) is actually in place.
+        let is_block = utils::block_kind(tag).is_some();
+        let sync = !has_block_descendant && !is_block;
+        self.push_emphasis(EmphasisClass::Bold, bold_own, sync);
+        self.push_emphasis(EmphasisClass::Italic, italic_own, sync);
         // Tags whose own arm opens a capture or a code block: anchor first.
         // Adding a tag that sets either guard means adding it here too
         // (RFC 006 Slice D; tests/anchor_drift_guard.rs).
@@ -580,7 +847,14 @@ impl MarkdownRenderer {
             self.emit_id_anchor(elem, preserve_ids);
         }
         if let Some(block) = utils::block_kind(tag) {
-            self.enter_block(block, elem, loose_list, needs_disambiguation, checkbox);
+            self.enter_block(
+                block,
+                elem,
+                loose_list,
+                needs_disambiguation,
+                checkbox,
+                has_block_descendant,
+            );
         } else {
             self.enter_inline(tag, elem, wraps_blocks);
         }
@@ -596,6 +870,7 @@ impl MarkdownRenderer {
         loose_list: bool,
         needs_disambiguation: bool,
         checkbox: Option<bool>,
+        has_block_descendant: bool,
     ) {
         // A GFM cell holds inline content only (F1, RFC 008 `008b`): a block
         // that reaches here is flattened, never given the normal container/
@@ -620,8 +895,23 @@ impl MarkdownRenderer {
                 let mut marker = "#".repeat(level);
                 marker.push(' ');
                 self.sink.heading_marker(&marker);
+                // RFC 049: a leaf heading opens *after* its own marker, or
+                // `## **x**` would become `**## x**`.
+                if !has_block_descendant {
+                    self.force_reopen_for_block(EmphasisClass::Bold);
+                    self.force_reopen_for_block(EmphasisClass::Italic);
+                }
             }
-            Block::Paragraph => self.begin_block(),
+            Block::Paragraph => {
+                self.begin_block();
+                // RFC 049: a container (a `style`'d `<div>` etc. with block
+                // descendants) declares for its descendants to inherit but
+                // never opens here itself -- only a genuine leaf does.
+                if !has_block_descendant {
+                    self.force_reopen_for_block(EmphasisClass::Bold);
+                    self.force_reopen_for_block(EmphasisClass::Italic);
+                }
+            }
             Block::UnorderedList => {
                 if self.list_stack.is_empty() {
                     self.begin_block();
@@ -740,74 +1030,9 @@ impl MarkdownRenderer {
                 }
                 self.code_captures.push(capture);
             }
-            "strong" | "b" | "em" | "i" => {
-                // No delimiters inside code, around blocks (RFC 028 criterion
-                // 1), when the element's own style negates the emphasis
-                // (criterion 4), or when a same-class ancestor is already
-                // open (RFC 037: italic in italic is italic, bold in bold is
-                // bold) -- this element's content flows through as if it
-                // were not there, the same as any of the other cases.
-                let class = if matches!(tag, "strong" | "b") {
-                    EmphasisClass::Bold
-                } else {
-                    EmphasisClass::Italic
-                };
-                let write = !self.in_code()
-                    && !wraps_blocks
-                    && !utils::emphasis_negated_by_style(tag, elem.attr("style"));
-                let collapsed = write && self.emphasis.iter().flatten().any(|f| f.class == class);
-                let frame = (write && !collapsed).then(|| {
-                    let _ = self.open_distributed_link();
-                    // `emphasis_open` flushes any pending space itself, as
-                    // part of what it can undo if this span turns out empty
-                    // (RFC 037 finding C) -- not done here first.
-                    // A same-class ancestor aside, an *open*, differently
-                    // classed ancestor immediately adjacent (nothing written
-                    // since its own delimiter) risks the opposite problem:
-                    // `**` then `*` (or vice versa) concatenate into one run
-                    // that reparses the same way regardless of which order
-                    // wrote it. `<em><strong>` already reparses correctly as
-                    // plain `*`/`**`; only `<strong><em>` does not, so only
-                    // that one direction swaps to `_` here.
-                    let start = self.sink.dest_len();
-                    let bold_ancestor = self
-                        .emphasis
-                        .iter()
-                        .rev()
-                        .find_map(|f| f.as_ref())
-                        .filter(|f| f.class == EmphasisClass::Bold);
-                    let touching_bold_ancestor = class == EmphasisClass::Italic
-                        && bold_ancestor.is_some_and(|f| f.mark.end() == start);
-                    // RFC 037 addendum: swapping to `_` only helps if `**`
-                    // can still open where it is -- CommonMark requires a
-                    // delimiter run followed by punctuation (here, the `_`
-                    // this swap is about to write) to be preceded by
-                    // whitespace, punctuation, or nothing. Preceded by a
-                    // letter or digit instead, `**` cannot open at all, and
-                    // the bold is lost outright: worse than the
-                    // order-inverted bug this swap exists to fix (RFC 037
-                    // review, 2026-09-22). Checked against the character
-                    // before the Bold ancestor's own opening delimiter --
-                    // already-written history, not a lookahead. What follows
-                    // the whole nested span's *close* is not knowable here;
-                    // `Sink::emphasis_close` confirms that half once it can.
-                    let intraword_candidate = touching_bold_ancestor
-                        && bold_ancestor.is_some_and(|f| {
-                            escape::class(self.sink.char_before(f.mark.start()))
-                                != escape::Class::Word
-                        });
-                    let delimiter = if intraword_candidate {
-                        "_"
-                    } else if class == EmphasisClass::Bold {
-                        "**"
-                    } else {
-                        "*"
-                    };
-                    let (_, mark) = self.sink.emphasis_open(delimiter, intraword_candidate);
-                    EmphasisFrame { class, mark }
-                });
-                self.emphasis.push(frame);
-            }
+            // `strong`/`b`/`em`/`i` open no frame here: `enter_element`
+            // already pushed their (and every other tag's) bold/italic
+            // contribution before dispatching, RFC 049.
             "del" | "s" => {
                 // No delimiters inside code or around blocks (RFC 009 §4.2),
                 // the same two reasons `strong`/`em` suppress theirs -- GFM
@@ -895,10 +1120,31 @@ impl MarkdownRenderer {
 
     // ─── Leave ─────────────────────────────────────────────────────────────
 
-    pub fn leave_element(&mut self, elem: &scraper::node::Element) {
+    pub fn leave_element(&mut self, elem: &scraper::node::Element, has_block_descendant: bool) {
         let tag = elem.name();
+        // RFC 049: pop this element's contribution, mirroring the push in
+        // `enter_element` -- unconditional, so the stack stays balanced
+        // regardless of which path a given tag takes. Popped italic before
+        // bold, closing the inner span first if both are open (`<b><i>`
+        // closes as `**_x_**`, not `**_x**_`).
+        //
+        // A block boundary pops *before* `leave_block`'s own closing
+        // newlines, so an ancestor's still-open span closes inside this
+        // block's own content, not after it. A code span pops *after* its
+        // own capture ends below: `in_code()` (which gates whether a span
+        // may be open) only turns false once that capture is gone, and an
+        // ancestor's span that was opened *before* this code span must not
+        // be closed into that capture's own buffer instead of the document's
+        // -- popping first, while still "in code", did exactly that
+        // (found live: `<strong><em>x<code>y</code></em></strong>` spliced
+        // the closing `_**` inside the code span's own text).
         if let Some(block) = utils::block_kind(tag) {
-            self.leave_block(block);
+            // Never synced here, symmetric with `enter_element`'s prelude --
+            // `leave_block`'s own `Block::Paragraph` arm does the leaf case's
+            // closing explicitly, before its closing blank line.
+            self.pop_emphasis(EmphasisClass::Italic, false);
+            self.pop_emphasis(EmphasisClass::Bold, false);
+            self.leave_block(block, has_block_descendant);
             return;
         }
         match tag {
@@ -912,11 +1158,7 @@ impl MarkdownRenderer {
                     self.sink.splice(rendered.as_deref(), trailing);
                 }
             }
-            "strong" | "b" | "em" | "i" => {
-                if let Some(Some(frame)) = self.emphasis.pop() {
-                    self.sink.emphasis_close_or_remove(frame.mark);
-                }
-            }
+            // `strong`/`b`/`em`/`i` are popped, unconditionally, above.
             "del" | "s" => {
                 if let Some(Some(mark)) = self.strikethrough.pop() {
                     self.sink.strikethrough_close_or_remove(mark);
@@ -934,7 +1176,8 @@ impl MarkdownRenderer {
                     // late, RFC 037 addendum), and with no unescaped `_`
                     // earlier in the paragraph still waiting for a partner.
                     let underscore_safe = self.sink.glued_to_word()
-                        && self.emphasis.iter().all(Option::is_none)
+                        && self.bold.open.is_none()
+                        && self.italic.open.is_none()
                         && !self.sink.underscore_may_pair();
                     // Empty content maps vacuously (RFC 037's own rule for
                     // an empty `<strong>`: nothing to write). Otherwise
@@ -971,9 +1214,12 @@ impl MarkdownRenderer {
             },
             _ => {}
         }
+        // This path is inline only (the block-kind arm above returns early).
+        self.pop_emphasis(EmphasisClass::Italic, !has_block_descendant);
+        self.pop_emphasis(EmphasisClass::Bold, !has_block_descendant);
     }
 
-    fn leave_block(&mut self, block: Block) {
+    fn leave_block(&mut self, block: Block, has_block_descendant: bool) {
         if self.in_table_cell() {
             self.leave_cell_block(block);
             return;
@@ -986,12 +1232,22 @@ impl MarkdownRenderer {
         }
         match block {
             Block::Heading(_) => {
+                if !has_block_descendant {
+                    self.force_close_for_block(EmphasisClass::Italic);
+                    self.force_close_for_block(EmphasisClass::Bold);
+                }
                 self.end_block();
                 // A heading with no real content (all whitespace) leaves no
                 // dangling strip request past its own end.
                 self.sink.end_leading_strip();
             }
-            Block::Paragraph => self.end_block(),
+            Block::Paragraph => {
+                if !has_block_descendant {
+                    self.force_close_for_block(EmphasisClass::Italic);
+                    self.force_close_for_block(EmphasisClass::Bold);
+                }
+                self.end_block();
+            }
             Block::UnorderedList | Block::OrderedList => {
                 self.list_stack.pop();
                 // A nested list ending inside an item is a block boundary too:

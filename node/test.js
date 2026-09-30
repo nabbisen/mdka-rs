@@ -259,6 +259,13 @@ async function run(name, fn) {
 
     console.log('\n=== ConversionOptions / mode tests ===\n')
 
+    await run('htmlToMarkdown: emphasisFromStyle lets a style add emphasis, off by default', () => {
+      const html = '<span style="font-weight:700">x</span>'
+      assert.strictEqual(htmlToMarkdown(html), 'x\n')
+      assert.strictEqual(htmlToMarkdown(html, { emphasisFromStyle: false }), 'x\n')
+      assert.strictEqual(htmlToMarkdown(html, { emphasisFromStyle: true }), '**x**\n')
+    })
+
     await run('htmlToMarkdown: minimal drops nav', () => {
       const md = htmlToMarkdown(
         '<nav><a href="/">Home</a></nav><main><p>Content</p></main>',
@@ -388,7 +395,7 @@ async function run(name, fn) {
     await run('htmlToMarkdown: an unknown option throws, naming it and the valid ones', () => {
       assert.throws(
         () => htmlToMarkdown('<p>Hi</p>', { mdoe: 'minimal' }),
-        { name: 'Error', message: "unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell" }
+        { name: 'Error', message: "unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell, emphasisFromStyle" }
       )
     })
 
@@ -402,12 +409,14 @@ async function run(name, fn) {
       await assert.rejects(htmlFilesToMarkdown([], os.tmpdir(), bad), removed)
     })
 
-    await run('the three valid keys, null and undefined are all accepted', () => {
+    await run('the four valid keys, null and undefined are all accepted', () => {
       const html = '<nav>n</nav><h1 id="x">T</h1>'
       assert.strictEqual(htmlToMarkdown(html, null), htmlToMarkdown(html))
       assert.strictEqual(htmlToMarkdown(html, undefined), htmlToMarkdown(html))
       assert.strictEqual(htmlToMarkdown(html, {}), htmlToMarkdown(html))
-      assert.doesNotThrow(() => htmlToMarkdown(html, { mode: 'minimal', preserveIds: false, dropInteractiveShell: true }))
+      assert.doesNotThrow(() => htmlToMarkdown(html, {
+        mode: 'minimal', preserveIds: false, dropInteractiveShell: true, emphasisFromStyle: true
+      }))
     })
 
     // 3.0 (RFC 048 §4): Node folds `With` away -- JavaScript has optional

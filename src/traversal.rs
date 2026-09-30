@@ -12,7 +12,7 @@ mod tests;
 use std::collections::HashSet;
 
 use crate::options::ConversionOptions;
-use crate::renderer::MarkdownRenderer;
+use crate::renderer::{ElementHints, MarkdownRenderer};
 use crate::utils;
 use ego_tree::NodeId;
 use ego_tree::iter::Edge;
@@ -85,6 +85,13 @@ pub(crate) struct Hints {
     /// absorbed as lazy-continuation text (ordered), so entering it needs a
     /// disambiguating blank line first.
     needs_disambiguation: HashSet<NodeId>,
+    /// Any rendered element (RFC 049, not only an inline wrapper -- see
+    /// `wrappers`, above) with a rendered block among its descendants. A
+    /// style-driven declaration on such an element must not emit its own
+    /// delimiters at its own boundary (there is no inline run there to wrap,
+    /// only nested blocks that each need their own): it only sets what its
+    /// descendants inherit, and a genuine leaf block does the emitting.
+    has_block_descendant: HashSet<NodeId>,
 }
 
 /// What an element's rendered content amounts to, for counting the blocks of
@@ -167,6 +174,7 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
         wrappers: HashSet::new(),
         loose_lists: HashSet::new(),
         needs_disambiguation: HashSet::new(),
+        has_block_descendant: HashSet::new(),
     };
     let mut open: Vec<Frame> = Vec::with_capacity(64);
     for edge in document.tree.root().traverse() {
@@ -223,6 +231,9 @@ fn structure_hints(document: &Html, opts: &ConversionOptions) -> Hints {
                 };
                 if frame.has_block && render && utils::is_inline_wrapper(tag) {
                     hints.wrappers.insert(node.id());
+                }
+                if frame.has_block && render {
+                    hints.has_block_descendant.insert(node.id());
                 }
                 // RFC 035 §3.1: two or more blocks in an item make its list loose.
                 if kind == Some(utils::Block::ListItem)
@@ -357,10 +368,14 @@ pub(crate) fn drive<'a>(
                     renderer.enter_element(
                         elem,
                         opts.preserve_ids,
-                        hints.wrappers.contains(&node.id()),
-                        hints.loose_lists.contains(&node.id()),
-                        hints.needs_disambiguation.contains(&node.id()),
-                        (tag == "li").then(|| task_checkbox(node)).flatten(),
+                        ElementHints {
+                            wraps_blocks: hints.wrappers.contains(&node.id()),
+                            loose_list: hints.loose_lists.contains(&node.id()),
+                            needs_disambiguation: hints.needs_disambiguation.contains(&node.id()),
+                            checkbox: (tag == "li").then(|| task_checkbox(node)).flatten(),
+                            has_block_descendant: hints.has_block_descendant.contains(&node.id()),
+                        },
+                        opts.emphasis_from_style,
                     );
 
                     // Leave イベントを先にスタックへ（子より後に処理される）
@@ -391,7 +406,8 @@ pub(crate) fn drive<'a>(
                     if disposition(elem.name(), opts) == Disposition::Unwrap {
                         renderer.end_unwrapped_separator();
                     } else {
-                        renderer.leave_element(elem);
+                        renderer
+                            .leave_element(elem, hints.has_block_descendant.contains(&node.id()));
                     }
                 }
             }

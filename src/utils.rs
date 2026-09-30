@@ -105,40 +105,52 @@ pub(crate) fn is_inline_wrapper(tag: &str) -> bool {
     )
 }
 
-/// Whether an emphasis element's **own** inline `style` negates its emphasis
-/// (RFC 028 Amendment 1).
-///
-/// - `<b>`/`<strong>`: `font-weight` is `normal` or a number ≤ 500. Relative
-///   values (`lighter`, `bolder`) and anything else do not negate.
-/// - `<i>`/`<em>`: `font-style` is `normal`.
-///
-/// Declarations are split on `;`; the name before `:` and the value are
-/// trimmed and case-folded, `!important` is stripped, and the last declaration
-/// of the property wins. No other property is read, nothing is inherited, and
-/// emphasis is never added.
-pub(crate) fn emphasis_negated_by_style(tag: &str, style: Option<&str>) -> bool {
-    let property = match tag {
-        "b" | "strong" => "font-weight",
-        "i" | "em" => "font-style",
-        _ => return false,
-    };
-    let Some(style) = style else {
-        return false;
-    };
-    let Some(value) = style_property(style, property) else {
-        return false;
-    };
-    if property == "font-style" {
-        return value == "normal";
+/// What `font-weight` says about bold, on any element (RFC 049): `bold` or a
+/// number >= 600 -> `Some(true)`; `normal` or a number <= 500 ->
+/// `Some(false)`; anything else -- absent, unparseable, a number strictly
+/// between the two thresholds, or a value relative to the parent's own
+/// computed weight (`bolder`/`lighter`, which mdka has no parent weight to
+/// resolve against) -- `None` ("says nothing"), never an error. Replaces
+/// `emphasis_negated_by_style` (RFC 028 Amendment 1): that function only
+/// ever removed emphasis from `b`/`strong`; this one is the same read,
+/// independent of tag, so the same declaration can add emphasis too
+/// (`renderer::own_emphasis` decides what a tag does with it) -- unchanged
+/// for `bolder`/`lighter`, which stayed unresolved before this RFC for the
+/// same reason and still do (`tests/inline_around_blocks.rs`,
+/// `tests/output_validity/proofs.rs`).
+pub(crate) fn style_font_weight(style: Option<&str>) -> Option<bool> {
+    let value = style_property(style?, "font-weight")?;
+    if value == "bold" {
+        return Some(true);
     }
-    value == "normal" || value.parse::<f64>().is_ok_and(|weight| weight <= 500.0)
+    if value == "normal" {
+        return Some(false);
+    }
+    match value.parse::<f64>() {
+        Ok(weight) if weight >= 600.0 => Some(true),
+        Ok(weight) if weight <= 500.0 => Some(false),
+        _ => None,
+    }
+}
+
+/// What `font-style` says about italic (RFC 049), the same shape as
+/// [`style_font_weight`]: `italic` or `oblique` -> `Some(true)`; `normal` ->
+/// `Some(false)`; anything else -> `None`.
+pub(crate) fn style_font_style(style: Option<&str>) -> Option<bool> {
+    let value = style_property(style?, "font-style")?;
+    match value.as_str() {
+        "italic" | "oblique" => Some(true),
+        "normal" => Some(false),
+        _ => None,
+    }
 }
 
 /// Reads one property out of an inline `style` attribute: declarations split
 /// on `;`, the name before `:` and the value trimmed and case-folded,
 /// `!important` stripped, the last declaration of the property wins. Shared
-/// by [`emphasis_negated_by_style`] and the table alignment reader (RFC 008
-/// §3, `align=`/`text-align:`) -- the only two places mdka reads `style`.
+/// by [`style_font_weight`]/[`style_font_style`] and the table alignment
+/// reader (RFC 008 §3, `align=`/`text-align:`) -- the only places mdka reads
+/// `style`.
 pub(crate) fn style_property(style: &str, property: &str) -> Option<String> {
     let mut value: Option<String> = None;
     for declaration in style.split(';') {

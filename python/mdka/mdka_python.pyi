@@ -58,15 +58,17 @@ class MdkaError(Exception):
 def version() -> str: ...
 def html_to_markdown(html: str) -> str: ...
 
-# The `_with` functions share one keyword tail: `mode`, `preserve_ids` and
-# `drop_interactive_shell`. The keyword arguments removed in 3.0
-# (`preserve_classes`, `preserve_data_attrs`, `preserve_aria_attrs`,
-# `unwrap_unknown_wrappers`) now raise TypeError like any unknown keyword.
+# The `_with` functions share one keyword tail: `mode`, `preserve_ids`,
+# `drop_interactive_shell` and `emphasis_from_style`. The keyword arguments
+# removed in 3.0 (`preserve_classes`, `preserve_data_attrs`,
+# `preserve_aria_attrs`, `unwrap_unknown_wrappers`) now raise TypeError like
+# any unknown keyword.
 def html_to_markdown_with(
     html: str,
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> str: ...
 def html_to_markdown_many(html_list: Sequence[str]) -> list[str]: ...
 def html_to_markdown_many_with(
@@ -74,6 +76,7 @@ def html_to_markdown_many_with(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> list[str]: ...
 def html_file_to_markdown(
     path: str,
@@ -81,6 +84,7 @@ def html_file_to_markdown(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> str: ...
 def html_file_to_markdown_with(
     path: str,
@@ -88,6 +92,7 @@ def html_file_to_markdown_with(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> str: ...
 def html_files_to_markdown(
     paths: Sequence[str],
@@ -95,6 +100,7 @@ def html_files_to_markdown(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> list[FileOutcome]: ...
 def html_files_to_markdown_with(
     paths: Sequence[str],
@@ -102,4 +108,5 @@ def html_files_to_markdown_with(
     mode: ConversionMode = ...,
     preserve_ids: bool | None = None,
     drop_interactive_shell: bool | None = None,
+    emphasis_from_style: bool | None = None,
 ) -> list[FileOutcome]: ...

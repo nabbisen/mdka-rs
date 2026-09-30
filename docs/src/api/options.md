@@ -5,6 +5,7 @@ pub struct ConversionOptions {
     pub mode: ConversionMode,
     pub preserve_ids:           bool,
     pub drop_interactive_shell: bool,
+    pub emphasis_from_style:    bool,
 }
 ```
 
@@ -15,10 +16,10 @@ walks the parsed document once. You rarely need to set individual fields —
 start with a mode and override only what differs from the default for
 that mode.
 
-**There are three fields, and two of them act on the output:** `preserve_ids` and
-`drop_interactive_shell`. Six more existed until 3.0 and are described under
-[Removed in 3.0](#removed-in-30) below — none of them ever changed a byte of
-output.
+**There are four fields, and three of them act on the output:** `preserve_ids`,
+`drop_interactive_shell` and `emphasis_from_style`. Six more existed until 3.0 and
+are described under [Removed in 3.0](#removed-in-30) below — none of them ever
+changed a byte of output.
 
 ## Creating Options
 
@@ -52,6 +53,7 @@ let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 |---|---|---|---|
 | `preserve_ids` | ✅ | ❌ | Emits anchors |
 | `drop_interactive_shell` | ❌ | ✅ | Drops shell elements |
+| `emphasis_from_style` | ❌ | ❌ | Lets inline `style` add bold/italic |
 
 See [Conversion Modes](./modes.md) for what this means when choosing a mode.
 
@@ -107,6 +109,62 @@ Whether to remove `<nav>`, `<header>`, `<footer>`, and `<aside>` elements
 **and all their children**.
 Useful for content extraction from full web pages.
 Enabled by default in `Minimal`; disabled by default in every other mode.
+
+### `emphasis_from_style`
+
+**mdka reads the element, not the environment.** An inline `style` attribute
+is part of the element it appears on — it arrived in the document mdka was
+handed, and reading it is reading the input. A `class` is a reference to a
+stylesheet mdka was never given; resolving it would mean inventing what
+mdka cannot see.
+
+- `<span style="font-weight:700">` **works** — the document itself says bold.
+- `<span class="c7">` **never will**, whatever the stylesheet says — mdka does
+  not read stylesheets, and this is permanent, not merely unimplemented.
+- `<style>` blocks and linked stylesheets are out of scope for the same reason.
+
+With this option **on** (default **off**), any element's inline `style` can
+add bold and/or italic it would not otherwise carry, read independently:
+
+| Property | Adds | Value grammar |
+|---|---|---|
+| `font-weight` | bold | `bold`, or a number ≥ 600 |
+| `font-style` | italic | `italic` or `oblique` |
+
+A value the grammar does not recognise (`bolder`/`lighter` — relative to a
+parent's computed weight mdka does not track — a number strictly between
+500 and 600, or anything unparseable) is read as "this element says
+nothing", the same as no `style` at all: never an error, and never guessed
+at.
+
+**Turning this on can change output for any document that has such a
+`style`.** That is why it is opt-in.
+
+Independently of the option, and unaffected by it, a `font-weight` of
+`normal` or ≤ 500 (or a `font-style` of `normal`) still **removes** the
+emphasis a `<b>`/`<strong>`/`<i>`/`<em>` tag would otherwise carry on its
+own — this shipped in `3.0.0`, before this option existed, most often seen
+on a Google Docs paste's own un-bolding wrapper, and stays on with the
+option off:
+
+```html
+<b style="font-weight:400">not actually bold</b>
+```
+→ `not actually bold` (no `**`), with `emphasis_from_style` either way.
+
+With the option on, a declaration on a container reaches every descendant
+block, the same way a browser would render it — a `style` on a `<div>`
+applies to the `<p>`s inside it, each opening and closing its own bold:
+
+```html
+<div style="font-weight:700"><p>a</p><p>b</p></div>
+```
+→
+```markdown
+**a**
+
+**b**
+```
 
 ## Removed in 3.0
 

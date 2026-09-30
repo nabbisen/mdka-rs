@@ -78,6 +78,29 @@ fn help_documents_preserve_ids_and_no_preserve_ids() {
 }
 
 #[test]
+fn help_documents_emphasis_from_style() {
+    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
+        .arg("--help")
+        .output()
+        .expect("failed to run mdka --help");
+    assert!(out.status.success());
+    let help = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        help.contains("--emphasis-from-style"),
+        "help text missing --emphasis-from-style:\n{help}"
+    );
+}
+
+#[test]
+fn emphasis_from_style_flag_lets_style_add_emphasis_off_by_default() {
+    let html = r#"<span style="font-weight:700">x</span>"#;
+    let off = run_mdka(&[], html);
+    assert_eq!(String::from_utf8(off.stdout).unwrap(), "x\n");
+    let on = run_mdka(&["--emphasis-from-style"], html);
+    assert_eq!(String::from_utf8(on.stdout).unwrap(), "**x**\n");
+}
+
+#[test]
 fn single_file_progress_goes_to_stderr_not_stdout() {
     let dir = std::env::temp_dir().join("mdka_cli_test_a7_progress");
     std::fs::create_dir_all(&dir).unwrap();

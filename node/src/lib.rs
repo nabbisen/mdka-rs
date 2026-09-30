@@ -16,10 +16,18 @@ pub struct JsConversionOptions {
     pub mode: Option<String>,
     pub preserve_ids: Option<bool>,
     pub drop_interactive_shell: Option<bool>,
+    /// Whether an inline `style` can add emphasis a tag would not otherwise
+    /// carry (RFC 049). Default **off**.
+    pub emphasis_from_style: Option<bool>,
 }
 
 /// The keys `JsConversionOptions` accepts, as JavaScript spells them.
-const VALID_KEYS: [&str; 3] = ["mode", "preserveIds", "dropInteractiveShell"];
+const VALID_KEYS: [&str; 4] = [
+    "mode",
+    "preserveIds",
+    "dropInteractiveShell",
+    "emphasisFromStyle",
+];
 
 /// Options removed in 3.0, with the reason each never mattered. napi drops a key it
 /// does not know, which after 3.0 would have left a plain-JavaScript caller passing
@@ -135,6 +143,9 @@ fn to_rust_opts(js: Option<StrictOptions>) -> Result<mdka::ConversionOptions> {
     }
     if let Some(v) = js.drop_interactive_shell {
         opts.drop_interactive_shell = v;
+    }
+    if let Some(v) = js.emphasis_from_style {
+        opts.emphasis_from_style = v;
     }
 
     Ok(opts)

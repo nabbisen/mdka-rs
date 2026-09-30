@@ -36,6 +36,7 @@ fn build_opts(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> ::mdka::ConversionOptions {
     let mut opts = ::mdka::ConversionOptions::for_mode(to_rust_mode(mode));
     if let Some(v) = preserve_ids {
@@ -43,6 +44,9 @@ fn build_opts(
     }
     if let Some(v) = drop_interactive_shell {
         opts.drop_interactive_shell = v;
+    }
+    if let Some(v) = emphasis_from_style {
+        opts.emphasis_from_style = v;
     }
     opts
 }
@@ -108,14 +112,20 @@ fn html_to_markdown(html: &str) -> String {
 
 #[pyfunction]
 #[pyo3(signature = (html, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_to_markdown_with(
     html: &str,
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<String> {
-    let opts = build_opts(mode, preserve_ids, drop_interactive_shell);
+    let opts = build_opts(
+        mode,
+        preserve_ids,
+        drop_interactive_shell,
+        emphasis_from_style,
+    );
     Ok(::mdka::html_to_markdown_with(html, &opts))
 }
 
@@ -137,15 +147,21 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
 /// keyword-argument shape.
 #[pyfunction]
 #[pyo3(signature = (html_list, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_to_markdown_many_with(
     py: Python<'_>,
     html_list: Vec<String>,
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<Vec<String>> {
-    let opts = build_opts(mode, preserve_ids, drop_interactive_shell);
+    let opts = build_opts(
+        mode,
+        preserve_ids,
+        drop_interactive_shell,
+        emphasis_from_style,
+    );
     Ok(py.detach(|| {
         html_list
             .par_iter()
@@ -182,8 +198,14 @@ fn html_file_to_markdown_impl(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<String> {
-    let opts = build_opts(mode, preserve_ids, drop_interactive_shell);
+    let opts = build_opts(
+        mode,
+        preserve_ids,
+        drop_interactive_shell,
+        emphasis_from_style,
+    );
     let out_dir_ref: Option<&str> = out_dir.as_deref();
 
     let result = py.detach(|| ::mdka::html_file_to_markdown_with(&path, out_dir_ref, &opts));
@@ -195,7 +217,7 @@ fn html_file_to_markdown_impl(
 
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_file_to_markdown(
     py: Python<'_>,
     path: String,
@@ -203,6 +225,7 @@ fn html_file_to_markdown(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
@@ -211,6 +234,7 @@ fn html_file_to_markdown(
         mode,
         preserve_ids,
         drop_interactive_shell,
+        emphasis_from_style,
     )
 }
 
@@ -223,7 +247,7 @@ fn html_file_to_markdown(
 /// accepting the same keyword arguments too, unchanged, for compatibility.
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_file_to_markdown_with(
     py: Python<'_>,
     path: String,
@@ -231,6 +255,7 @@ fn html_file_to_markdown_with(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
@@ -239,6 +264,7 @@ fn html_file_to_markdown_with(
         mode,
         preserve_ids,
         drop_interactive_shell,
+        emphasis_from_style,
     )
 }
 
@@ -251,13 +277,19 @@ fn html_files_to_markdown_impl(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     use std::path::Path;
     let out = Path::new(&out_dir);
     std::fs::create_dir_all(out)
         .map_err(|e| MdkaError::new_err(format!("cannot create out_dir: {e}")))?;
 
-    let opts = build_opts(mode, preserve_ids, drop_interactive_shell);
+    let opts = build_opts(
+        mode,
+        preserve_ids,
+        drop_interactive_shell,
+        emphasis_from_style,
+    );
     let path_bufs: Vec<std::path::PathBuf> = paths.iter().map(std::path::PathBuf::from).collect();
 
     let results = py.detach(|| ::mdka::html_files_to_markdown_with(&path_bufs, out, &opts));
@@ -284,7 +316,7 @@ fn html_files_to_markdown_impl(
 
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_files_to_markdown(
     py: Python<'_>,
     paths: Vec<String>,
@@ -292,6 +324,7 @@ fn html_files_to_markdown(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
@@ -300,6 +333,7 @@ fn html_files_to_markdown(
         mode,
         preserve_ids,
         drop_interactive_shell,
+        emphasis_from_style,
     )
 }
 
@@ -308,7 +342,7 @@ fn html_files_to_markdown(
 /// accepting the same keyword arguments too, unchanged, for compatibility.
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None))]
+    drop_interactive_shell=None, emphasis_from_style=None))]
 fn html_files_to_markdown_with(
     py: Python<'_>,
     paths: Vec<String>,
@@ -316,6 +350,7 @@ fn html_files_to_markdown_with(
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
+    emphasis_from_style: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
@@ -324,6 +359,7 @@ fn html_files_to_markdown_with(
         mode,
         preserve_ids,
         drop_interactive_shell,
+        emphasis_from_style,
     )
 }
 

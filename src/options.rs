@@ -107,6 +107,23 @@ pub struct ConversionOptions {
     /// Whether to drop shell elements such as `nav`, `header`, `footer` and
     /// `aside`.
     pub drop_interactive_shell: bool,
+
+    /// Whether an element's inline `style` attribute can add emphasis it
+    /// would not otherwise have -- a `bold`/`bolder`/`>=600` `font-weight`
+    /// making any element bold, an `italic`/`oblique` `font-style` making it
+    /// italic, independently (RFC 049). Default **off**: turning it on
+    /// changes output for documents carrying such a `style`.
+    ///
+    /// `font-weight: normal`/`lighter`/`<=500` and `font-style: normal`
+    /// removing emphasis a tag would otherwise carry (a `<b>` with
+    /// `font-weight: normal`, RFC 028 Amendment 1) is unaffected by this
+    /// option and stays on either way -- it already shipped in `3.0.0`.
+    ///
+    /// A `class` is never read, with this option on or off: it names a
+    /// stylesheet mdka was never given, and resolving it would mean
+    /// inventing what the input does not say. See the
+    /// [options page](https://nabbisen.github.io/mdka-rs/api/options.html#emphasis_from_style).
+    pub emphasis_from_style: bool,
 }
 
 impl Default for ConversionOptions {
@@ -123,11 +140,13 @@ impl ConversionOptions {
                 mode,
                 preserve_ids: true, // anchors only
                 drop_interactive_shell: false,
+                emphasis_from_style: false,
             },
             ConversionMode::Minimal => Self {
                 mode,
                 preserve_ids: false,
                 drop_interactive_shell: true,
+                emphasis_from_style: false,
             },
         }
     }
@@ -161,6 +180,12 @@ impl ConversionOptions {
     /// Builder: sets whether shell elements (nav/header/footer/aside) are dropped.
     pub fn drop_interactive_shell(mut self, v: bool) -> Self {
         self.drop_interactive_shell = v;
+        self
+    }
+
+    /// Builder: sets whether inline `style` can add emphasis (RFC 049).
+    pub fn emphasis_from_style(mut self, v: bool) -> Self {
+        self.emphasis_from_style = v;
         self
     }
 }

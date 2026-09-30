@@ -506,6 +506,19 @@ def test_with_drop_shell_flag():
     assert "HEADER" not in md, f"header leaked: {md}"
     assert "FOOTER" not in md, f"footer leaked: {md}"
 
+def test_emphasis_from_style_off_by_default():
+    html = '<span style="font-weight:700">x</span>'
+    assert html_to_markdown(html) == "x\n"
+    assert html_to_markdown_with(html) == "x\n"
+    assert html_to_markdown_with(html, emphasis_from_style=False) == "x\n"
+
+def test_emphasis_from_style_lets_style_add_emphasis():
+    md = html_to_markdown_with(
+        '<span style="font-weight:700">x</span>',
+        emphasis_from_style=True,
+    )
+    assert md == "**x**\n", f"got: {md}"
+
 def test_a_wrapper_keeps_its_separation_in_both_modes():
     # Bare-sibling-text fixture, not a block-element fixture: neighbouring
     # blocks' own spacing dominates the output otherwise. Minimal unwraps the

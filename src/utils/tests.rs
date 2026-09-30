@@ -80,75 +80,78 @@ fn block_kind_classifies_every_block_the_renderer_emits() {
 }
 
 #[test]
-fn style_negates_bold_with_normal_or_weight_up_to_500() {
-    assert!(emphasis_negated_by_style("b", Some("font-weight:normal")));
-    assert!(emphasis_negated_by_style(
-        "strong",
-        Some("font-weight:normal")
-    ));
-    assert!(emphasis_negated_by_style("b", Some("font-weight:400")));
-    assert!(emphasis_negated_by_style("b", Some("font-weight:500")));
-    assert!(!emphasis_negated_by_style("b", Some("font-weight:600")));
-    assert!(!emphasis_negated_by_style("b", Some("font-weight:700")));
-    assert!(!emphasis_negated_by_style("b", Some("font-weight:bold")));
+fn font_weight_bold_or_not_bold_by_keyword_or_threshold() {
+    assert_eq!(style_font_weight(Some("font-weight:normal")), Some(false));
+    assert_eq!(style_font_weight(Some("font-weight:400")), Some(false));
+    assert_eq!(style_font_weight(Some("font-weight:500")), Some(false));
+    assert_eq!(style_font_weight(Some("font-weight:600")), Some(true));
+    assert_eq!(style_font_weight(Some("font-weight:700")), Some(true));
+    assert_eq!(style_font_weight(Some("font-weight:bold")), Some(true));
 }
 
 #[test]
-fn style_relative_weights_do_not_negate() {
-    assert!(!emphasis_negated_by_style("b", Some("font-weight:lighter")));
-    assert!(!emphasis_negated_by_style("b", Some("font-weight:bolder")));
+fn font_weight_relative_keywords_and_unparseable_middle_say_nothing() {
+    // `bolder`/`lighter` are relative to the parent's own computed weight,
+    // which mdka has no parent weight to resolve against -- unresolved, not
+    // guessed at, the same as before this RFC (RFC 028 Amendment 1) and
+    // the same as an unparseable value (RFC 049).
+    assert_eq!(style_font_weight(Some("font-weight:lighter")), None);
+    assert_eq!(style_font_weight(Some("font-weight:bolder")), None);
+    assert_eq!(style_font_weight(Some("font-weight:550")), None);
+    assert_eq!(style_font_weight(Some("font-weight:not-a-number")), None);
 }
 
 #[test]
-fn style_parsing_edge_cases() {
+fn font_weight_parsing_edge_cases() {
     // !important stripped, with or without a space
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("font-weight: normal !important")
-    ));
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("font-weight:normal!important")
-    ));
+    assert_eq!(
+        style_font_weight(Some("font-weight: normal !important")),
+        Some(false)
+    );
+    assert_eq!(
+        style_font_weight(Some("font-weight:normal!important")),
+        Some(false)
+    );
     // case-folded names and values
-    assert!(emphasis_negated_by_style("b", Some("FONT-WEIGHT: NORMAL")));
+    assert_eq!(style_font_weight(Some("FONT-WEIGHT: NORMAL")), Some(false));
     // whitespace around names, values and separators
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("  font-weight  :  normal  ;  ")
-    ));
+    assert_eq!(
+        style_font_weight(Some("  font-weight  :  normal  ;  ")),
+        Some(false)
+    );
     // the last declaration of the property wins
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("font-weight:700; font-weight:400")
-    ));
-    assert!(!emphasis_negated_by_style(
-        "b",
-        Some("font-weight:400; font-weight:700")
-    ));
+    assert_eq!(
+        style_font_weight(Some("font-weight:700; font-weight:400")),
+        Some(false)
+    );
+    assert_eq!(
+        style_font_weight(Some("font-weight:400; font-weight:700")),
+        Some(true)
+    );
     // other properties present and ignored
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("color:red; font-weight:normal; text-decoration:underline")
-    ));
+    assert_eq!(
+        style_font_weight(Some(
+            "color:red; font-weight:normal; text-decoration:underline"
+        )),
+        Some(false)
+    );
     // a declaration without a colon is skipped
-    assert!(emphasis_negated_by_style(
-        "b",
-        Some("bogus; font-weight:normal")
-    ));
+    assert_eq!(
+        style_font_weight(Some("bogus; font-weight:normal")),
+        Some(false)
+    );
+    // absent style, or no font-weight declaration at all
+    assert_eq!(style_font_weight(None), None);
+    assert_eq!(style_font_weight(Some("")), None);
+    assert_eq!(style_font_weight(Some("color:red")), None);
 }
 
 #[test]
-fn style_reads_only_the_property_for_the_element() {
-    assert!(emphasis_negated_by_style("i", Some("font-style:normal")));
-    assert!(emphasis_negated_by_style("em", Some("font-style: Normal")));
-    assert!(!emphasis_negated_by_style("em", Some("font-style:italic")));
-    assert!(!emphasis_negated_by_style("i", Some("font-weight:normal")));
-    assert!(!emphasis_negated_by_style("b", Some("font-style:normal")));
-    assert!(!emphasis_negated_by_style(
-        "span",
-        Some("font-weight:normal")
-    ));
-    assert!(!emphasis_negated_by_style("b", None));
-    assert!(!emphasis_negated_by_style("b", Some("")));
+fn font_style_italic_or_not_italic() {
+    assert_eq!(style_font_style(Some("font-style:normal")), Some(false));
+    assert_eq!(style_font_style(Some("font-style: Normal")), Some(false));
+    assert_eq!(style_font_style(Some("font-style:italic")), Some(true));
+    assert_eq!(style_font_style(Some("font-style:oblique")), Some(true));
+    assert_eq!(style_font_style(Some("font-weight:normal")), None);
+    assert_eq!(style_font_style(None), None);
 }

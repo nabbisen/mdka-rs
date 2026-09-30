@@ -89,6 +89,11 @@ export interface JsConversionOptions {
   mode?: string
   preserveIds?: boolean
   dropInteractiveShell?: boolean
+  /**
+   * Whether an inline `style` can add emphasis a tag would not otherwise
+   * carry (RFC 049). Default **off**.
+   */
+  emphasisFromStyle?: boolean
 }
 
 export declare function version(): string
