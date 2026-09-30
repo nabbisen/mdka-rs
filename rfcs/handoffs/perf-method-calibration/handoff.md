@@ -1,3 +1,10 @@
+> **CANCELLED 2026-09-30, after experiment 1 sitting 1.** The owner narrowed the scope: no wall-time
+> performance gate will be built, so the threshold this calibration exists to produce is not needed.
+> **The result that was obtained is kept**: the harness's A-vs-A noise floor is ±3% with one +16%
+> outlier at 8 threads — which shows Part 2's 50–80% was not merely harness noise, and that any
+> wall-time gate below ~2× would be unusable. See
+> `.git-exclude/review-request/perf-scope-correction/README.md`.
+
 # Developer Handoff — calibrate the measurement method before building any gate
 
 **Source.** Owner, 2026-09-30: *"did we get a good method or confirm it for stable measurement?"* — **No. We have a stated method that has never been validated.**
