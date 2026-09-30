@@ -78,30 +78,79 @@
 //! affect the string workload either (checked at 1, 4, and 32 threads:
 //! `10319` B every time), which never touches rayon.
 //!
-//! **Validated against the change this exists for, using the same warmed
-//! methodology (both probes, 64-file warm-up)**, against the published
-//! `2.9.0` source (`Vec<(&P, Result<PathBuf, MdkaError>)>` — a borrowed
-//! return — instead of `3.0.0`'s owned `Vec<FileOutcome>`; `2.9.0`'s
-//! different API shape means the literal test in this file cannot compile
-//! against it, so this is the same measurement logic against a different
-//! dependency, not this exact file — both sides are standalone probes, not
-//! `cargo test` binaries, since a `cargo test` binary's own harness
-//! overhead is a separate, fixed offset that does not change what either
-//! version of the library itself allocates):
+//! **Attempt 4, wrong, and this is the one that shipped and went red on
+//! CI: `std::process::id()` was added to the fixture directory names to
+//! fix a real, different bug (two concurrent runs on one machine deleting
+//! each other's files) — but it made the *measured call's own paths*
+//! longer or shorter depending on how many digits the pid happened to
+//! have, and `FileOutcome::src` clones that path.** This project's own CI
+//! runner had a 4-digit pid where the machine this was measured on had a
+//! 6-digit one. Swept by overriding the suffix length directly:
+//!
+//! | suffix chars | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+//! |---|---:|---:|---:|---:|---:|---:|---:|
+//! | bulk measured (B) | 34005 | 34045 | 34085 | 34125 | 34165 | 34205 | 34245 |
+//!
+//! **Exactly +40 B per character** (confirmed independently on this
+//! machine too, same slope, different absolute baseline). Not noise, not
+//! the runner, not the compiler: `PathBuf`'s own allocation size tracks the
+//! string length of the path it holds, and that path included the fixture
+//! root's full name.
+//!
+//! **The fix: enter the fixture root with `std::env::set_current_dir`
+//! before building any path the measured call will see, and use short,
+//! fixed-length relative paths (`"in/f0.html"`, `"out"`) for the
+//! conversion itself.** The root's own absolute path (still pid-suffixed,
+//! still solving the original concurrent-run collision) is only ever used
+//! to create and later remove it — never passed to
+//! `html_files_to_markdown`, so its length cannot reach the measurement.
+//! Same suffix-length sweep, fixed:
+//!
+//! | suffix chars | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+//! |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+//! | bulk measured (B) | 32905 | 32905 | 32905 | 32905 | 32905 | 32905 | 32905 | 32905 | 32905 |
+//!
+//! **Constant at every length tried**, and re-confirmed varying `TMPDIR`
+//! itself (4 lengths from empty to 20 characters, crossed with
+//! `RAYON_NUM_THREADS` 1/4/32, 10 repeats each — 120 runs, zero failures,
+//! one value), since a longer `TMPDIR` would have reached the measurement
+//! exactly the way a longer pid did.
+//!
+//! **Three environment dependences found in three rounds — thread count,
+//! toolchain, path length — each found only by running somewhere new, never
+//! by reasoning about the code in advance.** A zero-tolerance allocation
+//! baseline is a claim about an environment, not just about a library
+//! version, and the only real proof of "machine-independent" is running it
+//! in a genuinely different one. Every sweep in this file is evidence of
+//! exactly one such attempt; there is no reason to believe this is the last
+//! one a sufficiently different environment could find, only that these four
+//! are now closed.
+//!
+//! **Validated against the change this exists for, using the same warmed,
+//! fixed-length-path methodology (both probes, 64-file warm-up, relative
+//! paths from a `set_current_dir` root)**, against the published `2.9.0`
+//! source (`Vec<(&P, Result<PathBuf, MdkaError>)>` — a borrowed return —
+//! instead of `3.0.0`'s owned `Vec<FileOutcome>`; `2.9.0`'s different API
+//! shape means the literal test in this file cannot compile against it, so
+//! this is the same measurement logic against a different dependency, not
+//! this exact file — both sides are standalone probes, not `cargo test`
+//! binaries, since a `cargo test` binary's own harness overhead is a
+//! separate, fixed offset that does not change what either version of the
+//! library itself allocates):
 //!
 //! | | `2.9.0` | current `HEAD` | diff |
 //! |---|---:|---:|---:|
 //! | string | 10507 B | 10319 B | 188 B |
-//! | bulk, warm | 34605 B | 33845 B | **760 B** |
+//! | bulk, warm, fixed-length paths | 33715 B | 32905 B | **810 B** |
 //!
-//! **760 B over 5 files is 152 B/file — in the same range as the `+160`–
+//! **810 B over 5 files is 162 B/file — squarely inside the `+160`–
 //! `167 B/file` this gate exists to catch** (first measured during the
 //! `3.0.0` benchmark regeneration, independent of this file), now visible
-//! cleanly because pool-construction noise no longer swamps it. The string
-//! difference (`188 B`) is RFC 049's internal rewrite, unrelated to the
-//! `FileOutcome` change this gate targets — both differences are real, both
-//! would fail a tolerance of 0, and a baseline is a **number**, not a claim
-//! about which version should be bigger.
+//! cleanly because neither pool-construction noise nor path-length noise
+//! swamps it. The string difference (`188 B`) is RFC 049's internal
+//! rewrite, unrelated to the `FileOutcome` change this gate targets — both
+//! differences are real, both would fail a tolerance of 0, and a baseline
+//! is a **number**, not a claim about which version should be bigger.
 //!
 //! **Tolerances, re-derived from the warmed spread: both 0.** Neither
 //! workload showed any variance once measured correctly — not "small
@@ -123,9 +172,12 @@
 //! same `examples/`→`benches/` coupling this project already flagged
 //! (`project_alloc_counter_removed_rfc012_unblocked`) and did not fix —
 //! moving the allocator is a separate decision, not worth making for this
-//! one include. Fixture directories are suffixed with `std::process::id()`
-//! so two concurrent runs on one machine cannot delete each other's files
-//! mid-test.
+//! one include. The fixture *root's* directory name is suffixed with
+//! `std::process::id()` so two concurrent runs on one machine cannot delete
+//! each other's files mid-test — but nothing under it, and nothing passed to
+//! the measured call, carries that suffix or the root's own absolute path
+//! (see attempt 4 above for why that distinction is load-bearing, not
+//! stylistic).
 
 #[path = "../benches/alloc_counter.rs"]
 mod alloc_counter;
@@ -161,16 +213,13 @@ const BULK_FILE_COUNT: usize = 5;
 const WARMUP_FILE_COUNT: usize = 64;
 
 /// Measured **after** a warm-up call that pays rayon's one-time pool
-/// construction cost outside the snapshot window (see the module doc for
-/// why this matters and the thread-count sweep that proves it): zero
-/// variance across every `RAYON_NUM_THREADS` value from 1 to 32, measured
-/// against this exact compiled test binary (a standalone probe crate with
-/// the same logic measures 400 B lower — `cargo test`'s own harness
-/// overhead, fixed and consistent, not noise; the baseline below is from
-/// this file's own binary, not the probe). Without the warm-up call, this
-/// number grows by roughly 7 KB per worker thread and the gate is not
-/// portable across machines.
-const BULK_BASELINE_BYTES: usize = 34205;
+/// construction cost outside the snapshot window, **and** after entering a
+/// fixture root via `set_current_dir` so every path the measured call sees
+/// is a short, fixed-length relative path (see the module doc for both
+/// fixes and the sweeps that prove each one): zero variance across every
+/// `RAYON_NUM_THREADS` value from 1 to 32 and every fixture-path length
+/// tried, measured against this exact compiled test binary.
+const BULK_BASELINE_BYTES: usize = 32905;
 const BULK_TOLERANCE_BYTES: usize = 0;
 
 fn assert_within_tolerance(
@@ -214,10 +263,19 @@ fn allocation_is_unchanged() {
         STRING_TOLERANCE_BYTES,
     );
 
+    // A fixed-length root, entered via set_current_dir, so every path this
+    // process's own measured call sees is a short, constant-length relative
+    // path ("in/f0.html", "out") regardless of this root's own absolute
+    // length (which varies with the pid and with `TMPDIR` — see the module
+    // doc for why that varied the measurement by +40 B/character before this
+    // fix). The root's own absolute path is never passed to the measured
+    // call, only used to create/remove it.
     let pid = std::process::id();
-    let dir = std::env::temp_dir().join(format!("mdka_allocation_gate_in_{pid}"));
-    let out_dir = std::env::temp_dir().join(format!("mdka_allocation_gate_out_{pid}"));
-    std::fs::create_dir_all(&dir).unwrap();
+    let root = std::env::temp_dir().join(format!("mdka_allocation_gate_{pid}"));
+    let original_cwd = std::env::current_dir().unwrap();
+    std::fs::create_dir_all(root.join("in")).unwrap();
+    std::env::set_current_dir(&root).unwrap();
+    let out_dir = std::path::Path::new("out");
 
     // Warm-up call over WARMUP_FILE_COUNT files, discarded: pays rayon's
     // one-time global thread-pool construction cost, and uses enough files
@@ -227,34 +285,34 @@ fn allocation_is_unchanged() {
     // alone were not enough to make this reliable at every thread count.
     let warm_paths: Vec<PathBuf> = (0..WARMUP_FILE_COUNT)
         .map(|i| {
-            let p = dir.join(format!("warm{i}.html"));
+            let p = std::path::Path::new("in").join(format!("warm{i}.html"));
             std::fs::write(&p, BULK_HTML).unwrap();
             p
         })
         .collect();
-    let warm = std::hint::black_box(mdka::html_files_to_markdown(&warm_paths, &out_dir));
+    let warm = std::hint::black_box(mdka::html_files_to_markdown(&warm_paths, out_dir));
     std::hint::black_box(&warm);
-    let _ = std::fs::remove_dir_all(&out_dir);
+    let _ = std::fs::remove_dir_all(out_dir);
 
     let paths: Vec<PathBuf> = (0..BULK_FILE_COUNT)
         .map(|i| {
-            let p = dir.join(format!("f{i}.html"));
+            let p = std::path::Path::new("in").join(format!("f{i}.html"));
             std::fs::write(&p, BULK_HTML).unwrap();
             p
         })
         .collect();
-    let _ = std::fs::remove_dir_all(&out_dir);
+    let _ = std::fs::remove_dir_all(out_dir);
 
     let before = AllocSnapshot::now();
-    let results = std::hint::black_box(mdka::html_files_to_markdown(&paths, &out_dir));
+    let results = std::hint::black_box(mdka::html_files_to_markdown(&paths, out_dir));
     let after = AllocSnapshot::now();
     std::hint::black_box(&results);
     assert_eq!(results.len(), BULK_FILE_COUNT);
     assert!(results.iter().all(|o| o.result.is_ok()));
     let bulk_measured = after.delta_since(&before).allocated_bytes;
 
-    std::fs::remove_dir_all(&dir).unwrap();
-    std::fs::remove_dir_all(&out_dir).unwrap();
+    std::env::set_current_dir(&original_cwd).unwrap();
+    std::fs::remove_dir_all(&root).unwrap();
 
     assert_within_tolerance(
         &mut errors,
