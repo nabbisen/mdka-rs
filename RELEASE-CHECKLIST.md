@@ -69,6 +69,24 @@ review did not — and the difference was **position**, not diligence.
       `mdka-python` entirely, so its red hid the fact that it was checking two
       fewer crates than it claimed. A red here is a finding, not a known issue.
 
+### Before removing anything: establish who can be affected
+
+**This project's rule has always been that nothing is removed that was never deprecated.** It was never
+written down, which is how `3.0.0` satisfied it with a deprecation that had been published for **11 hours
+and 26 minutes** — `2.8.0` at 21:51, `3.0.0` the next morning. Nobody adopted `2.8.0`, saw a warning and
+acted on it.
+
+A fixed minimum duration is the wrong fix: this project has shipped 14 releases in 26 days, so *"the
+previous release"* can mean hours — but at `3.0.0` **no published dependent could resolve the new major at
+all** (every one pinned `^1` or `^2`, and a caret does not cross a major), so a longer runway would have
+protected nobody.
+
+- [ ] **Before a release that removes anything, establish who could be affected** — for a major, re-run the
+      reverse-dependency check (RFC 022's rule: re-run, do not cite).
+- [ ] **Then state the honest position in the release record.** Either the runway was real — the
+      deprecating release was available long enough to adopt — **or nobody could be affected, and say
+      that.** **Never claim the first when the second is true.**
+
 ### Checkpoint
 
 - [ ] Raise a pre-tag checkpoint to the owner and wait for the go-ahead.
