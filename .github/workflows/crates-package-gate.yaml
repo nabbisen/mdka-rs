@@ -111,6 +111,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-package-gate-v2-
 
+      # THROWAWAY DIAGNOSTIC STEP - rfcs/handoffs/crates-package-gate-stale-source/handoff.md
+      # Lists exactly what the cache restored for target/debug before cargo
+      # package runs, to settle whether the exclusion pattern above actually
+      # took effect on save. Remove before the final push.
+      - name: DEBUG - list restored mdka artifacts
+        run: |
+          echo "--- target/debug/**/*mdka* (should be empty if exclusion worked) ---"
+          find target/debug -iname '*mdka*' -exec ls -la --time-style=full-iso {} \; 2>&1 || echo "(none found / target/debug absent)"
+          echo "--- cargo.lock hash ---"
+          sha256sum Cargo.lock || true
+
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
       # the distinction this whole milestone is about.
