@@ -1,59 +1,55 @@
 # Performance Characteristics
 
-**These figures describe mdka `3.0.0` (`main` @ [`2756c47`](https://github.com/nabbisen/mdka-rs/commit/2756c47e6d447facda832b699a94726693a53d57), the tagged `3.0.0` release plus two documentation-only commits), measured 2026-09-29/30.** They replace the `2.3.0`-era numbers this page carried between `2.3.0` and `3.0.0`.
+**These figures describe mdka `3.0.0` (`main` @ [`2756c47`](https://github.com/nabbisen/mdka-rs/commit/2756c47e6d447facda832b699a94726693a53d57), the tagged `3.0.0` release plus two documentation-only commits), measured 2026-09-30, with load average recorded rather than merely asserted (see [Conditions](#conditions)).** They replace the `2.3.0`-era numbers this page carried between `2.3.0` and `3.0.0`, and they also **replace this page's own first `3.0.0` regeneration** — that first sitting had unrecorded background load, and two of its findings did not survive a clean re-run. Both are corrected below rather than quietly dropped.
 
 ## `2.9.0` vs `3.0.0`: is `3.0` slower?
 
 The owner asked this directly before any measurement was taken: *"v3 may be slower than v2."* The
-measured answer is not a flat no: there is a small, real, single-digit-percent cost on the path
-every string caller uses, and — found while looking for it — a substantially **faster** path for
-callers who convert many files at once. Both are quantified below, from numbers taken this
-sitting rather than assumed.
+first attempt at answering this found a small string-conversion cost and a large bulk-conversion
+speedup — then the owner reported background processes running during that sitting, and a
+confirmed-quiet re-run, with load logged before/during/after every measurement (see the
+[RFC 012 amendment](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/012-benchmark-hardening.md#8-quietness-needed-evidence-too-2026-09-30)
+this prompted), told a different story for both findings.
 
-### The string-conversion path — a small, repeatable cost
+### The string-conversion path — the earlier "+2% to +5%" was the machine, not the library
 
 `3.0` removed types and functions from the public surface; the one change inside the conversion
 path itself is that `disposition()` in `src/traversal.rs`, called once per element, now asks
 `ConversionOptions::unwraps_wrappers()` — a method comparing the mode enum — where `2.9.0` read a
-`bool` field directly. Interleaved on one machine — two release binaries, one built against the
-published `2.9.0` source, one against `3.0.0`, alternating which runs first on every round to
-cancel first-mover bias, median of 9 rounds of 11 reps each, **repeated four independent times**
-because the first repetition and the next three disagreed enough to need it:
+`bool` field directly. The first sitting found a repeatable +2% to +5% cost across four runs and
+reported it as real, small, and unfixed. **On a re-run with load sampled throughout (0.02–1.09,
+confirmed quiet) it did not reproduce:**
 
 | Dataset | run 1 | run 2 | run 3 | run 4 | median |
 |---|---:|---:|---:|---:|---:|
-| small | −0.27% | +3.06% | +4.31% | +3.27% | **+3.17%** |
-| medium | +0.64% | +1.59% | +4.31% | +3.83% | **+2.71%** |
-| large | −0.16% | +5.60% | +4.70% | +4.32% | **+4.51%** |
-| deep_nest | −0.75% | −0.22% | −0.99% | +0.18% | **−0.48%** |
-| flat | −0.37% | +1.93% | +2.28% | +1.99% | **+1.96%** |
-| malformed | +3.54% | +0.03% | −31.61% | +46.23% | (noise — 38–58 µs absolute) |
+| small | +2.33% | −0.24% | −0.91% | −0.50% | **−0.37%** |
+| medium | +1.99% | +0.28% | −0.80% | −0.24% | **+0.02%** |
+| large | −0.17% | −0.08% | +0.15% | +0.22% | **+0.03%** |
+| deep_nest | +1.19% | −0.29% | +0.51% | +0.09% | **+0.30%** |
+| flat | +0.48% | −0.03% | −0.26% | +0.34% | **+0.16%** |
+| malformed | −5.06% | +4.29% | +1.60% | −32.90% | (noise — tens of µs absolute) |
 
-**`deep_nest` is the internal control, and it holds at ~0% across all four runs.** It is the one
-dataset where `scraper::Html::parse_document` alone accounts for ~99.8% of total time (see
-[Scaling: Depth and Width](#scaling-depth-and-width)) — the one code path `3.0` truly never
-touches. Every other dataset shows a small, repeatable (3 of 4 runs, same direction) delta of
-roughly **+2% to +5%**: real in the sense that it reproduces, and small in the sense that it costs
-a few dozen nanoseconds to tens of microseconds on inputs that convert in 140 microseconds to 12
-milliseconds. The `malformed` row is too small in absolute terms (38–58 µs) for this harness to
-read at all — a single scheduler hiccup swings it by tens of percent either way, which is itself
-why the other five rows were re-run rather than trusted after one sitting.
+Same harness, same two-worktree probe, same alternating-order protocol, same four repetitions —
+the only thing that changed is a machine confirmed quiet instead of asserted quiet. **Every dataset
+now sits within ±0.4%, `deep_nest` included**, and `deep_nest` — the one dataset where
+`scraper::Html::parse_document` alone accounts for ~99.8% of total time (see [Scaling: Depth and
+Width](#scaling-depth-and-width)), a path `3.0` never touches — moved by exactly as little as the
+rest. **The earlier +2% to +5% finding passed its own internal control and was still a load
+artifact.** That control catches the change leaking into a path it should not touch; it was never
+able to tell "the library got slower" apart from "the room got noisier," which is exactly the gap
+the RFC 012 amendment above closes. Read this page's `2.9.0` vs `3.0.0` string-conversion delta as
+**not measurable** going forward, not as "small but real."
 
-The same small cost, same direction, shows up independently in the bulk-conversion probe below
-when forced to run sequentially (+7.5% to +8.9%) — two different harnesses agreeing is stronger
-evidence than either alone. **This is reported as a finding, not fixed here**: the magnitude is
-below what any real caller would notice, and the handoff for this page is measurement and
-documentation, not code.
-
-### Bulk file conversion: a small allocation, and an unexpected, larger speedup
+### Bulk file conversion: a small allocation, and a real slowdown that grows with concurrency
 
 `html_files_to_markdown` returned `Vec<(&P, Result<PathBuf, MdkaError>)>` — a **borrowed** key —
 through `2.9.0`. It now returns `Vec<FileOutcome>` with an **owned** `PathBuf`. That is one
-allocation per file, and no benchmark before this one converted files at all, so both the
-allocation and any effect on wall time were measured directly.
+allocation per file, and no benchmark before this project's `3.0.0` regeneration converted files at
+all, so both the allocation and any effect on wall time were measured directly.
 
 **Bytes allocated**, converting 10/100/1000 copies of `small.html`, measured with this project's
-own counting allocator (`benches/alloc_counter.rs`), two independent runs:
+own counting allocator (`benches/alloc_counter.rs`) — this figure does not depend on scheduling and
+needed no re-run:
 
 | Files | `2.9.0` | `3.0.0` | delta | per file |
 |---:|---:|---:|---:|---:|
@@ -62,41 +58,46 @@ own counting allocator (`benches/alloc_counter.rs`), two independent runs:
 | 1000 | 134,615,600–134,650,600 B | 134,777,600–134,817,600 B | +0.12% | **+162–167 B** |
 
 Flat across a 100× range in file count, both runs — exactly what "one more small owned allocation
-per `FileOutcome`" predicts, and this is the whole mechanism, quantified rather than guessed at.
+per `FileOutcome`" predicts, and this is the whole allocation-side mechanism, quantified rather
+than guessed at.
 
-**Wall time is a different story, and a better one.** Run with the default thread count (all 32
-logical CPUs, rayon's parallel path — the default `[dependencies]` feature and what every caller
-gets unless they opt out):
+**The first sitting's wall-time finding was the opposite of the truth.** It reported `3.0.0`
+finishing the same batch *faster* by up to 37%, growing with thread count, and offered "the removed
+borrow parallelizes more cleanly" as an unconfirmed candidate mechanism. That mechanism was
+rejected on review: a removed borrow does not explain an effect that scales with thread count, and
+the new `FileOutcome` is the *larger* type (48 B vs. the old tuple's 32 B) — it should cost more,
+not less. **A confirmed-quiet re-run, with a filesystem-write/no-write control added at each thread
+count and the whole sweep repeated twice for reproducibility, found the review was right**:
 
-| Files | `2.9.0` | `3.0.0` | delta |
-|---:|---:|---:|---:|
-| 10 | 327.9–422.7 µs | 343.3–359.2 µs | −8.6% to +4.7% |
-| 100 | 1.326–2.435 ms | 1.316–1.618 ms | −0.8% to −36.5% |
-| 1000 | 10.41–19.84 ms | 10.36–12.25 ms | −0.5% to −40.0% |
+| Threads | with writes (run 1) | with writes (run 2) | no writes (run 1) | no writes (run 2) |
+|---:|---:|---:|---:|---:|
+| 1 | +0.45% | −0.05% | +3.33% | +0.01% |
+| 2 | +2.39% | +1.82% | −3.49% | +4.37% |
+| 4 | +12.47% | −2.00% | +17.46% | +12.95% |
+| 8 | +11.51% | +32.21% | +14.27% | +20.67% |
+| 16 | +70.20% | +57.85% | +82.69% | +60.89% |
+| 32 | +52.48% | +64.79% | +66.10% | +65.80% |
 
-The 10-file row is noise-dominated (sub-millisecond, wide spread across repeats); the 100- and
-1000-file rows are not, and both repeats agree: **`3.0.0` finishes the same batch faster, and the
-gap widens with more files.** Forcing the thread count with `RAYON_NUM_THREADS` isolates why:
+(A positive delta here means `3.0.0` is **slower**, matching the sign convention used above.)
 
-| Threads | `2.9.0` | `3.0.0` | delta |
-|---:|---:|---:|---:|
-| 1 (sequential) | 152.5–155.9 ms | 164.0–169.7 ms | **+7.5% to +8.9%** |
-| 2 | 88.26 ms | 80.63 ms | −8.7% |
-| 4 | 41.02 ms | 41.90 ms | +2.2% |
-| 8 | 29.58 ms | 23.08 ms | −22.0% |
-| 16 | 22.14 ms | 17.12 ms | −22.7% |
-| 32 (default) | 20.15 ms | 12.67 ms | **−37.2%** |
+**At 1–4 threads the delta is noise: it is under ±2% in most cells, and it is not even
+monotonic between the two runs** (e.g. 4 threads goes from +12.47% to −2.00% with writes) —
+consistent with the string-conversion finding above, where the same small per-file cost is present
+but too small for this harness to separate from scheduling noise. **From 8 threads upward a large,
+reproducible slowdown appears in both runs and grows with thread count**, roughly doubling from 8
+to 16 threads before easing slightly at 32 — and **it is present, at similar or larger magnitude,
+with filesystem writes removed.** That answers the filesystem-vs-library question directly: this is
+not an I/O effect, since it survives when the only thing left running is parallel in-memory
+conversion. `3.0.0` is measurably **slower** at bulk conversion under real parallelism, not faster,
+and the gap widens rather than narrows with more threads.
 
-**Sequentially, `3.0.0` costs a little more per file — the one added allocation, matching the
-string-conversion finding above.** Under rayon's parallel scheduler, at thread counts a real
-machine actually has (8 and up), `3.0.0` is consistently and increasingly faster, and scales
-better with added threads (2→32 threads: `2.9.0` speeds up 4.38× off an ideal 16×, `3.0.0` 6.37×).
-**The most likely mechanism, consistent with this sweep but not confirmed with a profiler**: the
-old return type carried a borrow (`&'a P`) through rayon's parallel `map`/`collect`, and the new
-one does not — an owned `FileOutcome` may simply parallelize more cleanly than a
-lifetime-bound tuple. This is reported as an observation, not asserted as the cause; it was not
-investigated further because doing so would mean instrumenting the library, which is out of
-scope here.
+**A plausible, structurally consistent candidate — not confirmed by profiling**: building an owned
+`FileOutcome` means cloning the source `PathBuf` once per file, an allocation the old borrowed tuple
+never needed. A single global allocator serving many concurrent short-lived allocations is a known
+place for contention to grow with thread count rather than stay flat, which is the shape seen here
+(negligible at 1–4 threads, large and still growing at 8–16). This is offered as a candidate the
+data does not rule out, not as a proven cause; confirming it would mean profiling allocator
+contention directly, which is out of scope for a measurement-and-documentation handoff.
 
 ### Node.js: rejecting an unrecognised option key
 
@@ -119,13 +120,15 @@ slice 2's own review: ~55 ns for one key, ~150 ns for three, against ±100 ns no
 
 ### What this means
 
-**Nobody converting strings will notice `3.0.0`**, and the small, repeatable cost this sitting
-found there (a few percent, sub-millisecond in absolute terms) is reported rather than hidden.
-**Bulk file conversion is not slower — it is measurably faster, by a wide and growing margin, on
-any machine with more than a handful of cores**, for the cost of about 165 bytes per file. Node's
-option checking, the one place `3.0` deliberately adds work, costs nothing that survives
-measurement. None of this was written before the numbers came in, and one of it (the bulk
-speedup) was not expected at all.
+**Nobody converting single strings will notice `3.0.0`**: the cost this page reported after the
+first sitting did not survive a confirmed-quiet re-run, and is corrected here to "not measurable"
+rather than left at "small but real." **Bulk file conversion is measurably slower under real
+parallelism, and the gap grows with thread count** — the opposite of what the first sitting
+reported, for the same reason: that sitting's numbers were taken on a machine with unrecorded
+background load. Node's option checking, the one place `3.0` deliberately adds work, costs nothing
+that survives measurement, on either sitting. The corrected finding here is not more comfortable
+than the wrong one it replaces, and it is reported anyway — that is the point of the RFC 012
+amendment this regeneration prompted.
 
 ## The Focus of mdka
 
@@ -147,30 +150,48 @@ This rewrite resulted in a dramatic performance leap and a significantly reduced
 fewer options, one result model across the three bindings — but not this traversal, which is why
 the section above finds no regression on the path everyone uses.
 
-## Benchmark Results (2026-09-29/30)
+## Benchmark Results (2026-09-30)
 
-Every table on this page was regenerated on one quiet machine, from the commit named above — not
-compared against a number measured on a different day, machine, or `mdka` version. Reading a fresh
+Every table on this page was regenerated in one sitting on one machine, from the commit named
+above — not compared against a number measured on a different day, machine, or `mdka` version. Reading a fresh
 run against an old page's own numbers can suggest a library got faster or slower when only the
 *conditions* changed; the fix is not a caveat, it is never comparing across sittings at all. The
 peer-library tables below (Conversion Speed, Memory Allocation, Scaling) are each the product of
 one `cargo bench` invocation measuring all eight libraries together, so the comparison *within*
-each table is a single sitting even though, this time, the three benchmark binaries
-(`convert`, `memory`, `scaling`) were not run back to back: the convert benchmark ran the evening
-of the 29th, and a machine restart pushed `memory` and `scaling` to the following day. The commit
-and the machine were unchanged across both; see
+each table is a single sitting; this regeneration also ran all three benchmark binaries
+(`convert`, `memory`, `scaling`) back to back in one sitting, rather than split across a machine
+restart as the previous attempt was, and logged `/proc/loadavg` before, during, and after each —
+see [Conditions](#conditions) and the [RFC 012
+amendment](https://github.com/nabbisen/mdka-rs/blob/main/rfcs/done/012-benchmark-hardening.md#8-quietness-needed-evidence-too-2026-09-30)
+this requirement comes from. The commit and the machine were unchanged throughout; see
 [How These Were Produced](#how-these-were-produced) to re-run any of them yourself.
 
 ### Conditions
 
 | | |
 |---|---|
-| Date | 2026-09-29 (Conversion Speed) / 2026-09-30 (Memory Allocation, Scaling) |
+| Date | 2026-09-30, one sitting, 18:24–18:57 |
 | Commit | [`2756c47`](https://github.com/nabbisen/mdka-rs/commit/2756c47e6d447facda832b699a94726693a53d57) (`3.0.0` tag plus two documentation-only commits — no code differs from the tagged release) |
 | Machine | AMD Ryzen 9 9950X (16-core / 32-thread) |
 | OS | CachyOS Linux, kernel 7.2.8-1-cachyos |
 | Rust | 1.98.1 (48a229cea 2026-09-01) |
 | Criterion | 0.8.2 |
+| Load average, `convert` | before 1.47/1.96/1.58 — during 1.96–3.19 (1 min) — after 2.64/2.90/2.44 |
+| Load average, `memory` | before 2.64/2.90/2.44 — during 2.65–3.70 (1 min) — after 2.22/2.65/2.60 |
+| Load average, `scaling` | before 2.22/2.65/2.60 — during 2.52–3.69 (1 min) — after 2.99/3.35/2.95 |
+
+**These load figures are higher than the 0.01–1.09 range recorded for this same sitting's
+`2.9.0`/`3.0.0` probe comparisons below, and the reason is disclosed rather than smoothed over: the
+`before` readings still carried the decaying 5-/15-minute average of an earlier, interrupted attempt
+at this same triple run, and a self-inflicted bug — a stray infinite polling loop left running by
+one of this session's own tool calls, using ~14% of one of the 32 logical CPUs — was present for the
+full duration and was found and killed only after the run finished.** Judged against the effect
+sizes this sitting found (a collapse to sub-1% and a 50–80% slowdown), a sustained 0.14-core
+artifact on a 32-thread machine is not a plausible explanation for either, and these three
+`cargo bench` invocations are internally self-comparing across eight libraries in one process each,
+where any constant background draw affects all eight equally. It is recorded here anyway, because
+recording every environmental fact — including an unflattering one — rather than only the
+convenient ones is the entire point of the RFC 012 amendment this page cites.
 
 All eight libraries are `[dev-dependencies]` pinned to the exact versions below, **unchanged from
 the `2.3.0`-era page** — regenerating this page never bumps them, so a stale claim never re-stales
@@ -200,15 +221,15 @@ fastest library on each row is **bold**.
 
 | Dataset | mdka | mdka_v1 | html2md | fast_html2md | htmd | html_to_markdown_rs | html2text | dom_smoothie |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| small | 138.12 µs | 101.15 µs | 115.73 µs | **66.80 µs** | 76.59 µs | 81.49 µs | 251.97 µs | 245.79 µs |
-| medium | 1.3377 ms | 1.6284 ms | 1.3192 ms | **709.19 µs** | 836.63 µs | 911.94 µs | 2.7671 ms | 2.2602 ms |
-| large | 12.116 ms | 52.120 ms | 10.819 ms | **5.6868 ms** | 6.2609 ms | 7.9149 ms | 26.155 ms | 20.120 ms |
-| deep_nest | 25.477 ms | 314.25 ms | 28.410 ms | **4.4766 ms** | 63.621 ms | 56.540 ms | 27.230 ms | — |
-| flat | 5.4595 ms | 12.820 ms | 5.9929 ms | **3.7400 ms** | 4.1062 ms | 4.0272 ms | 11.716 ms | 25.261 ms |
-| malformed | 35.01 µs | **32.52 µs** | 63.64 µs | 45.50 µs | 56.07 µs | 34.46 µs | 78.56 µs | 5.0136 ms |
+| small | 138.50 µs | 100.00 µs | 116.83 µs | **68.70 µs** | 75.29 µs | 83.40 µs | 253.64 µs | 250.75 µs |
+| medium | 1.3495 ms | 1.6324 ms | 1.3374 ms | **737.66 µs** | 837.62 µs | 916.66 µs | 2.8420 ms | 2.2785 ms |
+| large | 12.173 ms | 52.153 ms | 10.901 ms | **5.8554 ms** | 6.4987 ms | 7.9625 ms | 29.066 ms | 20.217 ms |
+| deep_nest | 27.968 ms | 317.86 ms | 28.480 ms | **4.5184 ms** | 65.728 ms | 57.274 ms | 27.420 ms | — |
+| flat | 5.5819 ms | 12.869 ms | 6.0287 ms | **3.8180 ms** | 4.2074 ms | 4.0612 ms | 12.939 ms | 24.862 ms |
+| malformed | 35.34 µs | **32.34 µs** | 64.24 µs | 45.44 µs | 56.95 µs | 34.78 µs | 80.66 µs | 5.0347 ms |
 
-`mdka` against `mdka_v1`: still ahead on medium (1.22×), large (4.30×), deep_nest (12.34×) and
-flat (2.35×) — but **behind** on small (0.73×) and malformed (0.93×), on the smallest and least
+`mdka` against `mdka_v1`: still ahead on medium (1.21×), large (4.28×), deep_nest (11.36×) and
+flat (2.31×) — but **behind** on small (0.72×) and malformed (0.92×), on the smallest and least
 structured inputs. Both exceptions were already known before this regeneration, not new findings
 here. These ratios are essentially unchanged from the `2.3.0`-era page, consistent with the
 `2.9.0` vs `3.0.0` section above: the traversal these numbers exercise did not move.
@@ -253,35 +274,39 @@ median of five), not one run split into parts — so read them side by side, not
 
 | Nesting depth | Total conversion | `scraper::Html::parse_document` alone |
 |---:|---:|---:|
-| 1,000 | 1.357 ms | 1.309 ms |
-| 5,000 | 29.140 ms | 23.980 ms |
-| 10,000 | 103.149 ms | 102.916 ms |
-| 20,000 | 411.270 ms | 411.704 ms |
-| 40,000 | 1580.981 ms | 1585.148 ms |
-| 80,000 | 6406.789 ms | 6395.065 ms |
+| 1,000 | 1.289 ms | 1.228 ms |
+| 5,000 | 24.175 ms | 23.894 ms |
+| 10,000 | 95.193 ms | 94.468 ms |
+| 20,000 | 383.158 ms | 382.657 ms |
+| 40,000 | 1561.849 ms | 1560.911 ms |
+| 80,000 | 6410.873 ms | 6360.341 ms |
 
 **Almost the entire cost is inside the parser, before mdka's own traversal ever begins** — the two
 columns track each other closely at every depth, never differing by more than a fraction of a
 percent, which is itself within this measurement's own noise between two separately-timed runs.
-The cost also grows worse than linearly: an 80× deeper document costs roughly 4,721× longer to
+The cost also grows worse than linearly: an 80× deeper document costs roughly 4,972× longer to
 convert, not 80×. A reader with untrusted, deeply-nested input should read the stack-overflow
 guarantee as exactly that — a crash-safety claim — and budget time separately using this table,
 `mdka`'s own `html_to_markdown` measured alone (`mdka` is not compared against the other seven
 libraries here; this is about `mdka`'s own scaling, not a cross-library race). These figures are
 consistent with the `2.3.0`-era page's (which found ~5,050× at the same 80× ratio); the parser's
-own scaling has not changed, as expected — `3.0` never touched it.
+own scaling has not changed, as expected — `3.0` never touched it. (The 5,000-deep row moved the
+most between this sitting and the previous one — 29.140 ms to 24.175 ms, about −17% — the largest
+swing of the six; every other row moved by single digits or less. This is depth-scaling data, run
+outside Criterion's own outlier detection, so a swing like this is read as measurement variance
+rather than a finding, consistent with the Conditions section's disclosure above.)
 
 Width (total input size, roughly constant shallow structure) scales far better, sub-linearly in
 practice on this run:
 
 | Input size | `mdka` | `mdka_v1` |
 |---:|---:|---:|
-| 10 KB | 138.77 µs | 104.79 µs |
-| 50 KB | 656.93 µs | 678.96 µs |
-| 100 KB | 1.3475 ms | 1.6644 ms |
-| 500 KB | 6.5220 ms | 14.352 ms |
-| 1 MB | 12.405 ms | 52.215 ms |
-| 5 MB | 68.237 ms | 1.3535 s |
+| 10 KB | 138.14 µs | 101.60 µs |
+| 50 KB | 651.80 µs | 666.64 µs |
+| 100 KB | 1.3441 ms | 1.6424 ms |
+| 500 KB | 6.3934 ms | 14.137 ms |
+| 1 MB | 12.092 ms | 52.378 ms |
+| 5 MB | 66.018 ms | 1.2391 s |
 
 ## How These Were Produced
 
@@ -312,13 +337,18 @@ either, because both versions are `mdka` itself and Cargo can only build one ver
 into one binary: two release binaries were built from clean `git worktree`s at the `2.9.0` and
 `3.0.0` tags, and a driver script ran them alternately — swapping which one goes first on every
 round — so that any shared machine noise affects both equally and cancels in the median. The
-string-conversion comparison was run **four independent times** rather than once, because the
-first repetition disagreed with the next three enough to need checking; all four are shown. The
+string-conversion comparison was run **four independent times**, first on a machine only asserted
+quiet (finding a since-retracted +2% to +5% cost) and then again on a machine confirmed quiet by
+logged `/proc/loadavg`; the four re-run numbers shown are the ones this page now reports. The
 bulk-file figures use the same two probe binaries: allocation with the counting allocator inside
-each, wall time both at the default thread count and swept across `RAYON_NUM_THREADS` values to
-separate the sequential cost from the parallel-scheduling effect. The Node.js figures used the
-**published** `mdka@2.9.0` and `mdka@3.0.0` packages installed from npm, not a local build, so the
-number on this page is the one every user actually runs.
+each; wall time swept across `RAYON_NUM_THREADS` values (1/2/4/8/16/32), **run twice** for
+reproducibility, and **run both with the library's normal filesystem writes and with a
+`bulk_nowrite` variant that converts and discards in memory**, to separate a filesystem effect from
+a library effect. The Node.js figures used the **published** `mdka@2.9.0` and `mdka@3.0.0` packages
+installed from npm, not a local build, so the number on this page is the one every user actually
+runs; that comparison was not re-run for the clean sitting, since it had already been measured
+twice in agreement and RFC 012's amendment concerns environmental evidence, not re-verifying an
+already-settled result.
 
 Nothing on this page is asserted without a command or a description sufficient to re-run it.
 
@@ -331,12 +361,12 @@ a single, simple implementation, not raw throughput — a reader who needs the f
 conversion should look at `fast_html2md`'s row above, not this project's own marketing of itself.
 
 `3.0.0`'s API changes — two modes instead of five, a smaller option surface, one result model
-across three languages — cost a small, single-digit-percent amount in string conversion (found on
-repeated measurement, too small to notice in practice) and about 165 bytes per file in bulk file
-conversion, where they also make conversion **substantially faster** under real parallelism. A
-reader deciding whether to upgrade should not let performance decide it either way: what changed is
-smaller than what stayed the same, and the one place that moved by a wide margin moved for the
-better.
+across three languages — cost about 165 bytes per file in bulk file conversion, and, at real
+parallelism (8+ threads), a wall-time slowdown that grows with thread count rather than a speedup:
+the opposite of what this page first reported, corrected after a confirmed-quiet re-run. Single-
+string conversion shows no measurable cost either way. A reader converting many files at once under
+heavy parallelism is the one case where this upgrade has a real, currently-unidentified cost; every
+other caller should not let performance decide whether to upgrade.
 
 We recognize that other libraries may offer more features or different trade-offs that make them
 better suited for certain applications. `mdka` aims to be the right choice for those who prioritize

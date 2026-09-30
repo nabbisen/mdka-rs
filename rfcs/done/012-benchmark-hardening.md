@@ -149,3 +149,25 @@ first or this RFC's memory table is measured against code that is about to chang
 
 Making mdka faster. This RFC measures and publishes honestly; recovering the 7–18% is separate work and
 should be scoped from these numbers once they exist.
+
+## 8. Quietness needed evidence too, 2026-09-30
+
+§3 says *"every published figure must carry the method that produced it"* and lists six things to record:
+machine, OS, CPU, Rust version, date, competitor versions, command. **A seventh claim was made without
+evidence: "on a quiet machine."** Every other environmental fact on the page is a number or a version
+string a reader can check; quietness was an assertion nobody could check, including us.
+
+This gap was not theoretical. The `3.0.0` benchmark regeneration (`rfcs/handoffs/3.0.0-benchmark-regeneration/`)
+measured a "+2% to +5%, repeatable" cost for one code path and, separately, a "faster by up to 37%, growing
+with thread count" result for another, on a machine asserted quiet but not logged. The owner later reported
+background processes running during that sitting. A re-run on a machine with `/proc/loadavg` sampled and
+recorded before, during, and after each `cargo bench` invocation found the first result was **not there** —
+it collapsed to within noise — and the second **reversed direction** once measured cleanly. Neither of those
+two outcomes could have been told apart from "the numbers moved because the machine got quieter" without
+a logged number to compare against. The internal control (`deep_nest`, a dataset RFC 012's own change never
+touches) passed on the noisy run too — quietness has to be checked directly, because a control checks
+whether *the change itself* leaked into an unrelated path, not whether *the room* is quiet.
+
+**Every regeneration from now on records `/proc/loadavg` (or the equivalent) immediately before, at least
+once during, and immediately after each benchmark invocation, in the Conditions table.** A number without
+a load figure beside it is the same unfalsifiable claim §3 was written to end, just for one more variable.
