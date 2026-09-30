@@ -22,7 +22,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | ID | Title | State |
 |----|-------|-------|
-| 049 | [Inline `style` emphasis, and where reading presentation stops](./accepted/049-inline-style-emphasis.md) — [handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) | **Accepted (owner, 2026-09-30).** The defect is an asymmetry: the same `font-weight` declaration is honoured when it removes emphasis and ignored when it would add it. Declares the boundary — *mdka reads the element, not the environment* — and closes bekoedit's top gap |
+| 049 | [Inline `style` emphasis, and where reading presentation stops](./accepted/049-inline-style-emphasis.md) — [handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) | **Accepted (owner, 2026-09-30).** The defect is an asymmetry: the same `font-weight` declaration is honoured when it removes emphasis and ignored when it would add it. Declares the boundary — *mdka reads the element, not the environment* — and closes bekoedit's top gap. **Implemented** (`96c9a28`, docs `8517c4d`); awaits a release |
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
 
