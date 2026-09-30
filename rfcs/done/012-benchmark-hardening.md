@@ -171,3 +171,58 @@ whether *the change itself* leaked into an unrelated path, not whether *the room
 **Every regeneration from now on records `/proc/loadavg` (or the equivalent) immediately before, at least
 once during, and immediately after each benchmark invocation, in the Conditions table.** A number without
 a load figure beside it is the same unfalsifiable claim §3 was written to end, just for one more variable.
+
+---
+
+## 9. What the page is for, and what it costs — amendment, 2026-09-30
+
+Four corrections, from the `3.0.0` regeneration. The original text stands; this replaces the assumptions
+behind §4.1 and §3.
+
+### 9.1 §4.1's decision rested on a cost claim that was wrong
+
+Its reasoning for keeping the eight-library table: *"the pinning … makes this cheap."* **Measured:** the
+three `cargo bench` invocations took **33.5 minutes** (from the load log's own timestamps), inside a
+regeneration the owner reports as **over three hours**. The remaining ~2.5 hours has never been broken down.
+
+**The table stays** — §4.1's argument against dropping it is still right, and more so after finding a
+regression. **What changes is that it is not a release obligation.** It never appeared in
+`RELEASE-CHECKLIST.md` and must not be added: the peers are pinned, so only `mdka`'s column can move, and
+that column has been measured as near-static across six months. Regenerate when someone has a reason.
+
+**Any future regeneration timestamps each phase**, so the next person optimising it is aiming at the right
+two hours rather than the visible half-hour.
+
+### 9.2 Only numbers from the same sitting may be compared
+
+The `3.0.0` page compared its peer ratios with the `2.3.0`-era page's and called them essentially
+unchanged. **Five of six had moved 28–48%** — because `mdka_v1`, pinned at `1.6.9` with unchanged code,
+measured 30–48% faster in the new sitting while `mdka` measured flat.
+
+**A pinned library's own number moved by half, on the same machine, six months apart.** So: within a table,
+columns measured together are comparable. Across pages, nothing is — not absolutes, and not ratios derived
+from them. **When a trend matters, re-measure every endpoint again.**
+
+### 9.3 The objective is a representative average, not a fastest lap
+
+The page exists to tell a reader what `mdka` costs **on an ordinary machine**. That rules out the
+laboratory practices that would otherwise be the obvious way to reduce variance: **no core isolation, no
+fixed governor, no disabling turbo.** Each of them buys precision by measuring something no user
+experiences.
+
+Variance is handled by **sampling across it** — repetitions, and a reported spread rather than a bare point
+— not by removing it.
+
+**§8's load log keeps its place with a corrected purpose:** it shows the machine was **ordinary**, not that
+it was quiet. A runaway background process is not a general environment; it is a broken one, and that is
+what the log is there to catch.
+
+### 9.4 Comparison and measurement are different jobs
+
+*"Did we get slower?"* does not need this page, this machine, or a quiet room. It needs **paired A/B,
+interleaved, in one sitting** — which cancels the environment, and which is why the `2.9.0`/`3.0.0` deltas
+survived a contended sitting while the absolutes did not.
+
+That is a **gate's** design, not a page's, and its absence is why `3.0.0` shipped a 50–80% bulk-conversion
+regression with every other gate green. **Performance is the last property this project asserts by hand.**
+
