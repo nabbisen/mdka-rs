@@ -231,8 +231,25 @@ fastest library on each row is **bold**.
 `mdka` against `mdka_v1`: still ahead on medium (1.21×), large (4.28×), deep_nest (11.36×) and
 flat (2.31×) — but **behind** on small (0.72×) and malformed (0.92×), on the smallest and least
 structured inputs. Both exceptions were already known before this regeneration, not new findings
-here. These ratios are essentially unchanged from the `2.3.0`-era page, consistent with the
-`2.9.0` vs `3.0.0` section above: the traversal these numbers exercise did not move.
+here.
+
+**These ratios are *not* comparable with the `2.3.0`-era page's, and an earlier draft of this
+section said they were.** Against that page, five of six moved by 28–48% — `flat` from 4.41× to
+2.31×, `large` from 6.14× to 4.28×, `medium` from 1.75× to 1.21× — and only `deep_nest` held
+(11.44× to 11.37×). The cause is visible in the two tables: **`mdka`'s own times barely moved**
+(`large` 12.336 → 12.173 ms, `flat` 5.625 → 5.582 ms), while **`mdka_v1`, pinned at `1.6.9` and
+unchanged in code, measured 30–48% faster** (`large` 75.751 → 52.153 ms, `flat` 24.817 → 12.869
+ms). Something outside this repository moved — a toolchain, a dependency, or the machine itself.
+
+**The lesson is the one this page keeps relearning: only numbers measured in the same sitting may
+be compared.** Within this table all eight libraries ran together, so the columns are comparable
+with each other. They are not comparable with any earlier page, and neither are the ratios derived
+from them. The `2.9.0` vs `3.0.0` section above is trustworthy for the opposite reason — both
+binaries ran in one sitting, interleaved.
+
+That `mdka`'s absolute times are near-identical across the two sittings is consistent with the
+`2.9.0` vs `3.0.0` finding that the traversal did not move, but it is a weaker statement than the
+one this paragraph used to make.
 
 ## Memory Allocation
 
