@@ -16,7 +16,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-*None.*
+| ID | Title | State |
+|----|-------|-------|
+| 049 | [Inline `style` emphasis, and where reading presentation stops](./proposed/049-inline-style-emphasis.md) | Awaiting owner acceptance. **The defect is an asymmetry**: the same `font-weight` declaration is honoured when it removes emphasis and ignored when it would add it. Declares the boundary the owner asked for — *mdka reads the element, not the environment* |
 
 ## Accepted
 
