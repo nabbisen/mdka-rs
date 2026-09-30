@@ -1,6 +1,6 @@
 # RFC 049 — Inline `style` emphasis, and where reading presentation stops
 
-**Status.** Proposed
+**Status.** Accepted — owner, 2026-09-30; §7 answered with the recommendations
 **Author.** Architect
 **Created.** 2026-09-30
 **Milestone.** Unassigned. Additive and opt-in; a minor.
@@ -116,3 +116,16 @@ proposing a default. That measurement belongs to a later slice with evidence, no
    My preference is the second — the surface should name the outcome, not the mechanism.
 2. **Whether §5's later default question should be opened at all**, or whether opt-in is the permanent
    answer. My recommendation is to leave it open and decide on evidence.
+
+---
+
+## 8. Owner decision, 2026-09-30
+
+**Accepted**, with both §7 recommendations taken:
+
+1. **The option is `emphasis_from_style`** — the surface names the outcome, not the mechanism.
+2. **The default question stays open**, to be decided on measured prevalence rather than opinion, as
+   RFC 043 did. Opt-in for now.
+
+Handoff: `rfcs/handoffs/049-inline-style-emphasis/implementation-handoff.md`.
+
