@@ -14,7 +14,7 @@
 //! measurement, the noise floor on a shared, ordinary machine is fat-tailed,
 //! and a "confirmed quiet" sitting still failed to reproduce its own finding a
 //! second time. Allocation does not have this problem *once it is measured
-//! correctly* — see below for what "correctly" took three attempts to reach.
+//! correctly* — see below for what "correctly" took five attempts to reach.
 //!
 //! **Attempt 1, wrong: release-mode numbers under a debug-mode CI.** A
 //! standalone `--release` probe showed zero variance over 60 separate
@@ -126,6 +126,66 @@
 //! one a sufficiently different environment could find, only that these four
 //! are now closed.
 //!
+//! **Attempt 5, a fourth environment dependence, and the one that attacked
+//! the gate's credibility rather than its numbers: the gate flaked on CI** —
+//! red on a documentation-only commit at `+900 B` on the **string** workload
+//! (`measured 11219 B, baseline 10319 B`), green on an identical re-run of
+//! the same job, same commit, same code. Did not reproduce locally: five
+//! runs of CI's exact invocation, and the 80-run/300-run sweeps from the
+//! previous two rounds, all passed. **A flaky zero-tolerance gate is worse
+//! than a wrong one** — it teaches re-running until green, which is how a
+//! real regression gets waved through.
+//!
+//! **Cause: `CountingAllocator`'s counters are process-global atomics (this
+//! file's own header above said so; an earlier version of
+//! `benches/alloc_counter.rs`'s own header called it a *thread-local*
+//! counter, which the implementation never was — corrected there).** Attempt
+//! 2 removed the second `#[test]` that was racing them, but the **libtest
+//! harness's own thread is still in the process**, printing and doing its
+//! own bookkeeping around the one test that remains. On a 4-vCPU CI runner
+//! its work can land inside the measurement window; on this project's own
+//! 32-thread machine it apparently does not, which is why this one took a
+//! live CI failure to find rather than a local sweep.
+//!
+//! **The fix rests on one property: foreign allocation inside the window is
+//! one-sided.** Both counters are monotonic and the delta is a saturating
+//! subtraction, so a stray allocation from anywhere else in the process can
+//! only make a single measurement **too high**, never too low. Proved, not
+//! assumed, with a standalone probe: a thread allocating a fixed, known
+//! number of buffers concurrently with the measurement inflates a
+//! single-shot reading by exactly that amount, every time —
+//!
+//! ```text
+//! clean (10 runs):            10319 (every run)
+//! single-shot, contaminated:  11343 (every run — +1024 B, the injected amount)
+//! ```
+//!
+//! — and taking the **minimum** over `MIN_SAMPLES` (5) in-process repeats,
+//! with the same contamination landing on only the first repeat, recovers
+//! the true value every time:
+//!
+//! ```text
+//! min=10319 all=[11343, 10319, 10319, 10319, 10319]   (10/10 trials, identical)
+//! ```
+//!
+//! **Tolerance stays 0 for both workloads.** Taking a minimum is not
+//! loosening the gate — a one-sided error term has a true floor, and the
+//! minimum over enough repeats finds it; 5 is cheap (both workloads already
+//! run in well under a millisecond each) and was not reached for its own
+//! sake — it is enough that at most one of five repeats being contaminated
+//! still finds the clean floor, and a second, sustained contamination would
+//! need to land on *every* repeat to survive this, which the one-off CI
+//! failure this round responds to was not. Re-ran both baselines under the
+//! new estimator: unchanged (`10319` / `32905`) — a minimum of several
+//! identical clean readings is that same reading.
+//!
+//! **This is the gate's fourth environment problem, and it has caught zero
+//! real regressions so far.** It remains worth having — it is the one
+//! performance property this project can measure, and the `+165`–`167
+//! B/file` change it exists to catch is real and did happen — but it does
+//! not get unlimited further chances: a fifth new failure mode would be the
+//! point to remove it rather than patch it again.
+//!
 //! **Validated against the change this exists for, using the same warmed,
 //! fixed-length-path methodology (both probes, 64-file warm-up, relative
 //! paths from a `set_current_dir` root)**, against the published `2.9.0`
@@ -189,6 +249,14 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 use mdka::options::{ConversionMode, ConversionOptions};
 use std::path::PathBuf;
 
+/// Both workloads are measured this many times in-process, and the
+/// **minimum** of the repeats is what gets asserted — see "Attempt 5" in the
+/// module doc for why a minimum, and why 5. Cheap (both workloads already
+/// run in well under a millisecond each; 5x that is still nothing) and
+/// proven, not assumed, to recover the true value when at most one repeat
+/// out of 5 is contaminated by a foreign allocation.
+const MIN_SAMPLES: usize = 5;
+
 /// Fixed document for the string-conversion workload: headings, inline
 /// emphasis, a link, and a list — enough surface to be a real measurement,
 /// small enough that the byte count is a value, not a benchmark.
@@ -245,16 +313,25 @@ fn assert_within_tolerance(
 #[test]
 fn allocation_is_unchanged() {
     let mut errors = Vec::new();
-
     let opts = ConversionOptions::for_mode(ConversionMode::Balanced);
-    let before = AllocSnapshot::now();
-    let md = std::hint::black_box(mdka::html_to_markdown_with(
-        std::hint::black_box(STRING_HTML),
-        &opts,
-    ));
-    let after = AllocSnapshot::now();
-    std::hint::black_box(&md);
-    let string_measured = after.delta_since(&before).allocated_bytes;
+
+    // MIN_SAMPLES repeats, minimum taken — see the module doc's "Attempt 5"
+    // for why. Foreign allocation inside the window is one-sided (it can
+    // only add bytes, never remove them), so the true value is whichever
+    // repeat happened not to race anything else in the process.
+    let string_measured = (0..MIN_SAMPLES)
+        .map(|_| {
+            let before = AllocSnapshot::now();
+            let md = std::hint::black_box(mdka::html_to_markdown_with(
+                std::hint::black_box(STRING_HTML),
+                &opts,
+            ));
+            let after = AllocSnapshot::now();
+            std::hint::black_box(&md);
+            after.delta_since(&before).allocated_bytes
+        })
+        .min()
+        .unwrap();
     assert_within_tolerance(
         &mut errors,
         "string conversion",
@@ -301,15 +378,20 @@ fn allocation_is_unchanged() {
             p
         })
         .collect();
-    let _ = std::fs::remove_dir_all(out_dir);
 
-    let before = AllocSnapshot::now();
-    let results = std::hint::black_box(mdka::html_files_to_markdown(&paths, out_dir));
-    let after = AllocSnapshot::now();
-    std::hint::black_box(&results);
-    assert_eq!(results.len(), BULK_FILE_COUNT);
-    assert!(results.iter().all(|o| o.result.is_ok()));
-    let bulk_measured = after.delta_since(&before).allocated_bytes;
+    let bulk_measured = (0..MIN_SAMPLES)
+        .map(|_| {
+            let _ = std::fs::remove_dir_all(out_dir);
+            let before = AllocSnapshot::now();
+            let results = std::hint::black_box(mdka::html_files_to_markdown(&paths, out_dir));
+            let after = AllocSnapshot::now();
+            std::hint::black_box(&results);
+            assert_eq!(results.len(), BULK_FILE_COUNT);
+            assert!(results.iter().all(|o| o.result.is_ok()));
+            after.delta_since(&before).allocated_bytes
+        })
+        .min()
+        .unwrap();
 
     std::env::set_current_dir(&original_cwd).unwrap();
     std::fs::remove_dir_all(&root).unwrap();
