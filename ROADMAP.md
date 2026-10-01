@@ -91,6 +91,23 @@ now writes the same bytes as `Render`.
 eight options cannot affect output and `Strict`/`Semantic`/`Preserve` are aliases of `Balanced` with no mechanism to
 diverge, while their documented purposes promise attribute fidelity Markdown cannot carry.~~ **Decided together and
 delivered by RFC 048 in `3.0.0`.**
+
+**`3.1.0` ships RFC 049** — prepared 2026-10-01, **not yet tagged**; this paragraph becomes a shipped record
+when the tag lands. `emphasis_from_style` (Rust, Python), `emphasisFromStyle` (Node), `--emphasis-from-style`
+(CLI): an opt-in, off-by-default option letting an element's own inline `style` add bold/italic it would not
+otherwise carry — closing bekoedit's top-ranked gap, that every bold word in a Google Docs paste arrived
+plain. **Off is byte-identical to `3.0.0`**, asserted by `mode_identity.rs`'s 397 tests, unmodified. Two
+boundaries, documented rather than widened: a container's declaration reaches paragraphs and headings among
+its descendants, not table cells and not a list item's or blockquote's own bare text; and `Minimal` unwraps
+the span/div that would carry the declaration before the option can read it, so the option does nothing for
+its own motivating case there. **RFC 049 moved to `done/` in the prep commit; `accepted/` and `proposed/` are
+both empty again.** Also in this release, neither user-facing: an allocation gate (`tests/allocation_gate.rs`)
+gating the one performance property this project has ever measured reliably, after three wall-time gate
+attempts were tried and cancelled; and a repair to `crates package gate`, which could previously verify
+`mdka-cli` against a compiled `mdka` that was not the one in the tree, restored from cache under an
+exclusion pattern that — twice — was guessed to work and did not. **Still open after it:** the performance
+page's own staleness relative to `3.0.0`/`3.1.0` (RFC 012 §9, not re-measured), and bekoedit's letter —
+owed since `3.0.0`, and now must say their top gap closes only in `Balanced`, not `Minimal`.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -695,7 +712,7 @@ gap, `data:` images their lowest:
 |---|---|
 | `emit_id_anchors`, independent of mode — *settled 2026-09-24, they no longer need it* | `preserve_ids` conflates keeping `id` information with emitting raw HTML to carry it. A caller wanting Balanced's other choices without raw HTML in the output has no way to say so. **A gap RFC 005 created.** |
 | Drop or alt-only `data:` URI images — *their #3, lowered 2026-09-24* | A pasted screenshot puts megabytes of base64 into the output. **They have solved it on their side** by substituting alt text, so this is now speculative demand unless another consumer asks |
-| **Read inline `style` for emphasis (opt-in)** — *their #1, 2026-09-24* | Google Docs and some editors express bold/italic only through `style`. Their framing is sharper than ours was: **every bold word in a Google Docs paste arrives plain.** Opt-in is acceptable to them |
+| ~~**Read inline `style` for emphasis (opt-in)** — *their #1, 2026-09-24*~~ — **shipped in `3.1.0`** as `emphasis_from_style`, off by default, in `Balanced` only (`Minimal` unwraps the carrying element first) | Google Docs and some editors express bold/italic only through `style`. Their framing is sharper than ours was: **every bold word in a Google Docs paste arrives plain.** Opt-in is acceptable to them |
 | Backslash hard-break instead of two trailing spaces — *their #2* | Editors that strip trailing whitespace silently remove the break. Minor, unchanged |
 
 **Harness limitations recorded, 2026-09-17 (RFC 024 review of `024d`):**
@@ -748,7 +765,7 @@ proofs did not cover degenerate nesting. Fixed by RFC 036 slice 4, approved 2026
 | `<dl>`/`<dt>`/`<dd>` run together; `<sup>`/`<sub>` lost — *"2⁷"* reads as *"27"*, arithmetically wrong, not merely unstyled; `<u>`, `<mark>`, `<kbd>`, `<abbr>`, `<q>`, `<cite>`, `<time>` flattened | **RFC 009** — already its scope; the `<sup>`/`<sub>` wording at `docs/src/api/elements.md:105` understates the damage and the `<dl>` row at `:103` describes the worst case as if it were the only one |
 | CLI `--preserve-ids` is a no-op in 4 of 5 modes and there is **no off switch**: `--no-preserve-ids` is an unknown option, and `--help` calls it *"Keep id attributes"*, which both implies opt-in and misdescribes the effect (it emits anchors). Anchor volume is large — Wikipedia 1198 anchors to 5990 words | **New CLI slice, P2.** Needs an owner call: adding `--no-preserve-ids` is a surface addition |
 | README Node Quick Start showcases `htmlToMarkdownWithAsync`, the one path that cannot emit deprecation warnings, with no caveat. The **docs page is already correct** (`usage-nodejs.md:132`); the README is not | Docs slice, P3. Closes the async-Node warning gap carried from M2 as far as it can be closed — the limitation itself is a napi-rs constraint (`node/src/lib.rs:42–49`) |
-| Google Docs emphasis carried by `<span style="font-weight:700">` is silently lost; `api/elements.md`'s `<strong>, <b>` row does not mention that mdka reads `style` to *suppress* emphasis either | Docs, plus the standing candidate — see RFC 037 §5 |
+| ~~Google Docs emphasis carried by `<span style="font-weight:700">` is silently lost~~ — **closed in `3.1.0`** by `emphasis_from_style`, in `Balanced`; `api/elements.md`'s `<strong>, <b>` row does not mention that mdka reads `style` to *suppress* emphasis either | Docs, plus the standing candidate — see RFC 037 §5 |
 | README: *"They remain distinct API"* → *"APIs"*; two links use `api/modes.html` where the rest use `api/modes` | Docs slice, P3 |
 
 **The mode set collapses to two, 2026-09-22 (owner decision, RFC 036 §6 option C).** `unwrap_unknown_wrappers`'s

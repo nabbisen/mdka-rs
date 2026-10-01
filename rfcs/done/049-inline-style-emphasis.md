@@ -1,9 +1,9 @@
 # RFC 049 — Inline `style` emphasis, and where reading presentation stops
 
-**Status.** Accepted — owner, 2026-09-30; §7 answered with the recommendations
+**Status.** Implemented — shipped in `3.1.0`, 2026-10-01
 **Author.** Architect
 **Created.** 2026-09-30
-**Milestone.** Unassigned. Additive and opt-in; a minor.
+**Milestone.** `3.1.0`. Additive and opt-in; a minor.
 **Source.** bekoedit's item 4, their top gap since 2026-09-24 — *every bold word in a Google Docs paste arrives plain*. Owner, 2026-09-30: approved in principle, with *"our library is not a CSS engine but a Markdown converter which should respect the original HTML as input. We had better declare it clearly."*
 **Touches.** `src/utils.rs`, `src/renderer.rs`, `src/options.rs`, the bindings, `docs/src/`.
 

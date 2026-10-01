@@ -20,9 +20,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Accepted
 
-| ID | Title | State |
-|----|-------|-------|
-| 049 | [Inline `style` emphasis, and where reading presentation stops](./accepted/049-inline-style-emphasis.md) — [handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) | **Accepted (owner, 2026-09-30).** The defect is an asymmetry: the same `font-weight` declaration is honoured when it removes emphasis and ignored when it would add it. Declares the boundary — *mdka reads the element, not the environment* — and closes bekoedit's top gap. **Implemented** (`96c9a28`, docs `8517c4d`); awaits a release |
+*None.*
 
 M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
 
@@ -81,6 +79,7 @@ corrupted tables in two default modes —
 | 039 | [Public API surface coherence](./done/039-public-api-surface-coherence.md) — [Half A handoff](./handoffs/039-public-api-surface-coherence/half-a-handoff.md) · Half B delivered by RFC 048 | 2.4.0 (Half A), 3.0.0 (Half B) |
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./done/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) · [deprecation slice](./handoffs/041-conversion-surface-honesty/deprecation-slice-handoff.md) · [addendum](./handoffs/041-conversion-surface-honesty/deprecation-slice-addendum-2026-09-25.md) | 2.6.0 (wording), 2.8.0 (deprecation), 3.0.0 (removal) |
 | 048 | [The `3.0` surface: one result model, one convention per language, two modes](./done/048-the-3.0-surface.md)  — [`2.9.0` precondition](./handoffs/048-the-3.0-surface/2.9.0-precondition-handoff.md) · [`2.9.0` API reference](./handoffs/048-the-3.0-surface/2.9.0-api-reference-handoff.md) · [slice 1: removals](./handoffs/048-the-3.0-surface/slice-1-removals-handoff.md) · [slice 2: result model](./handoffs/048-the-3.0-surface/slice-2-result-model-handoff.md) · [2 addendum: cache](./handoffs/048-the-3.0-surface/slice-2-addendum-2026-09-26-cache.md) · [2 addendum 2: cache key](./handoffs/048-the-3.0-surface/slice-2-addendum-2026-09-26b-cache-key.md) · [slice 3: migration guide](./handoffs/048-the-3.0-surface/slice-3-migration-guide-handoff.md) · [`3.0.0` prep](./handoffs/3.0.0-release-prep/prep-handoff.md) | 2.9.0 (precondition), 3.0.0 |
+| 049 | [Inline `style` emphasis, and where reading presentation stops](./done/049-inline-style-emphasis.md) — [implementation handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) · [docs addendum](./handoffs/049-inline-style-emphasis/addendum-2026-10-01.md) | 3.1.0 |
 
 ## Archive
 

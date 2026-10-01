@@ -9,6 +9,51 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [3.1.0] - 2026-10-01
+
+**`emphasis_from_style` — off by default, and with it off output is byte-identical
+to `3.0.0`.** Asserted by `mode_identity.rs`'s 397 byte-identity tests, unmodified
+by this release.
+
+### Added
+
+- **`emphasis_from_style`** (`emphasis_from_style` in Rust and Python,
+  `emphasisFromStyle` in Node.js, `--emphasis-from-style` on the CLI) — lets an
+  element's own inline `style` add bold and/or italic it would not otherwise
+  carry, read independently per property (`font-weight: bold` / a number ≥ 600;
+  `font-style: italic` or `oblique`). Closes bekoedit's top-ranked gap: a Google
+  Docs paste's bold words, carried only by `<span style="font-weight:700">`,
+  arrived plain. Off by default; turning it on can change output for any
+  document that has such a `style`.
+  - **Two boundaries, by design, not by gap:** a declaration on a container
+    reaches paragraphs and headings among its descendants — including one
+    nested inside a quote or a list item — but not a list item's or
+    blockquote's own bare text, and never a table cell. See
+    [`docs/src/api/options.md`](https://nabbisen.github.io/mdka-rs/api/options.html#emphasis_from_style)
+    for both, with examples.
+  - **In `Minimal`, the option does nothing for its own motivating case.**
+    `Minimal` unwraps the `<span>`/`<div>` that would carry the declaration
+    before anything can read it, so a Google Docs paste's bold is lost in
+    `Minimal` exactly as before this release — it is recovered only in
+    `Balanced`. This follows from `Minimal`'s existing wrapper-unwrapping
+    behaviour, not from a limit of the new option.
+  - Independently of the option, and unaffected by it: a `font-weight` of
+    `normal` or ≤ 500 (or a `font-style` of `normal`) still **removes** the
+    emphasis a `<b>`/`<strong>`/`<i>`/`<em>` tag would otherwise carry on its
+    own, as it has since `3.0.0`.
+
+### Tests
+
+- An allocation gate (`tests/allocation_gate.rs`), not user-facing: asserts
+  cumulative bytes allocated for a fixed string and a fixed bulk file
+  conversion against committed, measured baselines.
+
+### Fixed
+
+- `crates package gate` (CI only) could verify `mdka-cli` against a compiled
+  `mdka` that was not the one in the tree, restored stale from cache under a
+  cache-exclusion pattern that was not excluding anything.
+
 ## [3.0.0] - 2026-09-26
 
 **`3.0.0` changes no conversion output — not one byte, in either surviving mode.**
