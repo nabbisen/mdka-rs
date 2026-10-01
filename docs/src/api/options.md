@@ -152,6 +152,58 @@ option off:
 ```
 → `not actually bold` (no `**`), with `emphasis_from_style` either way.
 
+**A style that only restates a tag's own default adds nothing, either.**
+`b`/`strong`/`i`/`em` are not the only elements whose own rendering is
+already bold or italic by the browser's default stylesheet:
+
+- **Bold by default:** `b`, `strong`, `h1`–`h6`, `th`
+- **Italic by default:** `i`, `em`, `cite`, `address`, `var`, `dfn`
+
+For the wider set, the rule is the same one the negation case above already
+relies on: a `style` saying only what the tag already means is not new
+information, so it must not add a span the tag's own rendering never had:
+
+```html
+<h1 style="font-weight:700">Title</h1>
+```
+→ `# Title` (no `**`), with `emphasis_from_style` either way. A heading's
+`#` already carries the whole meaning; `# **Title**` would say "a heading
+containing bold text," which the source did not mean — there is no
+markdown for "heading, and also bold," nor any need.
+
+`cite`, `address`, `var` and `dfn` convert as plain text (see
+[Block Elements](./elements.md)) independently of this option — restating
+their default italic rendering via `style` does not change that:
+
+```html
+<cite style="font-style:italic">A Work</cite>
+```
+→ `A Work`, with `emphasis_from_style` either way. The same input converts
+identically whether or not the source happened to inline the tag's own
+default style — unlike the option's general case, output here does not
+depend on which browser produced the clipboard HTML.
+
+`th` is in the bold-default set for the same reason, even though table
+cells never receive emphasis from this option regardless (see the table
+boundary below): the set describes what the tag's own rendering already
+means, not only the paths this option happens to reach today.
+
+**An authored style nested inside one of these tags still works** — only
+the outer tag's own restated default is ignored, not a genuinely distinct
+declaration on a descendant:
+
+```html
+<h1 style="font-weight:700"><span style="font-weight:700">Title</span></h1>
+```
+→ `# **Title**` — the `<span>` is not a heading, and its own `style` still
+adds emphasis.
+
+A `style` that *removes* one of these tags' own default (`font-weight:400`
+on a heading, say) has no visible effect, unlike the `<b>` case just above:
+a heading's `#` never consults the emphasis-span state at all, so there is
+no markdown for "un-bolding" a heading — nothing to remove, where `<b>` had
+an actual span.
+
 With the option on, a declaration on a container reaches **paragraphs and
 headings among its descendants, including one nested inside a quote or a
 list item** — not every descendant a browser would render bold. A `style`

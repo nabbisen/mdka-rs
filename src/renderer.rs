@@ -218,6 +218,23 @@ impl StyleEmphasis {
 /// element the option makes bold or italic on its own account -- only wins
 /// when `emphasis_from_style` is on; with it off this function returns
 /// exactly what `3.0.0` already computed, tag default alone.
+///
+/// RFC 050: a style can also *restate* a default the tag already carries by
+/// some other means -- a heading's own boldness is `#`, not a span; a table
+/// cell's; `cite`/`address`/`var`/`dfn` render plain and that is deliberate
+/// (RFC 050 §5). **The one rule this adds:** a style that only restates
+/// meaning the tag's own rendering already carries contributes nothing new,
+/// so it must resolve to exactly what the tag would without any style at
+/// all -- `Some(true)` for the four tags whose own rendering *is* this
+/// class's span (`b`/`strong`, `i`/`em`: restating changes nothing visible
+/// either way), `None` for every other tag whose default is expressed some
+/// other way or not at all (a heading, `th`, or the four italic-by-UA-
+/// default tags): opening a span there would add markup the tag's own
+/// rendering never had. `tag_default` below is unchanged -- it answers "is
+/// this class's span the tag's own rendering" -- and `restates_default`
+/// answers the wider question "does the tag's UA default already mean this
+/// class at all", which is why a style restating it must defer to
+/// `tag_default` rather than to `emphasis_from_style`.
 fn own_emphasis(
     tag: &str,
     style: Option<&str>,
@@ -228,12 +245,34 @@ fn own_emphasis(
         (tag, class),
         ("b" | "strong", EmphasisClass::Bold) | ("i" | "em", EmphasisClass::Italic)
     );
+    // The tag's UA-default stylesheet already means this class, even where
+    // that meaning is expressed by something other than this class's own
+    // span (a heading's `#`, a table cell, or -- cite/address/var/dfn --
+    // not expressed in markdown at all, by RFC 050 §5's deliberate choice).
+    // `th` is included on purpose though currently unreachable (RFC 049
+    // never reaches a table cell's content) -- settled by RFC 050 §5.1 so
+    // the protection does not depend on that boundary.
+    let restates_default = tag_default
+        || matches!(
+            (tag, class),
+            (
+                "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "th",
+                EmphasisClass::Bold
+            ) | ("cite" | "address" | "var" | "dfn", EmphasisClass::Italic)
+        );
     let style_says = match class {
         EmphasisClass::Bold => utils::style_font_weight(style),
         EmphasisClass::Italic => utils::style_font_style(style),
     };
     match style_says {
         Some(false) => Some(false),
+        Some(true) if restates_default => {
+            if tag_default {
+                Some(true)
+            } else {
+                None
+            }
+        }
         Some(true) if emphasis_from_style => Some(true),
         _ if tag_default => Some(true),
         _ => None,

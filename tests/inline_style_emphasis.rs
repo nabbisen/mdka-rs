@@ -308,3 +308,123 @@ fn class_never_adds_emphasis_even_with_the_option_on() {
         );
     }
 }
+
+// ── RFC 050 — a style that restates a tag's own default is not new
+// information ──────────────────────────────────────────────────────────────
+//
+// `own_emphasis`'s original `tag_default` (`b`/`strong`/`i`/`em`) is
+// unchanged. RFC 050 widens the question "does the tag's UA-default
+// stylesheet already mean this class" to headings/`th` (bold) and
+// `cite`/`address`/`var`/`dfn` (italic) -- and for those, a style that only
+// restates what the tag already means contributes nothing: no `**`/`*` opens
+// around content whose own rendering (`#`, a cell, or RFC 050 §5's
+// deliberate plain suppression) never used that span to begin with.
+
+#[test]
+fn rfc050_a_restated_default_adds_nothing_on_the_wrong_rows() {
+    // RFC 050 §1's ❌ rows: previously wrong, now identical on/off.
+    for (html, plain) in [
+        (r#"<h1 style="font-weight:700">H</h1>"#, "# H\n"),
+        (r#"<h3 style="font-weight:bold">H</h3>"#, "### H\n"),
+        (r#"<cite style="font-style:italic">C</cite>"#, "C\n"),
+        (r#"<address style="font-style:italic">A</address>"#, "A\n"),
+        (r#"<var style="font-style:italic">v</var>"#, "v\n"),
+        (r#"<dfn style="font-style:italic">d</dfn>"#, "d\n"),
+    ] {
+        assert_eq!(
+            conv_with(html, &off(ConversionMode::Balanced)),
+            plain,
+            "{html} off"
+        );
+        assert_eq!(
+            conv_with(html, &on(ConversionMode::Balanced)),
+            plain,
+            "{html} on -- must match off, not gain emphasis"
+        );
+    }
+}
+
+#[test]
+fn rfc050_known_defaults_and_th_stay_unchanged() {
+    // RFC 050 §1's ✅ rows: already correct before this RFC, still correct
+    // after. `th` is included even though RFC 049's own mechanism never
+    // reaches a table cell's content -- untested-by-construction for the
+    // `own_emphasis` path itself (confirmed: no other reference to `"th"`
+    // exists in `src/renderer.rs` besides the set this RFC adds), so this
+    // pins the *observable* row, not the internal path RFC 050 §5.1 settled.
+    for (html, plain) in [
+        (r#"<b style="font-weight:700">b</b>"#, "**b**\n"),
+        (r#"<em style="font-style:italic">i</em>"#, "*i*\n"),
+        (
+            r#"<table><tr><th style="font-weight:700">H</th></tr></table>"#,
+            "| H |\n| --- |\n",
+        ),
+    ] {
+        assert_eq!(
+            conv_with(html, &off(ConversionMode::Balanced)),
+            conv_with(html, &on(ConversionMode::Balanced)),
+            "{html}"
+        );
+        assert_eq!(
+            conv_with(html, &off(ConversionMode::Balanced)),
+            plain,
+            "{html}"
+        );
+    }
+}
+
+#[test]
+fn an_authored_bold_inside_a_heading_survives() {
+    // RFC 050 §4 / handoff §4's named case -- the one way this fix could
+    // over-reach: the heading's own restated default must be ignored, but a
+    // genuinely authored bold nested inside it is real and must still open
+    // its own span.
+    assert_eq!(
+        conv_with(
+            r#"<h1 style="font-weight:700"><span style="font-weight:700">H</span></h1>"#,
+            &on(ConversionMode::Balanced)
+        ),
+        "# **H**\n"
+    );
+}
+
+#[test]
+fn a_plain_b_inside_a_heading_keeps_its_emphasis_either_way() {
+    // `<b>`'s own `tag_default` is untouched by RFC 050 -- its bold is real
+    // regardless of the option, inside a heading or anywhere else.
+    for opts in [on(ConversionMode::Balanced), off(ConversionMode::Balanced)] {
+        assert_eq!(conv_with(r#"<h1><b>H</b></h1>"#, &opts), "# **H**\n");
+    }
+}
+
+#[test]
+fn heading_negation_has_no_visible_effect() {
+    // `<h2 style="font-weight:400">` still resolves to `Some(false)` (the
+    // negation path is untouched by RFC 050), but a heading's `##` carries
+    // its whole meaning and never consults the emphasis-span state at all --
+    // there is no markdown for "un-bolding" a heading, so this is correct,
+    // not a gap.
+    for opts in [on(ConversionMode::Balanced), off(ConversionMode::Balanced)] {
+        assert_eq!(
+            conv_with(r#"<h2 style="font-weight:400">H</h2>"#, &opts),
+            "## H\n"
+        );
+    }
+}
+
+#[test]
+fn webkitgtk_shaped_document_adds_no_unintended_emphasis() {
+    // Built from the shape bekoedit actually reported -- every element
+    // carrying a long flattened computed style, headings included -- not a
+    // minimal reduction. A genuinely authored `<b>` is still present and
+    // must still bold; `<cite>` must still render plain, per RFC 050 §5.
+    let html = concat!(
+        r#"<h1 style="caret-color: rgb(0, 0, 0); font-weight: 700; font-style: normal; color: rgb(0, 0, 0);">Title</h1>"#,
+        r#"<p style="caret-color: rgb(0, 0, 0); font-weight: 400; font-style: normal;">Some <b style="caret-color: rgb(0, 0, 0); font-weight: 700;">bold</b> text.</p>"#,
+        r#"<h2 style="caret-color: rgb(0, 0, 0); font-weight: 700; font-style: normal;">Subtitle</h2>"#,
+        r#"<p style="caret-color: rgb(0, 0, 0); font-weight: 400;"><cite style="caret-color: rgb(0, 0, 0); font-style: italic;">A Work</cite> was cited.</p>"#,
+    );
+    let expected = "# Title\n\nSome **bold** text.\n\n## Subtitle\n\nA Work was cited.\n";
+    assert_eq!(conv_with(html, &on(ConversionMode::Balanced)), expected);
+    assert_eq!(conv_with(html, &off(ConversionMode::Balanced)), expected);
+}
