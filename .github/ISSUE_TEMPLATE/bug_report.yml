@@ -77,6 +77,12 @@ body:
         OS, and the runtime for the package above — Node, Python, or rustc
         version, as applicable.
   - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Error output or a panic backtrace, if mdka failed rather than converted.
+      render: shell
+  - type: textarea
     id: notes
     attributes:
       label: Additional notes
