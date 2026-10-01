@@ -1,6 +1,6 @@
 # RFC 050 — A computed style that restates a tag's own default is not new information
 
-**Status.** Accepted — owner, 2026-10-01. `3.1.1` authorised in the same decision.
+**Status.** Implemented — shipped in `3.1.1`, 2026-10-01
 **Author.** Architect
 **Created.** 2026-10-01
 **Milestone.** `3.1.1`.

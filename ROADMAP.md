@@ -108,6 +108,22 @@ attempts were tried and cancelled; and a repair to `crates package gate`, which 
 exclusion pattern that — twice — was guessed to work and did not. **Still open after it:** the performance
 page's own staleness relative to `3.0.0`/`3.1.0` (RFC 012 §9, not re-measured), and bekoedit's letter —
 owed since `3.0.0`, and now must say their top gap closes only in `Balanced`, not `Minimal`.
+
+**`3.1.1` ships RFC 050** — prepared 2026-10-01, **not yet tagged**; this paragraph becomes a shipped
+record when the tag lands. A patch, and the patch-ness is the point: with `emphasis_from_style` off —
+the default — **this release cannot change anyone's output**, verified against the published `3.1.0`
+binary (108 comparisons, 54 documents, both modes, 0 differing), not only against `mode_identity.rs`'s
+goldens. The fix: a `style` that only *restates* a tag's own default — a heading's own boldness, or
+`cite`/`address`/`var`/`dfn`'s own italics — no longer opens a span the tag's own rendering never had.
+Found by measuring bekoedit's heads-up before they ran it themselves, and wider than the case they
+named: not only headings, but every element whose UA-default stylesheet is bold or italic besides the
+four the option already knew. **RFC 050 moved to `done/` in the prep commit; `accepted/` and `proposed/`
+are both empty again.** **Still open after it:** RFC 051 (`3.2.0`, blocked until this tag lands), the
+performance page's own staleness (RFC 012 §9, unchanged, not re-measured), and one observation recorded
+during review, not a commitment — an **inherited** bold (as opposed to a heading's own restated one)
+still opens a span inside a heading (`<div style="font-weight:700"><h2>a</h2></div>` → `## **a**`), which
+is `3.1.0` behaviour this slice does not touch and does not arise from the computed-style input that
+motivated RFC 050.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.

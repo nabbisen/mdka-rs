@@ -23,7 +23,6 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 | # | Title | Status |
 |---|---|---|
-| 050 | [A computed style that restates a tag's own default is not new information](./accepted/050-tag-defaults-and-computed-style.md) — [handoff](./handoffs/050-tag-defaults/implementation-handoff.md) | **Accepted (owner, 2026-10-01), `3.1.1`.** `emphasis_from_style` adds `**` to every heading in clipboard HTML, because it knows only four tags' own defaults. Found by measuring bekoedit's heads-up before they ran it; wider than the case they named |
 | 051 | [A superscript that only looks raised is not notation](./accepted/051-typographic-superscripts.md) — [handoff](./handoffs/051-typographic-superscripts/implementation-handoff.md) | **Accepted (owner, 2026-10-01), `3.2.0`.** `1ˢᵗ` but `1^(º)` for the same construct — the rule's output depends on Unicode coverage, not meaning. States RFC 043's unwritten principle (render notation, flatten typography) and applies it to ordinals |
 
 
@@ -79,6 +78,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | 041 | [The conversion surface: options that cannot act, modes that cannot differ](./done/041-conversion-surface-honesty.md) — [§6.2 wording slice](./handoffs/041-conversion-surface-honesty/wording-slice-handoff.md) · [help-text follow-up](./handoffs/041-conversion-surface-honesty/help-text-slice-handoff.md) · [deprecation slice](./handoffs/041-conversion-surface-honesty/deprecation-slice-handoff.md) · [addendum](./handoffs/041-conversion-surface-honesty/deprecation-slice-addendum-2026-09-25.md) | 2.6.0 (wording), 2.8.0 (deprecation), 3.0.0 (removal) |
 | 048 | [The `3.0` surface: one result model, one convention per language, two modes](./done/048-the-3.0-surface.md)  — [`2.9.0` precondition](./handoffs/048-the-3.0-surface/2.9.0-precondition-handoff.md) · [`2.9.0` API reference](./handoffs/048-the-3.0-surface/2.9.0-api-reference-handoff.md) · [slice 1: removals](./handoffs/048-the-3.0-surface/slice-1-removals-handoff.md) · [slice 2: result model](./handoffs/048-the-3.0-surface/slice-2-result-model-handoff.md) · [2 addendum: cache](./handoffs/048-the-3.0-surface/slice-2-addendum-2026-09-26-cache.md) · [2 addendum 2: cache key](./handoffs/048-the-3.0-surface/slice-2-addendum-2026-09-26b-cache-key.md) · [slice 3: migration guide](./handoffs/048-the-3.0-surface/slice-3-migration-guide-handoff.md) · [`3.0.0` prep](./handoffs/3.0.0-release-prep/prep-handoff.md) | 2.9.0 (precondition), 3.0.0 |
 | 049 | [Inline `style` emphasis, and where reading presentation stops](./done/049-inline-style-emphasis.md) — [implementation handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) · [docs addendum](./handoffs/049-inline-style-emphasis/addendum-2026-10-01.md) | 3.1.0 |
+| 050 | [A computed style that restates a tag's own default is not new information](./done/050-tag-defaults-and-computed-style.md) — [handoff](./handoffs/050-tag-defaults/implementation-handoff.md) | 3.1.1 |
 
 ## Archive
 

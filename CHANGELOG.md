@@ -9,6 +9,34 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [3.1.1] - 2026-10-01
+
+**`3.1.1` — one fix, inside an option that is off by default. With `emphasis_from_style`
+off, this release cannot change anyone's output**, verified against the published
+`3.1.0` binary: 108 comparisons across 54 documents in both modes, 0 differing.
+
+### Fixed
+
+- **`emphasis_from_style` no longer adds `**` to a heading, or italic to `cite`,
+  `address`, `var` or `dfn`, just because a `style` restates what the tag already
+  renders by default.** `<h1 style="font-weight:700">H</h1>` became `# **H**`;
+  it is now `# H`, matching the option off. The option knew only four tags'
+  own emphasis defaults (`b`/`strong`/`i`/`em`); every other element whose
+  default rendering is bold or italic — headings, `th`, and the four italic
+  tags above — read a restated style as *new* emphasis instead of recognising
+  it as the tag's own meaning restated.
+  This mattered because it is the option's own motivating input: clipboard
+  HTML carries **computed** styles, flattened from the browser's default
+  stylesheet plus the page's own CSS, so every element arrives restating its
+  own default — exactly what a WebKitGTK paste does to every heading.
+  An authored style still works where it is genuinely new information — a
+  `<span style="font-weight:700">` nested inside a heading still bolds, and
+  a plain `<b>`/`<strong>`/`<i>`/`<em>` keeps its emphasis regardless of the
+  option. Nothing else changed: option off is byte-identical to `3.1.0`.
+  Found and reported by bekoedit, raised as *"a heads-up, not a report"*
+  before they had run the case themselves — measuring it here found the
+  defect was wider than the one they named.
+
 ## [3.1.0] - 2026-10-01
 
 **`emphasis_from_style` — off by default, and with it off output is byte-identical
