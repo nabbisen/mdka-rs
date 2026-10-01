@@ -1,3 +1,10 @@
+> **CLOSED 2026-10-01 — do not action.** Criteria 1 and 5 need a signed-in browser session, which is
+> unavailable to both the dev team and the architect. There is **no API route**: GraphQL's
+> `issueTemplates` covers Markdown templates only, not YAML forms (verified against `cli/cli`,
+> `rust-lang/rust` and `vercel/next.js`) — my claim otherwise in the review was wrong. The slice is
+> accepted on the schema validation; the remaining check is a one-minute task left to the owner. See
+> `.git-exclude/reviewed/issue-templates/README.md`.
+
 # Addendum 2 — issue templates, 2026-10-01 (b)
 
 Amends `handoff.md` and `addendum-2026-10-01.md`, both of which stay as issued. Review:
