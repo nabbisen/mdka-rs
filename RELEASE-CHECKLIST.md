@@ -69,6 +69,18 @@ review did not — and the difference was **position**, not diligence.
       `mdka-python` entirely, so its red hid the fact that it was checking two
       fewer crates than it claimed. A red here is a finding, not a known issue.
 
+### `ROADMAP.md`'s `**Current version.**` line is part of prep
+
+It drifted to **two releases stale** by `3.1.1` — `3.1.0`'s prep did not touch it and neither handoff
+asked. The line's whole job is to state the current version, so a stale one is worse than no line.
+
+> **`**Current version.**` states the latest *shipped* release, and every prep updates it to that.**
+
+Not the version being prepared — that one is not shipped until the tag. The line is then always true,
+and merely one release behind during an open prep window, which is honest.
+
+- [ ] Prep updates `ROADMAP.md`'s `**Current version.**` to the latest shipped release, with its tag.
+
 ### Before removing anything: establish who can be affected
 
 **This project's rule has always been that nothing is removed that was never deprecated.** It was never
