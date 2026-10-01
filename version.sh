@@ -51,6 +51,17 @@ WORKSPACE_ROOT=$(echo "$METADATA_JSON" | jq -r '.workspace_root')
 # update_file <path> <type:toml|json> <version>
 # Updated files are appended to $TOUCHED_LIST so the post-update assertion
 # (see below) knows exactly what to re-check, dry-run included.
+#
+# A `*package-lock.json` gets a second field written: lockfileVersion 3 keeps
+# a mirror of the root package's own metadata at `.packages[""]`, and that
+# mirror's `.version` was never part of the plain `.version = $v` jq filter
+# below - found 2026-10-01, stale at "2.1.6" (this project's very first
+# version) across every release since, because nothing ever asserted it and
+# the whole-file stale-version grep this function's caller runs afterward
+# happened to still find *some* other field holding the old string often
+# enough that the gap went unnoticed. `.packages[""]` is set only if already
+# present, so a lockfile in an older format (no "packages" key) is untouched
+# rather than gaining a key that was never there.
 update_file() {
     file_path=$1; type=$2; ver=$3
     [ ! -f "$file_path" ] && return
@@ -69,6 +80,13 @@ update_file() {
                 found=1; next
             }
             { print }
+        ' "$file_path" > "$tmp"
+    elif [ "$(basename "$file_path")" = "package-lock.json" ]; then
+        # JSON (lockfile)用: ルートの version と、存在する場合のみ
+        # .packages[""].version の両方を更新する
+        jq --arg v "$ver" '
+            .version = $v
+            | if (.packages? // {}) | has("") then .packages[""].version = $v else . end
         ' "$file_path" > "$tmp"
     else
         # JSON用: jq で確実に更新
@@ -246,11 +264,31 @@ if [ "$UPDATE_MODE" -eq 1 ]; then
     # workspace.dependencies line above only fixes the one location known to
     # have drifted; this assertion catches *any* touched manifest that still
     # carries the previous version string, including locations added later
-    # that nobody remembered to teach this script about.
+    # that nobody remembered to teach this script about. Whole-file grep
+    # stays the mechanism for every file type below *except* one.
+    #
+    # *package-lock.json is the one exception, found 2026-10-01: a lockfile
+    # records every dependency's own version too, so the whole-file grep
+    # false-positives whenever a third-party dependency happens to sit at
+    # the exact version this bump is leaving behind (hit at 3.1.0:
+    # @inquirer/external-editor, fast-content-type-parse and mute-stream
+    # were all "3.0.0"). Narrowing the check to a known field list would
+    # normally throw away exactly what this assertion exists to catch - but
+    # update_file above writes exactly two version fields into a lockfile
+    # (the root `.version` and, if present, `.packages[""].version`), so
+    # reading those two specific fields with jq is the complete set of what
+    # this script touches there, not a narrowing of coverage.
     if [ "$DRY_RUN" -eq 0 ]; then
         sort -u "$TOUCHED_LIST" | while read -r touched_file; do
             [ -f "$touched_file" ] || continue
-            if grep -qF "\"$OLD_VERSION\"" "$touched_file"; then
+            if [ "$(basename "$touched_file")" = "package-lock.json" ]; then
+                root_ver=$(jq -r '.version // empty' "$touched_file")
+                mirror_ver=$(jq -r '.packages[""].version // empty' "$touched_file")
+                if [ "$root_ver" = "$OLD_VERSION" ] || [ "$mirror_ver" = "$OLD_VERSION" ]; then
+                    printf 'STALE VERSION: %s still contains "%s"\n' "$touched_file" "$OLD_VERSION" >&2
+                    echo "stale" >> "$TOUCHED_LIST.stale"
+                fi
+            elif grep -qF "\"$OLD_VERSION\"" "$touched_file"; then
                 printf 'STALE VERSION: %s still contains "%s"\n' "$touched_file" "$OLD_VERSION" >&2
                 echo "stale" >> "$TOUCHED_LIST.stale"
             fi
