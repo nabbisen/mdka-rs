@@ -456,3 +456,89 @@ fn mixed_or_structural_content_takes_the_marker() {
     );
     assert_eq!(markdown("a<sup><code>x</code></sup>"), "a^(`x`)\n");
 }
+
+// ─── RFC 051 — render notation, flatten typography ─────────────────────────
+//
+// `1ˢᵗ` but `1^(º)` for the same construct: the same linguistic thing (an
+// ordinal) converted two different ways, for a reason that is neither
+// grammar nor meaning -- whether Unicode happens to have a superscript glyph
+// for those letters. A `<sup>` that is exactly an English ordinal suffix or
+// a Spanish ordinal indicator, glued to the digit it modifies, is
+// typography -- flattening it changes nothing -- so it is now written as
+// plain text, intercepted *before* the Unicode map above ever gets the
+// chance to turn it into notation that looks raised but isn't.
+
+#[test]
+fn rfc051_ordinal_suffixes_flatten_to_plain_text() {
+    // §1 row 3: `1<sup>st</sup> 2<sup>nd</sup>` -> `1ˢᵗ 2ⁿᵈ` before this RFC.
+    check_both(
+        "1<sup>st</sup> 2<sup>nd</sup> 3<sup>rd</sup> 4<sup>th</sup>",
+        r#"para("1st 2nd 3rd 4th")"#,
+    );
+    assert_eq!(
+        markdown("1<sup>st</sup> 2<sup>nd</sup> 3<sup>rd</sup> 4<sup>th</sup>"),
+        "1st 2nd 3rd 4th\n"
+    );
+}
+
+#[test]
+fn rfc051_ordinal_indicators_flatten_to_plain_text() {
+    // §1 row 5: `1<sup>º</sup> 2<sup>ª</sup>` -> `1^(º) 2^(ª)` before this RFC
+    // -- the worst of the three outputs, since it wasn't even raised.
+    check_both("1<sup>º</sup> 2<sup>ª</sup>", r#"para("1º 2ª")"#);
+    assert_eq!(markdown("1<sup>º</sup> 2<sup>ª</sup>"), "1º 2ª\n");
+}
+
+/// Criterion 2, named: the one way this fix can go wrong. A rule phrased as
+/// "letters after a digit" would also flatten these -- `n`/`e` are not in
+/// the closed set, but if the check somehow matched by shape rather than by
+/// the four exact suffixes plus the two indicators, these would be the
+/// first thing it broke.
+#[test]
+fn an_exponent_that_happens_to_follow_a_digit_is_not_an_ordinal() {
+    check_both("10<sup>n</sup>", r#"para("10ⁿ")"#);
+    assert_eq!(markdown("10<sup>n</sup>"), "10ⁿ\n");
+    check_both("2<sup>n − 1</sup>", r#"para("2^(n − 1)")"#);
+    assert_eq!(markdown("2<sup>n − 1</sup>"), "2^(n − 1)\n");
+}
+
+/// Criterion 3: French `1<sup>er</sup>` is a deliberate limit, not a gap.
+/// `10<sup>e</sup>` is ten to the power *e*, a legitimate exponent --
+/// flattening it would destroy notation to tidy typography, the exact error
+/// this RFC exists to avoid, so it is not in the flattened set and stays
+/// mapped to Unicode exactly as before.
+#[test]
+fn french_ordinals_are_a_deliberate_limit_not_a_gap() {
+    check_both("1<sup>er</sup> 2<sup>e</sup>", r#"para("1ᵉʳ 2ᵉ")"#);
+    assert_eq!(markdown("1<sup>er</sup> 2<sup>e</sup>"), "1ᵉʳ 2ᵉ\n");
+}
+
+/// The flatten set is a closed set, not a shape: only fires glued to the
+/// digit it modifies, in `<sup>` (never `<sub>`), and only for the content
+/// named, case-sensitively.
+#[test]
+fn ordinal_flattening_is_a_closed_set() {
+    // Not glued to a digit: falls through to the existing Unicode map.
+    check_both("foo<sup>st</sup>", r#"para("fooˢᵗ")"#);
+    assert_eq!(markdown("foo<sup>st</sup>"), "fooˢᵗ\n");
+    check_both("1 <sup>st</sup>", r#"para("1 ˢᵗ")"#);
+    assert_eq!(markdown("1 <sup>st</sup>"), "1 ˢᵗ\n");
+    // `<sub>` is not in scope -- RFC 051 touches `<sup>` only.
+    assert_eq!(markdown("1<sub>st</sub>"), "1ₛₜ\n");
+    // Uppercase is a different, unmapped string, not a case-insensitive hit.
+    assert_eq!(markdown("1<sup>ST</sup>"), "1^(ST)\n");
+}
+
+/// `TM`/`®` stay out of scope, as named: a mapping, not a flattening, and
+/// not proposed by this RFC.
+#[test]
+fn trademark_and_registered_are_still_out_of_scope() {
+    assert_eq!(markdown("Acme<sup>TM</sup>"), "Acme^(TM)\n");
+    assert_eq!(markdown("<sup>®</sup>"), "^(®)\n");
+}
+
+// Criterion 4 -- the 417-`<sup>` corpus behind RFC 043 re-run and the delta
+// reported per category -- is a release-prep measurement against a local,
+// not-checked-in corpus (`.git-exclude/tmp/supcorpus/*.html`), not a standing
+// regression test: see the review-request report for the method and result
+// (0 of 444 occurrences changed).

@@ -288,8 +288,15 @@ fn is_transparent_in_script(tag: &str) -> bool {
 
 /// How a closed `<sup>`/`<sub>` is written. `content` is its rendering (RFC
 /// 043); `frame` is what was seen of its source; `underscore_safe` says
-/// whether a `_` written here can be left unescaped.
+/// whether a `_` written here can be left unescaped; `preceded_by_digit` says
+/// whether it is glued to the digit it would modify as an ordinal.
 ///
+/// 0. **Render notation, flatten typography (RFC 051).** A `<sup>` that is
+///    exactly an English ordinal suffix or a Spanish ordinal indicator,
+///    immediately after the digit it modifies, is typography -- flattening
+///    it changes nothing -- so it is written as plain text, before the
+///    Unicode mapping below ever gets the chance to turn it into notation
+///    that looks raised but isn't.
 /// 1. Everything maps to Unicode: a real superscript/subscript, the best
 ///    outcome (RFC 009 §4.3, widened by RFC 043 §2). All or nothing -- half a
 ///    superscript is a different number, not an improvement.
@@ -304,7 +311,11 @@ fn render_script(
     superscript: bool,
     frame: Option<ScriptFrame>,
     underscore_safe: bool,
+    preceded_by_digit: bool,
 ) -> String {
+    if superscript && utils::ordinal_suffix(&content, preceded_by_digit) {
+        return content;
+    }
     if let Some(mapped) = utils::map_script(&content, superscript) {
         return mapped;
     }
@@ -1218,6 +1229,7 @@ impl MarkdownRenderer {
                         && self.bold.open.is_none()
                         && self.italic.open.is_none()
                         && !self.sink.underscore_may_pair();
+                    let preceded_by_digit = self.sink.preceded_by_digit();
                     // Empty content maps vacuously (RFC 037's own rule for
                     // an empty `<strong>`: nothing to write). Otherwise
                     // every character mapping wins (RFC 009 §4.3, widened by
@@ -1226,7 +1238,13 @@ impl MarkdownRenderer {
                     let rendered = if content.is_empty() {
                         None
                     } else {
-                        Some(render_script(content, tag == "sup", frame, underscore_safe))
+                        Some(render_script(
+                            content,
+                            tag == "sup",
+                            frame,
+                            underscore_safe,
+                            preceded_by_digit,
+                        ))
                     };
                     self.sink.splice(rendered.as_deref(), trailing);
                 }

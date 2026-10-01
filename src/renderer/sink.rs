@@ -525,6 +525,17 @@ impl Sink {
             && escape::class(dest.prev_char()) == escape::Class::Word
     }
 
+    /// Whether the next byte written lands directly against a digit, with
+    /// nothing pending between (RFC 051): an ordinal suffix or indicator is
+    /// only ever a flattening of the number it modifies, so it flattens only
+    /// when it is glued to that digit and not to some other word.
+    pub(super) fn preceded_by_digit(&self) -> bool {
+        let dest = self.dest_ref();
+        !dest.last_was_space
+            && !dest.at_line_start
+            && dest.prev_char().is_some_and(|c| c.is_ascii_digit())
+    }
+
     /// Whether the current paragraph already holds an unescaped `_` that
     /// could be waiting for a partner (RFC 043) -- an emphasis delimiter, or
     /// a stray one left where a span's own delimiters did not pair. A `_`

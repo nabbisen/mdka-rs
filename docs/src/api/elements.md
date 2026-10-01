@@ -33,17 +33,37 @@ Markdown it produces. Elements not listed are either silently removed
 | `<code>` (inline) | `` `text` `` | Only when not inside `<pre>` |
 | `<a href="…">` | `[text](url)` | `title` attribute → `[text](url "title")` |
 | `<img src="…" alt="…">` | `![alt](src)` | `title` attribute → `![alt](src "title")` |
-| `<sup>` | A Unicode superscript (`²`, `ⁿ`, `⁻⁹`), or a marker: `^(…)` | See [Superscript and subscript](#superscript-and-subscript) below |
+| `<sup>` | Plain text (an ordinal, `1st`/`1º`), a Unicode superscript (`²`, `ⁿ`, `⁻⁹`), or a marker: `^(…)` | See [Superscript and subscript](#superscript-and-subscript) below |
 | `<sub>` | A Unicode subscript (`₂`, `ₙ`, `ᵢ`), or a marker: `_(…)` | Same rules; see below |
 | `<br>` | `  \n` (trailing two spaces + newline) | |
 
 ### Superscript and subscript
 
-`<sup>` and `<sub>` are converted by three rules, tried in this order. The reason
-there is a rule three at all: `2<sup>n − 1</sup>` used to convert to `2n − 1`,
-which reads as "two times n minus one" — a different statement, not a lossy one.
+`<sup>` and `<sub>` are converted by four rules, tried in this order. The reason
+there is a marker rule at all (rule 4): `2<sup>n − 1</sup>` used to convert
+to `2n − 1`, which reads as "two times n minus one" — a different statement, not a
+lossy one.
 
-1. **A real Unicode superscript or subscript, when every character has one.**
+**The rule behind all four: render notation, flatten typography.** A superscript
+is *notation* when flattening it changes what it means — `10⁻⁹` → `10-9` says
+something different, so it is rendered. It is *typography* when flattening
+changes nothing — `1st` is `1st` either way, so it is flattened rather than
+turned into notation that only looks raised.
+
+1. **`<sup>` only: an English ordinal suffix or a Spanish ordinal indicator,
+   immediately after the digit it modifies, is written as plain text — not
+   mapped to Unicode.** `1<sup>st</sup> 2<sup>nd</sup> 3<sup>rd</sup> 4<sup>th</sup>`
+   → `1st 2nd 3rd 4th`; `1<sup>º</sup> 2<sup>ª</sup>` → `1º 2ª`. These two are a
+   closed set — `st`, `nd`, `rd`, `th`, `º` (U+00BA), `ª` (U+00AA) — not a shape:
+   the same letters elsewhere are notation and still map under rule 2, for instance
+   `10<sup>n</sup>` → `10ⁿ`. **Not flattened, deliberately:** French `1<sup>er</sup>`
+   and `2<sup>e</sup>` stay mapped to `1ᵉʳ`/`2ᵉ` — `10<sup>e</sup>` is a legitimate
+   exponent (ten to the power *e*), so flattening `e`/`er` would destroy notation
+   to tidy typography, the exact error this rule exists to avoid. Not in scope:
+   `<sup>TM</sup>` and `<sup>®</sup>` stay as `^(TM)`/`^(®)` — mapping them to
+   `™`/`®` is a different change, a mapping rather than a flattening, and is not
+   made here.
+2. **A real Unicode superscript or subscript, when every character has one.**
    `10<sup>−9</sup>` → `10⁻⁹`, `x<sup><i>n</i></sup>` → `xⁿ`, `H<sub>2</sub>O` → `H₂O`,
    `x<sub>max</sub>` → `xₘₐₓ`. The characters that map are digits, `+ - = ( )`,
    U+2212 MINUS SIGN (treated as `-`), and lowercase letters:
@@ -56,11 +76,11 @@ which reads as "two times n minus one" — a different statement, not a lossy on
    through: a superscript character cannot carry emphasis anyway. The rule is all or
    nothing — a run with one character that has no form (an uppercase letter, `/`, a
    space) is **not** half-converted, which would be a different number.
-2. **Text that already delimits itself is left exactly as it was.** If the text inside is
+3. **Text that already delimits itself is left exactly as it was.** If the text inside is
    bracketed — `[1]` or `(a b)` — it is a marker already (a citation, a note, a
    parenthetical) and nothing is added. This is why the citation markers on real pages
    (`<sup><a href="#c1">[1]</a></sup>`) convert as they always did.
-3. **Everything else gets a visible marker, always parenthesised:** `2<sup>n − 1</sup>` →
+4. **Everything else gets a visible marker, always parenthesised:** `2<sup>n − 1</sup>` →
    `2^(n − 1)`, `x<sub>y</sub>` → `x_(y)`, `x<sup>N</sup>` → `x^(N)`. Emphasis inside
    survives: `x<sup><i>n</i> + N</sup>` → `x^(*n* + N)`. The subscript marker's `_` is
    escaped (`\_(y)`) wherever it could otherwise pair with another underscore and

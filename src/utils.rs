@@ -330,6 +330,18 @@ fn subscript_char(c: char) -> Option<char> {
 /// a new defect. Empty content maps to `Some(String::new())` -- vacuously,
 /// every character (there are none) maps -- which the caller treats as
 /// "nothing to write", the same as an empty `<strong>` (RFC 037).
+/// Whether a `<sup>`'s content is exactly an English ordinal suffix or a
+/// Spanish ordinal indicator, immediately glued to the digit it modifies
+/// (RFC 051): `1<sup>st</sup>`, `2<sup>nd</sup>`, `3<sup>rd</sup>`,
+/// `4<sup>th</sup>`, `1<sup>º</sup>`, `1<sup>ª</sup>`. **Render notation,
+/// flatten typography** -- these are typography: `1st` is `1st`, unlike
+/// `10<sup>−9</sup>`, where flattening would change what it means. A closed
+/// set, not a shape: the letters alone would also match an exponent that
+/// happens to follow a digit (`10<sup>n</sup>`), which must stay notation.
+pub(crate) fn ordinal_suffix(content: &str, preceded_by_digit: bool) -> bool {
+    preceded_by_digit && matches!(content, "st" | "nd" | "rd" | "th" | "º" | "ª")
+}
+
 pub(crate) fn map_script(content: &str, superscript: bool) -> Option<String> {
     let mut out = String::with_capacity(content.len());
     for c in content.chars() {
