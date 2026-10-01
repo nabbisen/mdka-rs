@@ -16,7 +16,10 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-*None.*
+| # | Title | Status |
+|---|---|---|
+| 050 | [A computed style that restates a tag's own default is not new information](./proposed/050-tag-defaults-and-computed-style.md) | **Proposed, 2026-10-01.** `emphasis_from_style` adds `**` to every heading in clipboard HTML, because it knows only four tags' own defaults. Found by measuring bekoedit's heads-up before they ran it; wider than the case they named |
+
 
 ## Accepted
 
