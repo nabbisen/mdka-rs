@@ -8,6 +8,8 @@ body:
       value: |
         Thanks for the idea.
         Please describe the problem you're trying to solve and the outcome you want.
+        Significant changes go through an RFC — proposal, owner acceptance, then
+        implementation — so expect a design discussion before a patch.
   - type: textarea
     id: problem
     attributes:
