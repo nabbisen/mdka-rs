@@ -1,9 +1,9 @@
 # RFC 050 — A computed style that restates a tag's own default is not new information
 
-**Status.** Proposed — architect, 2026-10-01
+**Status.** Accepted — owner, 2026-10-01. `3.1.1` authorised in the same decision.
 **Author.** Architect
 **Created.** 2026-10-01
-**Milestone.** Unassigned. A defect in a shipped, opt-in option; additive fix, a patch or a minor.
+**Milestone.** `3.1.1`.
 **Source.** bekoedit, 2026-10-01, raised as *"a heads-up, not a report"* — and measured here before
 they ran it: **they are right, and it is wider than the case they named.**
 **Touches.** `src/renderer.rs` (`own_emphasis`), `docs/src/api/options.md`, tests.
@@ -87,15 +87,15 @@ matters.
 **Nothing about the negation path changes.** `<b style="font-weight:400">` still un-bolds, as it has
 since `3.0.0`.
 
-## 5. Open questions for the owner
+## 5. Decided
 
 1. **`<th>` — settle it on purpose.** Today it is protected by the table-cell gap. Should `th` be in
    the bold-default set regardless, so the protection survives if that gap is ever closed?
-   *Recommendation: yes. It costs one entry and removes a dependency on an unrelated boundary.*
+   **Decided: yes.** One entry, and it removes a dependency on an unrelated boundary.
 2. **`<cite>`/`<address>`/`<var>`/`<dfn>`: suppress, or render them italic always?** This RFC proposes
    **suppress** — keep today's plain output and make it independent of the clipboard. Rendering them
    italic unconditionally is defensible but is a separate output change for every user, not a fix.
-   *Recommendation: suppress now; propose the other separately if anyone asks for it.*
+   **Decided: suppress.** Rendering them italic unconditionally is a separate output change for every user, not a fix; propose it separately if anyone asks.
 
 ## 6. Urgency
 

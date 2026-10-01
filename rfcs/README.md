@@ -16,20 +16,15 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| # | Title | Status |
-|---|---|---|
-| 050 | [A computed style that restates a tag's own default is not new information](./proposed/050-tag-defaults-and-computed-style.md) | **Proposed, 2026-10-01.** `emphasis_from_style` adds `**` to every heading in clipboard HTML, because it knows only four tags' own defaults. Found by measuring bekoedit's heads-up before they ran it; wider than the case they named |
+*None.*
 
 
 ## Accepted
 
-*None.*
+| # | Title | Status |
+|---|---|---|
+| 050 | [A computed style that restates a tag's own default is not new information](./accepted/050-tag-defaults-and-computed-style.md) — [handoff](./handoffs/050-tag-defaults/implementation-handoff.md) | **Accepted (owner, 2026-10-01), `3.1.1`.** `emphasis_from_style` adds `**` to every heading in clipboard HTML, because it knows only four tags' own defaults. Found by measuring bekoedit's heads-up before they ran it; wider than the case they named |
 
-M4's remaining work is RFC 011 (robustness) and RFC 013 (comment migration); both are reserved, see below.
-
-**Shipped since, neither an RFC nor pending:** `2.4.2`, a P1 patch for an option documented as inert that
-corrupted tables in two default modes —
-[handoff](./handoffs/2.4.2-unwrap-wrappers-fix/implementation-handoff.md).
 
 ## Implemented
 
