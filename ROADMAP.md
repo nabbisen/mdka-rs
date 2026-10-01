@@ -1,12 +1,12 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 3.1.0 — **shipped 2026-10-01**, tag `7ca41c6`. Ships RFC 049's
-`emphasis_from_style` — an opt-in, off-by-default option letting an element's own inline
-`style` add bold/italic it would not otherwise carry, closing bekoedit's top-ranked gap
-that every bold word in a Google Docs paste arrived plain. **Off is byte-identical to
-`3.0.0`** — asserted by `mode_identity.rs`'s 397 tests, unmodified. `3.0.0` tag `73fe606`;
-`2.9.0` tag `5efc0a5`; `2.8.0` tag `d26f51b`; `2.7.0` tag `a488fb4`.
+**Current version.** 3.1.1 — **shipped 2026-10-01**, tag `f65030f`. A patch: RFC 050 fixed
+`emphasis_from_style` adding `**` to a heading, or italic to `cite`/`address`/`var`/`dfn`,
+whenever a `style` merely restated the tag's own default — exactly what a computed-style
+clipboard paste does to every element. **Off is byte-identical to `3.1.0`** — 108
+comparisons against the published `3.1.0` binary, 0 differing. `3.1.0` tag `7ca41c6`;
+`3.0.0` tag `73fe606`; `2.9.0` tag `5efc0a5`; `2.8.0` tag `d26f51b`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -129,6 +129,26 @@ during review, not a commitment — an **inherited** bold (as opposed to a headi
 still opens a span inside a heading (`<div style="font-weight:700"><h2>a</h2></div>` → `## **a**`), which
 is `3.1.0` behaviour this slice does not touch and does not arise from the computed-style input that
 motivated RFC 050.
+
+**`3.2.0` ships RFC 051** — prepared 2026-10-01, **not yet tagged**; this paragraph becomes a shipped
+record when the tag lands. **A minor, and this one changes output for every user with an ordinal, no
+opt-in required**: `1<sup>st</sup>` now converts to `1st`, where it was `1ˢᵗ`. The rule, in its own
+words: **render notation, flatten typography** — a superscript is notation when flattening it changes
+what it means, typography when it does not. `<sup>`'s English ordinal suffixes (`st`/`nd`/`rd`/`th`)
+and the Spanish ordinal indicators (`º`/`ª`), glued to the digit they modify, now flatten to plain text
+instead of mapping to Unicode or falling to the `^(…)` marker — `1^(º)` was the worst of the three
+outputs, since it wasn't even raised. Every exponent and every subscript are unchanged, `10<sup>n</sup>`
+specifically included; French `1<sup>er</sup> 2<sup>e</sup>` stays mapped, a deliberate limit rather
+than a gap, since `10<sup>e</sup>` is a legitimate exponent. Re-running the 417-occurrence corpus
+behind RFC 043 found **zero** occurrences affected — encyclopedia and technical prose writes "19th
+century" as text, never as `<sup>` markup, so the corpus shows only that no technical document's
+output moves, not that the change helps; the actual justification is the inconsistency itself plus
+bekoedit's report that ordinals are common in pasted web text. **RFC 051 moved to `done/` in the prep
+commit; `accepted/` and `proposed/` are both empty again.** **Still open after it:** the performance
+page's own staleness (RFC 012 §9, unchanged, not re-measured), the `<div style="font-weight:700"><h2>`
+observation from RFC 050's review (an observation, not a commitment), and `1<sup><i>st</i></sup>` →
+`1ˢᵗ` — an ordinal wrapped only in emphasis-transparent markup stays Unicode-mapped, a documented limit
+of this slice's closed set, not a gap, recorded during RFC 051's review.
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.

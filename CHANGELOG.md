@@ -9,6 +9,37 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [3.2.0] - 2026-10-01
+
+**`3.2.0` changes output for every user with an ordinal, no opt-in required:**
+`1<sup>st</sup>` now converts to `1st` — it was `1ˢᵗ`.
+
+### Changed
+
+- **`<sup>` ordinals now flatten to plain text instead of mapping to Unicode
+  or falling to the `^(…)` marker.** `1<sup>st</sup> 2<sup>nd</sup>
+  3<sup>rd</sup> 4<sup>th</sup>` → `1st 2nd 3rd 4th` (was `1ˢᵗ 2ⁿᵈ 3ʳᵈ 4ᵗʰ`);
+  the Spanish ordinal indicators `1<sup>º</sup> 2<sup>ª</sup>` → `1º 2ª` (was
+  `1^(º) 2^(ª)`, the worst of the three outputs, since it wasn't even raised).
+  **Every exponent and every subscript are unchanged**: `x²`, `10⁻⁹`, `H₂O`,
+  `2^(n − 1)` — and specifically `10<sup>n</sup>` → `10ⁿ`, the shape closest
+  in appearance to an ordinal, stays exactly as it was. **The rule, in its own
+  words: render notation, flatten typography** — a superscript is notation
+  when flattening it changes what it means, typography when it does not.
+  French ordinals are a deliberate limit, not a gap: `1<sup>er</sup>
+  2<sup>e</sup>` stays mapped to `1ᵉʳ 2ᵉ`, because `10<sup>e</sup>` is a
+  legitimate exponent (ten to the power *e*), and flattening it would destroy
+  notation to tidy typography.
+  The reason for the change is an inconsistency, not a corpus finding: the
+  same construct — an ordinal — converted two different ways depending only
+  on whether Unicode happens to have a superscript glyph for those letters,
+  which no reader can predict. Re-running the 417-occurrence corpus behind
+  RFC 043 found **zero** occurrences affected — encyclopedia and technical
+  prose writes "19th century" as text, never as `<sup>` markup, so this
+  shows only that no technical document's output moves, not that the change
+  helps. Found by bekoedit: ordinals are common in pasted web text, their
+  input, not this corpus's.
+
 ## [3.1.1] - 2026-10-01
 
 **`3.1.1` — one fix, inside an option that is off by default. With `emphasis_from_style`

@@ -1,6 +1,6 @@
 # RFC 051 — A superscript that only looks raised is not notation
 
-**Status.** Accepted — owner, 2026-10-01.
+**Status.** Implemented — shipped in `3.2.0`, 2026-10-01
 **Author.** Architect
 **Created.** 2026-10-01
 **Milestone.** `3.2.0`, **after `3.1.1` is tagged** — see §5.
