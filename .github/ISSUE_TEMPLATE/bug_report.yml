@@ -24,7 +24,11 @@ body:
     id: version
     attributes:
       label: Version
-      description: The version of the package above, e.g. 3.2.0
+      description: >-
+        Ask mdka itself, so this is the version actually running: `mdka
+        --version` on the CLI, or call `version()` — `mdka::version()` in
+        Rust, `require('mdka').version()` in Node, `mdka.version()` in
+        Python.
     validations:
       required: true
   - type: textarea
