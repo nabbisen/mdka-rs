@@ -16,9 +16,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| # | Title | Status |
-|---|---|---|
-| 051 | [A superscript that only looks raised is not notation](./proposed/051-typographic-superscripts.md) | **Proposed, 2026-10-01.** `1ˢᵗ` but `1^(º)` for the same construct — the rule's output depends on Unicode coverage, not meaning. States RFC 043's unwritten principle (render notation, flatten typography) and applies it to ordinals |
+*None.*
 
 
 ## Accepted
@@ -26,6 +24,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | # | Title | Status |
 |---|---|---|
 | 050 | [A computed style that restates a tag's own default is not new information](./accepted/050-tag-defaults-and-computed-style.md) — [handoff](./handoffs/050-tag-defaults/implementation-handoff.md) | **Accepted (owner, 2026-10-01), `3.1.1`.** `emphasis_from_style` adds `**` to every heading in clipboard HTML, because it knows only four tags' own defaults. Found by measuring bekoedit's heads-up before they ran it; wider than the case they named |
+| 051 | [A superscript that only looks raised is not notation](./accepted/051-typographic-superscripts.md) — [handoff](./handoffs/051-typographic-superscripts/implementation-handoff.md) | **Accepted (owner, 2026-10-01), `3.2.0`.** `1ˢᵗ` but `1^(º)` for the same construct — the rule's output depends on Unicode coverage, not meaning. States RFC 043's unwritten principle (render notation, flatten typography) and applies it to ordinals |
 
 
 ## Implemented

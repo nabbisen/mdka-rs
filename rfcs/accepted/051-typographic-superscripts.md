@@ -1,9 +1,9 @@
 # RFC 051 — A superscript that only looks raised is not notation
 
-**Status.** Proposed — architect, 2026-10-01
+**Status.** Accepted — owner, 2026-10-01.
 **Author.** Architect
 **Created.** 2026-10-01
-**Milestone.** Unassigned. Changes output for every user; a minor, not a patch.
+**Milestone.** `3.2.0`, **after `3.1.1` is tagged** — see §5.
 **Source.** bekoedit, 2026-10-01, as an explicit suggestion with no date. Owner, 2026-10-01, asked
 the question that decides it: *"which is near sense of ordinary? APIs and UI/UX should be easy to
 understand with instinct instead of confusion brought."*
@@ -77,15 +77,19 @@ discovered.
 **Not in scope:** `TM` and `®`. Mapping `<sup>TM</sup>` to `™` is a different change — a *mapping*,
 not a flattening — and should be asked for by someone before it is built.
 
-## 5. Open question for the owner
+## 5. Decided — its own release, after `3.1.1`
 
 **Does this warrant its own release, or does it wait?** It changes output for every user and reverts
 ordinals to what `2.5.1` produced. bekoedit has pinned the current output in a fixture specifically
 so they notice, and has said they have no date in mind.
 
-*Recommendation: not urgent, and not bundled with `3.1.1` — that release is a defect fix for an
-opt-in option and should stay that way. This is an output change and deserves its own line in a
-CHANGELOG where nobody is reading past it.*
+**Decided, owner 2026-10-01: its own release, `3.2.0`, kept apart from `3.1.1`.** The two make
+opposite promises — `3.1.1` cannot change anyone's output, this changes everyone's — and a version
+number that carries both claims carries neither. See
+`.git-exclude/reviewed/release-shape-3.1.1-vs-3.2.0/`.
+
+**Consequence for sequencing: this work must not land on `main` until `3.1.1` is tagged**, or
+`3.1.1` would be cut from a tip that already contains it.
 
 ## 6. Criteria
 
