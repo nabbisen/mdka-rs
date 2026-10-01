@@ -100,40 +100,43 @@ jobs:
       #    entry back had the key moved. Bump the namespace whenever what the
       #    cache must not hold changes.
       #
-      # 3. RFC 049, 2026-10-01: `!target/debug/**/*mdka*` needs at least one
-      #    path segment between `target/debug/` and the filename for `**` to
-      #    match, in the glob engine `actions/cache` actually uses -- it does
-      #    NOT match zero segments here. `target/debug/libmdka.rlib` and
-      #    `target/debug/libmdka.d` sit directly in `target/debug/`, with no
-      #    subdirectory, so neither was ever excluded: a debug step added to
-      #    list exactly what a real run restored
-      #    (rfcs/handoffs/crates-package-gate-stale-source/) showed
-      #    `target/debug/libmdka.rlib` dated four days stale, sitting right next
-      #    to correctly-excluded, same-age files one level down in
-      #    `target/debug/deps/`. `mdka-cli` linked against that stale rlib --
-      #    the run log's own tell, exactly as in incident 2, is that
-      #    `Unpacking mdka ... (registry .../tmp-registry)` is never followed by
-      #    a `Compiling mdka` for the registry copy: cargo treated the
+      # 3. RFC 049, 2026-10-01: `!target/debug/**/*mdka*` was not excluding
+      #    anything, at any depth. A debug step added to list exactly what a
+      #    real run restored (rfcs/handoffs/crates-package-gate-stale-source/)
+      #    showed over a dozen `target/debug/deps/libmdka*.{rlib,rmeta}` and
+      #    `libmdka_node.so` files present, dated 2026-09-25/26 -- stale, and
+      #    one directory level below `target/debug/`, exactly where the
+      #    pattern was supposed to reach. (A first read of that same listing
+      #    concluded the opposite -- that nested matches were correctly
+      #    absent and only a `target/debug/libmdka.rlib` sitting with no
+      #    subdirectory had slipped through zero-depth matching. That reading
+      #    was wrong: the zero-depth file was real, but so was every nested
+      #    one next to it. The pattern excludes nothing, not "nothing at zero
+      #    depth".) `mdka-cli` linked against the stale rlib -- the run log's
+      #    own tell, exactly as in incident 2, is that
+      #    `Unpacking mdka ... (registry .../tmp-registry)` is never followed
+      #    by a `Compiling mdka` for the registry copy: cargo treated the
       #    stale-but-name-and-version-matching rlib as already built.
       #
-      #    Fixed with a second exclusion line for the zero-segment case --
-      #    `target/debug/*mdka*` (no `**`) alongside the existing
-      #    `target/debug/**/*mdka*` (one-or-more segments) -- rather than
-      #    trusting a single pattern to cover both depths. **Verified against
-      #    the change this is meant to catch**, not merely asserted: on an
-      #    unchanged version number and an unchanged `Cargo.lock` hash (an
-      #    exact cache-key hit), a second, throwaway source change that
-      #    `mdka-cli` depends on was pushed after this fix landed, and the run
-      #    both stayed green and showed a fresh `Compiling mdka` for the
-      #    registry copy -- proving the fixed exclusion lets a same-version,
-      #    same-lockfile change through, not just that a cold cache does.
+      #    **This project has now guessed `actions/cache`'s `!`-exclusion
+      #    glob semantics wrong twice** (zero-depth in the first reading of
+      #    this incident, and -- it now appears likely, though not
+      #    separately re-verified -- the original incident 2 "fix" may only
+      #    ever have passed because its own `-v1-` to `-v2-` key bump forced
+      #    a cold miss that trivially succeeds regardless of whether the
+      #    exclusion itself does anything). **Stop trusting `path:` exclusion
+      #    patterns here.** Replaced with an explicit step, immediately after
+      #    cache restore, that deletes the workspace crates' compiled
+      #    artifacts and prints what it deleted -- visible in every run's
+      #    log, nothing to be wrong about silently.
       #
-      #    The key moves to -v3- for the same reason -v2- existed: the -v2-
-      #    entry was itself already frozen (exact hits, no resave, since
-      #    Cargo.lock stopped changing well before this was found), so keeping
-      #    -v2- would restore the same stale artifact under the corrected
-      #    `path` and prove nothing. Bump the namespace whenever what the
-      #    cache must not hold changes -- this makes three.
+      #    The key still moves to -v3-, for the same reason -v2- existed:
+      #    whatever is sitting in the -v2- entry was saved while the (inert)
+      #    `!` pattern was in the `path:` list, so it holds the same stale
+      #    mdka artifacts this fix removes at restore time regardless --
+      #    bumping guarantees this fix is exercised against a cache that
+      #    still needs it, rather than skating past on a cold miss the way
+      #    incident 2's own fix may have.
       - name: Cache cargo dependencies and build
         uses: actions/cache@v5
         with:
@@ -141,11 +144,18 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             target
-            !target/debug/*mdka*
-            !target/debug/**/*mdka*
           key: ${{ runner.os }}-cargo-package-gate-v3-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-package-gate-v3-
+
+      # Explicit, logged deletion -- not a `path:` exclusion pattern, after
+      # guessing that mechanism's semantics wrong twice (see the comment
+      # above). `-print` before `-exec rm -rf` means every run's log states
+      # exactly what was dropped; there is no silent-failure mode left for
+      # the next incident to rediscover.
+      - name: Drop restored workspace crate artifacts
+        run: |
+          find target/debug -maxdepth 2 -iname '*mdka*' -print -exec rm -rf {} + 2>/dev/null || true
 
       # No --no-verify anywhere. Packaging without building the result would
       # check that the tarball can be produced, not that it works -- which is
