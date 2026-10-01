@@ -16,7 +16,9 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-*None.*
+| # | Title | Status |
+|---|---|---|
+| 051 | [A superscript that only looks raised is not notation](./proposed/051-typographic-superscripts.md) | **Proposed, 2026-10-01.** `1ˢᵗ` but `1^(º)` for the same construct — the rule's output depends on Unicode coverage, not meaning. States RFC 043's unwritten principle (render notation, flatten typography) and applies it to ordinals |
 
 
 ## Accepted
