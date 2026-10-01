@@ -91,10 +91,6 @@ fn removed_flag(flag: &str) -> ! {
 }
 
 fn main() {
-    // THROWAWAY -- rfcs/handoffs/crates-package-gate-stale-source/, validation only.
-    // References mdka::__crates_gate_proof(); reverted in the very next commit.
-    debug_assert_eq!(mdka::__crates_gate_proof(), 42);
-
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     if args.iter().any(|a| a == "-h" || a == "--help") {

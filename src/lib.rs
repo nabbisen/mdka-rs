@@ -165,15 +165,6 @@ pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-// THROWAWAY -- rfcs/handoffs/crates-package-gate-stale-source/, validation only.
-// Proves the crates-package-gate's delete step picks up a same-version,
-// same-Cargo.lock source change rather than reusing a stale cached rlib.
-// Reverted in the very next commit.
-#[doc(hidden)]
-pub fn __crates_gate_proof() -> u32 {
-    42
-}
-
 // ── Single-file conversion API ─────────────────────────────────────────────
 
 /// Converts a single HTML file to Markdown (default mode: `balanced`).
