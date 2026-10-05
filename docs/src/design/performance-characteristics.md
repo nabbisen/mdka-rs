@@ -1,10 +1,10 @@
 # Performance Characteristics
 
-**These figures describe mdka `3.0.0`, not the current release — see [`3.1.0`](#310-what-changed-and-what-was-not-re-measured) immediately below for what changed since.** They describe `3.0.0` (`main` @ [`2756c47`](https://github.com/nabbisen/mdka-rs/commit/2756c47e6d447facda832b699a94726693a53d57), the tagged `3.0.0` release plus two documentation-only commits), measured 2026-09-30, with load average recorded rather than merely asserted (see [Conditions](#conditions)). They replace the `2.3.0`-era numbers this page carried between `2.3.0` and `3.0.0`, and they also **replace this page's own first `3.0.0` regeneration** — that first sitting had unrecorded background load, and two of its findings did not survive a clean re-run. Both are corrected below rather than quietly dropped.
+**These figures describe mdka `3.0.0`, not the current release — see [`3.1.0` to `3.2.0`](#310-to-320-what-changed-and-what-was-not-re-measured) immediately below for what changed since.** They describe `3.0.0` (`main` @ [`2756c47`](https://github.com/nabbisen/mdka-rs/commit/2756c47e6d447facda832b699a94726693a53d57), the tagged `3.0.0` release plus two documentation-only commits), measured 2026-09-30, with load average recorded rather than merely asserted (see [Conditions](#conditions)). They replace the `2.3.0`-era numbers this page carried between `2.3.0` and `3.0.0`, and they also **replace this page's own first `3.0.0` regeneration** — that first sitting had unrecorded background load, and two of its findings did not survive a clean re-run. Both are corrected below rather than quietly dropped.
 
-## `3.1.0`: what changed, and what was not re-measured
+## `3.1.0` to `3.2.0`: what changed, and what was not re-measured
 
-**Added 2026-10-01, after `3.1.0` shipped.** The figures below were measured at `3.0.0` and have
+**Added 2026-10-01 after `3.1.0`; extended 2026-10-06 to cover `3.1.1` and `3.2.0`.** The figures below were measured at `3.0.0` and have
 **not** been regenerated. That is deliberate — regeneration costs over three hours of a single
 machine, and RFC 012 §9 records that this page is a dated snapshot, not a release obligation. What a
 reader needs instead is to know whether `3.1.0` invalidates it, so here is the honest answer in both
@@ -28,6 +28,19 @@ conversion change should look like. It is also, for context, larger than the **+
 `3.0.0` itself added over `2.9.0` and that the table below records: **`3.1.0` gives back more than
 `3.0.0` cost.** This property is now gated at tolerance 0 (`tests/allocation_gate.rs`), so it cannot
 drift unnoticed.
+
+**`3.1.1` and `3.2.0` moved it by nothing at all.** Both changed code on the conversion path —
+`3.1.1` reworked how `own_emphasis` weighs a tag's default against its `style`, and `3.2.0` changed
+the `<sup>`/`<sub>` mapping — so both were re-measured rather than assumed. Same probe, same
+machine, three runs each, zero variance:
+
+| Workload | `3.1.0` | `3.1.1` | `3.2.0` |
+|---|---:|---:|---:|
+| Single string conversion | 10 319 B | **10 319 B** | **10 319 B** |
+| Bulk, 5 files | 32 905 B | **32 905 B** | **32 905 B** |
+
+**Identical.** So the `3.0.0` → `3.1.0` figures above are still the current release's figures, and
+the only allocation movement anywhere in the `3.x` line is that one −188 B per conversion.
 
 **Wall time was not re-measured, and no claim is made about it.** This project cancelled its
 wall-time work deliberately: three attempts, zero performance defects ever caught by a timing
