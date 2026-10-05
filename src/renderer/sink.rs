@@ -132,10 +132,11 @@ struct Dest {
     /// alternative, `~~~~`, degrades to literal text mid-line and destroys
     /// content outright at the start of one (a tilde code fence).
     last_strike: Option<(usize, usize)>,
-    /// RFC 052: a backslash hard break whose newline is not written yet. It is
-    /// written only if content follows in the same block; a block boundary
-    /// drops it, so a trailing break never leaves a literal `\` behind.
-    pending_backslash: bool,
+    /// RFC 052: the backslash hard breaks of a run whose newlines are not
+    /// written yet. The run is written whole if content follows in the same
+    /// block; a block boundary drops it, so a trailing break never leaves a
+    /// literal `\` behind.
+    pending_breaks: u32,
 }
 
 impl Dest {
@@ -158,7 +159,7 @@ impl Dest {
             flank_guard: None,
             em_guard: None,
             last_strike: None,
-            pending_backslash: false,
+            pending_breaks: 0,
         }
     }
 
@@ -735,10 +736,15 @@ impl Sink {
         } else {
             self.prefix(self.min_depth).trim_end().to_string()
         };
+        let line_prefix = if self.dest_ref().pending_breaks > 0 && !self.is_capturing() {
+            self.prefix(self.containers.len())
+        } else {
+            String::new()
+        };
         let dest = self.dest();
         if dest.pending_newlines > dest.newlines_emitted {
             // A break that ends its block is not a break: CommonMark drops it.
-            dest.pending_backslash = false;
+            dest.pending_breaks = 0;
             for i in dest.newlines_emitted..dest.pending_newlines {
                 if i >= 1 {
                     dest.put(&blank);
@@ -746,9 +752,14 @@ impl Sink {
                 dest.put("\n");
             }
             dest.newlines_emitted = dest.pending_newlines;
-        } else if dest.pending_backslash {
-            dest.pending_backslash = false;
-            dest.write_break("\\\n");
+        } else {
+            // Each line of the run after the first continues the containers.
+            for i in 0..std::mem::take(&mut dest.pending_breaks) {
+                if i >= 1 {
+                    dest.put(&line_prefix);
+                }
+                dest.write_break("\\\n");
+            }
         }
         dest.pending_newlines = 0;
     }
@@ -1277,14 +1288,12 @@ impl Sink {
     /// spaces; elsewhere it is deferred to [`flush_newlines`](Self::flush_newlines),
     /// which drops it if the block ends first.
     pub(super) fn hard_break(&mut self, backslash: bool) {
-        // A break right after another, with nothing between, leaves the first
-        // one an ordinary break after all: the spaces form, as it always was.
-        if self.dest().pending_backslash {
-            let dest = self.dest();
-            dest.pending_backslash = false;
-            if dest.pending_newlines <= dest.newlines_emitted {
-                dest.write_break("  \n");
-            }
+        let dest = self.dest();
+        if backslash && dest.pending_breaks > 0 && dest.pending_newlines <= dest.newlines_emitted {
+            // Another break in the same run: written with the run, or dropped with it.
+            dest.pending_breaks += 1;
+            self.end_leading_strip();
+            return;
         }
         self.flush_newlines();
         if !self.is_capturing() {
@@ -1293,7 +1302,7 @@ impl Sink {
         self.end_leading_strip();
         let dest = self.dest();
         if backslash && !dest.at_line_start && !dest.line.heading {
-            dest.pending_backslash = true;
+            dest.pending_breaks = 1;
             dest.newlines_emitted = 0;
         } else {
             dest.write_break("  \n");

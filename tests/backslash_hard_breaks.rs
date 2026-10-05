@@ -85,6 +85,7 @@ fn the_heading_case_is_unchanged_with_the_option_on_and_off() {
         "<h1>one<br>two</h1>",
         "<h2><b>one</b><br>two</h2>",
         "<blockquote><h2>one<br>two</h2></blockquote>",
+        "<h2>a<br><br>b</h2>",
     ] {
         assert_eq!(convert(html, true), convert(html, false), "{html}");
     }
@@ -103,23 +104,47 @@ fn a_break_that_ends_its_block_leaves_no_backslash() {
     assert_same_parse("<p>one<br></p><p>two</p>");
 }
 
-/// Two breaks in a row read as a blank line, which the spaces form already does.
+/// A run of breaks is one paragraph with every break kept, in every container.
+/// The spaces form cannot do this: its whitespace-only line is a blank line, so
+/// the default splits a run into two paragraphs. That default is unchanged here.
 #[test]
-fn consecutive_breaks_parse_as_a_blank_line() {
-    assert_same_parse("<p>one<br><br>two</p>");
+fn a_run_of_breaks_keeps_every_break_as_a_backslash() {
+    let md = convert("<p>a<br><br>b</p>", true);
+    assert_eq!(md, "a\\\n\\\nb\n");
+    let ev = events(&md);
+    assert_eq!(count(&ev, "Start(Paragraph)"), 1, "{ev:?}");
+    assert_eq!(count(&ev, "HardBreak"), 2, "{ev:?}");
+
+    let md = convert("<p>a<br><br><br>b</p>", true);
+    assert_eq!(count(&events(&md), "HardBreak"), 3, "{md:?}");
+
+    let md = convert("<blockquote><p>one<br><br>two</p></blockquote>", true);
+    assert_eq!(md, "> one\\\n> \\\n> two\n");
+    let ev = events(&md);
+    assert_eq!(count(&ev, "Start(Paragraph)"), 1, "{ev:?}");
+    assert_eq!(count(&ev, "HardBreak"), 2, "{ev:?}");
+
+    let ev = events(&convert("<ul><li>one<br><br>two</li></ul>", true));
+    assert_eq!(count(&ev, "HardBreak"), 2, "{ev:?}");
 }
 
-/// A run of breaks has no content between its breaks, so none of them can be a
-/// backslash: the output is the spaces form exactly, in a paragraph and in a
-/// tight list item, where a stray `\` line would otherwise be a literal.
+/// The default's own run is left as it is: two paragraphs, not a backslash.
 #[test]
-fn a_run_of_breaks_is_written_exactly_as_the_spaces_form() {
-    for html in [
-        "<p>one<br><br><br>two</p>",
-        "<ul><li>one<br><br>two</li></ul>",
-    ] {
-        assert_eq!(convert(html, true), convert(html, false), "{html}");
-    }
+fn the_default_run_is_unchanged() {
+    assert_eq!(convert("<p>a<br><br>b</p>", false), "a  \n  \nb\n");
+}
+
+/// A run that ends its block leaves no backslash behind.
+#[test]
+fn a_run_that_ends_its_block_leaves_no_backslash() {
+    assert_eq!(
+        convert("<p>one<br><br></p><p>two</p>", true),
+        "one\n\ntwo\n"
+    );
+}
+
+fn count(ev: &[String], name: &str) -> usize {
+    ev.iter().filter(|e| e.as_str() == name).count()
 }
 
 /// A break that starts its block, or follows a block boundary, has no content

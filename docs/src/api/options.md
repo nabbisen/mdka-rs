@@ -280,11 +280,17 @@ everyone who does not ask.
 
 - **In a heading**, a hard break cannot exist, and the backslash would stay visible in the
   heading text, so the heading keeps its two spaces either way (`## one  ⏎two`).
-- **At the end of its block**, a `<br>` is not a break; the spaces are dropped as trailing
-  whitespace, and the backslash is dropped too rather than left as a literal `\`.
+- **At the end of its block**, a `<br>` is not a break. The default still writes its two
+  trailing spaces there; CommonMark ignores them, so they are inert. With this option on,
+  nothing is written at all, so no literal `\` can appear.
 - **In a table cell**, `<pre>` and a code span, the break is written as before.
-- **In a run of `<br>`**, every break is written with two spaces, as the default form always
-  is: no break in the run has content before it on its own line, so none can be a backslash.
+
+**A run of `<br>` is the one place the default is actually wrong, and this option fixes it
+for that case.** `a<br><br>b` in the default writes a whitespace-only line between the two
+breaks. CommonMark reads that as a blank line, so the default splits the run into two
+paragraphs. With this option on, every break in the run is a backslash, and the run stays one
+paragraph with every break kept. The default is not changed, so output without the option is
+exactly what it was.
 
 ## Removed in 3.0
 
