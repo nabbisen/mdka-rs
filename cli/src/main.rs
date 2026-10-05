@@ -14,6 +14,7 @@
 //!       --no-preserve-ids  Turn anchor emission off, in any mode
 //!       --drop-shell     Drop nav/header/footer/aside
 //!       --emphasis-from-style  Let inline style add bold/italic (RFC 049)
+//!       --backslash-hard-breaks  Write a hard break as \ + newline (RFC 052)
 //!   -h, --help           Show this help
 //!   -V, --version        Show the version
 //!       --               End of options; everything after is a path
@@ -47,6 +48,10 @@ Options:
                           tag would not otherwise carry (RFC 049); a class
                           is never read, on or off -- it names a stylesheet
                           mdka was never given. Default off
+      --backslash-hard-breaks  Write a hard break as a backslash, not two
+                          trailing spaces (RFC 052). Survives editors that
+                          strip trailing whitespace; Python-Markdown does not
+                          read it as a break. Default off
   -h, --help              Show this help
   -V, --version           Show the version
       --                  End of options; everything after is a path
@@ -114,6 +119,7 @@ fn main() {
     let mut preserve_ids_override: Option<bool> = None;
     let mut drop_shell = false;
     let mut emphasis_from_style = false;
+    let mut backslash_hard_breaks = false;
     let mut file_args: Vec<String> = Vec::new();
 
     let mut iter = args.into_iter().peekable();
@@ -156,6 +162,7 @@ fn main() {
             }
             "--drop-shell" => drop_shell = true,
             "--emphasis-from-style" => emphasis_from_style = true,
+            "--backslash-hard-breaks" => backslash_hard_breaks = true,
             // An unrecognised `-`-prefixed argument used to be taken as a file
             // path, so `mdka --version` reported "No such file or directory"
             // and a typo like `--drop-shel` silently converted nothing
@@ -179,6 +186,9 @@ fn main() {
     }
     if emphasis_from_style {
         opts.emphasis_from_style = true;
+    }
+    if backslash_hard_breaks {
+        opts.backslash_hard_breaks = true;
     }
 
     // ── Dispatch ──────────────────────────────────────────────────────

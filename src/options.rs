@@ -124,6 +124,16 @@ pub struct ConversionOptions {
     /// inventing what the input does not say. See the
     /// [options page](https://nabbisen.github.io/mdka-rs/api/options.html#emphasis_from_style).
     pub emphasis_from_style: bool,
+    /// Whether a hard break (`<br>`) is written as `\` + newline instead of
+    /// two trailing spaces + newline (RFC 052). Default **off**: the spaces
+    /// are what `3.2.0` wrote, and many editors strip them, which silently
+    /// removes the break. The backslash is not read as a break by
+    /// Python-Markdown, which shows a literal `\` instead.
+    ///
+    /// Only where the break survives as one: in a heading the spaces stay, and
+    /// a break that ends its block is dropped either way.
+    /// See the [options page](https://nabbisen.github.io/mdka-rs/api/options.html#backslash_hard_breaks).
+    pub backslash_hard_breaks: bool,
 }
 
 impl Default for ConversionOptions {
@@ -141,12 +151,14 @@ impl ConversionOptions {
                 preserve_ids: true, // anchors only
                 drop_interactive_shell: false,
                 emphasis_from_style: false,
+                backslash_hard_breaks: false,
             },
             ConversionMode::Minimal => Self {
                 mode,
                 preserve_ids: false,
                 drop_interactive_shell: true,
                 emphasis_from_style: false,
+                backslash_hard_breaks: false,
             },
         }
     }
@@ -186,6 +198,12 @@ impl ConversionOptions {
     /// Builder: sets whether inline `style` can add emphasis (RFC 049).
     pub fn emphasis_from_style(mut self, v: bool) -> Self {
         self.emphasis_from_style = v;
+        self
+    }
+
+    /// Builder: sets whether hard breaks are written as a backslash (RFC 052).
+    pub fn backslash_hard_breaks(mut self, v: bool) -> Self {
+        self.backslash_hard_breaks = v;
         self
     }
 }

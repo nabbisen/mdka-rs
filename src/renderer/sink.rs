@@ -132,6 +132,10 @@ struct Dest {
     /// alternative, `~~~~`, degrades to literal text mid-line and destroys
     /// content outright at the start of one (a tilde code fence).
     last_strike: Option<(usize, usize)>,
+    /// RFC 052: a backslash hard break whose newline is not written yet. It is
+    /// written only if content follows in the same block; a block boundary
+    /// drops it, so a trailing break never leaves a literal `\` behind.
+    pending_backslash: bool,
 }
 
 impl Dest {
@@ -154,7 +158,18 @@ impl Dest {
             flank_guard: None,
             em_guard: None,
             last_strike: None,
+            pending_backslash: false,
         }
+    }
+
+    /// Writes a line break as `marker`, which must be `"  \n"` or `"\\\n"`.
+    fn write_break(&mut self, marker: &str) {
+        let pipe = self.line.pipe_here;
+        self.put(marker);
+        // The paragraph continues on the next line.
+        self.line.pipe_here = pipe;
+        self.line.newline(true);
+        self.newlines_emitted = 1;
     }
 
     /// Settles the waiting escape, now that the byte after it is known
@@ -722,6 +737,8 @@ impl Sink {
         };
         let dest = self.dest();
         if dest.pending_newlines > dest.newlines_emitted {
+            // A break that ends its block is not a break: CommonMark drops it.
+            dest.pending_backslash = false;
             for i in dest.newlines_emitted..dest.pending_newlines {
                 if i >= 1 {
                     dest.put(&blank);
@@ -729,6 +746,9 @@ impl Sink {
                 dest.put("\n");
             }
             dest.newlines_emitted = dest.pending_newlines;
+        } else if dest.pending_backslash {
+            dest.pending_backslash = false;
+            dest.write_break("\\\n");
         }
         dest.pending_newlines = 0;
     }
@@ -1251,19 +1271,33 @@ impl Sink {
     }
 
     /// A hard line break. No prefix: the next content line gets one.
-    pub(super) fn hard_break(&mut self) {
+    /// `backslash`: write `\` + newline rather than two spaces + newline
+    /// (RFC 052), but only where the break survives as one. In a heading the
+    /// backslash would stay visible in the heading text, so it keeps the
+    /// spaces; elsewhere it is deferred to [`flush_newlines`](Self::flush_newlines),
+    /// which drops it if the block ends first.
+    pub(super) fn hard_break(&mut self, backslash: bool) {
+        // A break right after another, with nothing between, leaves the first
+        // one an ordinary break after all: the spaces form, as it always was.
+        if self.dest().pending_backslash {
+            let dest = self.dest();
+            dest.pending_backslash = false;
+            if dest.pending_newlines <= dest.newlines_emitted {
+                dest.write_break("  \n");
+            }
+        }
         self.flush_newlines();
         if !self.is_capturing() {
             self.only_markers = false;
         }
         self.end_leading_strip();
         let dest = self.dest();
-        let pipe = dest.line.pipe_here;
-        dest.put("  \n");
-        // The paragraph continues on the next line.
-        dest.line.pipe_here = pipe;
-        dest.line.newline(true);
-        dest.newlines_emitted = 1;
+        if backslash && !dest.at_line_start && !dest.line.heading {
+            dest.pending_backslash = true;
+            dest.newlines_emitted = 0;
+        } else {
+            dest.write_break("  \n");
+        }
         dest.at_line_start = true;
         dest.last_was_space = false;
     }

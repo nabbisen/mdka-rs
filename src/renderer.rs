@@ -837,13 +837,14 @@ impl MarkdownRenderer {
     /// `hints`, computed once per document by the traversal, per node --
     /// see [`ElementHints`]. `emphasis_from_style` is the option (RFC 049):
     /// whether an inline `style` can add bold/italic a tag would not
-    /// otherwise carry.
+    /// otherwise carry. `backslash_hard_breaks` is the option (RFC 052).
     pub fn enter_element(
         &mut self,
         elem: &scraper::node::Element,
         preserve_ids: bool,
         hints: ElementHints,
         emphasis_from_style: bool,
+        backslash_hard_breaks: bool,
     ) {
         let ElementHints {
             wraps_blocks,
@@ -906,7 +907,7 @@ impl MarkdownRenderer {
                 has_block_descendant,
             );
         } else {
-            self.enter_inline(tag, elem, wraps_blocks);
+            self.enter_inline(tag, elem, wraps_blocks, backslash_hard_breaks);
         }
         if !anchor_before {
             self.emit_id_anchor(elem, preserve_ids);
@@ -1052,7 +1053,13 @@ impl MarkdownRenderer {
         }
     }
 
-    fn enter_inline(&mut self, tag: &str, elem: &scraper::node::Element, wraps_blocks: bool) {
+    fn enter_inline(
+        &mut self,
+        tag: &str,
+        elem: &scraper::node::Element,
+        wraps_blocks: bool,
+        backslash_hard_breaks: bool,
+    ) {
         match tag {
             // A cell's own flattened `<pre>` (F1) has no fence and opens no
             // capture: its `<code>`, like anything else inside it, is text
@@ -1162,7 +1169,7 @@ impl MarkdownRenderer {
             }
             "br" => {
                 // The next content line gets the blockquote prefix, if any.
-                self.sink.hard_break();
+                self.sink.hard_break(backslash_hard_breaks);
             }
             _ => {}
         }

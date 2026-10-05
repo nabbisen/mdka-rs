@@ -37,6 +37,7 @@ fn build_opts(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> ::mdka::ConversionOptions {
     let mut opts = ::mdka::ConversionOptions::for_mode(to_rust_mode(mode));
     if let Some(v) = preserve_ids {
@@ -47,6 +48,9 @@ fn build_opts(
     }
     if let Some(v) = emphasis_from_style {
         opts.emphasis_from_style = v;
+    }
+    if let Some(v) = backslash_hard_breaks {
+        opts.backslash_hard_breaks = v;
     }
     opts
 }
@@ -112,19 +116,21 @@ fn html_to_markdown(html: &str) -> String {
 
 #[pyfunction]
 #[pyo3(signature = (html, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
 fn html_to_markdown_with(
     html: &str,
     mode: ConversionMode,
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<String> {
     let opts = build_opts(
         mode,
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     );
     Ok(::mdka::html_to_markdown_with(html, &opts))
 }
@@ -147,7 +153,7 @@ fn html_to_markdown_many(py: Python<'_>, html_list: Vec<String>) -> Vec<String> 
 /// keyword-argument shape.
 #[pyfunction]
 #[pyo3(signature = (html_list, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
 fn html_to_markdown_many_with(
     py: Python<'_>,
     html_list: Vec<String>,
@@ -155,12 +161,14 @@ fn html_to_markdown_many_with(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<Vec<String>> {
     let opts = build_opts(
         mode,
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     );
     Ok(py.detach(|| {
         html_list
@@ -191,6 +199,7 @@ fn html_to_markdown_many_with(
 ///     >>> import mdka
 ///     >>> dest = mdka.html_file_to_markdown("index.html")          # same directory
 ///     >>> dest = mdka.html_file_to_markdown("index.html", "out/")  # another directory
+#[allow(clippy::too_many_arguments)]
 fn html_file_to_markdown_impl(
     py: Python<'_>,
     path: String,
@@ -199,12 +208,14 @@ fn html_file_to_markdown_impl(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<String> {
     let opts = build_opts(
         mode,
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     );
     let out_dir_ref: Option<&str> = out_dir.as_deref();
 
@@ -217,7 +228,8 @@ fn html_file_to_markdown_impl(
 
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
+#[allow(clippy::too_many_arguments)]
 fn html_file_to_markdown(
     py: Python<'_>,
     path: String,
@@ -226,6 +238,7 @@ fn html_file_to_markdown(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
@@ -235,6 +248,7 @@ fn html_file_to_markdown(
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     )
 }
 
@@ -247,7 +261,8 @@ fn html_file_to_markdown(
 /// accepting the same keyword arguments too, unchanged, for compatibility.
 #[pyfunction]
 #[pyo3(signature = (path, out_dir=None, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
+#[allow(clippy::too_many_arguments)]
 fn html_file_to_markdown_with(
     py: Python<'_>,
     path: String,
@@ -256,6 +271,7 @@ fn html_file_to_markdown_with(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<String> {
     html_file_to_markdown_impl(
         py,
@@ -265,11 +281,13 @@ fn html_file_to_markdown_with(
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     )
 }
 
 // ─── Bulk file conversion API ────────────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn html_files_to_markdown_impl(
     py: Python<'_>,
     paths: Vec<String>,
@@ -278,6 +296,7 @@ fn html_files_to_markdown_impl(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     use std::path::Path;
     let out = Path::new(&out_dir);
@@ -289,6 +308,7 @@ fn html_files_to_markdown_impl(
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     );
     let path_bufs: Vec<std::path::PathBuf> = paths.iter().map(std::path::PathBuf::from).collect();
 
@@ -316,7 +336,8 @@ fn html_files_to_markdown_impl(
 
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
+#[allow(clippy::too_many_arguments)]
 fn html_files_to_markdown(
     py: Python<'_>,
     paths: Vec<String>,
@@ -325,6 +346,7 @@ fn html_files_to_markdown(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
@@ -334,6 +356,7 @@ fn html_files_to_markdown(
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     )
 }
 
@@ -342,7 +365,8 @@ fn html_files_to_markdown(
 /// accepting the same keyword arguments too, unchanged, for compatibility.
 #[pyfunction]
 #[pyo3(signature = (paths, out_dir, mode=ConversionMode::Balanced, preserve_ids=None,
-    drop_interactive_shell=None, emphasis_from_style=None))]
+    drop_interactive_shell=None, emphasis_from_style=None, backslash_hard_breaks=None))]
+#[allow(clippy::too_many_arguments)]
 fn html_files_to_markdown_with(
     py: Python<'_>,
     paths: Vec<String>,
@@ -351,6 +375,7 @@ fn html_files_to_markdown_with(
     preserve_ids: Option<bool>,
     drop_interactive_shell: Option<bool>,
     emphasis_from_style: Option<bool>,
+    backslash_hard_breaks: Option<bool>,
 ) -> PyResult<Vec<FileOutcome>> {
     html_files_to_markdown_impl(
         py,
@@ -360,6 +385,7 @@ fn html_files_to_markdown_with(
         preserve_ids,
         drop_interactive_shell,
         emphasis_from_style,
+        backslash_hard_breaks,
     )
 }
 

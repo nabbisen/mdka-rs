@@ -519,6 +519,16 @@ def test_emphasis_from_style_lets_style_add_emphasis():
     )
     assert md == "**x**\n", f"got: {md}"
 
+def test_backslash_hard_breaks_off_by_default():
+    html = "<p>one<br>two</p>"
+    assert html_to_markdown(html) == "one  \ntwo\n"
+    assert html_to_markdown_with(html) == "one  \ntwo\n"
+    assert html_to_markdown_with(html, backslash_hard_breaks=False) == "one  \ntwo\n"
+
+def test_backslash_hard_breaks_writes_a_backslash():
+    md = html_to_markdown_with("<p>one<br>two</p>", backslash_hard_breaks=True)
+    assert md == "one\\\ntwo\n", f"got: {md!r}"
+
 def test_a_wrapper_keeps_its_separation_in_both_modes():
     # Bare-sibling-text fixture, not a block-element fixture: neighbouring
     # blocks' own spacing dominates the output otherwise. Minimal unwraps the

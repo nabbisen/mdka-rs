@@ -19,14 +19,18 @@ pub struct JsConversionOptions {
     /// Whether an inline `style` can add emphasis a tag would not otherwise
     /// carry (RFC 049). Default **off**.
     pub emphasis_from_style: Option<bool>,
+    /// Whether a hard break is written as `\` + newline instead of two spaces
+    /// (RFC 052). Default **off**.
+    pub backslash_hard_breaks: Option<bool>,
 }
 
 /// The keys `JsConversionOptions` accepts, as JavaScript spells them.
-const VALID_KEYS: [&str; 4] = [
+const VALID_KEYS: [&str; 5] = [
     "mode",
     "preserveIds",
     "dropInteractiveShell",
     "emphasisFromStyle",
+    "backslashHardBreaks",
 ];
 
 /// Options removed in 3.0, with the reason each never mattered. napi drops a key it
@@ -146,6 +150,9 @@ fn to_rust_opts(js: Option<StrictOptions>) -> Result<mdka::ConversionOptions> {
     }
     if let Some(v) = js.emphasis_from_style {
         opts.emphasis_from_style = v;
+    }
+    if let Some(v) = js.backslash_hard_breaks {
+        opts.backslash_hard_breaks = v;
     }
 
     Ok(opts)

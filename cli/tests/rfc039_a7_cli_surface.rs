@@ -101,6 +101,29 @@ fn emphasis_from_style_flag_lets_style_add_emphasis_off_by_default() {
 }
 
 #[test]
+fn help_documents_backslash_hard_breaks() {
+    let out = Command::new(env!("CARGO_BIN_EXE_mdka"))
+        .arg("--help")
+        .output()
+        .expect("failed to run mdka --help");
+    assert!(out.status.success());
+    let help = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        help.contains("--backslash-hard-breaks"),
+        "help text missing --backslash-hard-breaks:\n{help}"
+    );
+}
+
+#[test]
+fn backslash_hard_breaks_flag_writes_a_backslash_off_by_default() {
+    let html = "<p>one<br>two</p>";
+    let off = run_mdka(&[], html);
+    assert_eq!(String::from_utf8(off.stdout).unwrap(), "one  \ntwo\n");
+    let on = run_mdka(&["--backslash-hard-breaks"], html);
+    assert_eq!(String::from_utf8(on.stdout).unwrap(), "one\\\ntwo\n");
+}
+
+#[test]
 fn single_file_progress_goes_to_stderr_not_stdout() {
     let dir = std::env::temp_dir().join("mdka_cli_test_a7_progress");
     std::fs::create_dir_all(&dir).unwrap();

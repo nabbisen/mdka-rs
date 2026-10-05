@@ -376,6 +376,7 @@ pub(crate) fn drive<'a>(
                             has_block_descendant: hints.has_block_descendant.contains(&node.id()),
                         },
                         opts.emphasis_from_style,
+                        opts.backslash_hard_breaks,
                     );
 
                     // Leave イベントを先にスタックへ（子より後に処理される）

@@ -6,6 +6,7 @@ pub struct ConversionOptions {
     pub preserve_ids:           bool,
     pub drop_interactive_shell: bool,
     pub emphasis_from_style:    bool,
+    pub backslash_hard_breaks:  bool,
 }
 ```
 
@@ -16,8 +17,8 @@ walks the parsed document once. You rarely need to set individual fields —
 start with a mode and override only what differs from the default for
 that mode.
 
-**There are four fields, and three of them act on the output:** `preserve_ids`,
-`drop_interactive_shell` and `emphasis_from_style`. Six more existed until 3.0 and
+**There are five fields, and four of them act on the output:** `preserve_ids`,
+`drop_interactive_shell`, `emphasis_from_style` and `backslash_hard_breaks`. Six more existed until 3.0 and
 are described under [Removed in 3.0](#removed-in-30) below — none of them ever
 changed a byte of output.
 
@@ -54,6 +55,7 @@ let opts = ConversionOptions::default(); // equivalent to for_mode(Balanced)
 | `preserve_ids` | ✅ | ❌ | Emits anchors |
 | `drop_interactive_shell` | ❌ | ✅ | Drops shell elements |
 | `emphasis_from_style` | ❌ | ❌ | Lets inline `style` add bold/italic |
+| `backslash_hard_breaks` | ❌ | ❌ | Writes a hard break as `\` + newline, not two spaces |
 
 See [Conversion Modes](./modes.md) for what this means when choosing a mode.
 
@@ -251,6 +253,38 @@ downstream could read it. **This follows from `Minimal`'s own wrapper
 unwrapping, not from a limit of this option**: see
 [Conversion Modes](./modes.md#minimal) for why. A reader converting Google
 Docs pastes in `Minimal` should not expect this option to help.
+
+### `backslash_hard_breaks`
+
+A hard break (`<br>`) is written as **two trailing spaces and a newline** by default,
+and as **a backslash and a newline** with this option on. The two are the same break in
+CommonMark — they parse to the same events — so the choice is about what survives the
+editor and the renderer, not about meaning. Pick by which of these your Markdown will meet:
+
+| | survives whitespace stripping | works in Python-Markdown |
+|---|---|---|
+| two trailing spaces (default) | **no** — many editors strip them on save, and `markdownlint`'s MD009 flags them | **yes** |
+| backslash (this option) | **yes** | **no** — Python-Markdown (the engine behind MkDocs) does not read it as a break and shows a literal `\` |
+
+Neither form dominates. If your Markdown is edited in an editor that strips trailing
+whitespace, the backslash keeps the break; if it is rendered by Python-Markdown, the spaces
+are the only form that breaks. The default stays the spaces, so output is unchanged for
+everyone who does not ask.
+
+```html
+<p>one<br>two</p>
+```
+→ `one  ⏎two` by default (two trailing spaces), and `one\⏎two` with `backslash_hard_breaks`.
+
+**Where the option is not applied**, by design:
+
+- **In a heading**, a hard break cannot exist, and the backslash would stay visible in the
+  heading text, so the heading keeps its two spaces either way (`## one  ⏎two`).
+- **At the end of its block**, a `<br>` is not a break; the spaces are dropped as trailing
+  whitespace, and the backslash is dropped too rather than left as a literal `\`.
+- **In a table cell**, `<pre>` and a code span, the break is written as before.
+- **In a run of `<br>`**, every break is written with two spaces, as the default form always
+  is: no break in the run has content before it on its own line, so none can be a backslash.
 
 ## Removed in 3.0
 

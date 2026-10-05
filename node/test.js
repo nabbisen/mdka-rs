@@ -266,6 +266,13 @@ async function run(name, fn) {
       assert.strictEqual(htmlToMarkdown(html, { emphasisFromStyle: true }), '**x**\n')
     })
 
+    await run('htmlToMarkdown: backslashHardBreaks writes a backslash, off by default', () => {
+      const html = '<p>one<br>two</p>'
+      assert.strictEqual(htmlToMarkdown(html), 'one  \ntwo\n')
+      assert.strictEqual(htmlToMarkdown(html, { backslashHardBreaks: false }), 'one  \ntwo\n')
+      assert.strictEqual(htmlToMarkdown(html, { backslashHardBreaks: true }), 'one\\\ntwo\n')
+    })
+
     await run('htmlToMarkdown: minimal drops nav', () => {
       const md = htmlToMarkdown(
         '<nav><a href="/">Home</a></nav><main><p>Content</p></main>',
@@ -395,7 +402,7 @@ async function run(name, fn) {
     await run('htmlToMarkdown: an unknown option throws, naming it and the valid ones', () => {
       assert.throws(
         () => htmlToMarkdown('<p>Hi</p>', { mdoe: 'minimal' }),
-        { name: 'Error', message: "unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell, emphasisFromStyle" }
+        { name: 'Error', message: "unknown option 'mdoe'. Valid options: mode, preserveIds, dropInteractiveShell, emphasisFromStyle, backslashHardBreaks" }
       )
     })
 
@@ -409,13 +416,13 @@ async function run(name, fn) {
       await assert.rejects(htmlFilesToMarkdown([], os.tmpdir(), bad), removed)
     })
 
-    await run('the four valid keys, null and undefined are all accepted', () => {
+    await run('the five valid keys, null and undefined are all accepted', () => {
       const html = '<nav>n</nav><h1 id="x">T</h1>'
       assert.strictEqual(htmlToMarkdown(html, null), htmlToMarkdown(html))
       assert.strictEqual(htmlToMarkdown(html, undefined), htmlToMarkdown(html))
       assert.strictEqual(htmlToMarkdown(html, {}), htmlToMarkdown(html))
       assert.doesNotThrow(() => htmlToMarkdown(html, {
-        mode: 'minimal', preserveIds: false, dropInteractiveShell: true, emphasisFromStyle: true
+        mode: 'minimal', preserveIds: false, dropInteractiveShell: true, emphasisFromStyle: true, backslashHardBreaks: true
       }))
     })
 

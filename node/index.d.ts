@@ -94,6 +94,11 @@ export interface JsConversionOptions {
    * carry (RFC 049). Default **off**.
    */
   emphasisFromStyle?: boolean
+  /**
+   * Whether a hard break is written as `\` + newline instead of two spaces
+   * (RFC 052). Default **off**.
+   */
+  backslashHardBreaks?: boolean
 }
 
 export declare function version(): string
