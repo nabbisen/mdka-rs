@@ -16,14 +16,14 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Proposed
 
-| # | Title | Status |
-|---|---|---|
-| 052 | [A hard break that survives the editor](./proposed/052-backslash-hard-breaks.md) | **Proposed, 2026-10-06.** bekoedit's last open item. Two trailing spaces are stripped by editors; the backslash form is not understood by Python-Markdown. Neither dominates, so it is an option — measured, after setting out to argue for a default change |
+*None.*
 
 
 ## Accepted
 
-*None.*
+| # | Title | Status |
+|---|---|---|
+| 052 | [A hard break that survives the editor](./accepted/052-backslash-hard-breaks.md) — [handoff](./handoffs/052-backslash-hard-breaks/implementation-handoff.md) | **Accepted (owner, 2026-10-06), `3.3.0`.** bekoedit's last open item. Two trailing spaces are stripped by editors; the backslash form is not understood by Python-Markdown. Neither dominates, so it is an option — measured, after setting out to argue for a default change |
 
 
 ## Implemented

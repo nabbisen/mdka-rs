@@ -1,9 +1,9 @@
 # RFC 052 — A hard break that survives the editor
 
-**Status.** Proposed — architect, 2026-10-06
+**Status.** Accepted — owner, 2026-10-06
 **Author.** Architect
 **Created.** 2026-10-06
-**Milestone.** Unassigned. Opt-in and off by default; a minor.
+**Milestone.** `3.3.0` — semver leaves no choice for an additive, opt-in option. **When to cut is the owner's.**
 **Source.** bekoedit's item 9, 2026-09-16, their last open request: *"`<br>` becomes two trailing
 spaces and a newline. Many editors strip trailing whitespace, which silently removes the break. An
 option for the backslash form (`\` + newline) would be more robust."* Reaffirmed 2026-09-24 as
