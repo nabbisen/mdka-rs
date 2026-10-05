@@ -1,12 +1,12 @@
 # mdka — Roadmap
 
 **Status.** Active — planning baseline approved by the project owner on 2026-08-02.
-**Current version.** 3.1.1 — **shipped 2026-10-01**, tag `f65030f`. A patch: RFC 050 fixed
-`emphasis_from_style` adding `**` to a heading, or italic to `cite`/`address`/`var`/`dfn`,
-whenever a `style` merely restated the tag's own default — exactly what a computed-style
-clipboard paste does to every element. **Off is byte-identical to `3.1.0`** — 108
-comparisons against the published `3.1.0` binary, 0 differing. `3.1.0` tag `7ca41c6`;
-`3.0.0` tag `73fe606`; `2.9.0` tag `5efc0a5`; `2.8.0` tag `d26f51b`.
+**Current version.** 3.2.0 — **shipped 2026-10-01**, tag `3ba2cf9` (the commit the annotated tag
+`3.2.0` points at; `git rev-parse '3.2.0^{}'`). Ships RFC 051: an ordinal written as `<sup>` now converts to
+plain text — `1<sup>st</sup>` → `1st`, where it was `1ˢᵗ` — and `1<sup>º</sup>` → `1º`, where it was `1^(º)`.
+**This changes output for every user with an ordinal, with no opt-in.** Every exponent and subscript is
+unchanged, `10<sup>n</sup>` included. `3.1.1` tag `f65030f`; `3.1.0` tag `7ca41c6`; `3.0.0` tag `73fe606`;
+`2.9.0` tag `5efc0a5`.
 **Current version note.** `2.2.1` shipped RFC 020; `2.2.2` shipped RFC 007, 021,
 022, 023, 026 and 027; `2.2.3` shipped RFC 029; **`2.3.0` ships RFC 010, 024, 025,
 028, 030–035** — output validity, and the control repairs that made it measurable;
@@ -149,6 +149,21 @@ page's own staleness (RFC 012 §9, unchanged, not re-measured), the `<div style=
 observation from RFC 050's review (an observation, not a commitment), and `1<sup><i>st</i></sup>` →
 `1ˢᵗ` — an ordinal wrapped only in emphasis-transparent markup stays Unicode-mapped, a documented limit
 of this slice's closed set, not a gap, recorded during RFC 051's review.
+**`3.3.0` ships RFC 052** — prepared 2026-10-06, **not yet tagged**; this paragraph becomes a shipped record
+when the tag lands. One new option, `backslash_hard_breaks`, off by default, on all four surfaces (`backslashHardBreaks`
+in Node, `--backslash-hard-breaks` on the CLI). **With it off, output is byte-identical to `3.2.0`**: 108 comparisons
+against the published binary, 0 differing. With it on, a hard break is written as a backslash and a newline, which
+survives editors that strip trailing whitespace but is not understood by Python-Markdown, so the choice is the
+caller's; `docs/src/api/options.md` states both directions. **The substantive case is a run of breaks:** `a<br><br>b`
+under the default writes a whitespace-only line, which CommonMark reads as a blank line, so the run splits into two
+paragraphs and every break is lost. With the option on, the run stays one paragraph with every break kept. The
+default is unchanged, so that fix is for callers who opt in. Not applied in a heading, at the end of a block, in a
+table cell, in `<pre>` or in a code span. **RFC 052 moved to `done/` in the prep commit; `accepted/` and `proposed/`
+are both empty.** **This closes bekoedit's last open item.** **Still open after it:** the default's run defect
+(pinned by `the_default_run_is_unchanged`, needs its own RFC), the `clippy::clone_on_copy` timebomb in
+`python/src/lib.rs` (recorded below), the performance page's standing (RFC 012 §9), and two observations,
+neither a commitment: `<div style="font-weight:700"><h2>` (inherited bold opens a span in a heading) and
+`1<sup><i>st</i></sup>` → `1ˢᵗ` (an ordinal whose suffix is italicised).
 **Governance.** RFC lifecycle follows [RFC 000](./rfcs/done/000-rfc-lifecycle-policy.md).
 
 This document is the planning baseline from which the RFC portfolio is derived.
@@ -754,7 +769,7 @@ gap, `data:` images their lowest:
 | `emit_id_anchors`, independent of mode — *settled 2026-09-24, they no longer need it* | `preserve_ids` conflates keeping `id` information with emitting raw HTML to carry it. A caller wanting Balanced's other choices without raw HTML in the output has no way to say so. **A gap RFC 005 created.** |
 | Drop or alt-only `data:` URI images — *their #3, lowered 2026-09-24* | A pasted screenshot puts megabytes of base64 into the output. **They have solved it on their side** by substituting alt text, so this is now speculative demand unless another consumer asks |
 | ~~**Read inline `style` for emphasis (opt-in)** — *their #1, 2026-09-24*~~ — **shipped in `3.1.0`** as `emphasis_from_style`, off by default, in `Balanced` only (`Minimal` unwraps the carrying element first) | Google Docs and some editors express bold/italic only through `style`. Their framing is sharper than ours was: **every bold word in a Google Docs paste arrives plain.** Opt-in is acceptable to them |
-| Backslash hard-break instead of two trailing spaces — *their #2* | Editors that strip trailing whitespace silently remove the break. Minor, unchanged |
+| ~~Backslash hard-break instead of two trailing spaces — *their #2*~~ — **shipped in `3.3.0`** as `backslash_hard_breaks`, off by default. This closes their last open item | Editors that strip trailing whitespace silently remove the break. Neither form dominates; the option states the trade-off in both directions |
 
 **Harness limitations recorded, 2026-09-17 (RFC 024 review of `024d`):**
 
@@ -950,6 +965,13 @@ anyone's memory.
 | **Nothing asserts the corrected mode text.** `cli/tests/rfc039_a7_cli_surface.rs` already asserts on `--help`; two lines rejecting *"debugging"*, *"archiving"*, *"as much of the original"* would stop the promise returning | Raised 2026-09-24 by the dev team, deliberately out of that slice's scope. Same lesson as `2.4.2`'s inertness properties and RFC 042's contract: a corrected statement with nothing asserting it is one waiting to drift back |
 
 | **`pypi-wheel-gate.yaml`'s header comment is wrong, and the gate is the right home for a `.pyi` check** | The comment says RFC 023 *"decided to remove that claim rather than ship the marker"*; RFC 023 actually says **"Prefer shipping it"**. Its reasoning — *"shipping `py.typed` would silence a type checker without giving it anything to check"* — is exactly the defect RFC 045 fixes, and it sat in a workflow comment while RFC 039 A6 shipped the marker anyway. Correct the comment, and add `test -f` for `mdka/__init__.pyi`, `mdka/mdka_python.pyi` and `mdka/py.typed`: that gate already builds and installs the wheel outside the workspace |
+
+### Recorded 2026-10-06, from the RFC 052 review
+
+| Item | State |
+|---|---|
+| **`clippy::clone_on_copy` in `python/src/lib.rs` is a future-CI timebomb** — it fires on local clippy `0.1.99` (2026-09-28) on `#[pyclass(from_py_object)]` for `ConversionMode`, and not on the GitHub runner's current stable, which is why `main` is green | **Pre-existing, not introduced by any slice.** Reproduced at `a8f8776` in a clean worktree, with none of the RFC 052 changes applied. A runner-image update that ships a clippy with this lint would turn CI red on an unrelated push, with no obvious cause. Fix it by choosing a pyo3 idiom, once, before that happens |
+| **`a<br><br>b` splits into two paragraphs under the default** — the run's whitespace-only line is read as a blank line, losing every break in the run | **Pre-existing, option off.** Fixing it changes output for everyone and needs its own RFC. Pinned by `the_default_run_is_unchanged` so a change cannot happen unnoticed. The option (`backslash_hard_breaks`) fixes it for callers who opt in |
 
 ### Recorded 2026-09-26, from `3.0` slice 2
 

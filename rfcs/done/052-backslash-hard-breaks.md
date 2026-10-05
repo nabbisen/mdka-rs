@@ -1,6 +1,6 @@
 # RFC 052 — A hard break that survives the editor
 
-**Status.** Accepted — owner, 2026-10-06
+**Status.** Implemented — shipped in `3.3.0`, 2026-10-06
 **Author.** Architect
 **Created.** 2026-10-06
 **Milestone.** `3.3.0` — semver leaves no choice for an additive, opt-in option. **When to cut is the owner's.**

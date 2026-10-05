@@ -9,6 +9,38 @@ This file was reconstructed on 2026-08-02 from git tags and commit history
 (RFC 002). Where a version's intent could not be established from history with
 confidence, that is stated explicitly rather than guessed.
 
+## [3.3.0] - 2026-10-06
+
+**`3.3.0` adds one option, off by default. With it off, output is byte-identical to `3.2.0`**,
+verified against the published `3.2.0` binary: 108 comparisons, 0 differing.
+
+### Added
+
+- **`backslash_hard_breaks`** (`backslash_hard_breaks` in Rust and Python,
+  `backslashHardBreaks` in Node.js, `--backslash-hard-breaks` on the CLI) — writes a hard
+  break as a backslash and a newline, instead of two trailing spaces and a newline.
+  Off by default.
+  - **The trade-off runs both ways, and the choice is yours.** Two trailing spaces are
+    stripped by many editors on save, and `markdownlint`'s MD009 flags them; the backslash
+    survives that, but Python-Markdown, the engine behind MkDocs, does not understand it as a
+    break and shows a literal `\`. Neither form dominates. See
+    [`docs/src/api/options.md`](https://nabbisen.github.io/mdka-rs/api/options.html#backslash_hard_breaks)
+    for the table.
+  - **A run of breaks is the substantive case.** `a<br><br>b` under the default writes a
+    whitespace-only line between the two breaks. CommonMark reads that as a blank line, so the
+    run splits into two paragraphs and every break is lost. With the option on, the run stays
+    one paragraph with every break kept, in paragraphs, blockquotes and list items. **The
+    default is unchanged**, so this is a fix only for callers who opt in.
+  - **It does not apply in a heading, at the end of a block, in a table cell, in `<pre>`, or in a
+    code span.** A heading has no hard break, so the backslash would stay visible in the heading
+    text; at the end of a block the default's spaces are inert and the option writes nothing;
+    the other three are written as before.
+
+Found by bekoedit, whose last open item this closes. They asked for a backslash option
+because editors that strip trailing whitespace silently remove the break. Measuring the
+request first showed the trade-off above, which is why it is an option rather than a
+default change.
+
 ## [3.2.0] - 2026-10-01
 
 **`3.2.0` changes output for every user with an ordinal, no opt-in required:**

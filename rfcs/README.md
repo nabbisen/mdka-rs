@@ -21,9 +21,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 
 ## Accepted
 
-| # | Title | Status |
-|---|---|---|
-| 052 | [A hard break that survives the editor](./accepted/052-backslash-hard-breaks.md) — [handoff](./handoffs/052-backslash-hard-breaks/implementation-handoff.md) | **Accepted (owner, 2026-10-06), `3.3.0`.** bekoedit's last open item. Two trailing spaces are stripped by editors; the backslash form is not understood by Python-Markdown. Neither dominates, so it is an option — measured, after setting out to argue for a default change |
+*None.*
 
 
 ## Implemented
@@ -80,6 +78,7 @@ Planning context for the whole portfolio lives in [`ROADMAP.md`](../ROADMAP.md).
 | 049 | [Inline `style` emphasis, and where reading presentation stops](./done/049-inline-style-emphasis.md) — [implementation handoff](./handoffs/049-inline-style-emphasis/implementation-handoff.md) · [docs addendum](./handoffs/049-inline-style-emphasis/addendum-2026-10-01.md) | 3.1.0 |
 | 050 | [A computed style that restates a tag's own default is not new information](./done/050-tag-defaults-and-computed-style.md) — [handoff](./handoffs/050-tag-defaults/implementation-handoff.md) | 3.1.1 |
 | 051 | [A superscript that only looks raised is not notation](./done/051-typographic-superscripts.md) — [handoff](./handoffs/051-typographic-superscripts/implementation-handoff.md) | 3.2.0 |
+| 052 | [A hard break that survives the editor](./done/052-backslash-hard-breaks.md) — [handoff](./handoffs/052-backslash-hard-breaks/implementation-handoff.md) | 3.3.0 |
 
 ## Archive
 
