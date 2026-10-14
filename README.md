@@ -2,16 +2,16 @@
 
 **A HTML to Markdown converter written in Rust.**
 
-[![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka)
-[![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
-[![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka)
-[![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)    
+<img src="https://raw.githubusercontent.com/nabbisen/mdka-rs/main/docs/src/assets/logo.png" alt="mdka logo" width="120">
+
+[![License](https://img.shields.io/github/license/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/blob/main/LICENSE)
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
 [![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka)
 [![CI](https://github.com/nabbisen/mdka-rs/actions/workflows/ci.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/ci.yaml)
-[![GitHub Release](https://img.shields.io/github/v/release/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/releases)
 
-![logo](https://raw.githubusercontent.com/nabbisen/mdka-rs/main/docs/src/assets/logo.png)
+| Rust | Node.js | Python | GitHub |
+| --- | --- | --- | --- |
+| [![crates.io](https://img.shields.io/crates/v/mdka?label=rust)](https://crates.io/crates/mdka) | [![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka) | [![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka) | [![GitHub Release](https://img.shields.io/github/v/release/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/releases)
 
 mdka balances conversion quality with runtime efficiency —
 correct, readable Markdown from real-world HTML, at competitive speed and
