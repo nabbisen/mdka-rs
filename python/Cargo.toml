@@ -10,6 +10,12 @@ license     = "Apache-2.0"
 name       = "mdka_python"
 crate-type = ["cdylib"]
 
+[lints.clippy]
+# PyO3's `from_py_object` expansion clones a Copy enum; the suggestion is not
+# actionable because the clone is in generated code, not ours. Fires on clippy
+# 1.99.0 and not on earlier stables.
+clone_on_copy = "allow"
+
 [dependencies]
 mdka  = { workspace = true }
 pyo3  = { version = "0.28", features = ["extension-module", "abi3-py310"] }
