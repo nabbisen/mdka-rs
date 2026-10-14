@@ -69,6 +69,29 @@ review did not — and the difference was **position**, not diligence.
       `mdka-python` entirely, so its red hid the fact that it was checking two
       fewer crates than it claimed. A red here is a finding, not a known issue.
 
+### The documentation is part of prep
+
+Prep has steps for the version, the CHANGELOG, the RFC move and the ROADMAP, and **had none for the
+documentation**. So when `3.1.0` and `3.3.0` each added an option, only `api/options.md` learned
+about it — and `getting-started/usage-cli.md`'s flag table, which says in writing that it *"mirrors
+`mdka --help`"*, silently stopped doing so for two releases. Found in the 2026-10-15 audit, by which
+point the install examples still said `mdka = "2"`.
+
+> **When a release adds, removes or renames anything on the public surface, update every page that
+> enumerates it — not only `api/options.md`.**
+
+The pages that enumerate: `api/options.md`, `api/core.md`, `api/modes.md`, and
+`getting-started/usage-cli.md`. The usage pages for Rust, Node and Python are worked examples that
+link to the reference; they are deliberately not enumerations and need no change.
+
+- [ ] For any public-surface change, update every enumerating page above.
+- [ ] **`usage-cli.md` is checkable, so check it**: diff the long flags in its table against
+      `mdka --help`'s own output. The table claims to mirror the binary; a claim that can be tested
+      should not be left to the eye.
+- [ ] Dependency-version examples (`README.md`, `getting-started/installation.md`) track the **major**
+      only, so they change at a major — but they are the first thing a new user copies, so confirm
+      them at every major.
+
 ### `ROADMAP.md`'s `**Current version.**` line is part of prep
 
 It drifted to **two releases stale** by `3.1.1` — `3.1.0`'s prep did not touch it and neither handoff
