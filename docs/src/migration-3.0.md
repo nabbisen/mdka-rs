@@ -271,8 +271,9 @@ many, one bad file must not hide the rest.
 
 ### TypeScript
 
-`ConvertResult` is no longer exported; import `FileOutcome`. `JsConversionOptions`
-has three fields, `mode`, `preserveIds` and `dropInteractiveShell`:
+`ConvertResult` is no longer exported; import `FileOutcome`. At `3.0`, `JsConversionOptions`
+had three fields, `mode`, `preserveIds` and `dropInteractiveShell`; later releases have added
+more — see [Options](./api/options.md) for the current set:
 
 ```ts
 import { htmlFilesToMarkdown, type FileOutcome, type JsConversionOptions } from 'mdka'

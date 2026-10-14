@@ -9,9 +9,10 @@
 [![Documentation](https://docs.rs/mdka/badge.svg?version=latest)](https://docs.rs/mdka)
 [![Dependency Status](https://deps.rs/crate/mdka/latest/status.svg)](https://deps.rs/crate/mdka)
 [![CI](https://github.com/nabbisen/mdka-rs/actions/workflows/ci.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/ci.yaml)
-[![Executable](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-executable.yaml)
-[![npm](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-npm.yaml)
-[![PyPi](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml/badge.svg)](https://github.com/nabbisen/mdka-rs/actions/workflows/release-pypi.yaml)
+[![crates.io](https://img.shields.io/crates/v/mdka)](https://crates.io/crates/mdka)
+[![npm](https://img.shields.io/npm/v/mdka)](https://www.npmjs.com/package/mdka)
+[![pypi](https://img.shields.io/pypi/v/mdka)](https://www.pypi.org/project/mdka)
+[![GitHub Release](https://img.shields.io/github/v/release/nabbisen/mdka-rs)](https://github.com/nabbisen/mdka-rs/releases)
 
 ![logo](https://raw.githubusercontent.com/nabbisen/mdka-rs/main/docs/src/assets/logo.png)
 
@@ -129,7 +130,7 @@ mdka --help                             # full option list
 ```toml
 # Cargo.toml
 [dependencies]
-mdka = "2"
+mdka = "3"
 ```
 
 ```rust

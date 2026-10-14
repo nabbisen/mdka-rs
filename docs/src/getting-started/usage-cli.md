@@ -51,6 +51,8 @@ truth — it is generated from the binary you are running.
 | `--preserve-ids` | Emit `<a id="…"></a>` anchors for elements with an `id`. On by default in every mode except `minimal` |
 | `--no-preserve-ids` | Turn anchor emission off, in any mode |
 | `--drop-shell` | Drop `nav`, `header`, `footer`, `aside` |
+| `--emphasis-from-style` | Let an inline `style` attribute add bold/italic a tag would not otherwise carry (RFC 049). Off by default; see [Options](../api/options.md#emphasis_from_style) for where it does and does not reach |
+| `--backslash-hard-breaks` | Write a hard break as `\` + newline instead of two trailing spaces (RFC 052). Off by default; see [Options](../api/options.md#backslash_hard_breaks) for the trade-off |
 | `-h, --help` | Show this help |
 | `-V, --version` | Show the version |
 | `--` | End of options; everything after is a path |

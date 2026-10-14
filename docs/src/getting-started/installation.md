@@ -6,7 +6,7 @@ Add mdka to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mdka = "2"
+mdka = "3"
 ```
 
 That is the only step. mdka has no system dependencies.
